@@ -1,21 +1,19 @@
-import type { SVGProps } from 'react';
+import Image from 'next/image';
 
-export function RotaSeguraLogo(props: SVGProps<SVGSVGElement>) {
+interface RotaSeguraLogoProps {
+  className?: string;
+}
+
+export function RotaSeguraLogo({ className }: RotaSeguraLogoProps) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M12 2L2 7l10 5 10-5-10-5z" />
-      <path d="M2 17l10 5 10-5" />
-      <path d="M2 12l10 5 10-5" />
-      <circle cx="12" cy="12" r="3" fill="hsl(var(--accent))" stroke="hsl(var(--accent-foreground))" strokeWidth="0.5"/>
-    </svg>
+    <Image
+      src="https://placehold.co/150x40.png"
+      alt="Rota Segura Logo"
+      width={150}
+      height={40}
+      className={className}
+      data-ai-hint="road company logo"
+      priority
+    />
   );
 }
