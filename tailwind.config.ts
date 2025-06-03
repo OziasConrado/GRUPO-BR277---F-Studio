@@ -1,3 +1,4 @@
+
 import type {Config} from 'tailwindcss';
 
 export default {
@@ -65,6 +66,9 @@ export default {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))',
         },
+        'story-blue': '#002776',
+        'story-green': '#009c3b',
+        'story-yellow': '#ffdf00',
       },
       borderRadius: {
         lg: 'var(--radius)',

@@ -21,7 +21,7 @@ const mockAdminStories: StoryCircleProps[] = [
   {
     id: 'story-admin-1',
     adminName: 'Admin Oficial',
-    avatarUrl: 'https://placehold.co/64x64.png?text=AO',
+    avatarUrl: 'https://placehold.co/180x320.png?text=AO', // Rectangular placeholder
     dataAIAvatarHint: 'app logo admin',
     hasNewStory: true,
     storyType: 'image',
@@ -29,7 +29,7 @@ const mockAdminStories: StoryCircleProps[] = [
   {
     id: 'story-admin-2',
     adminName: 'Alerta Rota',
-    avatarUrl: 'https://placehold.co/64x64.png?text=AR',
+    avatarUrl: 'https://placehold.co/180x320.png?text=AR',
     dataAIAvatarHint: 'alert icon',
     hasNewStory: true,
     storyType: 'video',
@@ -37,15 +37,15 @@ const mockAdminStories: StoryCircleProps[] = [
   {
     id: 'story-admin-3',
     adminName: 'Manutenção',
-    avatarUrl: 'https://placehold.co/64x64.png?text=MS',
+    avatarUrl: 'https://placehold.co/180x320.png?text=MS',
     dataAIAvatarHint: 'maintenance tools',
     hasNewStory: false,
     storyType: 'image',
   },
   {
     id: 'story-admin-4',
-    adminName: 'Novidades',
-    avatarUrl: 'https://placehold.co/64x64.png?text=NV',
+    adminName: 'Novidades App',
+    avatarUrl: 'https://placehold.co/180x320.png?text=NV',
     dataAIAvatarHint: 'megaphone icon',
     hasNewStory: true,
     storyType: 'video',
@@ -53,9 +53,17 @@ const mockAdminStories: StoryCircleProps[] = [
   {
     id: 'story-admin-5',
     adminName: 'Dicas Seg',
-    avatarUrl: 'https://placehold.co/64x64.png?text=DS',
+    avatarUrl: 'https://placehold.co/180x320.png?text=DS',
     dataAIAvatarHint: 'shield icon',
     hasNewStory: false,
+    storyType: 'image',
+  },
+  {
+    id: 'story-admin-6',
+    adminName: 'Promoções',
+    avatarUrl: 'https://placehold.co/180x320.png?text=PR',
+    dataAIAvatarHint: 'discount tag',
+    hasNewStory: true,
     storyType: 'image',
   }
 ];
@@ -157,22 +165,22 @@ export default function FeedPage() {
 
   return (
     <div className="w-full">
-      <Card className="mb-6 glassmorphic rounded-xl">
-        <CardHeader className="pb-2 pt-4 px-4">
-          <CardTitle className="text-lg font-headline flex items-center">
+      <div className="mb-6">
+        <div className="px-1"> {/* Ajuste para se o título deve ir até a borda ou ter padding do container */}
+          <h2 className="text-xl font-bold font-headline flex items-center mb-1 text-foreground">
             <Info className="h-5 w-5 mr-2 text-primary" />
             Destaques dos Administradores
-          </CardTitle>
-           <p className="text-xs text-muted-foreground pt-0">Avisos importantes e novidades da equipe Rota Segura.</p>
-        </CardHeader>
-        <CardContent className="p-4 pt-2">
-          <div className="flex overflow-x-auto space-x-4 pb-2 no-scrollbar">
-            {mockAdminStories.map((story) => (
-              <StoryCircle key={story.id} {...story} />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+          </h2>
+          <p className="text-xs text-muted-foreground ml-7">Avisos importantes e novidades da equipe Rota Segura.</p>
+        </div>
+        {/* Container para os stories com scroll horizontal */}
+        <div className="mt-4 flex overflow-x-auto space-x-2 pb-3 -mx-4 px-4 no-scrollbar">
+          {mockAdminStories.map((story) => (
+            <StoryCircle key={story.id} {...story} />
+          ))}
+        </div>
+      </div>
+
 
       <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="glassmorphic rounded-xl">

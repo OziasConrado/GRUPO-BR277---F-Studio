@@ -8,7 +8,7 @@ import { PlayCircle, Image as ImageIcon } from 'lucide-react';
 export interface StoryCircleProps {
   id: string;
   adminName: string;
-  avatarUrl: string;
+  avatarUrl: string; // Should be a URL to a rectangular image (e.g., 9:16 aspect ratio)
   dataAIAvatarHint?: string;
   hasNewStory: boolean;
   storyType: 'image' | 'video';
@@ -16,36 +16,48 @@ export interface StoryCircleProps {
 
 export default function StoryCircle({ adminName, avatarUrl, dataAIAvatarHint, hasNewStory, storyType }: StoryCircleProps) {
   return (
-    <div className="flex flex-col items-center space-y-1 flex-shrink-0 w-20 cursor-pointer group">
+    <div className="group flex-shrink-0 cursor-pointer">
       <div
         className={cn(
-          'relative rounded-full p-0.5 transition-all duration-300',
-          hasNewStory ? 'bg-gradient-to-tr from-yellow-400 to-pink-500' : 'bg-muted/50',
-          'group-hover:scale-105'
+          'rounded-lg transition-all duration-300 shadow-md',
+          hasNewStory 
+            ? 'p-1 bg-gradient-to-br from-story-blue via-story-green to-story-yellow' 
+            : 'p-0.5 bg-muted/40 hover:bg-muted/60'
         )}
       >
-        <div className="relative w-16 h-16 rounded-full bg-background p-0.5">
+        <div 
+          className={cn(
+            "relative w-[76px] h-[135px] bg-background rounded-[5px] overflow-hidden transition-transform duration-300 ease-in-out group-hover:scale-[1.03]",
+          )}
+        >
           <Image
             src={avatarUrl}
             alt={adminName}
-            width={60}
-            height={60}
-            className="rounded-full object-cover"
-            data-ai-hint={dataAIAvatarHint || 'admin profile'}
+            layout="fill"
+            objectFit="cover"
+            className="" // Removed rounded-md as parent handles rounding and overflow
+            data-ai-hint={dataAIAvatarHint || 'admin story content'}
           />
+          
+          {/* Admin Name Overlay */}
+          <div className="absolute bottom-0 left-0 right-0 p-1.5 bg-gradient-to-t from-black/70 via-black/40 to-transparent">
+            <p className="text-xs text-white font-semibold truncate drop-shadow-sm">{adminName}</p>
+          </div>
+
+          {/* Story Type Icon */}
           {storyType === 'video' && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-full">
-              <PlayCircle className="w-6 h-6 text-white/90" />
+            <div className="absolute top-1.5 right-1.5 bg-black/40 p-0.5 rounded-full backdrop-blur-sm">
+              <PlayCircle className="w-4 h-4 text-white/90" />
             </div>
           )}
-           {storyType === 'image' && !hasNewStory && (
-             <div className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-0.5 border-2 border-background">
-                <ImageIcon className="w-3 h-3" />
+          {/* Add specific icon for 'image' type if needed, e.g. when not new */}
+          {storyType === 'image' && hasNewStory && ( // Example: Icon for new image story
+             <div className="absolute top-1.5 right-1.5 bg-black/40 p-0.5 rounded-full backdrop-blur-sm">
+                <ImageIcon className="w-4 h-4 text-white/90" />
              </div>
            )}
         </div>
       </div>
-      <p className="text-xs text-center text-muted-foreground truncate w-full group-hover:text-primary">{adminName}</p>
     </div>
   );
 }
