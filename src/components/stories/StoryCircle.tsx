@@ -8,53 +8,55 @@ import { PlayCircle, Image as ImageIcon } from 'lucide-react';
 export interface StoryCircleProps {
   id: string;
   adminName: string;
-  avatarUrl: string; 
+  avatarUrl: string;
   dataAIAvatarHint?: string;
   hasNewStory: boolean;
   storyType: 'image' | 'video';
+  onClick?: () => void;
 }
 
-export default function StoryCircle({ adminName, avatarUrl, dataAIAvatarHint, hasNewStory, storyType }: StoryCircleProps) {
+export default function StoryCircle({ adminName, avatarUrl, dataAIAvatarHint, hasNewStory, storyType, onClick }: StoryCircleProps) {
   return (
-    <div className="group flex-shrink-0">
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'group flex-shrink-0 rounded-lg transition-all duration-300 shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
+        hasNewStory
+          ? 'p-0.5 bg-gradient-to-br from-story-blue via-story-green to-story-yellow'
+          : 'p-0.5 bg-muted/40 hover:bg-muted/60'
+      )}
+      aria-label={`Ver story de ${adminName}`}
+    >
       <div
         className={cn(
-          'rounded-lg transition-all duration-300 shadow-md',
-          hasNewStory 
-            ? 'p-0.5 bg-gradient-to-br from-story-blue via-story-green to-story-yellow' 
-            : 'p-0.5 bg-muted/40 hover:bg-muted/60'
+          "relative w-[76px] h-[135px] bg-background rounded-sm overflow-hidden transition-transform duration-300 ease-in-out group-hover:scale-[1.03]",
         )}
       >
-        <div 
-          className={cn(
-            "relative w-[76px] h-[135px] bg-background rounded-sm overflow-hidden transition-transform duration-300 ease-in-out group-hover:scale-[1.03]",
-          )}
-        >
-          <Image
-            src={avatarUrl}
-            alt={adminName}
-            layout="fill"
-            objectFit="cover"
-            className="" 
-            data-ai-hint={dataAIAvatarHint || 'admin story content'}
-          />
-          
-          <div className="absolute bottom-0 left-0 right-0 p-1.5 bg-gradient-to-t from-black/70 via-black/40 to-transparent">
-            <p className="text-xs text-white font-semibold truncate drop-shadow-sm">{adminName}</p>
-          </div>
+        <Image
+          src={avatarUrl}
+          alt={adminName}
+          layout="fill"
+          objectFit="cover"
+          className=""
+          data-ai-hint={dataAIAvatarHint || 'admin story content'}
+        />
 
-          {storyType === 'video' && (
-            <div className="absolute top-1.5 right-1.5 bg-black/40 p-0.5 rounded-full backdrop-blur-sm">
-              <PlayCircle className="w-4 h-4 text-white/90" />
-            </div>
-          )}
-          {storyType === 'image' && hasNewStory && ( 
-             <div className="absolute top-1.5 right-1.5 bg-black/40 p-0.5 rounded-full backdrop-blur-sm">
-                <ImageIcon className="w-4 h-4 text-white/90" />
-             </div>
-           )}
+        <div className="absolute bottom-0 left-0 right-0 p-1.5 bg-gradient-to-t from-black/70 via-black/40 to-transparent">
+          <p className="text-xs text-white font-semibold truncate drop-shadow-sm">{adminName}</p>
         </div>
+
+        {storyType === 'video' && (
+          <div className="absolute top-1.5 right-1.5 bg-black/40 p-0.5 rounded-full backdrop-blur-sm">
+            <PlayCircle className="w-4 h-4 text-white/90" />
+          </div>
+        )}
+        {storyType === 'image' && hasNewStory && (
+           <div className="absolute top-1.5 right-1.5 bg-black/40 p-0.5 rounded-full backdrop-blur-sm">
+              <ImageIcon className="w-4 h-4 text-white/90" />
+           </div>
+         )}
       </div>
-    </div>
+    </button>
   );
 }

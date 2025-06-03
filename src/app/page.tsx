@@ -22,7 +22,7 @@ const mockAdminStories: StoryCircleProps[] = [
   {
     id: 'story-admin-1',
     adminName: 'Admin Oficial',
-    avatarUrl: 'https://placehold.co/180x320.png?text=AO', 
+    avatarUrl: 'https://placehold.co/180x320.png?text=AO',
     dataAIAvatarHint: 'app logo admin',
     hasNewStory: true,
     storyType: 'image',
@@ -154,15 +154,15 @@ export default function FeedPage() {
         display: none;
       }
       .no-scrollbar {
-        -ms-overflow-style: none; 
-        scrollbar-width: none; 
+        -ms-overflow-style: none;
+        scrollbar-width: none;
       }
     `;
     document.head.appendChild(style);
     return () => {
       document.head.removeChild(style);
     };
-  }, []); 
+  }, []);
 
   const handleStoryClick = (story: StoryCircleProps) => {
     setSelectedStory(story);
@@ -172,63 +172,60 @@ export default function FeedPage() {
   return (
     <div className="w-full">
       <div className="mb-6">
-        <div className="px-1"> 
+        <div className="px-1">
           <h2 className="text-xl font-bold font-headline flex items-center mb-1 text-foreground">
             <Info className="h-5 w-5 mr-2 text-primary" />
             Destaques dos Administradores
           </h2>
           <p className="text-xs text-muted-foreground ml-7">Avisos importantes e novidades da equipe Rota Segura.</p>
         </div>
-        
+
         <div className="mt-4 flex overflow-x-auto space-x-2 pb-3 -mx-4 px-4 no-scrollbar">
           {mockAdminStories.map((story) => (
-            <button
+            <StoryCircle
               key={story.id}
+              {...story}
               onClick={() => handleStoryClick(story)}
-              className="focus:outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-              aria-label={`Ver story de ${story.adminName}`}
-            >
-              <StoryCircle {...story} />
-            </button>
+            />
           ))}
         </div>
       </div>
 
 
-      <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="mb-8 grid grid-cols-2 md:grid-cols-3 gap-3">
         <Card className="glassmorphic rounded-xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium font-headline">Publicações da Comunidade</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1">
+            <CardTitle className="text-sm font-medium font-headline">Publicações</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+{mockPosts.length}</div>
+          <CardContent className="p-3 pt-1">
+            <div className="text-xl font-bold">+{mockPosts.length}</div>
             <p className="text-xs text-muted-foreground">
-              Novas atualizações dos usuários
+              Dos usuários
             </p>
           </CardContent>
         </Card>
         <Card className="glassmorphic rounded-xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1">
             <CardTitle className="text-sm font-medium font-headline">Alertas Ativos</CardTitle>
             <AlertCircle className="h-4 w-4 text-destructive" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">3</div>
+          <CardContent className="p-3 pt-1">
+            <div className="text-xl font-bold">3</div>
             <p className="text-xs text-muted-foreground">
-              Informações importantes sobre rotas
+              Sobre rotas
             </p>
           </CardContent>
         </Card>
-        <Card className="glassmorphic rounded-xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium font-headline">Destaques da Comunidade</CardTitle>
+        <Card className="glassmorphic rounded-xl col-span-2 md:col-span-1">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1">
+            <CardTitle className="text-sm font-medium font-headline">Destaques</CardTitle>
             <Star className="h-4 w-4 text-accent" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">Top #1</div>
+          <CardContent className="p-3 pt-1">
+            <div className="text-xl font-bold">Top #1</div>
             <p className="text-xs text-muted-foreground">
-              Post mais engajado da semana
+              Mais engajado
             </p>
           </CardContent>
         </Card>
