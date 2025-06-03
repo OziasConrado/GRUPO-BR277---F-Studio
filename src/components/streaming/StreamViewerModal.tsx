@@ -4,7 +4,7 @@
 import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { X, ExternalLink } from 'lucide-react';
-import type { StreamCardProps } from './stream-card'; // Ajuste o caminho se necessário
+import type { StreamCardProps } from './stream-card';
 
 interface StreamViewerModalProps {
   isOpen: boolean;
@@ -16,15 +16,12 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
   if (!isOpen || !stream) return null;
 
   const canEmbed = (url: string) => {
-    // Simples verificação, pode ser expandida
-    // rtsp.me e giseleimoveis podem ser iframable. fullcam.me geralmente não.
-    // playerv.logicahost.com.br pode funcionar se a URL for a de embed direto.
     const nonEmbeddableHosts = ['cloud.fullcam.me'];
     try {
       const hostname = new URL(url).hostname;
       return !nonEmbeddableHosts.some(host => hostname.includes(host));
     } catch (e) {
-      return false; // URL inválida não pode ser embedada
+      return false; 
     }
   };
 
@@ -32,7 +29,7 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="fixed inset-0 z-[100] flex h-screen w-screen flex-col items-center justify-start bg-black/95 p-0 data-[state=open]:animate-none data-[state=closed]:animate-none rounded-none border-none max-w-none overflow-hidden">
+      <DialogContent className="fixed inset-0 z-[100] flex h-screen w-screen flex-col bg-black/95 p-0 data-[state=open]:animate-none data-[state=closed]:animate-none rounded-none border-none max-w-none">
         <div className="absolute top-4 right-4 z-20">
           <DialogClose asChild>
             <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full h-10 w-10">
@@ -52,7 +49,8 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
           </div>
         </div>
         
-        <div className="flex-grow flex items-center justify-center w-full h-[calc(100%-120px-60px)] pt-2 pb-2 px-4"> {/* 120px AdMob + 60px Patrocinador */}
+        {/* Conteúdo Principal (Vídeo) */}
+        <div className="flex-grow w-full flex items-center justify-center overflow-hidden p-2">
           {embeddable ? (
             <iframe
               src={stream.streamUrl}
@@ -60,7 +58,7 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
               className="w-full h-full border-0 rounded-md"
               allow="autoplay; encrypted-media; picture-in-picture"
               allowFullScreen
-              sandbox="allow-scripts allow-same-origin allow-presentation" // Adicionado sandbox
+              sandbox="allow-scripts allow-same-origin allow-presentation"
             ></iframe>
           ) : (
             <div className="text-center text-white p-8 bg-slate-800 rounded-lg">
