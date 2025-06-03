@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -15,7 +16,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from "@/hooks/use-toast";
 
-export default function EmergencyButton() {
+export default function EmergencyButton({ className, iconClassName }: { className?: string; iconClassName?: string }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { toast } = useToast();
 
@@ -44,11 +45,11 @@ export default function EmergencyButton() {
       <Button
         variant="destructive"
         size="icon"
-        className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-50 rounded-full h-16 w-16 shadow-xl animate-pulse"
+        className={className || "rounded-full h-12 w-12 shadow-xl"}
         onClick={() => setIsModalOpen(true)}
         aria-label="Botão de Emergência"
       >
-        <AlertTriangle className="h-8 w-8" />
+        <AlertTriangle className={iconClassName || "h-6 w-6"} />
       </Button>
 
       <AlertDialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -77,3 +78,4 @@ export default function EmergencyButton() {
     </>
   );
 }
+
