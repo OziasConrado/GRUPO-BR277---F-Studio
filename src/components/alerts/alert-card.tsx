@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, CarCrash, Construction, CloudFog, Clock, UserCircle, TrafficCone, Waves, MountainSnow, Wind } from "lucide-react";
+import { AlertTriangle, Car, Construction, CloudFog, Clock, UserCircle, TrafficCone, Waves, MountainSnow, Wind } from "lucide-react"; // Alterado CarCrash para Car
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -24,7 +24,7 @@ interface AlertCardProps {
 const getAlertIcon = (type: AlertProps['type']) => {
   switch (type) {
     case 'Acidente':
-      return <CarCrash className="h-5 w-5 text-red-500" />;
+      return <Car className="h-5 w-5 text-red-500" />; // Alterado CarCrash para Car
     case 'Obras na Pista':
       return <Construction className="h-5 w-5 text-yellow-500" />;
     case 'Congestionamento':
@@ -49,7 +49,7 @@ const getSeverityBadgeVariant = (severity: AlertProps['severity']): "default" | 
     case 'Alta':
       return 'destructive';
     case 'Média':
-      return 'default'; // Usando 'default' (primary) para média para destacar um pouco
+      return 'default'; 
     case 'Baixa':
       return 'secondary';
     default:
