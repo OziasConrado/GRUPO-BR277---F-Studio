@@ -1,3 +1,4 @@
+
 import PostCard, { type PostCardProps } from '@/components/feed/post-card';
 import { Separator } from '@/components/ui/separator';
 import { AlertCircle, Star, TrendingUp } from 'lucide-react';
@@ -8,34 +9,71 @@ const mockPosts: PostCardProps[] = [
     id: '1',
     userName: 'Carlos Caminhoneiro',
     userAvatarUrl: 'https://placehold.co/40x40.png?text=CC',
+    dataAIAvatarHint: 'truck driver',
     timestamp: '2 horas atrás',
     text: 'Estrada tranquila hoje na BR-116! Sol brilhando e sem trânsito. Bom dia a todos!',
     imageUrl: 'https://placehold.co/600x400.png',
-    dataAIAvatartHint: 'truck driver',
     dataAIImageHint: 'highway sunny day',
-    likes: 152,
-    comments: 12,
+    reactions: { thumbsUp: 152, heart: 25, laugh: 10 },
+    commentsData: [
+      {
+        id: 'c1-1',
+        userName: 'Mariana Logística',
+        userAvatarUrl: 'https://placehold.co/40x40.png?text=ML',
+        dataAIAvatarHint: 'logistics woman',
+        timestamp: '1 hora atrás',
+        text: 'Que ótimo, Carlos! Boas viagens!',
+        replies: [
+          { 
+            id: 'r1-1-1', 
+            userName: 'Carlos Caminhoneiro', 
+            userAvatarUrl: 'https://placehold.co/40x40.png?text=CC',
+            dataAIAvatarHint: 'truck driver',
+            timestamp: '30 minutos atrás', 
+            text: 'Obrigado, Mariana!' 
+          }
+        ]
+      },
+      {
+        id: 'c1-2',
+        userName: 'Pedro Estradeiro',
+        userAvatarUrl: 'https://placehold.co/40x40.png?text=PE',
+        dataAIAvatarHint: 'male traveler',
+        timestamp: '45 minutos atrás',
+        text: 'Também passei por lá, realmente um dia bom pra rodar.',
+      }
+    ],
   },
   {
     id: '2',
     userName: 'Ana Viajante',
     userAvatarUrl: 'https://placehold.co/40x40.png?text=AV',
+    dataAIAvatarHint: 'woman traveler',
     timestamp: '5 horas atrás',
     text: 'Alerta de neblina densa na Serra do Mar. Redobrem a atenção, pessoal!',
     imageUrl: 'https://placehold.co/600x300.png',
-    dataAIAvatartHint: 'woman traveler',
     dataAIImageHint: 'foggy mountain road',
-    likes: 98,
-    comments: 25,
+    reactions: { thumbsUp: 98, heart: 15, laugh: 2 },
+    commentsData: [
+      {
+        id: 'c2-1',
+        userName: 'Segurança Rodoviária',
+        userAvatarUrl: 'https://placehold.co/40x40.png?text=SR',
+        dataAIAvatarHint: 'safety logo',
+        timestamp: '4 horas atrás',
+        text: 'Obrigado pelo alerta, Ana! Informação crucial.',
+      }
+    ],
   },
   {
     id: '3',
     userName: 'Rota Segura Admin',
     userAvatarUrl: 'https://placehold.co/40x40.png?text=RS',
+    dataAIAvatarHint: 'app logo',
     timestamp: '1 dia atrás',
     text: 'Nova funcionalidade no app: Checklist de Viagem aprimorado! Confira na seção de Ferramentas.',
-    likes: 210,
-    comments: 30,
+    reactions: { thumbsUp: 210, heart: 50, laugh: 5 },
+    commentsData: [],
   },
 ];
 
@@ -93,3 +131,4 @@ export default function FeedPage() {
     </div>
   );
 }
+
