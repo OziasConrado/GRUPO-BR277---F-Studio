@@ -2,25 +2,24 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { PlayCircle, ListFilter } from 'lucide-react';
+import { PlayCircle } from 'lucide-react';
 import StreamFilters from '@/components/streaming/stream-filters';
-import StreamViewerModal from '@/components/streaming/StreamViewerModal'; // Novo componente
-import type { StreamCardProps } from '@/components/streaming/stream-card'; // Interface atualizada
+import StreamViewerModal from '@/components/streaming/StreamViewerModal';
+import type { StreamCardProps } from '@/components/streaming/stream-card'; 
 
+// Dados fornecidos pelo usuário
 const mockStreamsData: StreamCardProps[] = [
   // Curitiba-PR
   {
     id: 'stream-cwb-1',
     title: 'BR-376, km 594',
     description: 'Contorno Sul | Viaduto Caiuá/CIC',
-    thumbnailUrl: 'https://placehold.co/160x90.png',
+    thumbnailUrl: 'https://placehold.co/160x90.png', // Placeholder
     dataAIThumbnailHint: 'highway traffic',
     category: 'Curitiba-PR',
     isLive: true,
-    viewers: Math.floor(Math.random() * 200) + 50,
     streamUrl: 'https://cloud.fullcam.me/#/cembed/a8b563b95ba9299432dfaf5b8a8f6962aedd36e58d15d22c3b9cffeec6a32001e18ae8897e091f1981234490ee24',
   },
   {
@@ -31,7 +30,6 @@ const mockStreamsData: StreamCardProps[] = [
     dataAIThumbnailHint: 'road intersection',
     category: 'Curitiba-PR',
     isLive: true,
-    viewers: Math.floor(Math.random() * 200) + 50,
     streamUrl: 'https://cloud.fullcam.me/#/cembed/a3a1e898486a65603b809dde9804a58f77042874f324f77a2a0ddeb76a4c741179d75f5643d74090c7b3c0101fe8',
   },
   {
@@ -42,7 +40,6 @@ const mockStreamsData: StreamCardProps[] = [
     dataAIThumbnailHint: 'city road',
     category: 'Curitiba-PR',
     isLive: true,
-    viewers: Math.floor(Math.random() * 200) + 50,
     streamUrl: 'https://rtsp.me/embed/QtFANhNy/',
   },
   // Campo Largo-PR
@@ -173,7 +170,7 @@ const mockStreamsData: StreamCardProps[] = [
   {
     id: 'stream-guaratuba-3',
     title: 'Obra Nova Ponte',
-    description: 'Câmera 1',
+    description: 'Câmera 1', // Corrigido de "câmera 1"
     thumbnailUrl: 'https://placehold.co/160x90.png',
     dataAIThumbnailHint: 'construction site bridge',
     category: 'Guaratuba-PR',
@@ -206,7 +203,7 @@ const mockStreamsData: StreamCardProps[] = [
     id: 'stream-outros-1',
     title: 'Paraguai',
     description: 'Ponte da Amizade | Sentido Brasil',
-    thumbnailUrl: 'https://placehold.co/160x90.png',
+    thumbnailUrl: 'https://placehold.co/160x90.png', // Corrigido de "Otros" para "Outros"
     dataAIThumbnailHint: 'bridge international border',
     category: 'Outros',
     isLive: true,
@@ -234,6 +231,20 @@ export default function StreamingPage() {
 
   const streamCategories = ['Todos', ...new Set(mockStreamsData.map(s => s.category))];
 
+  const canEmbedPreview = (url: string) => {
+    const nonEmbeddableHosts = ['cloud.fullcam.me']; // Hosts que não funcionam bem em iframes pequenos ou múltiplos
+    try {
+      const hostname = new URL(url).hostname;
+      // Para miniaturas, podemos ser mais restritivos. Alguns que funcionam em tela cheia podem não funcionar bem aqui.
+      if (nonEmbeddableHosts.some(host => hostname.includes(host))) return false;
+      if (hostname.includes('playerv.logicahost.com.br')) return false; // Muitas vezes não carrega em iframes pequenos
+      if (hostname.includes('giseleimoveis.com.br')) return false; // Página web completa
+      return true;
+    } catch (e) {
+      return false; 
+    }
+  };
+
 
   return (
     <div className="w-full space-y-6">
@@ -251,40 +262,55 @@ export default function StreamingPage() {
           />
 
           {filteredStreams.length > 0 ? (
-            <div className="mt-4 space-y-4">
-              {filteredStreams.map((stream) => (
-                <Card key={stream.id} className="bg-card/70 dark:bg-card/70 backdrop-blur-sm border border-white/10 dark:border-slate-700/10 rounded-lg overflow-hidden">
-                  <CardContent className="p-3 flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                    <div className="flex-grow space-y-1">
-                      <h3 className="text-md font-semibold font-headline">{stream.title}</h3>
-                      <p className="text-xs text-muted-foreground leading-relaxed">{stream.description}</p>
-                      <Button 
-                        variant="default" 
-                        size="sm" 
-                        onClick={() => handleWatchStream(stream)}
-                        className="mt-1 rounded-md text-xs py-1 px-2 h-auto"
-                      >
-                        <PlayCircle className="mr-1.5 h-4 w-4" /> Assistir
-                      </Button>
-                    </div>
-                    <div className="w-full sm:w-32 md:w-40 aspect-video rounded-md overflow-hidden relative flex-shrink-0 mt-2 sm:mt-0">
-                      <Image
-                        src={stream.thumbnailUrl}
-                        alt={`Thumbnail para ${stream.title}`}
-                        layout="fill"
-                        objectFit="cover"
-                        data-ai-hint={stream.dataAIThumbnailHint || "live stream thumbnail"}
-                        className="transition-transform duration-300 hover:scale-105"
-                      />
-                       {stream.isLive && (
-                        <div className="absolute top-1 left-1 bg-red-600 text-white px-1.5 py-0.5 rounded text-[0.6rem] font-bold animate-pulse">
-                          AO VIVO
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="mt-4 space-y-3">
+              {filteredStreams.map((stream) => {
+                const embedPreview = canEmbedPreview(stream.streamUrl);
+                return (
+                  <Card 
+                    key={stream.id} 
+                    className="bg-card/70 dark:bg-card/70 backdrop-blur-sm border border-white/10 dark:border-slate-700/10 rounded-lg overflow-hidden"
+                  >
+                    <CardContent className="p-3 flex flex-row items-start gap-3">
+                      <div className="w-28 sm:w-32 aspect-video rounded-md overflow-hidden relative flex-shrink-0 bg-black/10">
+                        {embedPreview ? (
+                           <iframe
+                            src={stream.streamUrl}
+                            title={`Miniatura: ${stream.title}`}
+                            className="w-full h-full border-0"
+                            sandbox="allow-scripts allow-same-origin allow-presentation"
+                            scrolling="no"
+                          ></iframe>
+                        ) : (
+                          <img // Fallback para imagem estática
+                            src={stream.thumbnailUrl}
+                            alt={`Thumbnail para ${stream.title}`}
+                            className="w-full h-full object-cover"
+                            data-ai-hint={stream.dataAIThumbnailHint || "live stream thumbnail"}
+                          />
+                        )}
+                        {stream.isLive && !embedPreview && ( // Mostra 'AO VIVO' apenas se for fallback de imagem
+                          <div className="absolute top-1 left-1 bg-red-600 text-white px-1.5 py-0.5 rounded text-[0.6rem] font-bold animate-pulse">
+                            AO VIVO
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex-grow space-y-1 self-center">
+                        <h3 className="text-sm sm:text-md font-semibold font-headline line-clamp-2">{stream.title}</h3>
+                        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{stream.description}</p>
+                        <Button 
+                          variant="default" 
+                          size="sm" 
+                          onClick={() => handleWatchStream(stream)}
+                          className="mt-1.5 rounded-md text-xs py-1 px-2 h-auto"
+                        >
+                          <PlayCircle className="mr-1.5 h-4 w-4" /> Assistir
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           ) : (
             <p className="mt-6 text-center text-muted-foreground">Nenhuma transmissão encontrada para esta categoria.</p>
@@ -305,4 +331,3 @@ export default function StreamingPage() {
     </div>
   );
 }
-

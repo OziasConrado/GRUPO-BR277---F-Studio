@@ -18,8 +18,8 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="fixed inset-0 z-[100] flex h-screen w-screen flex-col bg-black/95 p-0 data-[state=open]:animate-none data-[state=closed]:animate-none rounded-none border-none max-w-none">
-        <div className="absolute top-4 right-4 z-10">
+      <DialogContent className="fixed inset-0 z-[100] flex flex-col bg-black/95 p-0 data-[state=open]:animate-none data-[state=closed]:animate-none rounded-none border-none w-screen h-screen max-w-none max-h-none">
+        <div className="absolute top-2 right-2 z-10">
           <DialogClose asChild>
             <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full h-10 w-10">
               <X className="h-6 w-6" />
@@ -29,7 +29,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
         
         {/* Conteúdo Principal (Imagem/Vídeo do Story) */}
         <div className="flex-grow w-full flex items-center justify-center overflow-hidden p-4">
-          <div className="relative w-full h-full"> {/* Contêiner para Image com layout="fill" */}
+          <div className="relative w-full h-full max-w-md max-h-full"> {/* Contêiner para Image com layout="fill" e limites */}
             <Image
               src={story.avatarUrl} 
               alt={`Story by ${story.adminName}`}

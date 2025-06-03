@@ -16,7 +16,7 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
   if (!isOpen || !stream) return null;
 
   const canEmbed = (url: string) => {
-    const nonEmbeddableHosts = ['cloud.fullcam.me'];
+    const nonEmbeddableHosts = ['cloud.fullcam.me']; // Adicionar outros hosts se necessário
     try {
       const hostname = new URL(url).hostname;
       return !nonEmbeddableHosts.some(host => hostname.includes(host));
@@ -29,8 +29,8 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="fixed inset-0 z-[100] flex h-screen w-screen flex-col bg-black/95 p-0 data-[state=open]:animate-none data-[state=closed]:animate-none rounded-none border-none max-w-none">
-        <div className="absolute top-4 right-4 z-20">
+      <DialogContent className="fixed inset-0 z-[100] flex flex-col bg-black/95 p-0 data-[state=open]:animate-none data-[state=closed]:animate-none rounded-none border-none w-screen h-screen max-w-none max-h-none">
+        <div className="absolute top-2 right-2 z-20">
           <DialogClose asChild>
             <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full h-10 w-10">
               <X className="h-6 w-6" />
@@ -50,20 +50,22 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
         </div>
         
         {/* Conteúdo Principal (Vídeo) */}
-        <div className="flex-grow w-full flex items-center justify-center overflow-hidden p-2">
+        <div className="flex-grow w-full flex items-center justify-center p-2 overflow-auto">
           {embeddable ? (
-            <iframe
-              src={stream.streamUrl}
-              title={`Transmissão ao vivo: ${stream.title}`}
-              className="w-full h-full border-0 rounded-md"
-              allow="autoplay; encrypted-media; picture-in-picture"
-              allowFullScreen
-              sandbox="allow-scripts allow-same-origin allow-presentation"
-            ></iframe>
+            <div className="w-full max-w-4xl mx-auto aspect-video bg-black rounded-md overflow-hidden">
+              <iframe
+                src={stream.streamUrl}
+                title={`Transmissão ao vivo: ${stream.title}`}
+                className="w-full h-full border-0"
+                allow="autoplay; encrypted-media; picture-in-picture"
+                allowFullScreen
+                sandbox="allow-scripts allow-same-origin allow-presentation"
+              ></iframe>
+            </div>
           ) : (
             <div className="text-center text-white p-8 bg-slate-800 rounded-lg">
               <h3 className="text-xl font-semibold mb-2">{stream.title}</h3>
-              <p className="text-sm mb-4">Esta transmissão não pode ser incorporada diretamente.</p>
+              <p className="text-sm mb-4">Esta transmissão não pode ser incorporada diretamente para visualização aqui.</p>
               <Button 
                 onClick={() => window.open(stream.streamUrl, '_blank')}
                 variant="outline" 
