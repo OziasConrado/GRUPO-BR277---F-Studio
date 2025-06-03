@@ -1,8 +1,10 @@
 
-
+'use client';
+import { useEffect } from 'react';
 import PostCard, { type PostCardProps, type PostReactions } from '@/components/feed/post-card';
+import StoryCircle, { type StoryCircleProps } from '@/components/stories/StoryCircle';
 import { Separator } from '@/components/ui/separator';
-import { AlertCircle, Star, TrendingUp } from 'lucide-react';
+import { AlertCircle, Star, TrendingUp, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const defaultReactions: PostReactions = {
@@ -14,6 +16,50 @@ const defaultReactions: PostReactions = {
   sad: 0,
   angry: 0,
 };
+
+const mockAdminStories: StoryCircleProps[] = [
+  {
+    id: 'story-admin-1',
+    adminName: 'Admin Oficial',
+    avatarUrl: 'https://placehold.co/64x64.png?text=AO',
+    dataAIAvatarHint: 'app logo admin',
+    hasNewStory: true,
+    storyType: 'image',
+  },
+  {
+    id: 'story-admin-2',
+    adminName: 'Alerta Rota',
+    avatarUrl: 'https://placehold.co/64x64.png?text=AR',
+    dataAIAvatarHint: 'alert icon',
+    hasNewStory: true,
+    storyType: 'video',
+  },
+  {
+    id: 'story-admin-3',
+    adminName: 'Manutenção',
+    avatarUrl: 'https://placehold.co/64x64.png?text=MS',
+    dataAIAvatarHint: 'maintenance tools',
+    hasNewStory: false,
+    storyType: 'image',
+  },
+  {
+    id: 'story-admin-4',
+    adminName: 'Novidades',
+    avatarUrl: 'https://placehold.co/64x64.png?text=NV',
+    dataAIAvatarHint: 'megaphone icon',
+    hasNewStory: true,
+    storyType: 'video',
+  },
+  {
+    id: 'story-admin-5',
+    adminName: 'Dicas Seg',
+    avatarUrl: 'https://placehold.co/64x64.png?text=DS',
+    dataAIAvatarHint: 'shield icon',
+    hasNewStory: false,
+    storyType: 'image',
+  }
+];
+
 
 const mockPosts: PostCardProps[] = [
   {
@@ -35,13 +81,13 @@ const mockPosts: PostCardProps[] = [
         timestamp: '1 hora atrás',
         text: 'Que ótimo, Carlos! Boas viagens!',
         replies: [
-          { 
-            id: 'r1-1-1', 
-            userName: 'Carlos Caminhoneiro', 
+          {
+            id: 'r1-1-1',
+            userName: 'Carlos Caminhoneiro',
             userAvatarUrl: 'https://placehold.co/40x40.png?text=CC',
             dataAIAvatarHint: 'truck driver',
-            timestamp: '30 minutos atrás', 
-            text: 'Obrigado, Mariana!' 
+            timestamp: '30 minutos atrás',
+            text: 'Obrigado, Mariana!'
           }
         ]
       },
@@ -89,20 +135,55 @@ const mockPosts: PostCardProps[] = [
 ];
 
 export default function FeedPage() {
+  useEffect(() => {
+    // Helper para ocultar a barra de rolagem
+    const style = document.createElement('style');
+    style.innerHTML = `
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none; 
+        scrollbar-width: none; 
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Cleanup function to remove the style when the component unmounts
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []); // Empty dependency array ensures this runs only once on mount and unmount
+
   return (
     <div className="w-full">
-      <h1 className="text-3xl font-bold mb-6 font-headline text-center sm:text-left">Feed de Notícias</h1>
-      
+      <Card className="mb-6 glassmorphic rounded-xl">
+        <CardHeader className="pb-2 pt-4 px-4">
+          <CardTitle className="text-lg font-headline flex items-center">
+            <Info className="h-5 w-5 mr-2 text-primary" />
+            Destaques dos Administradores
+          </CardTitle>
+           <p className="text-xs text-muted-foreground pt-0">Avisos importantes e novidades da equipe Rota Segura.</p>
+        </CardHeader>
+        <CardContent className="p-4 pt-2">
+          <div className="flex overflow-x-auto space-x-4 pb-2 no-scrollbar">
+            {mockAdminStories.map((story) => (
+              <StoryCircle key={story.id} {...story} />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="glassmorphic rounded-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium font-headline">Publicações Recentes</CardTitle>
+            <CardTitle className="text-sm font-medium font-headline">Publicações da Comunidade</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">+{mockPosts.length}</div>
             <p className="text-xs text-muted-foreground">
-              Novas atualizações da comunidade
+              Novas atualizações dos usuários
             </p>
           </CardContent>
         </Card>
@@ -134,6 +215,7 @@ export default function FeedPage() {
 
       <Separator className="my-6" />
 
+      <h2 className="text-2xl font-bold mb-4 font-headline text-center sm:text-left">Últimas da Comunidade</h2>
       <div className="space-y-6">
         {mockPosts.map((post) => (
           <PostCard key={post.id} {...post} />
