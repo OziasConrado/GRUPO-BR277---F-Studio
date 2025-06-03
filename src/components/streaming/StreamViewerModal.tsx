@@ -16,7 +16,7 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
   if (!isOpen || !stream) return null;
 
   const canEmbed = (url: string) => {
-    const nonEmbeddableHosts = ['cloud.fullcam.me']; // Adicionar outros hosts se necessário
+    const nonEmbeddableHosts = ['cloud.fullcam.me']; 
     try {
       const hostname = new URL(url).hostname;
       return !nonEmbeddableHosts.some(host => hostname.includes(host));
@@ -29,7 +29,7 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="fixed inset-0 z-[100] flex flex-col bg-black/95 p-0 data-[state=open]:animate-none data-[state=closed]:animate-none rounded-none border-none w-screen h-screen max-w-none max-h-none">
+      <DialogContent className="!fixed !inset-0 !z-[200] !flex !flex-col !bg-black/95 !p-0 !max-w-none !max-h-none !w-screen !h-screen !rounded-none !border-none">
         <div className="absolute top-2 right-2 z-20">
           <DialogClose asChild>
             <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full h-10 w-10">
@@ -38,7 +38,6 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
           </DialogClose>
         </div>
 
-        {/* Espaço Publicitário do Patrocinador */}
         <div className="w-full h-[60px] bg-slate-700/80 flex items-center justify-center text-white text-sm shrink-0 z-10 border-b border-slate-600">
           <p className="text-xs text-muted-foreground mr-2">Patrocinado por:</p>
           <div 
@@ -49,7 +48,6 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
           </div>
         </div>
         
-        {/* Conteúdo Principal (Vídeo) */}
         <div className="flex-grow w-full flex items-center justify-center p-2 overflow-auto">
           {embeddable ? (
             <div className="w-full max-w-4xl mx-auto aspect-video bg-black rounded-md overflow-hidden">
@@ -59,7 +57,7 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
                 className="w-full h-full border-0"
                 allow="autoplay; encrypted-media; picture-in-picture"
                 allowFullScreen
-                sandbox="allow-scripts allow-same-origin allow-presentation"
+                sandbox="allow-scripts allow-same-origin allow-presentation" // Maintained sandbox attributes
               ></iframe>
             </div>
           ) : (
@@ -78,7 +76,6 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
           )}
         </div>
 
-        {/* Espaço para Banner AdMob */}
         <div className="w-full h-[100px] bg-neutral-800/80 flex flex-col items-center justify-center text-white text-xs shrink-0 border-t border-neutral-700 z-10">
           <p className="mb-1 text-muted-foreground">Publicidade</p>
           <div 
