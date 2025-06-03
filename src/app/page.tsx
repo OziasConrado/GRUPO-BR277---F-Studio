@@ -7,6 +7,7 @@ import StoryViewerModal from '@/components/stories/StoryViewerModal';
 import { Separator } from '@/components/ui/separator';
 import { AlertCircle, Star, TrendingUp, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import Link from 'next/link'; // Import Link
 
 const defaultReactions: PostReactions = {
   thumbsUp: 0,
@@ -143,6 +144,8 @@ const mockPosts: PostCardProps[] = [
   },
 ];
 
+const mockAlertsCount = 5; // Corresponde ao número de mockAlertsData em alertas/page.tsx
+
 export default function FeedPage() {
   const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
   const [selectedStory, setSelectedStory] = useState<StoryCircleProps | null>(null);
@@ -205,18 +208,20 @@ export default function FeedPage() {
             </p>
           </CardContent>
         </Card>
-        <Card className="glassmorphic rounded-xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1">
-            <CardTitle className="text-sm font-medium font-headline">Alertas Ativos</CardTitle>
-            <AlertCircle className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent className="p-3 pt-1">
-            <div className="text-xl font-bold">3</div>
-            <p className="text-xs text-muted-foreground">
-              Sobre rotas
-            </p>
-          </CardContent>
-        </Card>
+        <Link href="/alertas" className="glassmorphic rounded-xl block hover:shadow-lg transition-shadow">
+          <Card className="h-full bg-transparent border-none shadow-none">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1">
+              <CardTitle className="text-sm font-medium font-headline">Alertas Ativos</CardTitle>
+              <AlertCircle className="h-4 w-4 text-destructive" />
+            </CardHeader>
+            <CardContent className="p-3 pt-1">
+              <div className="text-xl font-bold">{mockAlertsCount}</div>
+              <p className="text-xs text-muted-foreground">
+                Sobre rotas
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
         <Card className="glassmorphic rounded-xl col-span-2 md:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1">
             <CardTitle className="text-sm font-medium font-headline">Destaques</CardTitle>
