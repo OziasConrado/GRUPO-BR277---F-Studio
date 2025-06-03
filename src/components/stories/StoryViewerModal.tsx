@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogClose, DialogHeader, DialogTitle } from '@
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import type { StoryCircleProps } from './StoryCircle';
-// import Image from 'next/image'; // Será necessário quando re-adicionar o conteúdo
+import Image from 'next/image';
 
 interface StoryViewerModalProps {
   isOpen: boolean;
@@ -36,11 +36,10 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
         className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none !bg-black/95 !p-0 flex flex-col !translate-x-0 !translate-y-0"
         onEscapeKeyDown={onClose}
       >
-        <DialogHeader className="shrink-0 p-2 sm:p-3 flex flex-row justify-between items-center bg-black/30">
-          <DialogTitle className="sr-only">
+        <DialogHeader className="shrink-0 p-2 sm:p-3 flex flex-row justify-between items-center bg-black/30 !z-[210]">
+           <DialogTitle className="sr-only">
             Visualizador de Story: {story.adminName}
           </DialogTitle>
-           {/* Placeholder para informações do story, se necessário */}
            <div className="text-white text-sm font-medium truncate flex-grow pl-2">
              {story.adminName}
           </div>
@@ -52,26 +51,23 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
         </DialogHeader>
         
         {/* Espaço do Patrocinador (simulado) */}
-        {/* <SponsorAdSpace /> */}
+        <SponsorAdSpace />
 
         <div className="flex-grow flex items-center justify-center p-1 sm:p-2 overflow-hidden">
-          {/* Conteúdo simplificado para diagnóstico */}
-          <p className="text-white text-lg">Conteúdo do Modal Story: {story.adminName}</p>
-          {/* Conteúdo do Story (Imagem/Vídeo) iria aqui
+          {/* Conteúdo do Story (Imagem) */}
           <div className="relative w-full h-full max-w-md max-h-full mx-auto">
             <Image
               src={story.avatarUrl} // Usar a URL do story real aqui
               alt={`Story de ${story.adminName}`}
               layout="fill"
-              objectFit="contain" // ou "cover" dependendo do design
+              objectFit="contain"
               data-ai-hint={story.dataAIAvatarHint || "story content"}
             />
           </div>
-          */}
         </div>
 
          {/* Banner AdMob (simulado) */}
-        {/* <AdMobSpace /> */}
+        <AdMobSpace />
 
       </DialogContent>
     </Dialog>

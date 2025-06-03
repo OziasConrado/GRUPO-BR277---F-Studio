@@ -35,28 +35,26 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
         className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none !bg-black/95 !p-0 flex flex-col !translate-x-0 !translate-y-0"
         onEscapeKeyDown={onClose}
       >
-        <DialogHeader className="shrink-0 p-2 sm:p-3 flex flex-row justify-between items-center bg-black/30">
+        <DialogHeader className="shrink-0 p-2 sm:p-3 flex flex-row justify-between items-center bg-black/30 !z-[210]">
           <DialogTitle className="sr-only">
             Visualizador de Transmissão: {stream.title}
           </DialogTitle>
-          {/* Placeholder para informações do stream, se necessário */}
           <div className="text-white text-sm font-medium truncate flex-grow pl-2">
              {stream.title}
           </div>
           <DialogClose asChild>
             <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full h-9 w-9 sm:h-10 sm:w-10 !z-[210] flex-shrink-0">
-              <X className="h-5 w-5 sm:h-6 sm:w-6" />
+              <X className="h-5 w-5 sm:h-6 sm:h-6" />
             </Button>
           </DialogClose>
         </DialogHeader>
-
-        {/* Espaço do Patrocinador (simulado) */}
-        {/* <SponsorAdSpace /> */}
         
+        {/* Espaço do Patrocinador (simulado) */}
+        <SponsorAdSpace />
+
         <div className="flex-grow flex items-center justify-center p-1 sm:p-2 overflow-hidden">
-          {/* Conteúdo simplificado para diagnóstico */}
-          <p className="text-white text-lg">Conteúdo do Modal Stream: {stream.title}</p>
-          {/* <div className="w-full max-w-4xl mx-auto aspect-video bg-black rounded-md overflow-hidden">
+          {/* Conteúdo do Stream (Vídeo) */}
+          <div className="w-full max-w-4xl mx-auto aspect-video bg-black rounded-md overflow-hidden">
             <iframe
               src={stream.streamUrl}
               title={stream.title}
@@ -65,11 +63,11 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
               allowFullScreen
               sandbox="allow-scripts allow-same-origin allow-presentation"
             ></iframe>
-          </div> */}
+          </div>
         </div>
 
-        {/* Banner AdMob (simulado) */}
-        {/* <AdMobSpace /> */}
+         {/* Banner AdMob (simulado) */}
+        <AdMobSpace />
 
       </DialogContent>
     </Dialog>
