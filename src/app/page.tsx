@@ -1,8 +1,19 @@
 
-import PostCard, { type PostCardProps } from '@/components/feed/post-card';
+
+import PostCard, { type PostCardProps, type PostReactions } from '@/components/feed/post-card';
 import { Separator } from '@/components/ui/separator';
 import { AlertCircle, Star, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+const defaultReactions: PostReactions = {
+  thumbsUp: 0,
+  thumbsDown: 0,
+  heart: 0,
+  laugh: 0,
+  wow: 0,
+  sad: 0,
+  angry: 0,
+};
 
 const mockPosts: PostCardProps[] = [
   {
@@ -14,7 +25,7 @@ const mockPosts: PostCardProps[] = [
     text: 'Estrada tranquila hoje na BR-116! Sol brilhando e sem trânsito. Bom dia a todos!',
     imageUrl: 'https://placehold.co/600x400.png',
     dataAIImageHint: 'highway sunny day',
-    reactions: { thumbsUp: 152, heart: 25, laugh: 10 },
+    reactions: { ...defaultReactions, thumbsUp: 152, heart: 25, laugh: 10, thumbsDown: 5, wow: 12 },
     commentsData: [
       {
         id: 'c1-1',
@@ -53,7 +64,7 @@ const mockPosts: PostCardProps[] = [
     text: 'Alerta de neblina densa na Serra do Mar. Redobrem a atenção, pessoal!',
     imageUrl: 'https://placehold.co/600x300.png',
     dataAIImageHint: 'foggy mountain road',
-    reactions: { thumbsUp: 98, heart: 15, laugh: 2 },
+    reactions: { ...defaultReactions, thumbsUp: 98, heart: 15, sad: 20, thumbsDown: 2 },
     commentsData: [
       {
         id: 'c2-1',
@@ -72,7 +83,7 @@ const mockPosts: PostCardProps[] = [
     dataAIAvatarHint: 'app logo',
     timestamp: '1 dia atrás',
     text: 'Nova funcionalidade no app: Checklist de Viagem aprimorado! Confira na seção de Ferramentas.',
-    reactions: { thumbsUp: 210, heart: 50, laugh: 5 },
+    reactions: { ...defaultReactions, thumbsUp: 210, heart: 50, wow: 30 },
     commentsData: [],
   },
 ];
@@ -131,4 +142,3 @@ export default function FeedPage() {
     </div>
   );
 }
-
