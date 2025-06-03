@@ -1,8 +1,9 @@
 
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import PostCard, { type PostCardProps, type PostReactions } from '@/components/feed/post-card';
 import StoryCircle, { type StoryCircleProps } from '@/components/stories/StoryCircle';
+import StoryViewerModal from '@/components/stories/StoryViewerModal';
 import { Separator } from '@/components/ui/separator';
 import { AlertCircle, Star, TrendingUp, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,7 +22,7 @@ const mockAdminStories: StoryCircleProps[] = [
   {
     id: 'story-admin-1',
     adminName: 'Admin Oficial',
-    avatarUrl: 'https://placehold.co/180x320.png?text=AO', // Rectangular placeholder
+    avatarUrl: 'https://placehold.co/180x320.png?text=AO', 
     dataAIAvatarHint: 'app logo admin',
     hasNewStory: true,
     storyType: 'image',
@@ -143,8 +144,10 @@ const mockPosts: PostCardProps[] = [
 ];
 
 export default function FeedPage() {
+  const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
+  const [selectedStory, setSelectedStory] = useState<StoryCircleProps | null>(null);
+
   useEffect(() => {
-    // Helper para ocultar a barra de rolagem
     const style = document.createElement('style');
     style.innerHTML = `
       .no-scrollbar::-webkit-scrollbar {
@@ -156,27 +159,37 @@ export default function FeedPage() {
       }
     `;
     document.head.appendChild(style);
-
-    // Cleanup function to remove the style when the component unmounts
     return () => {
       document.head.removeChild(style);
     };
-  }, []); // Empty dependency array ensures this runs only once on mount and unmount
+  }, []); 
+
+  const handleStoryClick = (story: StoryCircleProps) => {
+    setSelectedStory(story);
+    setIsStoryModalOpen(true);
+  };
 
   return (
     <div className="w-full">
       <div className="mb-6">
-        <div className="px-1"> {/* Ajuste para se o título deve ir até a borda ou ter padding do container */}
+        <div className="px-1"> 
           <h2 className="text-xl font-bold font-headline flex items-center mb-1 text-foreground">
             <Info className="h-5 w-5 mr-2 text-primary" />
             Destaques dos Administradores
           </h2>
           <p className="text-xs text-muted-foreground ml-7">Avisos importantes e novidades da equipe Rota Segura.</p>
         </div>
-        {/* Container para os stories com scroll horizontal */}
+        
         <div className="mt-4 flex overflow-x-auto space-x-2 pb-3 -mx-4 px-4 no-scrollbar">
           {mockAdminStories.map((story) => (
-            <StoryCircle key={story.id} {...story} />
+            <button
+              key={story.id}
+              onClick={() => handleStoryClick(story)}
+              className="focus:outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              aria-label={`Ver story de ${story.adminName}`}
+            >
+              <StoryCircle {...story} />
+            </button>
           ))}
         </div>
       </div>
@@ -229,6 +242,11 @@ export default function FeedPage() {
           <PostCard key={post.id} {...post} />
         ))}
       </div>
+      <StoryViewerModal
+        isOpen={isStoryModalOpen}
+        onClose={() => setIsStoryModalOpen(false)}
+        story={selectedStory}
+      />
     </div>
   );
 }
