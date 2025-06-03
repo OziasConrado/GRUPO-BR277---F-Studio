@@ -9,7 +9,8 @@ import { UserCircle, RefreshCcw, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-
+import ChatFloatingButton from '@/components/chat/ChatFloatingButton';
+import ChatWindow from '@/components/chat/ChatWindow';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -18,6 +19,7 @@ interface AppLayoutProps {
 export default function AppLayout({ children }: AppLayoutProps) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -50,19 +52,19 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <div className="flex flex-col min-h-screen">
          <header className="sticky top-0 z-50 w-full bg-primary text-primary-foreground shadow-lg rounded-b-xl">
           <div className="container flex h-20 items-center justify-between">
-            <div className="h-10 w-10"></div> {}
+            <div className="h-10 w-10"></div> {/* Placeholder for EmergencyButton */}
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8"></div> {}
-              <div className="h-8 w-8"></div> {}
-              <div className="h-8 w-8"></div> {}
+              <div className="h-8 w-8"></div> {/* Placeholder for Profile Icon */}
+              <div className="h-8 w-8"></div> {/* Placeholder for Theme Switch */}
+              <div className="h-8 w-8"></div> {/* Placeholder for Reload Button */}
             </div>
           </div>
         </header>
         <main className="flex-grow container mx-auto px-4 py-8 pb-24 sm:pb-8">
           {children}
         </main>
-        {}
-        <nav className="fixed bottom-0 left-0 right-0 z-40 border-t glassmorphic sm:hidden h-16"></nav> {}
+        {/* Placeholder for Navigation */}
+        <nav className="fixed bottom-0 left-0 right-0 z-40 border-t glassmorphic sm:hidden h-16"></nav> {/* Placeholder for Navigation */}
       </div>
     );
   }
@@ -127,6 +129,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
           {children}
         </main>
         <Navigation />
+        <ChatFloatingButton onClick={() => setIsChatOpen(true)} />
+        {isChatOpen && <ChatWindow onClose={() => setIsChatOpen(false)} />}
       </div>
     </TooltipProvider>
   );
