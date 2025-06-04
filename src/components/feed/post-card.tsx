@@ -8,13 +8,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send, X } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send } from 'lucide-react'; // X removed from here
 import { useState, type ChangeEvent, type FormEvent, useCallback } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetClose, SheetTrigger } from '@/components/ui/sheet'; // SheetTrigger ADICIONADO AQUI
+import { Sheet, SheetContent, SheetHeader, SheetTrigger } from '@/components/ui/sheet'; // SheetClose removed
 import { Separator } from '@/components/ui/separator';
 
-export interface ReplyReactions {
+export interface ReactionState {
   thumbsUp: number;
+  thumbsDown: number;
+  userReaction?: 'thumbsUp' | 'thumbsDown' | null;
 }
 
 export interface ReplyProps {
@@ -24,14 +26,10 @@ export interface ReplyProps {
   dataAIAvatarHint?: string;
   timestamp: string;
   text: string;
-  reactions: ReplyReactions;
-  userHasReacted?: boolean;
-  replies?: ReplyProps[]; 
+  reactions: ReactionState;
+  replies?: ReplyProps[];
 }
 
-export interface CommentReactions {
-  thumbsUp: number;
-}
 export interface CommentProps {
   id: string;
   userName: string;
@@ -39,8 +37,7 @@ export interface CommentProps {
   dataAIAvatarHint?: string;
   timestamp: string;
   text: string;
-  reactions: CommentReactions;
-  userHasReacted?: boolean;
+  reactions: ReactionState;
   replies?: ReplyProps[];
 }
 
@@ -55,6 +52,7 @@ export interface PostReactions {
   angry: number;
 }
 
+
 export interface PostCardProps {
   id: string;
   userName: string;
@@ -64,11 +62,9 @@ export interface PostCardProps {
   timestamp: string;
   text: string;
   imageUrl?: string | StaticImageData;
-  reactions: PostReactions;
+  reactions: PostReactions; // This is for the main post, initial state
   commentsData: CommentProps[];
 }
-
-type PostReactionType = 'thumbsUp' | 'thumbsDown';
 
 
 interface ReplyingToInfo {
@@ -90,84 +86,100 @@ export default function PostCard({
   reactions: initialReactions,
   commentsData: initialCommentsData,
 }: PostCardProps) {
-  const [currentUserPostReaction, setCurrentUserPostReaction] = useState<PostReactionType | null>(null);
-  const [localReactions, setLocalReactions] = useState(initialReactions);
-  const [localCommentsData, setLocalCommentsData] = useState<CommentProps[]>(initialCommentsData.map(c => ({
-    ...c,
-    reactions: c.reactions || { thumbsUp: 0 },
-    replies: c.replies?.map(r => ({ ...r, reactions: r.reactions || { thumbsUp: 0 } })) || []
-  })));
+  const [currentUserPostReaction, setCurrentUserPostReaction] = useState<'thumbsUp' | 'thumbsDown' | null>(null);
+  const [localPostReactions, setLocalPostReactions] = useState(initialReactions);
+
+  const [localCommentsData, setLocalCommentsData] = useState<CommentProps[]>(
+    initialCommentsData.map(c => ({
+      ...c,
+      reactions: c.reactions || { thumbsUp: 0, thumbsDown: 0, userReaction: null },
+      replies: c.replies?.map(r => ({
+        ...r,
+        reactions: r.reactions || { thumbsUp: 0, thumbsDown: 0, userReaction: null },
+      })) || []
+    }))
+  );
 
   const [newCommentText, setNewCommentText] = useState('');
   const [replyingTo, setReplyingTo] = useState<ReplyingToInfo | null>(null);
   const [newReplyText, setNewReplyText] = useState('');
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  const handlePostReactionClick = (reactionType: PostReactionType) => {
-    setLocalReactions(prevReactions => {
+  const handlePostReactionClick = (reactionType: 'thumbsUp' | 'thumbsDown') => {
+    setLocalPostReactions(prevReactions => {
       const newReactions = { ...prevReactions };
-      // If clicking the same reaction, un-react
       if (currentUserPostReaction === reactionType) {
         newReactions[reactionType]--;
         setCurrentUserPostReaction(null);
       } else {
-        // If switching reaction or reacting for the first time
         if (currentUserPostReaction) {
-          newReactions[currentUserPostReaction]--; // Decrement old reaction
+          newReactions[currentUserPostReaction]--;
         }
-        newReactions[reactionType]++; // Increment new reaction
+        newReactions[reactionType]++;
         setCurrentUserPostReaction(reactionType);
       }
       return newReactions;
     });
   };
 
-  const handleToggleCommentReaction = useCallback((commentId: string) => {
+  const handleItemReaction = useCallback((
+    itemId: string,
+    reactionType: 'thumbsUp' | 'thumbsDown',
+    itemType: 'comment' | 'reply',
+    commentId?: string, // only for replies
+    parentReplyId?: string // only for nested replies (if applicable)
+  ) => {
     setLocalCommentsData(prevComments =>
       prevComments.map(comment => {
-        if (comment.id === commentId) {
-          const newReactionCount = comment.userHasReacted
-            ? comment.reactions.thumbsUp - 1
-            : comment.reactions.thumbsUp + 1;
-          return {
-            ...comment,
-            reactions: { thumbsUp: newReactionCount < 0 ? 0 : newReactionCount },
-            userHasReacted: !comment.userHasReacted,
-          };
-        }
-        return comment;
-      })
-    );
-  }, []);
+        // Helper function to update reactions for an item (comment or reply)
+        const updateReaction = (item: CommentProps | ReplyProps): CommentProps | ReplyProps => {
+          const currentReaction = item.reactions.userReaction;
+          let newThumbsUp = item.reactions.thumbsUp;
+          let newThumbsDown = item.reactions.thumbsDown;
+          let newUserReaction: 'thumbsUp' | 'thumbsDown' | null = null;
 
-  const handleToggleReplyReaction = useCallback((commentId: string, replyId: string, parentReplyId?: string) => {
-    setLocalCommentsData(prevComments =>
-      prevComments.map(comment => {
-        if (comment.id === commentId) {
-          const updateReplies = (replies: ReplyProps[] | undefined, targetReplyId: string, targetParentReplyId?: string): ReplyProps[] | undefined => {
-            return replies?.map(reply => {
-              if (reply.id === targetReplyId && !targetParentReplyId) { // Direct reply to comment
-                const newReactionCount = reply.userHasReacted
-                  ? reply.reactions.thumbsUp - 1
-                  : reply.reactions.thumbsUp + 1;
-                return {
-                  ...reply,
-                  reactions: { thumbsUp: newReactionCount < 0 ? 0 : newReactionCount },
-                  userHasReacted: !reply.userHasReacted,
-                };
-              } else if (reply.replies && reply.id === targetParentReplyId) { // This reply is the parent of the target reply
-                 return { ...reply, replies: updateReplies(reply.replies, targetReplyId) };
-              } else if (reply.replies) { // Check deeper nested replies (though UI might only show one level of reply-to-reply)
-                 return { ...reply, replies: updateReplies(reply.replies, targetReplyId, targetParentReplyId) };
+          if (currentReaction === reactionType) { // Clicked the same reaction again (un-react)
+            if (reactionType === 'thumbsUp') newThumbsUp--;
+            else newThumbsDown--;
+            newUserReaction = null;
+          } else { // Clicked a new reaction or switched reaction
+            if (currentReaction === 'thumbsUp') newThumbsUp--;
+            if (currentReaction === 'thumbsDown') newThumbsDown--;
+            
+            if (reactionType === 'thumbsUp') newThumbsUp++;
+            else newThumbsDown++;
+            newUserReaction = reactionType;
+          }
+          
+          return {
+            ...item,
+            reactions: {
+              thumbsUp: Math.max(0, newThumbsUp),
+              thumbsDown: Math.max(0, newThumbsDown),
+              userReaction: newUserReaction,
+            },
+          };
+        };
+
+        // Update comment reactions
+        if (itemType === 'comment' && comment.id === itemId) {
+          return updateReaction(comment) as CommentProps;
+        }
+
+        // Update reply reactions (recursive for nesting)
+        if (comment.replies) {
+          const updateNestedReplies = (replies: ReplyProps[]): ReplyProps[] => {
+            return replies.map(reply => {
+              if (itemType === 'reply' && reply.id === itemId) {
+                return updateReaction(reply) as ReplyProps;
+              }
+              if (reply.replies) {
+                return { ...reply, replies: updateNestedReplies(reply.replies) };
               }
               return reply;
             });
           };
-          
-          return {
-            ...comment,
-            replies: updateReplies(comment.replies, replyId, parentReplyId),
-          };
+          return { ...comment, replies: updateNestedReplies(comment.replies) };
         }
         return comment;
       })
@@ -185,8 +197,7 @@ export default function PostCard({
       dataAIAvatarHint: 'current user',
       timestamp: 'Agora mesmo',
       text: newCommentText,
-      reactions: { thumbsUp: 0 },
-      userHasReacted: false,
+      reactions: { thumbsUp: 0, thumbsDown: 0, userReaction: null },
       replies: [],
     };
     setLocalCommentsData(prevComments => [newComment, ...prevComments]);
@@ -204,8 +215,7 @@ export default function PostCard({
       dataAIAvatarHint: 'current user',
       timestamp: 'Agora mesmo',
       text: newReplyText,
-      reactions: { thumbsUp: 0 },
-      userHasReacted: false,
+      reactions: { thumbsUp: 0, thumbsDown: 0, userReaction: null },
       replies: [],
     };
 
@@ -214,7 +224,6 @@ export default function PostCard({
         if (replyingTo.type === 'comment' && comment.id === replyingTo.parentId) {
           return { ...comment, replies: [newReply, ...(comment.replies || [])] };
         } else if (replyingTo.type === 'reply' && comment.id === replyingTo.grandParentId) {
-          // Function to add reply to a nested reply
           const addNestedReply = (replies: ReplyProps[]): ReplyProps[] => {
             return replies.map(reply => {
               if (reply.id === replyingTo.parentId) {
@@ -237,9 +246,9 @@ export default function PostCard({
   };
 
 
-  const renderReplies = (replies: ReplyProps[] | undefined, commentId: string, depth = 0) => {
+  const renderReplies = (replies: ReplyProps[] | undefined, commentIdForReply: string, depth = 0) => {
     if (!replies || replies.length === 0) return null;
-    const MAX_DEPTH = 1; // Allow replying to a comment, and replying to that reply.
+    const MAX_DEPTH = 1; 
 
     return (
       <div className={`ml-6 mt-2 space-y-2 pt-2 ${depth > 0 ? 'pl-3 border-l-2 border-muted/30' : 'pl-3 border-l-2 border-muted/50'}`}>
@@ -256,27 +265,36 @@ export default function PostCard({
                   <p className="text-xs text-muted-foreground">{reply.timestamp}</p>
                 </div>
                 <p className="text-sm mt-0.5">{reply.text}</p>
-                <div className="flex items-center mt-1">
+                <div className="flex items-center mt-1 space-x-2">
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="p-0 h-auto text-xs text-muted-foreground hover:text-primary"
-                    onClick={() => handleToggleReplyReaction(commentId, reply.id, depth > 0 ? replies.find(r => r.replies?.includes(reply))?.id : undefined)}
+                    className="p-0 h-auto text-xs text-muted-foreground hover:text-primary hover:bg-transparent focus:bg-transparent"
+                    onClick={() => handleItemReaction(reply.id, 'thumbsUp', 'reply', commentIdForReply)}
                   >
-                    <ThumbsUp className={`mr-1 h-3.5 w-3.5 ${reply.userHasReacted ? 'fill-primary text-primary' : ''}`} />
+                    <ThumbsUp className={`mr-1 h-3.5 w-3.5 ${reply.reactions.userReaction === 'thumbsUp' ? 'fill-primary text-primary' : ''}`} />
                     {reply.reactions.thumbsUp > 0 ? reply.reactions.thumbsUp : ''}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="p-0 h-auto text-xs text-muted-foreground hover:text-destructive hover:bg-transparent focus:bg-transparent"
+                    onClick={() => handleItemReaction(reply.id, 'thumbsDown', 'reply', commentIdForReply)}
+                  >
+                    <ThumbsDown className={`mr-1 h-3.5 w-3.5 ${reply.reactions.userReaction === 'thumbsDown' ? 'fill-destructive text-destructive' : ''}`} />
+                    {reply.reactions.thumbsDown > 0 ? reply.reactions.thumbsDown : ''}
                   </Button>
                   {depth < MAX_DEPTH && (
                     <Button
                       variant="link"
                       size="sm"
-                      className="p-0 h-auto text-xs text-primary ml-2"
+                      className="p-0 h-auto text-xs text-primary ml-1"
                       onClick={() => {
                         if (replyingTo?.type === 'reply' && replyingTo.parentId === reply.id) {
                           setReplyingTo(null);
                           setNewReplyText('');
                         } else {
-                          setReplyingTo({ type: 'reply', parentId: reply.id, grandParentId: commentId });
+                          setReplyingTo({ type: 'reply', parentId: reply.id, grandParentId: commentIdForReply });
                           setNewReplyText('');
                         }
                       }}
@@ -305,8 +323,7 @@ export default function PostCard({
                 </Button>
               </form>
             )}
-            {/* Recursive call for nested replies, controlled by depth */}
-            {depth < MAX_DEPTH && renderReplies(reply.replies, commentId, depth + 1)}
+            {depth < MAX_DEPTH && renderReplies(reply.replies, commentIdForReply, depth + 1)}
           </div>
         ))}
       </div>
@@ -353,60 +370,36 @@ export default function PostCard({
             <Share2 className="mr-2 h-4 w-4" /> Compartilhar
           </Button>
 
-          <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0">
-            <SheetHeader className="p-4 border-b border-border">
-              <div className="flex justify-between items-center mb-2">
-                <SheetTitle className="font-headline">Reações e Comentários</SheetTitle>
-                <SheetClose asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full">
-                    <X className="h-5 w-5" />
-                  </Button>
-                </SheetClose>
-              </div>
-              <SheetDescription className="text-xs">Reaja ao post e veja o que outros estão dizendo.</SheetDescription>
-
-              <div className="flex items-center justify-center gap-4 pt-3">
+          <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0 rounded-t-[25px]">
+            <SheetHeader className="p-4 border-b border-border flex flex-row justify-center items-center">
+              {/* Title removed, Description removed. Reactions are now here. */}
+              <div className="flex items-center justify-center gap-4 py-2">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => handlePostReactionClick('thumbsUp')}
-                  className={`p-1 h-auto ${currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground'}`}
+                  className={`p-1 h-auto hover:bg-transparent focus:bg-transparent ${currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground'}`}
                   aria-label="Curtir"
                 >
                   <ThumbsUp className={`h-5 w-5 ${currentUserPostReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
-                  <span className="ml-1 text-xs">({localReactions.thumbsUp})</span>
+                  <span className="ml-1 text-xs">({localPostReactions.thumbsUp})</span>
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => handlePostReactionClick('thumbsDown')}
-                  className={`p-1 h-auto ${currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground'}`}
+                  className={`p-1 h-auto hover:bg-transparent focus:bg-transparent ${currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground'}`}
                   aria-label="Não curtir"
                 >
                   <ThumbsDown className={`h-5 w-5 ${currentUserPostReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
-                  <span className="ml-1 text-xs">({localReactions.thumbsDown})</span>
+                  <span className="ml-1 text-xs">({localPostReactions.thumbsDown})</span>
                 </Button>
               </div>
+              {/* Default SheetContent close button will be used (top-right) */}
             </SheetHeader>
 
             <div className="flex-grow overflow-y-auto p-4 space-y-4">
-              <form onSubmit={handleAddComment} className="flex gap-2 items-start sticky top-0 bg-background/80 backdrop-blur-sm p-2 -mx-2 z-10 rounded-b-lg">
-                <Avatar className="mt-1">
-                  <AvatarImage src="https://placehold.co/40x40.png?text=UA" alt="Usuário Atual" data-ai-hint="current user" />
-                  <AvatarFallback>UA</AvatarFallback>
-                </Avatar>
-                <Textarea
-                  placeholder="Escreva um comentário..."
-                  value={newCommentText}
-                  onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setNewCommentText(e.target.value)}
-                  className="rounded-lg flex-grow bg-background/70 min-h-[40px] resize-none text-base"
-                  rows={1}
-                />
-                <Button type="submit" size="icon" className="rounded-lg shrink-0">
-                  <Send className="h-4 w-4" />
-                </Button>
-              </form>
-
+              {/* Comment input form moved to the bottom */}
               {localCommentsData.length > 0 && <Separator />}
 
               <div className="space-y-3">
@@ -423,20 +416,29 @@ export default function PostCard({
                           <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
                         </div>
                         <p className="text-sm mt-1">{comment.text}</p>
-                        <div className="flex items-center mt-1.5">
+                        <div className="flex items-center mt-1.5 space-x-2">
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="p-0 h-auto text-xs text-muted-foreground hover:text-primary"
-                            onClick={() => handleToggleCommentReaction(comment.id)}
+                            className="p-0 h-auto text-xs text-muted-foreground hover:text-primary hover:bg-transparent focus:bg-transparent"
+                            onClick={() => handleItemReaction(comment.id, 'thumbsUp', 'comment')}
                           >
-                            <ThumbsUp className={`mr-1 h-3.5 w-3.5 ${comment.userHasReacted ? 'fill-primary text-primary' : ''}`} />
+                            <ThumbsUp className={`mr-1 h-3.5 w-3.5 ${comment.reactions.userReaction === 'thumbsUp' ? 'fill-primary text-primary' : ''}`} />
                              {comment.reactions.thumbsUp > 0 ? comment.reactions.thumbsUp : ''}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="p-0 h-auto text-xs text-muted-foreground hover:text-destructive hover:bg-transparent focus:bg-transparent"
+                            onClick={() => handleItemReaction(comment.id, 'thumbsDown', 'comment')}
+                          >
+                            <ThumbsDown className={`mr-1 h-3.5 w-3.5 ${comment.reactions.userReaction === 'thumbsDown' ? 'fill-destructive text-destructive' : ''}`} />
+                             {comment.reactions.thumbsDown > 0 ? comment.reactions.thumbsDown : ''}
                           </Button>
                           <Button
                             variant="link"
                             size="sm"
-                            className="p-0 h-auto text-xs text-primary ml-2"
+                            className="p-0 h-auto text-xs text-primary ml-1"
                             onClick={() => {
                               if (replyingTo?.type === 'comment' && replyingTo.parentId === comment.id) {
                                 setReplyingTo(null);
@@ -477,7 +479,27 @@ export default function PostCard({
               </div>
             </div>
             
-            <div className="p-4 border-t border-border">
+            {/* Comment input form moved here */}
+            <div className="p-4 border-t border-border bg-background">
+                 <form onSubmit={handleAddComment} className="flex gap-2 items-start">
+                    <Avatar className="mt-1">
+                    <AvatarImage src="https://placehold.co/40x40.png?text=UA" alt="Usuário Atual" data-ai-hint="current user" />
+                    <AvatarFallback>UA</AvatarFallback>
+                    </Avatar>
+                    <Textarea
+                    placeholder="Escreva um comentário..."
+                    value={newCommentText}
+                    onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setNewCommentText(e.target.value)}
+                    className="rounded-lg flex-grow bg-background/70 min-h-[40px] resize-none text-base"
+                    rows={1}
+                    />
+                    <Button type="submit" size="icon" className="rounded-lg shrink-0">
+                    <Send className="h-4 w-4" />
+                    </Button>
+                </form>
+            </div>
+
+            <div className="p-4 border-t border-border bg-background">
               <div className="h-[50px] bg-muted/30 rounded flex items-center justify-center text-sm text-muted-foreground">
                 Espaço para Publicidade AdMob (Ex: 320x50)
               </div>
@@ -488,3 +510,4 @@ export default function PostCard({
     </Card>
   );
 }
+
