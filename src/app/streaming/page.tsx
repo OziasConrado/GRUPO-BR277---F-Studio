@@ -239,7 +239,7 @@ export default function StreamingPage() {
       if (nonEmbeddableHosts.some(host => hostname.includes(host))) return false;
       if (hostname.includes('playerv.logicahost.com.br')) return false; // Muitas vezes não carrega em iframes pequenos
       if (hostname.includes('giseleimoveis.com.br')) return false; // Página web completa
-      return true;
+      return true; 
     } catch (e) {
       return false; 
     }
@@ -253,70 +253,72 @@ export default function StreamingPage() {
         <p className="text-muted-foreground text-center sm:text-left text-sm">Acompanhe o trânsito e condições das estradas.</p>
       </div>
       
-      <Card className="glassmorphic rounded-xl">
-        <CardContent className="p-4">
-          <StreamFilters 
-            currentFilter={currentFilter}
-            onFilterChange={setCurrentFilter} 
-            streamCategories={streamCategories}
-          />
+      <div className="p-4 rounded-xl glassmorphic">
+        <StreamFilters 
+          currentFilter={currentFilter}
+          onFilterChange={setCurrentFilter} 
+          streamCategories={streamCategories}
+        />
+      </div>
 
-          {filteredStreams.length > 0 ? (
-            <div className="mt-4 space-y-3">
-              {filteredStreams.map((stream) => {
-                const embedPreview = canEmbedPreview(stream.streamUrl);
-                return (
-                  <Card 
-                    key={stream.id} 
-                    className="bg-card/70 dark:bg-card/70 backdrop-blur-sm border border-white/10 dark:border-slate-700/10 rounded-lg overflow-hidden"
-                  >
-                    <CardContent className="p-3 flex flex-row items-start gap-3">
-                      <div className="w-28 sm:w-32 aspect-video rounded-md overflow-hidden relative flex-shrink-0 bg-black/10">
-                        {embedPreview ? (
-                           <iframe
-                            src={stream.streamUrl}
-                            title={`Miniatura: ${stream.title}`}
-                            className="w-full h-full border-0"
-                            sandbox="allow-scripts allow-same-origin allow-presentation"
-                            scrolling="no"
-                          ></iframe>
-                        ) : (
-                          <img // Fallback para imagem estática
-                            src={stream.thumbnailUrl}
-                            alt={`Thumbnail para ${stream.title}`}
-                            className="w-full h-full object-cover"
-                            data-ai-hint={stream.dataAIThumbnailHint || "live stream thumbnail"}
-                          />
-                        )}
-                        {stream.isLive && !embedPreview && ( // Mostra 'AO VIVO' apenas se for fallback de imagem
-                          <div className="absolute top-1 left-1 bg-red-600 text-white px-1.5 py-0.5 rounded text-[0.6rem] font-bold animate-pulse">
-                            AO VIVO
-                          </div>
-                        )}
+      {filteredStreams.length > 0 ? (
+        <div className="space-y-3">
+          {filteredStreams.map((stream) => {
+            const embedPreview = canEmbedPreview(stream.streamUrl);
+            return (
+              <Card 
+                key={stream.id} 
+                className="bg-card/70 dark:bg-card/70 backdrop-blur-sm border border-white/10 dark:border-slate-700/10 rounded-lg overflow-hidden"
+              >
+                <CardContent className="p-3 flex flex-row items-start gap-3">
+                  <div className="w-28 sm:w-32 aspect-video rounded-md overflow-hidden relative flex-shrink-0 bg-black/10">
+                    {embedPreview ? (
+                        <iframe
+                        src={stream.streamUrl}
+                        title={`Miniatura: ${stream.title}`}
+                        className="w-full h-full border-0"
+                        sandbox="allow-scripts allow-same-origin allow-presentation"
+                        scrolling="no"
+                      ></iframe>
+                    ) : (
+                      <img // Fallback para imagem estática
+                        src={stream.thumbnailUrl}
+                        alt={`Thumbnail para ${stream.title}`}
+                        className="w-full h-full object-cover"
+                        data-ai-hint={stream.dataAIThumbnailHint || "live stream thumbnail"}
+                      />
+                    )}
+                    {stream.isLive && !embedPreview && ( // Mostra 'AO VIVO' apenas se for fallback de imagem
+                      <div className="absolute top-1 left-1 bg-red-600 text-white px-1.5 py-0.5 rounded text-[0.6rem] font-bold animate-pulse">
+                        AO VIVO
                       </div>
+                    )}
+                  </div>
 
-                      <div className="flex-grow space-y-1 self-center">
-                        <h3 className="text-sm sm:text-md font-semibold font-headline line-clamp-2">{stream.title}</h3>
-                        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{stream.description}</p>
-                        <Button 
-                          variant="default" 
-                          size="sm" 
-                          onClick={() => handleWatchStream(stream)}
-                          className="mt-1.5 rounded-md text-xs py-1 px-2 h-auto"
-                        >
-                          <PlayCircle className="mr-1.5 h-4 w-4" /> Assistir
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="mt-6 text-center text-muted-foreground">Nenhuma transmissão encontrada para esta categoria.</p>
-          )}
-        </CardContent>
-      </Card>
+                  <div className="flex-grow flex flex-col justify-between self-stretch"> {/* Alterado para self-stretch e justify-between */}
+                    <div> {/* Título e Descrição */}
+                      <h3 className="text-sm sm:text-md font-semibold font-headline line-clamp-2">{stream.title}</h3>
+                      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{stream.description}</p>
+                    </div>
+                    <div className="self-end"> {/* Botão alinhado à direita/fim */}
+                      <Button 
+                        variant="default" 
+                        size="sm" 
+                        onClick={() => handleWatchStream(stream)}
+                        className="mt-1.5 rounded-md text-xs py-1 px-2 h-auto"
+                      >
+                        <PlayCircle className="mr-1.5 h-4 w-4" /> Assistir
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="mt-6 text-center text-muted-foreground">Nenhuma transmissão encontrada para esta categoria.</p>
+      )}
 
       {selectedStream && (
         <StreamViewerModal
@@ -331,3 +333,4 @@ export default function StreamingPage() {
     </div>
   );
 }
+
