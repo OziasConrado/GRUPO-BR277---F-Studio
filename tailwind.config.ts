@@ -92,25 +92,13 @@ export default {
             height: '0',
           },
         },
-        'pulse-ring-keyframes': { /* Renamed to avoid conflict if Tailwind adds 'pulse' keyframes */
-          '0%': {
-            transform: 'scale(1)',
-            opacity: '0.7',
-          },
-          '70%': {
-            transform: 'scale(1.5)',
-            opacity: '0',
-          },
-          '100%': {
-            transform: 'scale(1)',
-            opacity: '0',
-          },
-        },
+        // pulse-ring-keyframes is defined in globals.css and used as a global class
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
-        'pulse-ring-animation': 'pulse-ring-keyframes 1.5s infinite', /* Renamed */
+        // pulse-ring-animation will use the global pulse-ring-keyframes from globals.css
+        // No need to define it here if we are using the global CSS class directly.
       },
     },
   },

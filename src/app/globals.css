@@ -9,32 +9,32 @@ body {
 
 @layer base {
   :root {
-    --background: 222.2 84% 4.9%; /* #F5F5F5 Light Gray - Original PRD value */
-    --foreground: 210 40% 98%; /* Dark Gray for text - Original PRD value */
+    --background: 0 0% 96.1%; /* #F5F5F5 Light Gray - Corrected PRD value */
+    --foreground: 222.2 47.4% 11.2%; /* Dark Gray for text - Corrected value */
 
-    --card: 222.2 84% 4.9%; /* Default card background */
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 96.1%; /* Card background to match light theme background */
+    --card-foreground: 222.2 47.4% 11.2%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 96.1%;
+    --popover-foreground: 222.2 47.4% 11.2%;
 
     --primary: 47.9 95.8% 53.1%; /* #FFC107 Yellow - Original PRD value */
     --primary-foreground: 222.2 47.4% 11.2%; /* Dark text on yellow */
 
-    --secondary: 210 40% 96.1%; /* Lighter gray for secondary elements */
+    --secondary: 0 0% 93%; /* Slightly darker light gray for secondary elements */
     --secondary-foreground: 222.2 47.4% 11.2%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 56.9%; /* Slightly darker muted text */
+    --muted: 0 0% 93%;
+    --muted-foreground: 215.4 16.3% 46.9%; /* Slightly darker muted text */
 
-    --accent: 204 90% 50%; /* #2196F3 Blue - Original PRD value */
-    --accent-foreground: 210 40% 98%; /* White text on blue */
+    --accent: 204 90% 50%; /* #2196F3 Blue - Original PRD value (adjusted HSL from 217 91% 60%) */
+    --accent-foreground: 0 0% 98%; /* White text on blue */
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 214.3 31.8% 91.4%; /* Slightly darker gray for borders */
-    --input: 214.3 31.8% 91.4%;
+    --border: 0 0% 89.8%; /* Slightly darker gray for borders */
+    --input: 0 0% 89.8%;
     --ring: 47.9 95.8% 53.1%; /* Yellow for focus rings */
 
     --chart-1: 12 76% 61%;
@@ -53,7 +53,7 @@ body {
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    /* Custom colors from PRD */
+    /* Custom colors from PRD (referenced for HSL values) */
     --prd-primary-yellow: 45 100% 51%; /* #FFC107 */
     --prd-background-gray: 0 0% 96.1%; /* #F5F5F5 */
     --prd-accent-blue: 217 91% 60%; /* #2196F3 */
