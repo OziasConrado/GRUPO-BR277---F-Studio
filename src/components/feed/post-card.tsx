@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send } from 'lucide-react';
 import { useState, type ChangeEvent, type FormEvent, useCallback } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'; // Added SheetTitle
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'; // Added SheetTrigger
 import { Separator } from '@/components/ui/separator';
 
 export interface ReactionState {
@@ -107,17 +107,23 @@ export default function PostCard({
   const handlePostReactionClick = (reactionType: 'thumbsUp' | 'thumbsDown') => {
     setLocalPostReactions(prevReactions => {
       const newReactions = { ...prevReactions };
+      // Remove heart, laugh, wow, sad, angry as they are no longer used for direct post reaction
+      const baseReactions = { thumbsUp: prevReactions.thumbsUp, thumbsDown: prevReactions.thumbsDown, heart: 0, laugh: 0, wow: 0, sad: 0, angry: 0 };
+      
       if (currentUserPostReaction === reactionType) {
-        newReactions[reactionType]--;
+        // User is deselecting the current reaction
+        baseReactions[reactionType]--;
         setCurrentUserPostReaction(null);
       } else {
+        // User is selecting a new reaction or switching reactions
         if (currentUserPostReaction) {
-          newReactions[currentUserPostReaction]--;
+          // If there was a previous reaction, decrement it
+          baseReactions[currentUserPostReaction]--;
         }
-        newReactions[reactionType]++;
+        baseReactions[reactionType]++;
         setCurrentUserPostReaction(reactionType);
       }
-      return newReactions;
+      return baseReactions;
     });
   };
 
@@ -125,7 +131,7 @@ export default function PostCard({
     itemId: string,
     reactionType: 'thumbsUp' | 'thumbsDown',
     itemType: 'comment' | 'reply',
-    commentId?: string,
+    commentId?: string, // Only relevant for replies to find the parent comment
   ) => {
     setLocalCommentsData(prevComments =>
       prevComments.map(comment => {
@@ -135,13 +141,13 @@ export default function PostCard({
           let newThumbsDown = item.reactions.thumbsDown;
           let newUserReaction: 'thumbsUp' | 'thumbsDown' | null = null;
 
-          if (currentReaction === reactionType) {
+          if (currentReaction === reactionType) { // Deselecting current reaction
             if (reactionType === 'thumbsUp') newThumbsUp--;
             else newThumbsDown--;
             newUserReaction = null;
-          } else {
-            if (currentReaction === 'thumbsUp') newThumbsUp--;
-            if (currentReaction === 'thumbsDown') newThumbsDown--;
+          } else { // Selecting a new reaction or switching
+            if (currentReaction === 'thumbsUp') newThumbsUp--; // Deselect previous thumbsUp if any
+            if (currentReaction === 'thumbsDown') newThumbsDown--; // Deselect previous thumbsDown if any
             
             if (reactionType === 'thumbsUp') newThumbsUp++;
             else newThumbsDown++;
