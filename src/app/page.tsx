@@ -198,7 +198,7 @@ export default function FeedPage() {
 
       <h2 className="text-2xl font-bold mb-4 font-headline text-left">Feed277</h2>
 
-      <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="mb-6 grid grid-cols-2 gap-3">
         <Card className="rounded-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1">
             <CardTitle className="text-sm font-medium font-headline">Publicações</CardTitle>
@@ -224,9 +224,6 @@ export default function FeedPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Separator removido */}
-      {/* <Separator className="my-6" /> */}
 
       <div className="space-y-6">
         {mockPosts.map((post) => (
