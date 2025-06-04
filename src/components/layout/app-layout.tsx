@@ -60,7 +60,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
               onClick={() => router.back()}
               className="text-primary-foreground hover:bg-white/10 rounded-full"
             >
-              <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+              <ArrowLeft className="h-6 w-6 sm:h-7 sm:w-7" />
               <span className="sr-only">Voltar</span>
             </Button>
           </TooltipTrigger>
@@ -73,18 +73,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
         <div className="flex items-center gap-1 sm:gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10 rounded-full">
-                <UserCircle className="h-5 w-5 sm:h-6 sm:w-6" />
-                <span className="sr-only">Meu Perfil</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              <p>Meu Perfil</p>
-            </TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -92,7 +80,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 className="text-primary-foreground hover:bg-white/10 rounded-full"
                 aria-label="Alternar tema claro/escuro"
               >
-                {isDarkMode ? <Sun className="h-4 w-4 sm:h-5 sm:h-5 text-yellow-400" /> : <Moon className="h-4 w-4 sm:h-5 sm:h-5" />}
+                {isDarkMode ? <Sun className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-400" /> : <Moon className="h-5 w-5 sm:h-6 sm:w-6" />}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">
@@ -108,12 +96,24 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 onClick={() => window.location.reload()}
                 className="text-primary-foreground hover:bg-white/10 rounded-full"
               >
-                <RefreshCcw className="h-4 w-4 sm:h-5 sm:h-5" />
+                <RefreshCcw className="h-5 w-5 sm:h-6 sm:w-6" />
                 <span className="sr-only">Recarregar Página</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">
               <p>Recarregar Página</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10 rounded-full">
+                <UserCircle className="h-6 w-6 sm:h-7 sm:w-7" />
+                <span className="sr-only">Meu Perfil</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p>Meu Perfil</p>
             </TooltipContent>
           </Tooltip>
         </div>
@@ -147,10 +147,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
             <ChatFloatingButton onClick={() => setIsChatOpen(true)} />
         </div>
 
-        <Navigation /> {/* Contém a navegação de rodapé para mobile e header para desktop (se aplicável) */}
+        <Navigation /> {/* Contém a navegação de rodapé para mobile */}
         
         {isChatOpen && <ChatWindow onClose={() => setIsChatOpen(false)} />}
       </div>
     </TooltipProvider>
   );
 }
+
