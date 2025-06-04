@@ -5,18 +5,19 @@ import type { ReactNode, Dispatch, SetStateAction } from 'react';
 import { useState, useEffect, createContext, useContext } from 'react';
 import { useRouter } from 'next/navigation';
 import Navigation from './navigation';
-// EmergencyButton removed as per request from this component
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; 
 import { RefreshCcw, Moon, Sun, ArrowLeft } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-// ChatFloatingButton removed as per request
-import ChatWindow from '@/components/chat/ChatWindow';
+import ChatWindow from '@/components/chat/ChatWindow'; // Mantido caso o chat seja reativado de outra forma
 
 interface AppLayoutProps {
   children: ReactNode;
 }
 
+// AppLayoutContext removido pois a funcionalidade de abrir chat pelo rodapé foi removida.
+// Se for necessário para outras funcionalidades globais do layout, pode ser reintroduzido.
+/*
 export interface AppLayoutContextType {
   isChatOpen: boolean;
   setIsChatOpen: Dispatch<SetStateAction<boolean>>;
@@ -31,12 +32,13 @@ export function useAppLayout() {
   }
   return context;
 }
-
+*/
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
+  // isChatOpen e setIsChatOpen removidos daqui, pois o controle do chat não é mais via rodapé
+  // const [isChatOpen, setIsChatOpen] = useState(false); 
   const router = useRouter();
 
   useEffect(() => {
@@ -124,10 +126,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10 rounded-full p-0 h-10 w-10 sm:h-11 sm:w-11">
                 <Avatar className="h-8 w-8 sm:h-9 sm:w-9">
                   <AvatarImage src="https://placehold.co/80x80.png" alt="Foto do Usuário" data-ai-hint="user profile"/>
-                  <AvatarFallback>
-                    {/* Placeholder for user initials or icon if image fails */}
-                    U
-                  </AvatarFallback>
+                  <AvatarFallback>U</AvatarFallback>
                 </Avatar>
                 <span className="sr-only">Meu Perfil</span>
               </Button>
@@ -151,19 +150,23 @@ export default function AppLayout({ children }: AppLayoutProps) {
     );
   }
 
+  // O AppLayoutContext.Provider é removido pois o contexto não está mais em uso aqui.
   return (
-    <AppLayoutContext.Provider value={{ isChatOpen, setIsChatOpen }}>
-      <TooltipProvider>
-        <div className="flex flex-col min-h-screen">
-          <AppHeader />
-          <main className="flex-grow container mx-auto px-4 py-8 pb-20 sm:pb-8">
-            {children}
-          </main>
-          {/* EmergencyButton and ChatFloatingButton removed from here */}
-          <Navigation />
-          {isChatOpen && <ChatWindow onClose={() => setIsChatOpen(false)} />}
-        </div>
-      </TooltipProvider>
-    </AppLayoutContext.Provider>
+    <TooltipProvider>
+      <div className="flex flex-col min-h-screen">
+        <AppHeader />
+        <main className="flex-grow container mx-auto px-4 py-8 pb-20 sm:pb-8">
+          {children}
+        </main>
+        <Navigation />
+        {/* O ChatWindow pode ser mantido aqui se houver outra forma de abri-lo, 
+            caso contrário, pode ser removido se o único gatilho era o rodapé.
+            Por enquanto, vamos manter o ChatWindow, mas sem o isChatOpen para controlá-lo
+            a partir daqui, pois o AppLayoutContext foi removido.
+            Se você quiser um botão flutuante para o chat, podemos readicioná-lo.
+        */}
+        {/* {isChatOpen && <ChatWindow onClose={() => setIsChatOpen(false)} />} */}
+      </div>
+    </TooltipProvider>
   );
 }
