@@ -98,10 +98,10 @@ const mockPosts: PostCardProps[] = [
             dataAIAvatarHint: 'truck driver',
             timestamp: '30 minutos atrás',
             text: 'Obrigado, Mariana!',
-            reactions: { thumbsUp: 0 }
+            reactions: { thumbsUp: 0, thumbsDown: 0 }
           }
         ],
-        reactions: { thumbsUp: 0 }
+        reactions: { thumbsUp: 0, thumbsDown: 0 }
       },
       {
         id: 'c1-2',
@@ -110,7 +110,7 @@ const mockPosts: PostCardProps[] = [
         dataAIAvatarHint: 'male traveler',
         timestamp: '45 minutos atrás',
         text: 'Também passei por lá, realmente um dia bom pra rodar.',
-        reactions: { thumbsUp: 0 }
+        reactions: { thumbsUp: 0, thumbsDown: 0 }
       }
     ],
   },
@@ -132,7 +132,7 @@ const mockPosts: PostCardProps[] = [
         dataAIAvatarHint: 'safety logo',
         timestamp: '4 horas atrás',
         text: 'Obrigado pelo alerta, Ana! Informação crucial.',
-        reactions: { thumbsUp: 0 }
+        reactions: { thumbsUp: 0, thumbsDown: 0 }
       }
     ],
   },
@@ -147,8 +147,6 @@ const mockPosts: PostCardProps[] = [
     commentsData: [],
   },
 ];
-
-const mockAlertsCount = 5; // Corresponde ao número de mockAlertsData em alertas/page.tsx
 
 export default function FeedPage() {
   const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
@@ -198,8 +196,9 @@ export default function FeedPage() {
         </div>
       </div>
 
+      <h2 className="text-2xl font-bold mb-4 font-headline text-left">Feed277</h2>
 
-      <div className="mb-8 grid grid-cols-2 md:grid-cols-3 gap-3">
+      <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Card className="rounded-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1">
             <CardTitle className="text-sm font-medium font-headline">Publicações</CardTitle>
@@ -212,21 +211,7 @@ export default function FeedPage() {
             </p>
           </CardContent>
         </Card>
-        <Link href="/alertas" className="rounded-xl block hover:shadow-lg transition-shadow">
-          <Card className="h-full bg-transparent border-none shadow-none">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1">
-              <CardTitle className="text-sm font-medium font-headline">Alertas Ativos</CardTitle>
-              <AlertCircle className="h-4 w-4 text-destructive" />
-            </CardHeader>
-            <CardContent className="p-3 pt-1">
-              <div className="text-xl font-bold">{mockAlertsCount}</div>
-              <p className="text-xs text-muted-foreground">
-                Sobre rotas
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-        <Card className="rounded-xl col-span-2 md:col-span-1">
+        <Card className="rounded-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1">
             <CardTitle className="text-sm font-medium font-headline">Destaques</CardTitle>
             <Star className="h-4 w-4 text-accent" />
@@ -240,9 +225,9 @@ export default function FeedPage() {
         </Card>
       </div>
 
-      <Separator className="my-6" />
+      {/* Separator removido */}
+      {/* <Separator className="my-6" /> */}
 
-      <h2 className="text-2xl font-bold mb-4 font-headline text-center sm:text-left">Últimas da Comunidade</h2>
       <div className="space-y-6">
         {mockPosts.map((post) => (
           <PostCard key={post.id} {...post} />
