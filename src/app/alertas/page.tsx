@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { CardTitle, CardDescription } from "@/components/ui/card"; // Import CardTitle and CardDescription
 import { PlusCircle, ListFilter, ArrowLeft } from "lucide-react";
 import Link from 'next/link';
 import AlertCard, { type AlertProps } from '@/components/alerts/alert-card';
@@ -113,29 +113,27 @@ export default function AlertasPage() {
         </Button>
       </div>
 
-      <Card className="glassmorphic rounded-xl">
-        <CardHeader>
-          <CardTitle className="font-headline flex items-center"><ListFilter className="mr-2 h-5 w-5 text-primary"/> Filtros e Lista de Alertas</CardTitle>
-          <CardDescription>Filtre por tipo ou veja todos os alertas recentes.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <AlertFilters
-            currentFilter={activeFilter}
-            onFilterChange={setActiveFilter}
-            alertTypes={['Todos', ...new Set(mockAlertsData.map(a => a.type))]}
-          />
-
-          {filteredAlerts.length > 0 ? (
-            <div className="mt-6 space-y-4">
-              {filteredAlerts.map(alert => (
-                <AlertCard key={alert.id} alert={alert} />
-              ))}
-            </div>
-          ) : (
-            <p className="mt-6 text-center text-muted-foreground">Nenhum alerta encontrado para este filtro.</p>
-          )}
-        </CardContent>
-      </Card>
+      {/* Filtros diretamente na página, sem o Card envolvente */}
+      <div className="p-4 rounded-xl glassmorphic"> {/* Opcional: manter um container visual para filtros */}
+        <CardTitle className="font-headline flex items-center text-lg mb-1"><ListFilter className="mr-2 h-5 w-5 text-primary"/> Filtros de Alertas</CardTitle>
+        <CardDescription className="text-xs mb-4">Filtre por tipo ou veja todos os alertas recentes.</CardDescription>
+        <AlertFilters
+          currentFilter={activeFilter}
+          onFilterChange={setActiveFilter}
+          alertTypes={['Todos', ...new Set(mockAlertsData.map(a => a.type))]}
+        />
+      </div>
+      
+      {/* Lista de Alertas */}
+      {filteredAlerts.length > 0 ? (
+        <div className="space-y-4"> {/* mt-6 removido, space-y-6 do pai deve cuidar disso */}
+          {filteredAlerts.map(alert => (
+            <AlertCard key={alert.id} alert={alert} />
+          ))}
+        </div>
+      ) : (
+        <p className="text-center text-muted-foreground py-4">Nenhum alerta encontrado para este filtro.</p>
+      )}
 
       <ReportAlertModal
         isOpen={isReportModalOpen}
