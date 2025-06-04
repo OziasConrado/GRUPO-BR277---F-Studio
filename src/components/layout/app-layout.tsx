@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ChatFloatingButton from '@/components/chat/ChatFloatingButton';
 import ChatWindow from '@/components/chat/ChatWindow';
+import { RotaSeguraLogo } from '@/components/common/rota-segura-logo'; // Importei a logo
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -46,25 +47,81 @@ export default function AppLayout({ children }: AppLayoutProps) {
     }
   };
 
+  // Cabeçalho unificado para desktop e mobile
+  const AppHeader = () => (
+    <header className="sticky top-0 z-50 w-full bg-primary text-primary-foreground shadow-lg">
+      <div className="container flex h-16 sm:h-20 items-center justify-between">
+        {/* Botão de Emergência à esquerda OU Logo em desktop */}
+        <div className="sm:hidden">
+          <EmergencyButton className="h-11 w-11" iconClassName="h-5 w-5" />
+        </div>
+        <div className="hidden sm:block">
+          <RotaSeguraLogo height={30} width={120} />
+        </div>
+        
+        {/* Ícone Rota Segura Centralizado em Mobile */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 sm:hidden">
+          <RotaSeguraLogo height={28} width={110} />
+        </div>
+
+        <div className="flex items-center gap-1 sm:gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80 rounded-full">
+                <UserCircle className="h-5 w-5 sm:h-6 sm:h-6" />
+                <span className="sr-only">Meu Perfil</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p>Meu Perfil</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center p-1.5 sm:p-2 rounded-full hover:bg-primary/80 cursor-pointer">
+                {isDarkMode ? <Sun className="h-4 w-4 sm:h-5 sm:h-5 text-yellow-400" /> : <Moon className="h-4 w-4 sm:h-5 sm:h-5" />}
+                <Switch
+                  checked={isDarkMode}
+                  onCheckedChange={handleThemeChange}
+                  aria-label="Toggle dark mode"
+                  className="ml-1.5 sm:ml-2 scale-75 sm:scale-100 data-[state=checked]:bg-primary-foreground/20 data-[state=unchecked]:bg-primary-foreground/20 [&>span]:bg-background"
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p>{isDarkMode ? 'Modo Claro' : 'Modo Escuro'}</p>
+            </TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => window.location.reload()}
+                className="text-primary-foreground hover:bg-primary/80 rounded-full"
+              >
+                <RefreshCcw className="h-4 w-4 sm:h-5 sm:h-5" />
+                <span className="sr-only">Recarregar Página</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p>Recarregar Página</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </div>
+    </header>
+  );
+
+
   if (!isMounted) {
-    // Evita piscar de tema no carregamento inicial
-    return (
-      <div className="flex flex-col min-h-screen">
-         <header className="sticky top-0 z-50 w-full bg-primary text-primary-foreground shadow-lg rounded-b-xl">
-          <div className="container flex h-20 items-center justify-between">
-            <div className="h-10 w-10"></div> {/* Placeholder for EmergencyButton */}
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8"></div> {/* Placeholder for Profile Icon */}
-              <div className="h-8 w-8"></div> {/* Placeholder for Theme Switch */}
-              <div className="h-8 w-8"></div> {/* Placeholder for Reload Button */}
-            </div>
-          </div>
-        </header>
-        <main className="flex-grow container mx-auto px-4 py-8 pb-20 sm:pb-8">
-          {children}
-        </main>
-        {/* Placeholder for Navigation */}
-        <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-white sm:hidden h-[65px]"></nav> {/* Placeholder for Navigation */}
+    return ( // Fallback simples para evitar piscar de tema/layout
+      <div className="flex flex-col min-h-screen bg-background">
+        <div className="sticky top-0 z-50 w-full bg-primary h-16 sm:h-20"></div>
+        <main className="flex-grow container mx-auto px-4 py-8 pb-24 sm:pb-8"></main>
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background h-[65px] sm:hidden"></div>
       </div>
     );
   }
@@ -72,63 +129,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
   return (
     <TooltipProvider>
       <div className="flex flex-col min-h-screen">
-        <header className="sticky top-0 z-50 w-full bg-primary text-primary-foreground shadow-lg rounded-b-xl">
-          <div className="container flex h-20 items-center justify-between">
-            <EmergencyButton className="h-11 w-11" iconClassName="h-5 w-5" />
-            
-            <div className="flex items-center gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80">
-                    <UserCircle className="h-6 w-6" />
-                    <span className="sr-only">Meu Perfil</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>Meu Perfil</p>
-                </TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center p-2 rounded-md hover:bg-primary/80 cursor-pointer">
-                    {isDarkMode ? <Sun className="h-5 w-5 text-yellow-400" /> : <Moon className="h-5 w-5" />}
-                    <Switch
-                      checked={isDarkMode}
-                      onCheckedChange={handleThemeChange}
-                      aria-label="Toggle dark mode"
-                      className="ml-2 data-[state=checked]:bg-primary-foreground/20 data-[state=unchecked]:bg-primary-foreground/20 [&>span]:bg-background"
-                    />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>{isDarkMode ? 'Modo Claro' : 'Modo Escuro'}</p>
-                </TooltipContent>
-              </Tooltip>
-              
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => window.location.reload()}
-                    className="text-primary-foreground hover:bg-primary/80"
-                  >
-                    <RefreshCcw className="h-5 w-5" />
-                    <span className="sr-only">Recarregar Página</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>Recarregar Página</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-          </div>
-        </header>
-        <main className="flex-grow container mx-auto px-4 py-8 pb-20 sm:pb-8"> {/* Adjusted padding-bottom */}
+        <AppHeader />
+        <main className="flex-grow container mx-auto px-4 py-8 pb-24 sm:pb-8"> {/* Padding para rodapé mobile */}
           {children}
         </main>
-        <Navigation />
+        <Navigation /> {/* Contém a navegação de rodapé para mobile */}
         <ChatFloatingButton onClick={() => setIsChatOpen(true)} />
         {isChatOpen && <ChatWindow onClose={() => setIsChatOpen(false)} />}
       </div>

@@ -9,31 +9,31 @@ body {
 
 @layer base {
   :root {
-    --background: 0 0% 96.1%; /* #F5F5F5 Light Gray - Corrected PRD value */
-    --foreground: 222.2 47.4% 11.2%; /* Dark Gray for text - Corrected value */
+    --background: 0 0% 96.1%; /* #F5F5F5 Light Gray */
+    --foreground: 222.2 47.4% 11.2%; /* Dark Gray for text */
 
-    --card: 0 0% 96.1%; /* Card background to match light theme background */
+    --card: 0 0% 96.1%; 
     --card-foreground: 222.2 47.4% 11.2%;
 
     --popover: 0 0% 96.1%;
     --popover-foreground: 222.2 47.4% 11.2%;
 
-    --primary: 47.9 95.8% 53.1%; /* #FFC107 Yellow - Original PRD value */
-    --primary-foreground: 222.2 47.4% 11.2%; /* Dark text on yellow */
+    --primary: 47.9 95.8% 53.1%; /* #FFC107 Yellow */
+    --primary-foreground: 222.2 47.4% 11.2%; 
 
-    --secondary: 0 0% 93%; /* Slightly darker light gray for secondary elements */
+    --secondary: 0 0% 93%; 
     --secondary-foreground: 222.2 47.4% 11.2%;
 
     --muted: 0 0% 93%;
-    --muted-foreground: 215.4 16.3% 46.9%; /* Slightly darker muted text */
+    --muted-foreground: 215.4 16.3% 46.9%; 
 
-    --accent: 204 90% 50%; /* #2196F3 Blue - Original PRD value (adjusted HSL from 217 91% 60%) */
-    --accent-foreground: 0 0% 98%; /* White text on blue */
+    --accent: 204 90% 50%; /* #2196F3 Blue */
+    --accent-foreground: 0 0% 98%; 
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 89.8%; /* Slightly darker gray for borders */
+    --border: 0 0% 89.8%; 
     --input: 0 0% 89.8%;
     --ring: 47.9 95.8% 53.1%; /* Yellow for focus rings */
 
@@ -120,55 +120,16 @@ body {
 
 /* Glassmorphism utility */
 .glassmorphic {
-  /* Multiple fallbacks for better browser support */
-  background: rgba(255, 255, 255, 0.3); /* Light theme fallback */
+  background: rgba(255, 255, 255, 0.3); 
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1); /* Softer shadow for glass */
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1); 
 }
 
 .dark .glassmorphic {
-  background: rgba(30, 41, 59, 0.3); /* Dark theme fallback (slate-800/30) */
-  border: 1px solid rgba(51, 65, 85, 0.2); /* Dark theme border (slate-700/20) */
-}
-
-
-/* Custom styles for the new bottom navigation */
-.menu-item-central .live-icon-wrapper {
-  width: 50px;
-  height: 50px;
-  background-color: hsl(var(--destructive)); /* Red color for live button */
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  box-shadow: 0 0 12px hsla(var(--destructive), 0.4);
-}
-
-.menu-item-central .live-icon-wrapper .pulse-ring-animation {
-  position: absolute;
-  width: 50px;
-  height: 50px;
-  border: 2px solid hsla(var(--destructive), 0.4);
-  border-radius: 50%;
-  animation: pulse-ring-keyframes 1.5s infinite;
-}
-
-@keyframes pulse-ring-keyframes {
-  0% {
-    transform: scale(1);
-    opacity: 0.7;
-  }
-  70% {
-    transform: scale(1.5);
-    opacity: 0;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 0;
-  }
+  background: rgba(30, 41, 59, 0.3); 
+  border: 1px solid rgba(51, 65, 85, 0.2); 
 }
 
 /* Ensure PT Sans is consistently applied */
