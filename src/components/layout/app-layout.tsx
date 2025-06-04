@@ -60,11 +60,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
             </div>
           </div>
         </header>
-        <main className="flex-grow container mx-auto px-4 py-8 pb-24 sm:pb-8">
+        <main className="flex-grow container mx-auto px-4 py-8 pb-20 sm:pb-8">
           {children}
         </main>
         {/* Placeholder for Navigation */}
-        <nav className="fixed bottom-0 left-0 right-0 z-40 border-t glassmorphic sm:hidden h-16"></nav> {/* Placeholder for Navigation */}
+        <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-white sm:hidden h-[65px]"></nav> {/* Placeholder for Navigation */}
       </div>
     );
   }
@@ -125,7 +125,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             </div>
           </div>
         </header>
-        <main className="flex-grow container mx-auto px-4 py-8 pb-24 sm:pb-8">
+        <main className="flex-grow container mx-auto px-4 py-8 pb-20 sm:pb-8"> {/* Adjusted padding-bottom */}
           {children}
         </main>
         <Navigation />

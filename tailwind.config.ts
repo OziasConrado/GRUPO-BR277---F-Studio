@@ -66,9 +66,9 @@ export default {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))',
         },
-        'story-blue': '#002776',
-        'story-green': '#009c3b',
-        'story-yellow': '#ffdf00',
+        'story-blue': '#002776', // Retained for stories if needed
+        'story-green': '#009c3b', // Retained for stories if needed
+        'story-yellow': '#ffdf00', // Retained for stories if needed
       },
       borderRadius: {
         lg: 'var(--radius)',
@@ -92,10 +92,25 @@ export default {
             height: '0',
           },
         },
+        'pulse-ring-keyframes': { /* Renamed to avoid conflict if Tailwind adds 'pulse' keyframes */
+          '0%': {
+            transform: 'scale(1)',
+            opacity: '0.7',
+          },
+          '70%': {
+            transform: 'scale(1.5)',
+            opacity: '0',
+          },
+          '100%': {
+            transform: 'scale(1)',
+            opacity: '0',
+          },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'pulse-ring-animation': 'pulse-ring-keyframes 1.5s infinite', /* Renamed */
       },
     },
   },
