@@ -315,7 +315,7 @@ export default function PostCard({
 
 
   return (
-    <Card className="w-full max-w-2xl mx-auto mb-6 shadow-lg rounded-xl glassmorphic overflow-hidden">
+    <Card className="w-full max-w-2xl mx-auto mb-6 shadow-lg rounded-xl overflow-hidden">
       <CardHeader className="flex flex-row items-center space-x-3 p-4">
         <Avatar>
           {userAvatarUrl ? <AvatarImage src={userAvatarUrl as string} alt={userName} data-ai-hint={dataAIAvatarHint} /> : null}
@@ -342,7 +342,7 @@ export default function PostCard({
           </div>
         )}
       </CardContent>
-      <CardFooter className="flex justify-end p-4 border-t border-white/10 dark:border-slate-700/10">
+      <CardFooter className="flex justify-end p-4 border-t border-border">
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary rounded-md">
@@ -353,8 +353,8 @@ export default function PostCard({
             <Share2 className="mr-2 h-4 w-4" /> Compartilhar
           </Button>
 
-          <SheetContent side="bottom" className="h-[90vh] flex flex-col glassmorphic p-0">
-            <SheetHeader className="p-4 border-b border-white/20 dark:border-slate-700/20">
+          <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0">
+            <SheetHeader className="p-4 border-b border-border">
               <div className="flex justify-between items-center mb-2">
                 <SheetTitle className="font-headline">Reações e Comentários</SheetTitle>
                 <SheetClose asChild>
@@ -390,7 +390,7 @@ export default function PostCard({
             </SheetHeader>
 
             <div className="flex-grow overflow-y-auto p-4 space-y-4">
-              <form onSubmit={handleAddComment} className="flex gap-2 items-start sticky top-0 bg-card/80 dark:bg-card/80 backdrop-blur-sm p-2 -mx-2 z-10 rounded-b-lg">
+              <form onSubmit={handleAddComment} className="flex gap-2 items-start sticky top-0 bg-background/80 backdrop-blur-sm p-2 -mx-2 z-10 rounded-b-lg">
                 <Avatar className="mt-1">
                   <AvatarImage src="https://placehold.co/40x40.png?text=UA" alt="Usuário Atual" data-ai-hint="current user" />
                   <AvatarFallback>UA</AvatarFallback>
@@ -477,7 +477,7 @@ export default function PostCard({
               </div>
             </div>
             
-            <div className="p-4 border-t border-white/20 dark:border-slate-700/20">
+            <div className="p-4 border-t border-border">
               <div className="h-[50px] bg-muted/30 rounded flex items-center justify-center text-sm text-muted-foreground">
                 Espaço para Publicidade AdMob (Ex: 320x50)
               </div>

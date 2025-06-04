@@ -23,7 +23,7 @@ export default function ChecklistPage() {
         <ArrowLeft className="w-4 h-4 mr-1" />
         Voltar para Ferramentas
       </Link>
-      <Card className="glassmorphic rounded-xl">
+      <Card className="rounded-xl">
         <CardHeader>
           <CardTitle className="font-headline text-2xl">Checklist de Viagem</CardTitle>
         </CardHeader>

@@ -168,8 +168,8 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center sm:p-4">
-      <div className="bg-background w-full h-full sm:max-w-lg sm:max-h-[90vh] sm:rounded-xl shadow-2xl flex flex-col overflow-hidden glassmorphic">
-        <header className="p-4 border-b border-border/50 flex items-center justify-between bg-card/80 dark:bg-card/80 backdrop-blur-sm">
+      <div className="bg-background w-full h-full sm:max-w-lg sm:max-h-[90vh] sm:rounded-xl shadow-2xl flex flex-col overflow-hidden">
+        <header className="p-4 border-b border-border/50 flex items-center justify-between bg-card">
           <div className="flex items-center gap-3">
             <Avatar>
               <AvatarImage src="https://placehold.co/40x40.png?text=CG" alt="Chat em Grupo" data-ai-hint="group chat icon"/>
@@ -193,7 +193,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
           </div>
         </ScrollArea>
 
-        <footer className="p-3 border-t border-border/50 bg-card/80 dark:bg-card/80 backdrop-blur-sm">
+        <footer className="p-3 border-t border-border/50 bg-card">
           <form onSubmit={handleSendMessage} className="flex items-center gap-2">
             <Button type="button" variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-primary" onClick={handleEmojiClick}>
               <Smile className="h-5 w-5" />

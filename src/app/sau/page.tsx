@@ -146,7 +146,7 @@ export default function SAUPage() {
       />
 
       {locationStatus === 'loading' && (
-        <Alert className="glassmorphic">
+        <Alert>
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
           <AlertTitle className="font-headline">Obtendo sua localização...</AlertTitle>
           <AlertDescription>
@@ -156,7 +156,7 @@ export default function SAUPage() {
       )}
 
       {locationStatus === 'error' && (
-         <Alert variant="destructive" className="glassmorphic">
+         <Alert variant="destructive">
             <AlertTriangle className="h-5 w-5" />
             <AlertTitle className="font-headline">Localização indisponível</AlertTitle>
             <AlertDescription>
@@ -191,7 +191,7 @@ export default function SAUPage() {
         )}
       </div>
       
-       <Alert className="glassmorphic mt-6"> {/* Reduced margin-top from 8 to 6 */}
+       <Alert className="mt-6"> {/* Reduced margin-top from 8 to 6 */}
           <Info className="h-5 w-5 text-primary" />
           <AlertTitle className="font-headline">Sobre os SAUs</AlertTitle>
           <AlertDescription>

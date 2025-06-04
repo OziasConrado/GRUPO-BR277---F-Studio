@@ -114,22 +114,6 @@
   }
 }
 
-/* Glassmorphism utility */
-.glassmorphic {
-  background: rgba(255, 255, 255, 0.3); 
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1); 
-}
-
-.dark .glassmorphic {
-  background: rgba(30, 41, 59, 0.3); 
-  border: 1px solid rgba(51, 65, 85, 0.2); 
-}
-
-/* .font-body and .font-headline classes using PT Sans removed */
-
 /* Hide scrollbar for elements with this class */
 .no-scrollbar::-webkit-scrollbar {
   display: none;

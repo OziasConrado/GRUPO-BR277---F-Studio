@@ -53,7 +53,7 @@ export default function EmergencyButton({ className, iconClassName }: { classNam
       </Button>
 
       <AlertDialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <AlertDialogContent className="glassmorphic">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="font-headline text-center">Contato de Emergência</AlertDialogTitle>
             <AlertDialogDescription className="text-center">
@@ -78,4 +78,3 @@ export default function EmergencyButton({ className, iconClassName }: { classNam
     </>
   );
 }
-

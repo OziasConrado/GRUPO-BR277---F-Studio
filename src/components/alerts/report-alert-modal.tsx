@@ -74,7 +74,7 @@ export default function ReportAlertModal({ isOpen, onClose, onAlertReported }: R
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if(!open) form.reset(); onClose(); }}>
-      <DialogContent className="sm:max-w-[480px] glassmorphic rounded-xl">
+      <DialogContent className="sm:max-w-[480px] rounded-xl">
         <DialogHeader>
           <DialogTitle className="font-headline text-xl">Reportar Novo Alerta</DialogTitle>
           <DialogDescription>

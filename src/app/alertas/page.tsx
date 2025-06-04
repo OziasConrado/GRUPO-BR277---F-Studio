@@ -114,7 +114,7 @@ export default function AlertasPage() {
       </div>
 
       {/* Filtros diretamente na página, sem o Card envolvente */}
-      <div className="p-4 rounded-xl glassmorphic"> {/* Opcional: manter um container visual para filtros */}
+      <div className="p-4 rounded-xl bg-card border"> {/* Opcional: manter um container visual para filtros */}
         <CardTitle className="font-headline flex items-center text-lg mb-1"><ListFilter className="mr-2 h-5 w-5 text-primary"/> Filtros de Alertas</CardTitle>
         <CardDescription className="text-xs mb-4">Filtre por tipo ou veja todos os alertas recentes.</CardDescription>
         <AlertFilters

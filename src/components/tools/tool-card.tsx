@@ -12,7 +12,7 @@ export interface ToolCardProps {
 export default function ToolCard({ title, Icon, href, description }: ToolCardProps) {
   return (
     <Link href={href} passHref>
-      <Card className="group glassmorphic rounded-xl overflow-hidden h-full flex flex-col justify-between hover:shadow-2xl transition-shadow duration-300">
+      <Card className="group rounded-xl overflow-hidden h-full flex flex-col justify-between hover:shadow-2xl transition-shadow duration-300">
         <CardContent className="p-6 flex flex-col items-center text-center">
           <div className="p-4 bg-primary/10 rounded-full mb-4 group-hover:bg-primary/20 transition-colors">
             <Icon className="h-12 w-12 text-primary" />

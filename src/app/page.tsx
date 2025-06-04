@@ -97,9 +97,11 @@ const mockPosts: PostCardProps[] = [
             userAvatarUrl: 'https://placehold.co/40x40.png?text=CC',
             dataAIAvatarHint: 'truck driver',
             timestamp: '30 minutos atrás',
-            text: 'Obrigado, Mariana!'
+            text: 'Obrigado, Mariana!',
+            reactions: { thumbsUp: 0 }
           }
-        ]
+        ],
+        reactions: { thumbsUp: 0 }
       },
       {
         id: 'c1-2',
@@ -108,6 +110,7 @@ const mockPosts: PostCardProps[] = [
         dataAIAvatarHint: 'male traveler',
         timestamp: '45 minutos atrás',
         text: 'Também passei por lá, realmente um dia bom pra rodar.',
+        reactions: { thumbsUp: 0 }
       }
     ],
   },
@@ -129,6 +132,7 @@ const mockPosts: PostCardProps[] = [
         dataAIAvatarHint: 'safety logo',
         timestamp: '4 horas atrás',
         text: 'Obrigado pelo alerta, Ana! Informação crucial.',
+        reactions: { thumbsUp: 0 }
       }
     ],
   },
@@ -196,7 +200,7 @@ export default function FeedPage() {
 
 
       <div className="mb-8 grid grid-cols-2 md:grid-cols-3 gap-3">
-        <Card className="glassmorphic rounded-xl">
+        <Card className="rounded-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1">
             <CardTitle className="text-sm font-medium font-headline">Publicações</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -208,7 +212,7 @@ export default function FeedPage() {
             </p>
           </CardContent>
         </Card>
-        <Link href="/alertas" className="glassmorphic rounded-xl block hover:shadow-lg transition-shadow">
+        <Link href="/alertas" className="rounded-xl block hover:shadow-lg transition-shadow">
           <Card className="h-full bg-transparent border-none shadow-none">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1">
               <CardTitle className="text-sm font-medium font-headline">Alertas Ativos</CardTitle>
@@ -222,7 +226,7 @@ export default function FeedPage() {
             </CardContent>
           </Card>
         </Link>
-        <Card className="glassmorphic rounded-xl col-span-2 md:col-span-1">
+        <Card className="rounded-xl col-span-2 md:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1">
             <CardTitle className="text-sm font-medium font-headline">Destaques</CardTitle>
             <Star className="h-4 w-4 text-accent" />

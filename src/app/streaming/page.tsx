@@ -204,7 +204,7 @@ const mockStreamsData: StreamCardProps[] = [
     title: 'Paraguai',
     description: 'Ponte da Amizade | Sentido Brasil',
     thumbnailUrl: 'https://placehold.co/160x90.png', // Corrigido de "Otros" para "Outros"
-    dataAIThumbnailHint: 'bridge international border',
+    dataAIThumbnailHint: 'international border bridge',
     category: 'Outros',
     isLive: true,
     streamUrl: 'https://playerv.logicahost.com.br/video-ip-camera/brimostech//false/false/Wkcxc2ExcFhPSGROYVRWellqSmtjRmt5Um05aU0wNHdURzFPZG1KVE5XbGpaejA5KzM=/16:9/WVVoU01HTklUVFpNZVRnOSsz/camatg01.stream/',
@@ -253,7 +253,7 @@ export default function StreamingPage() {
         <p className="text-muted-foreground text-center sm:text-left text-sm">Acompanhe o trânsito e condições das estradas.</p>
       </div>
       
-      <div className="p-4 rounded-xl glassmorphic">
+      <div className="p-4 rounded-xl bg-card border">
         <StreamFilters 
           currentFilter={currentFilter}
           onFilterChange={setCurrentFilter} 
@@ -333,4 +333,3 @@ export default function StreamingPage() {
     </div>
   );
 }
-

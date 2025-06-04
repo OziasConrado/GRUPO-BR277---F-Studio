@@ -40,7 +40,7 @@ export default function SauLocationCard({ sau, reviews, onAddReview }: SauLocati
 
   return (
     <>
-      <Card className="w-full shadow-lg rounded-xl overflow-hidden bg-card/80 dark:bg-card/80 backdrop-blur-sm border border-white/10 dark:border-slate-700/10">
+      <Card className="w-full shadow-lg rounded-xl overflow-hidden bg-card/80 dark:bg-card/80 border border-border">
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-2">
             <div className="flex-grow">
@@ -119,7 +119,7 @@ export default function SauLocationCard({ sau, reviews, onAddReview }: SauLocati
         {reviews && reviews.length > 0 && (
              <CardFooter className="p-0">
                 <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="reviews" className="border-t border-white/10 dark:border-slate-700/10">
+                <AccordionItem value="reviews" className="border-t border-border">
                     <AccordionTrigger className="px-6 py-3 hover:no-underline">
                         <div className="flex items-center">
                             <MessageSquare className="h-4 w-4 mr-2 text-muted-foreground" />

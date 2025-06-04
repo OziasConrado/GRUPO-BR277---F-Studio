@@ -50,7 +50,7 @@ export default function SubmitReviewModal({ isOpen, onClose, onSubmit, sauName }
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if(!open) form.reset(); onClose(); }}>
-      <DialogContent className="sm:max-w-md glassmorphic rounded-xl">
+      <DialogContent className="sm:max-w-md rounded-xl">
         <DialogHeader>
           <DialogTitle className="font-headline text-xl">Avaliar {sauName}</DialogTitle>
           <DialogDescription>
