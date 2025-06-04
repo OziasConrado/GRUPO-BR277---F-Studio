@@ -3,14 +3,14 @@
 
 import type { StaticImageData } from 'next/image';
 import Image from 'next/image';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle as PostCardTitleUI } from '@/components/ui/card'; // Renamed CardTitle to avoid conflict
+import { Card, CardContent, CardFooter, CardHeader, CardTitle as PostCardTitleUI } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send } from 'lucide-react';
 import { useState, type ChangeEvent, type FormEvent, useCallback } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'; // Added SheetTrigger
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 
 export interface ReactionState {
@@ -44,7 +44,8 @@ export interface CommentProps {
 export interface PostReactions {
   thumbsUp: number;
   thumbsDown: number;
-  heart: number;
+  // Removed other emojis as they are no longer directly used for post reaction display
+  heart: number; // Kept in type for potential future use or backend compatibility
   laugh: number;
   wow: number;
   sad: number;
@@ -68,8 +69,9 @@ export interface PostCardProps {
 
 interface ReplyingToInfo {
   type: 'comment' | 'reply';
-  parentId: string;
-  grandParentId?: string;
+  parentId: string; // ID of the comment or reply being replied to
+  grandParentId?: string; // ID of the original comment if replying to a reply
+  userNameToReply?: string;
 }
 
 
@@ -107,23 +109,18 @@ export default function PostCard({
   const handlePostReactionClick = (reactionType: 'thumbsUp' | 'thumbsDown') => {
     setLocalPostReactions(prevReactions => {
       const newReactions = { ...prevReactions };
-      // Remove heart, laugh, wow, sad, angry as they are no longer used for direct post reaction
-      const baseReactions = { thumbsUp: prevReactions.thumbsUp, thumbsDown: prevReactions.thumbsDown, heart: 0, laugh: 0, wow: 0, sad: 0, angry: 0 };
       
       if (currentUserPostReaction === reactionType) {
-        // User is deselecting the current reaction
-        baseReactions[reactionType]--;
+        newReactions[reactionType]--;
         setCurrentUserPostReaction(null);
       } else {
-        // User is selecting a new reaction or switching reactions
         if (currentUserPostReaction) {
-          // If there was a previous reaction, decrement it
-          baseReactions[currentUserPostReaction]--;
+          newReactions[currentUserPostReaction]--;
         }
-        baseReactions[reactionType]++;
+        newReactions[reactionType]++;
         setCurrentUserPostReaction(reactionType);
       }
-      return baseReactions;
+      return newReactions;
     });
   };
 
@@ -131,7 +128,7 @@ export default function PostCard({
     itemId: string,
     reactionType: 'thumbsUp' | 'thumbsDown',
     itemType: 'comment' | 'reply',
-    commentId?: string, // Only relevant for replies to find the parent comment
+    commentIdForReply?: string, 
   ) => {
     setLocalCommentsData(prevComments =>
       prevComments.map(comment => {
@@ -141,13 +138,13 @@ export default function PostCard({
           let newThumbsDown = item.reactions.thumbsDown;
           let newUserReaction: 'thumbsUp' | 'thumbsDown' | null = null;
 
-          if (currentReaction === reactionType) { // Deselecting current reaction
+          if (currentReaction === reactionType) { 
             if (reactionType === 'thumbsUp') newThumbsUp--;
             else newThumbsDown--;
             newUserReaction = null;
-          } else { // Selecting a new reaction or switching
-            if (currentReaction === 'thumbsUp') newThumbsUp--; // Deselect previous thumbsUp if any
-            if (currentReaction === 'thumbsDown') newThumbsDown--; // Deselect previous thumbsDown if any
+          } else { 
+            if (currentReaction === 'thumbsUp') newThumbsUp--; 
+            if (currentReaction === 'thumbsDown') newThumbsDown--; 
             
             if (reactionType === 'thumbsUp') newThumbsUp++;
             else newThumbsDown++;
@@ -265,7 +262,7 @@ export default function PostCard({
                   <p className="text-xs font-semibold font-headline">{reply.userName}</p>
                   <p className="text-xs text-muted-foreground">{reply.timestamp}</p>
                 </div>
-                <p className="text-sm mt-0.5">{reply.text}</p>
+                <p className="text-base mt-0.5">{reply.text}</p> {/* Changed from text-sm to text-base */}
                 <div className="flex items-center mt-1 space-x-2">
                   <Button
                     variant="ghost"
@@ -295,7 +292,7 @@ export default function PostCard({
                           setReplyingTo(null);
                           setNewReplyText('');
                         } else {
-                          setReplyingTo({ type: 'reply', parentId: reply.id, grandParentId: commentIdForReply });
+                          setReplyingTo({ type: 'reply', parentId: reply.id, grandParentId: commentIdForReply, userNameToReply: reply.userName });
                           setNewReplyText('');
                         }
                       }}
@@ -316,7 +313,7 @@ export default function PostCard({
                   placeholder={`Respondendo a ${reply.userName}...`}
                   value={newReplyText}
                   onChange={(e: ChangeEvent<HTMLInputElement>) => setNewReplyText(e.target.value)}
-                  className="rounded-lg flex-grow h-9 bg-background/70 text-sm"
+                  className="rounded-lg flex-grow h-9 bg-background/70 text-base" // Ensure text-base
                   autoFocus
                 />
                 <Button type="submit" size="icon" className="rounded-lg h-9 w-9 shrink-0">
@@ -347,7 +344,7 @@ export default function PostCard({
         </div>
       </CardHeader>
       <CardContent className="p-4 pt-0">
-        <p className="mb-3 text-sm leading-relaxed">{text}</p>
+        <p className="mb-3 text-base leading-relaxed">{text}</p> {/* Changed from text-sm to text-base */}
         {imageUrl && (
           <div className="relative aspect-video rounded-lg overflow-hidden border">
             <Image
@@ -372,7 +369,7 @@ export default function PostCard({
           </Button>
 
           <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0 rounded-t-[25px]">
-            <SheetHeader className="p-4 border-b border-border flex flex-row justify-center items-center relative">
+             <SheetHeader className="p-4 border-b border-border flex flex-row justify-center items-center relative">
               <SheetTitle className="sr-only">Comentários e Reações do Post</SheetTitle>
               <div className="flex items-center justify-center gap-4 py-2">
                 <Button
@@ -396,6 +393,7 @@ export default function PostCard({
                   <span className="ml-1 text-xs">({localPostReactions.thumbsDown})</span>
                 </Button>
               </div>
+              {/* Default SheetClose (X button) is handled by SheetContent itself */}
             </SheetHeader>
 
             <div className="flex-grow overflow-y-auto p-4 space-y-4">
@@ -414,7 +412,7 @@ export default function PostCard({
                           <p className="text-xs font-semibold font-headline">{comment.userName}</p>
                           <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
                         </div>
-                        <p className="text-sm mt-1">{comment.text}</p>
+                        <p className="text-base mt-1">{comment.text}</p> {/* Changed from text-sm to text-base */}
                         <div className="flex items-center mt-1.5 space-x-2">
                           <Button
                             variant="ghost"
@@ -443,7 +441,7 @@ export default function PostCard({
                                 setReplyingTo(null);
                                 setNewReplyText('');
                               } else {
-                                setReplyingTo({ type: 'comment', parentId: comment.id });
+                                setReplyingTo({ type: 'comment', parentId: comment.id, userNameToReply: comment.userName });
                                 setNewReplyText('');
                               }
                             }}
@@ -464,7 +462,7 @@ export default function PostCard({
                           placeholder={`Respondendo a ${comment.userName}...`}
                           value={newReplyText}
                           onChange={(e: ChangeEvent<HTMLInputElement>) => setNewReplyText(e.target.value)}
-                          className="rounded-lg flex-grow h-10 bg-background/70 text-base"
+                          className="rounded-lg flex-grow h-10 bg-background/70 text-base" // Ensure text-base
                           autoFocus
                         />
                         <Button type="submit" size="icon" className="rounded-lg h-10 w-10 shrink-0">
@@ -488,7 +486,7 @@ export default function PostCard({
                     placeholder="Escreva um comentário..."
                     value={newCommentText}
                     onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setNewCommentText(e.target.value)}
-                    className="rounded-lg flex-grow bg-background/70 min-h-[40px] resize-none text-base"
+                    className="rounded-lg flex-grow bg-background/70 min-h-[40px] resize-none text-base" // Ensure text-base
                     rows={1}
                     />
                     <Button type="submit" size="icon" className="rounded-lg shrink-0">
@@ -508,4 +506,3 @@ export default function PostCard({
     </Card>
   );
 }
-
