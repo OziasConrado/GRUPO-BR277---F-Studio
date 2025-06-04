@@ -1,17 +1,18 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, MapPin, Navigation, AlertTriangle, Info, Star, MessageSquare } from 'lucide-react';
+import { Loader2, MapPin, AlertTriangle, Info } from 'lucide-react';
 import type { SAULocation, SAUReview } from '@/types/sau';
 import SauLocationCard from '@/components/sau/sau-location-card';
+import SauFilters from '@/components/sau/sau-filters'; // Import new filter component
 import { useToast } from "@/hooks/use-toast";
 
-const concessionaires = [
-  "Via Araucária", "EPR Litoral Pioneiro", "Arteris Litoral Sul",
+// Concessionaires for the filter
+const concessionairesForFilter = [
+  "Todos", "Via Araucária", "EPR Litoral Pioneiro", "Arteris Litoral Sul",
   "Arteris Planalto Sul", "Arteris Régis Bitencourt", "CCR PRVias",
   "CCR RioSP", "COI DER/PR"
 ];
@@ -42,7 +43,6 @@ const mockSauLocations: SAULocation[] = [
   { id: 'coi-der-1', concessionaire: 'COI DER/PR', name: 'Posto de Apoio PR-445 Km 50', address: 'PR-445, Km 50, Londrina - PR', latitude: -23.3874, longitude: -51.1311, services: ['Banheiros', 'Informações'], operatingHours: '08:00 - 18:00' },
 ];
 
-
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371; // Radius of the Earth in km
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -57,9 +57,9 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 
 export default function SAUPage() {
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [sortedSaus, setSortedSaus] = useState<SAULocation[]>(mockSauLocations);
   const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [reviews, setReviews] = useState<SAUReview[]>([]);
+  const [activeConcessionaireFilter, setActiveConcessionaireFilter] = useState<string>('Todos');
   const { toast } = useToast();
 
   const requestLocation = useCallback(() => {
@@ -94,35 +94,35 @@ export default function SAUPage() {
   }, [toast]);
 
   useEffect(() => {
-    // Request location on initial load
     requestLocation();
   }, [requestLocation]);
 
-  useEffect(() => {
+  const processedSaus = useMemo(() => {
+    let filteredSaus = mockSauLocations;
+
+    if (activeConcessionaireFilter !== 'Todos') {
+      filteredSaus = filteredSaus.filter(sau => sau.concessionaire === activeConcessionaireFilter);
+    }
+
     if (userLocation) {
-      const sausWithDistance = mockSauLocations.map(sau => ({
+      const sausWithDistance = filteredSaus.map(sau => ({
         ...sau,
         distance: calculateDistance(userLocation.latitude, userLocation.longitude, sau.latitude, sau.longitude),
       }));
       sausWithDistance.sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
-      setSortedSaus(sausWithDistance);
+      return sausWithDistance;
     } else {
-      // Default sort if no location (e.g., by concessionaire then name)
-      const defaultSorted = [...mockSauLocations].sort((a, b) => {
-        if (a.concessionaire < b.concessionaire) return -1;
-        if (a.concessionaire > b.concessionaire) return 1;
-        return a.name.localeCompare(b.name);
-      });
-      setSortedSaus(defaultSorted);
+      // Default sort if no location (e.g., by name within the filtered list)
+      return [...filteredSaus].sort((a, b) => a.name.localeCompare(b.name));
     }
-  }, [userLocation]);
+  }, [userLocation, activeConcessionaireFilter]);
 
   const handleAddReview = (newReview: Omit<SAUReview, 'id' | 'timestamp' | 'author'>, sauId: string) => {
     const fullReview: SAUReview = {
       ...newReview,
       id: `review-${Date.now()}`,
       sauId: sauId,
-      author: "Usuário Anônimo", // Or get from user profile if available
+      author: "Usuário Anônimo", 
       timestamp: new Date().toISOString(),
     };
     setReviews(prevReviews => [...prevReviews, fullReview]);
@@ -133,18 +133,24 @@ export default function SAUPage() {
   };
 
   return (
-    <div className="w-full space-y-8">
+    <div className="w-full space-y-6"> {/* Reduced top-level space-y from 8 to 6 */}
       <div className="text-center sm:text-left">
-        <h1 className="text-3xl font-bold font-headline">Serviços de Atendimento ao Usuário (SAU)</h1>
-        <p className="text-muted-foreground">Encontre os SAUs das concessionárias mais próximos de você.</p>
+        <h1 className="text-2xl lg:text-3xl font-bold font-headline">Serviços de Atendimento ao Usuário (SAU)</h1> {/* Adjusted heading size */}
+        <p className="text-muted-foreground">Encontre os SAUs das concessionárias.</p>
       </div>
+
+      <SauFilters
+        concessionaires={concessionairesForFilter}
+        currentFilter={activeConcessionaireFilter}
+        onFilterChange={setActiveConcessionaireFilter}
+      />
 
       {locationStatus === 'loading' && (
         <Alert className="glassmorphic">
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
           <AlertTitle className="font-headline">Obtendo sua localização...</AlertTitle>
           <AlertDescription>
-            Por favor, aguarde enquanto tentamos determinar sua posição para listar os SAUs mais próximos.
+            Por favor, aguarde para listarmos os SAUs mais próximos.
           </AlertDescription>
         </Alert>
       )}
@@ -152,10 +158,9 @@ export default function SAUPage() {
       {locationStatus === 'error' && (
          <Alert variant="destructive" className="glassmorphic">
             <AlertTriangle className="h-5 w-5" />
-            <AlertTitle className="font-headline">Não foi possível obter sua localização</AlertTitle>
+            <AlertTitle className="font-headline">Localização indisponível</AlertTitle>
             <AlertDescription>
-                Verifique as permissões de localização do seu navegador e tente novamente.
-                Mostrando SAUs em ordem padrão.
+                Verifique as permissões de localização e tente novamente.
                 <Button variant="outline" size="sm" onClick={requestLocation} className="ml-2 mt-1 sm:mt-0">
                     Tentar Novamente
                 </Button>
@@ -163,42 +168,34 @@ export default function SAUPage() {
         </Alert>
       )}
       
-      {locationStatus !== 'loading' && (
-        <Card className="glassmorphic rounded-xl">
-          <CardHeader>
-            <CardTitle className="font-headline flex items-center">
-                <MapPin className="mr-2 h-6 w-6 text-primary"/> Lista de SAUs
-            </CardTitle>
-            <CardDescription>
-              {userLocation ? "Ordenados por proximidade." : "Ordenados por concessionária."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {sortedSaus.length > 0 ? sortedSaus.map(sau => {
-              const sauReviews = reviews.filter(r => r.sauId === sau.id);
-              let averageRating = 0;
-              if (sauReviews.length > 0) {
-                averageRating = sauReviews.reduce((sum, r) => sum + r.rating, 0) / sauReviews.length;
-              }
-              return (
-                <SauLocationCard
-                  key={sau.id}
-                  sau={{...sau, averageRating, reviewCount: sauReviews.length}}
-                  reviews={sauReviews}
-                  onAddReview={(reviewData) => handleAddReview(reviewData, sau.id)}
-                />
-              );
-            }) : (
-              <p className="text-muted-foreground text-center py-4">Nenhum SAU encontrado.</p>
-            )}
-          </CardContent>
-        </Card>
-      )}
-       <Alert className="glassmorphic mt-8">
+      {/* Outer Card removed, now directly mapping SauLocationCard */}
+      <div className="space-y-4">
+        {processedSaus.length > 0 ? processedSaus.map(sau => {
+          const sauReviews = reviews.filter(r => r.sauId === sau.id);
+          let averageRating = 0;
+          if (sauReviews.length > 0) {
+            averageRating = sauReviews.reduce((sum, r) => sum + r.rating, 0) / sauReviews.length;
+          }
+          return (
+            <SauLocationCard
+              key={sau.id}
+              sau={{...sau, averageRating, reviewCount: sauReviews.length}}
+              reviews={sauReviews}
+              onAddReview={(reviewData) => handleAddReview(reviewData, sau.id)}
+            />
+          );
+        }) : (
+          <p className="text-muted-foreground text-center py-4">
+            {locationStatus !== 'loading' ? 'Nenhum SAU encontrado para os filtros selecionados.' : 'Carregando SAUs...'}
+          </p>
+        )}
+      </div>
+      
+       <Alert className="glassmorphic mt-6"> {/* Reduced margin-top from 8 to 6 */}
           <Info className="h-5 w-5 text-primary" />
           <AlertTitle className="font-headline">Sobre os SAUs</AlertTitle>
           <AlertDescription>
-            Os SAUs (Serviços de Atendimento ao Usuário) são pontos de apoio mantidos pelas concessionárias de rodovias, oferecendo diversos serviços para os viajantes, como banheiros, água, informações e, em alguns casos, atendimento emergencial.
+            Os SAUs são pontos de apoio das concessionárias, oferecendo serviços como banheiros, água e informações.
           </AlertDescription>
         </Alert>
     </div>

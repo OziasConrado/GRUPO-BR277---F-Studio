@@ -11,8 +11,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['PT Sans', 'sans-serif'],
-        headline: ['PT Sans', 'sans-serif'],
+        sans: ['Arial', 'sans-serif'], // Set Arial as default sans-serif
+        body: ['Arial', 'sans-serif'],   // Explicitly set Arial for body
+        headline: ['Arial', 'sans-serif'], // Explicitly set Arial for headlines
         code: ['monospace'],
       },
       colors: {
@@ -66,9 +67,9 @@ export default {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))',
         },
-        'story-blue': '#002776', // Retained for stories if needed
-        'story-green': '#009c3b', // Retained for stories if needed
-        'story-yellow': '#ffdf00', // Retained for stories if needed
+        'story-blue': '#002776', 
+        'story-green': '#009c3b', 
+        'story-yellow': '#ffdf00', 
       },
       borderRadius: {
         lg: 'var(--radius)',
@@ -92,15 +93,13 @@ export default {
             height: '0',
           },
         },
-        // pulse-ring-keyframes is defined in globals.css and used as a global class
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
-        // pulse-ring-animation will use the global pulse-ring-keyframes from globals.css
-        // No need to define it here if we are using the global CSS class directly.
       },
     },
   },
   plugins: [require('tailwindcss-animate')],
 } satisfies Config;
+

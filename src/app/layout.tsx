@@ -17,14 +17,13 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
+        {/* PT Sans font import removed */}
       </head>
-      <body className="font-body antialiased bg-background text-foreground"> {/* Moved bg-background and text-foreground here */}
+      <body className="antialiased bg-background text-foreground"> {/* font-body class removed, Arial will be default */}
         <AppLayout>{children}</AppLayout>
         <Toaster />
       </body>
     </html>
   );
 }
+
