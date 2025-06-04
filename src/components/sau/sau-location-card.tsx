@@ -43,22 +43,24 @@ export default function SauLocationCard({ sau, reviews, onAddReview }: SauLocati
       <Card className="w-full shadow-lg rounded-xl overflow-hidden bg-card/80 dark:bg-card/80 backdrop-blur-sm border border-white/10 dark:border-slate-700/10">
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-2">
-            <div>
-              <CardTitle className="text-lg font-headline flex items-center"> {/* Adjusted title size if needed by global font change */}
-                <Building className="h-5 w-5 mr-2 text-primary flex-shrink-0" />
-                {sau.name}
-              </CardTitle>
+            <div className="flex-grow">
+              <div className="flex justify-between items-start">
+                <CardTitle className="text-lg font-headline flex items-center">
+                  <Building className="h-5 w-5 mr-2 text-primary flex-shrink-0" />
+                  {sau.name}
+                </CardTitle>
+                {sau.distance !== undefined && (
+                  <Badge variant="secondary" className="ml-2 mt-1 sm:mt-0 self-start whitespace-nowrap">
+                    <MapPin className="h-3.5 w-3.5 mr-1.5" />
+                    Aprox. {sau.distance.toFixed(1)} km
+                  </Badge>
+                )}
+              </div>
               <CardDescription className="mt-1 ml-7 sm:ml-0">{sau.concessionaire}</CardDescription>
             </div>
-            {sau.distance !== undefined && (
-              <Badge variant="secondary" className="mt-1 sm:mt-0 self-start sm:self-auto whitespace-nowrap">
-                <MapPin className="h-3.5 w-3.5 mr-1.5" />
-                Aprox. {sau.distance.toFixed(1)} km
-              </Badge>
-            )}
           </div>
         </CardHeader>
-        <CardContent className="pb-4 space-y-4"> {/* Increased space-y from 3 to 4 */}
+        <CardContent className="pb-4 space-y-4">
           
           <div>
             <div className="flex items-start">
@@ -94,8 +96,8 @@ export default function SauLocationCard({ sau, reviews, onAddReview }: SauLocati
           
           <Separator />
 
-          <div className="pt-1"> {/* Adjusted padding top */}
-            <div className="flex items-center gap-2 mb-2"> {/* Increased margin bottom */}
+          <div className="pt-1">
+            <div className="flex items-center gap-2 mb-2">
                 <StarDisplay rating={sau.averageRating || 0} size={18}/>
                 <span className="text-muted-foreground">
                     ({(sau.averageRating || 0).toFixed(1)} de {sau.reviewCount || 0} avaliações)
@@ -106,9 +108,9 @@ export default function SauLocationCard({ sau, reviews, onAddReview }: SauLocati
                     <Navigation className="mr-1.5 h-4 w-4" />
                     Navegar
                 </Button>
-                <Button variant="default" size="sm" onClick={() => setIsReviewModalOpen(true)} className="rounded-md">
+                <Button variant="default" size="sm" onClick={() => setIsReviewModalOpen(true)} className="rounded-md ml-2">
                   <Edit3 className="mr-1.5 h-4 w-4" />
-                  Avaliar SAU
+                  Avaliar Serviço
                 </Button>
              </div>
           </div>
@@ -132,7 +134,7 @@ export default function SauLocationCard({ sau, reviews, onAddReview }: SauLocati
                             <StarDisplay rating={review.rating} size={14} />
                         </div>
                         <p className="mb-1">{review.comment}</p>
-                        <p className="text-muted-foreground/70 text-[10px]"> {/* Explicitly smaller for timestamp */}
+                        <p className="text-muted-foreground/70 text-[10px]">
                             {new Date(review.timestamp).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </p>
                         </div>
