@@ -3,48 +3,90 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Youtube, Wrench, Headset, AlertTriangle, Video } from 'lucide-react';
+import { PlusSquare, Video, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import EmergencyButton from '@/components/common/emergency-button'; // Importar EmergencyButton
+import type { AppLayoutContextType } from './app-layout'; // Import a context type if available or define one
+import { useAppLayout } from './app-layout'; // Assuming you'll create a context hook
 
 const navItems = [
-  { href: '/', label: 'Feed', icon: Home },
-  { href: '/streaming', label: 'Ao Vivo', icon: Video }, // Ícone central "AO VIVO"
-  { href: '/ferramentas', label: 'Ferramentas', icon: Wrench },
-  { href: '/alertas', label: 'Alertas', icon: AlertTriangle },
-  { href: '/sau', label: 'SAU', icon: Headset },
+  { href: '/publicar', label: 'Publicar', icon: PlusSquare, action: 'navigate' }, // Placeholder href
+  { href: '/streaming', label: 'AO VIVO', icon: Video, action: 'navigate' },
+  { href: '#chat', label: 'Chat', icon: MessageCircle, action: 'openChat' }, // Action to open chat
 ];
 
 export default function Navigation() {
   const pathname = usePathname();
+  const { setIsChatOpen } = useAppLayout(); // Use context to control chat modal
+
+  const handleItemClick = (action: string, href: string) => {
+    if (action === 'openChat') {
+      setIsChatOpen(true);
+    }
+    // Navigation will be handled by Link component for 'navigate' actions
+  };
 
   return (
     <>
-      {/* Navegação Desktop (oculta em mobile) - Removida conforme novas diretrizes do header global */}
-      {/* <nav className="hidden sm:flex sticky top-0 z-50 w-full bg-primary text-primary-foreground shadow-md items-center justify-between p-4">
-        ... (código anterior do header desktop)
-      </nav> */}
-
       {/* Navegação Mobile (rodapé) */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 h-[65px] border-t bg-background/95 backdrop-blur-md shadow-[0_-2px_10px_rgba(0,0,0,0.05)] sm:hidden">
-        <div className="container mx-auto grid h-full grid-cols-5 items-center px-1">
-          {navItems.map((item, index) => {
-            const isActive = pathname === item.href;
-            const isCentralButton = item.href === '/streaming'; // Identifica o botão "AO VIVO"
+        <div className="container mx-auto grid h-full grid-cols-3 items-stretch px-1">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href && item.action === 'navigate';
+            const isCentralButton = item.label === 'AO VIVO';
+
+            const content = (
+              <>
+                <item.icon
+                  className={cn(
+                    'mb-0.5 h-6 w-6 transition-transform duration-200 ease-out',
+                    isActive && item.action === 'navigate' ? 'scale-110' : 'group-hover:scale-105',
+                    isCentralButton && 'h-7 w-7 text-destructive-foreground'
+                  )}
+                />
+                <span className={cn(
+                  "truncate text-xs",
+                  isCentralButton ? "mt-1.5 font-semibold text-foreground" : "text-muted-foreground",
+                  isActive && item.action === 'navigate' && !isCentralButton ? 'text-primary font-semibold' : '',
+                  !isCentralButton && !isActive && 'group-hover:text-primary/80'
+                )}>
+                  {item.label}
+                </span>
+              </>
+            );
 
             if (isCentralButton) {
               return (
-                <div key={item.href} className="menu-item-central relative flex flex-col items-center justify-center -top-5">
-                  <Link href={item.href} className="live-icon-wrapper z-10">
-                    <div className="live-icon bg-destructive w-14 h-14 rounded-full flex items-center justify-center shadow-lg relative">
+                <Link
+                  href={item.href}
+                  key={item.href}
+                  className="menu-item-central relative flex flex-col items-center justify-center -top-4"
+                  onClick={() => handleItemClick(item.action, item.href)}
+                  passHref
+                >
+                  <div className="live-icon-wrapper z-10">
+                    <div className="live-icon bg-destructive w-16 h-16 rounded-full flex items-center justify-center shadow-lg relative">
                       <div className="pulse-ring-animation"></div>
-                      <item.icon className={cn('h-6 w-6 text-destructive-foreground')} />
+                      {content}
                     </div>
-                  </Link>
-                  <span className="mt-1.5 text-xs font-semibold text-center text-foreground">
-                    {item.label}
-                  </span>
-                </div>
+                  </div>
+                </Link>
+              );
+            }
+            
+            const commonClasses = cn(
+              'group flex h-full flex-col items-center justify-center text-center no-underline transition-colors duration-150 pt-1',
+               isActive && item.action === 'navigate' ? 'text-primary font-semibold' : 'text-muted-foreground hover:text-primary/80'
+            );
+
+            if (item.action === 'openChat') {
+              return (
+                 <button
+                  key={item.href}
+                  onClick={() => handleItemClick(item.action, item.href)}
+                  className={commonClasses}
+                >
+                  {content}
+                </button>
               );
             }
 
@@ -52,18 +94,10 @@ export default function Navigation() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={cn(
-                  'group flex h-full flex-col items-center justify-center text-center text-xs no-underline transition-colors duration-150 pt-1',
-                  isActive ? 'text-primary font-semibold' : 'text-muted-foreground hover:text-primary/80'
-                )}
+                className={commonClasses}
+                passHref
               >
-                <item.icon
-                  className={cn(
-                    'mb-0.5 h-5 w-5 transition-transform duration-200 ease-out',
-                    isActive ? 'scale-110' : 'group-hover:scale-105'
-                  )}
-                />
-                <span className="truncate">{item.label}</span>
+                {content}
               </Link>
             );
           })}
