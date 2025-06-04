@@ -6,24 +6,16 @@ import { usePathname } from 'next/navigation';
 import { Home, Wrench, Video, AlertTriangle, Headset } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Removida a importação de useAppLayout pois o chat não está mais no rodapé
-// import { useAppLayout } from './app-layout'; 
-
 const navItems = [
-  { href: '/', label: 'Início', icon: Home, action: 'navigate' },
-  { href: '/ferramentas', label: 'Ferramentas', icon: Wrench, action: 'navigate' },
-  { href: '/streaming', label: 'AO VIVO', icon: Video, action: 'navigate' },
-  { href: '/alertas', label: 'Alertas', icon: AlertTriangle, action: 'navigate' },
-  { href: '/sau', label: 'SAU', icon: Headset, action: 'navigate' },
+  { href: '/', label: 'Início', icon: Home },
+  { href: '/ferramentas', label: 'Ferramentas', icon: Wrench },
+  { href: '/streaming', label: 'AO VIVO', icon: Video },
+  { href: '/alertas', label: 'Alertas', icon: AlertTriangle },
+  { href: '/sau', label: 'SAU', icon: Headset },
 ];
 
 export default function Navigation() {
   const pathname = usePathname();
-  // Removido setIsChatOpen pois o chat não está mais no rodapé
-  // const { setIsChatOpen } = useAppLayout(); 
-
-  // Removida a função handleItemClick pois todas as ações são 'navigate'
-  // ou o chat foi removido do rodapé
 
   return (
     <>
@@ -32,10 +24,9 @@ export default function Navigation() {
         <div className="container mx-auto grid h-full grid-cols-5 items-stretch px-1">
           {navItems.map((item, index) => {
             const isActive = pathname === item.href;
-            // O item central é o terceiro item (índice 2) em uma lista de 5.
             const isCentralButton = index === 2 && item.label === 'AO VIVO';
 
-            const content = (
+            const itemContent = (
               <>
                 <item.icon
                   className={cn(
@@ -45,8 +36,8 @@ export default function Navigation() {
                   )}
                 />
                 <span className={cn(
-                  "truncate text-[10px] leading-tight", // Tamanho de fonte menor para 5 itens
-                  isCentralButton ? "mt-1 font-semibold text-foreground" : "text-muted-foreground",
+                  "truncate text-[10px] leading-tight",
+                  isCentralButton ? "mt-1 font-semibold text-destructive-foreground" : "text-muted-foreground",
                   isActive && !isCentralButton ? 'text-primary font-semibold' : '',
                   !isCentralButton && !isActive && 'group-hover:text-primary/80'
                 )}>
@@ -60,13 +51,13 @@ export default function Navigation() {
                 <Link
                   href={item.href}
                   key={item.href}
-                  className="menu-item-central relative flex flex-col items-center justify-center -top-3" // Ajuste no 'top' para o novo tamanho
+                  className="menu-item-central relative flex flex-col items-center justify-center -top-3"
                   passHref
                 >
                   <div className="live-icon-wrapper z-10">
-                    <div className="live-icon bg-destructive w-14 h-14 rounded-full flex items-center justify-center shadow-lg relative"> {/* Tamanho do ícone central um pouco menor */}
+                    <div className="live-icon bg-destructive w-14 h-14 rounded-full flex items-center justify-center shadow-lg relative">
                       <div className="pulse-ring-animation"></div>
-                      {content}
+                      {itemContent}
                     </div>
                   </div>
                 </Link>
@@ -74,11 +65,10 @@ export default function Navigation() {
             }
             
             const commonClasses = cn(
-              'group flex h-full flex-col items-center justify-center text-center no-underline transition-colors duration-150 pt-1 pb-0.5', // Ajuste no padding
+              'group relative flex h-full flex-col items-center justify-center text-center no-underline transition-colors duration-150 pt-1 pb-0.5',
                isActive ? 'text-primary font-semibold' : 'text-muted-foreground hover:text-primary/80'
             );
 
-            // Todos os itens são links de navegação agora
             return (
               <Link
                 key={item.href}
@@ -86,7 +76,12 @@ export default function Navigation() {
                 className={commonClasses}
                 passHref
               >
-                {content}
+                {itemContent}
+                {item.label === 'Alertas' && (
+                  <span className="absolute top-1 right-1.5 sm:right-2.5 bg-destructive text-destructive-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full pointer-events-none">
+                    +2
+                  </span>
+                )}
               </Link>
             );
           })}
