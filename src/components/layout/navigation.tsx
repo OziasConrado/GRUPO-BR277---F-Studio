@@ -3,8 +3,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Wrench, Video, AlertTriangle, Headset } from 'lucide-react';
+import { Home, Wrench, Video, AlertTriangle, Headset, PlusSquare, MessageCircle } from 'lucide-react'; // PlusSquare, MessageCircle might be unused now
 import { cn } from '@/lib/utils';
+// AppLayoutContext and related imports removed as chat is not opened from here anymore
 
 const navItems = [
   { href: '/', label: 'Início', icon: Home },
@@ -16,6 +17,12 @@ const navItems = [
 
 export default function Navigation() {
   const pathname = usePathname();
+  // const { setIsChatOpen } = useAppLayout(); // Removed
+
+  // const handleChatClick = (e: React.MouseEvent) => { // Removed
+  //   e.preventDefault(); // Prevent navigation if it was a link
+  //   setIsChatOpen(true);
+  // };
 
   return (
     <>
@@ -31,12 +38,13 @@ export default function Navigation() {
                 <item.icon
                   className={cn(
                     'mb-0.5 h-5 w-5 transition-transform duration-200 ease-out group-hover:scale-105',
-                    isActive ? 'scale-110' : '',
+                    isActive && !isCentralButton ? 'scale-110 text-primary' : '',
+                    isActive && isCentralButton ? 'scale-110' : '',
                     isCentralButton && 'h-7 w-7 text-destructive-foreground'
                   )}
                 />
                 <span className={cn(
-                  "truncate text-[10px] leading-tight", // Reduzido para acomodar 5 itens
+                  "truncate text-[10px] leading-tight",
                   isCentralButton ? "mt-1 font-semibold text-destructive-foreground" : "text-muted-foreground",
                   isActive && !isCentralButton ? 'text-primary font-semibold' : '',
                   !isCentralButton && !isActive && 'group-hover:text-primary/80'
@@ -44,6 +52,12 @@ export default function Navigation() {
                   {item.label}
                 </span>
               </>
+            );
+            
+            const commonClasses = cn(
+              'group relative flex h-full flex-col items-center justify-center text-center no-underline transition-colors duration-150 pt-1 pb-0.5',
+               isActive && !isCentralButton ? 'text-primary font-semibold' : 'text-muted-foreground hover:text-primary/80',
+               isActive && isCentralButton ? '' : '' // Central button handles its own active state via destructive bg
             );
 
             if (isCentralButton) {
@@ -55,7 +69,10 @@ export default function Navigation() {
                   passHref
                 >
                   <div className="live-icon-wrapper z-10">
-                    <div className="live-icon bg-destructive w-14 h-14 rounded-full flex items-center justify-center shadow-lg relative">
+                    <div className={cn(
+                      "live-icon bg-destructive w-14 h-14 rounded-full flex items-center justify-center shadow-lg relative",
+                      isActive ? "ring-2 ring-offset-2 ring-destructive ring-offset-background" : ""
+                    )}>
                       <div className="pulse-ring-animation"></div>
                       {itemContent}
                     </div>
@@ -64,11 +81,6 @@ export default function Navigation() {
               );
             }
             
-            const commonClasses = cn(
-              'group relative flex h-full flex-col items-center justify-center text-center no-underline transition-colors duration-150 pt-1 pb-0.5',
-               isActive ? 'text-primary font-semibold' : 'text-muted-foreground hover:text-primary/80'
-            );
-
             return (
               <Link
                 key={item.href}
@@ -78,7 +90,9 @@ export default function Navigation() {
               >
                 {itemContent}
                 {item.label === 'Alertas' && (
-                  <span className="absolute top-1 left-[calc(50%+0.25rem)] w-2 h-2 bg-destructive rounded-full pointer-events-none"></span>
+                  <span className="absolute top-1.5 right-[calc(50%-1.25rem)] transform translate-x-full -translate-y-1/4 text-[0.6rem] bg-destructive text-destructive-foreground rounded-full px-1.5 py-0.5 leading-none pointer-events-none shadow-md">
+                    +2
+                  </span>
                 )}
               </Link>
             );
