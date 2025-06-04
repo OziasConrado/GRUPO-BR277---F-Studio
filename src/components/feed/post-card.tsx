@@ -3,14 +3,14 @@
 
 import type { StaticImageData } from 'next/image';
 import Image from 'next/image';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle as PostCardTitleUI } from '@/components/ui/card'; // Renamed CardTitle to avoid conflict
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send } from 'lucide-react'; // X removed from here
+import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send } from 'lucide-react';
 import { useState, type ChangeEvent, type FormEvent, useCallback } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTrigger } from '@/components/ui/sheet'; // SheetClose removed
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'; // Added SheetTitle
 import { Separator } from '@/components/ui/separator';
 
 export interface ReactionState {
@@ -32,7 +32,7 @@ export interface ReplyProps {
 
 export interface CommentProps {
   id: string;
-  userName: string;
+  userName:string;
   userAvatarUrl?: string | StaticImageData;
   dataAIAvatarHint?: string;
   timestamp: string;
@@ -44,8 +44,7 @@ export interface CommentProps {
 export interface PostReactions {
   thumbsUp: number;
   thumbsDown: number;
-  // Other emojis removed as per request
-  heart: number; // Keep for data structure consistency, though not displayed via dedicated buttons
+  heart: number;
   laugh: number;
   wow: number;
   sad: number;
@@ -62,15 +61,15 @@ export interface PostCardProps {
   timestamp: string;
   text: string;
   imageUrl?: string | StaticImageData;
-  reactions: PostReactions; // This is for the main post, initial state
+  reactions: PostReactions;
   commentsData: CommentProps[];
 }
 
 
 interface ReplyingToInfo {
   type: 'comment' | 'reply';
-  parentId: string; // commentId if type is 'comment', or replyId if type is 'reply'
-  grandParentId?: string; // commentId if replying to a reply
+  parentId: string;
+  grandParentId?: string;
 }
 
 
@@ -126,23 +125,21 @@ export default function PostCard({
     itemId: string,
     reactionType: 'thumbsUp' | 'thumbsDown',
     itemType: 'comment' | 'reply',
-    commentId?: string, // only for replies
-    parentReplyId?: string // only for nested replies (if applicable)
+    commentId?: string,
   ) => {
     setLocalCommentsData(prevComments =>
       prevComments.map(comment => {
-        // Helper function to update reactions for an item (comment or reply)
         const updateReaction = (item: CommentProps | ReplyProps): CommentProps | ReplyProps => {
           const currentReaction = item.reactions.userReaction;
           let newThumbsUp = item.reactions.thumbsUp;
           let newThumbsDown = item.reactions.thumbsDown;
           let newUserReaction: 'thumbsUp' | 'thumbsDown' | null = null;
 
-          if (currentReaction === reactionType) { // Clicked the same reaction again (un-react)
+          if (currentReaction === reactionType) {
             if (reactionType === 'thumbsUp') newThumbsUp--;
             else newThumbsDown--;
             newUserReaction = null;
-          } else { // Clicked a new reaction or switched reaction
+          } else {
             if (currentReaction === 'thumbsUp') newThumbsUp--;
             if (currentReaction === 'thumbsDown') newThumbsDown--;
             
@@ -161,12 +158,10 @@ export default function PostCard({
           };
         };
 
-        // Update comment reactions
         if (itemType === 'comment' && comment.id === itemId) {
           return updateReaction(comment) as CommentProps;
         }
 
-        // Update reply reactions (recursive for nesting)
         if (comment.replies) {
           const updateNestedReplies = (replies: ReplyProps[]): ReplyProps[] => {
             return replies.map(reply => {
@@ -341,7 +336,7 @@ export default function PostCard({
           </AvatarFallback>
         </Avatar>
         <div>
-          <CardTitle className="text-base font-headline">{userName}</CardTitle>
+          <PostCardTitleUI className="text-base font-headline">{userName}</PostCardTitleUI>
           <p className="text-xs text-muted-foreground">{timestamp}</p>
         </div>
       </CardHeader>
@@ -371,8 +366,8 @@ export default function PostCard({
           </Button>
 
           <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0 rounded-t-[25px]">
-            <SheetHeader className="p-4 border-b border-border flex flex-row justify-center items-center">
-              {/* Title removed, Description removed. Reactions are now here. */}
+            <SheetHeader className="p-4 border-b border-border flex flex-row justify-center items-center relative">
+              <SheetTitle className="sr-only">Comentários e Reações do Post</SheetTitle>
               <div className="flex items-center justify-center gap-4 py-2">
                 <Button
                   variant="ghost"
@@ -395,11 +390,9 @@ export default function PostCard({
                   <span className="ml-1 text-xs">({localPostReactions.thumbsDown})</span>
                 </Button>
               </div>
-              {/* Default SheetContent close button will be used (top-right) */}
             </SheetHeader>
 
             <div className="flex-grow overflow-y-auto p-4 space-y-4">
-              {/* Comment input form moved to the bottom */}
               {localCommentsData.length > 0 && <Separator />}
 
               <div className="space-y-3">
@@ -479,7 +472,6 @@ export default function PostCard({
               </div>
             </div>
             
-            {/* Comment input form moved here */}
             <div className="p-4 border-t border-border bg-background">
                  <form onSubmit={handleAddComment} className="flex gap-2 items-start">
                     <Avatar className="mt-1">
