@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send, X } from 'lucide-react';
 import { useState, type ChangeEvent, type FormEvent, useCallback } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetClose } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetClose, SheetTrigger } from '@/components/ui/sheet'; // SheetTrigger ADICIONADO AQUI
 import { Separator } from '@/components/ui/separator';
 
 export interface ReplyReactions {
@@ -247,7 +247,7 @@ export default function PostCard({
           <div key={reply.id} className="space-y-1">
             <div className="flex items-start space-x-2">
               <Avatar className="h-7 w-7">
-                <AvatarImage src={reply.userAvatarUrl} alt={reply.userName} data-ai-hint={reply.dataAIAvatarHint} />
+                <AvatarImage src={reply.userAvatarUrl as string} alt={reply.userName} data-ai-hint={reply.dataAIAvatarHint} />
                 <AvatarFallback>{reply.userName.substring(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div className="flex-grow p-2 rounded-md bg-muted/20 dark:bg-slate-700/20">
