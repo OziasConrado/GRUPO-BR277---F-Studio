@@ -36,7 +36,7 @@ export default function Navigation() {
                   )}
                 />
                 <span className={cn(
-                  "truncate text-[10px] leading-tight",
+                  "truncate text-[10px] leading-tight", // Reduzido para acomodar 5 itens
                   isCentralButton ? "mt-1 font-semibold text-destructive-foreground" : "text-muted-foreground",
                   isActive && !isCentralButton ? 'text-primary font-semibold' : '',
                   !isCentralButton && !isActive && 'group-hover:text-primary/80'
@@ -78,9 +78,7 @@ export default function Navigation() {
               >
                 {itemContent}
                 {item.label === 'Alertas' && (
-                  <span className="absolute top-1 right-1.5 sm:right-2.5 bg-destructive text-destructive-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full pointer-events-none">
-                    +2
-                  </span>
+                  <span className="absolute top-1 left-[calc(50%+0.25rem)] w-2 h-2 bg-destructive rounded-full pointer-events-none"></span>
                 )}
               </Link>
             );
