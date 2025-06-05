@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send, MoreVertical, Trash2, Edit3, Flag } from 'lucide-react';
 import { useState, type ChangeEvent, type FormEvent, useCallback, useEffect } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,7 +27,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -65,7 +64,6 @@ export interface CommentProps {
 export interface PostReactions {
   thumbsUp: number;
   thumbsDown: number;
-  // heart, laugh, wow, sad, angry removed
 }
 
 
@@ -74,7 +72,7 @@ export interface PostCardProps {
   userName: string;
   userAvatarUrl?: string | StaticImageData;
   dataAIAvatarHint?: string;
-  userLocation?: string; // Nova propriedade
+  userLocation?: string; 
   dataAIImageHint?: string;
   timestamp: string;
   text: string;
@@ -87,7 +85,7 @@ export interface PostCardProps {
 interface ReplyingToInfo {
   type: 'comment' | 'reply';
   parentId: string;
-  grandParentId?: string;
+  grandParentId?: string; // Used when replying to a reply, to know the top-level comment
   userNameToReply?: string;
 }
 
@@ -167,7 +165,7 @@ export default function PostCard({
     itemId: string,
     reactionType: 'thumbsUp' | 'thumbsDown',
     itemType: 'comment' | 'reply',
-    commentIdForReply?: string,
+    commentIdForReply?: string, // This is the grandParentId for replies to replies
   ) => {
     setLocalCommentsData(prevComments =>
       prevComments.map(comment => {
@@ -177,14 +175,16 @@ export default function PostCard({
           let newThumbsDown = item.reactions.thumbsDown;
           let newUserReaction: 'thumbsUp' | 'thumbsDown' | null = null;
 
-          if (currentReaction === reactionType) {
+          if (currentReaction === reactionType) { // Deselecting current reaction
             if (reactionType === 'thumbsUp') newThumbsUp--;
             else newThumbsDown--;
             newUserReaction = null;
-          } else {
+          } else { // Selecting a new reaction or switching reaction
+            // First, undo the previous reaction if it exists
             if (currentReaction === 'thumbsUp') newThumbsUp--;
             if (currentReaction === 'thumbsDown') newThumbsDown--;
             
+            // Apply the new reaction
             if (reactionType === 'thumbsUp') newThumbsUp++;
             else newThumbsDown++;
             newUserReaction = reactionType;
@@ -193,30 +193,34 @@ export default function PostCard({
           return {
             ...item,
             reactions: {
-              thumbsUp: Math.max(0, newThumbsUp),
+              thumbsUp: Math.max(0, newThumbsUp), // Ensure count doesn't go below 0
               thumbsDown: Math.max(0, newThumbsDown),
               userReaction: newUserReaction,
             },
           };
         };
 
+        // Target is a top-level comment
         if (itemType === 'comment' && comment.id === itemId) {
           return updateReaction(comment) as CommentProps;
         }
 
+        // Target is a reply or a nested reply
         if (comment.replies) {
-          const updateNestedReplies = (replies: ReplyProps[]): ReplyProps[] => {
+          const updateNestedReplies = (replies: ReplyProps[], currentGrandParentId: string): ReplyProps[] => {
             return replies.map(reply => {
-              if (itemType === 'reply' && reply.id === itemId) {
+              // Target is a direct reply to the comment
+              if (itemType === 'reply' && reply.id === itemId && commentIdForReply === currentGrandParentId) {
                 return updateReaction(reply) as ReplyProps;
               }
+              // Recursively update nested replies
               if (reply.replies) {
-                return { ...reply, replies: updateNestedReplies(reply.replies) };
+                return { ...reply, replies: updateNestedReplies(reply.replies, currentGrandParentId) };
               }
               return reply;
             });
           };
-          return { ...comment, replies: updateNestedReplies(comment.replies) };
+          return { ...comment, replies: updateNestedReplies(comment.replies, comment.id) };
         }
         return comment;
       })
@@ -229,7 +233,7 @@ export default function PostCard({
     if (!newCommentText.trim()) return;
     const newComment: CommentProps = {
       id: `c${Date.now()}`,
-      userName: 'Usuário Atual',
+      userName: 'Usuário Atual', 
       userAvatarUrl: 'https://placehold.co/40x40.png?text=UA',
       dataAIAvatarHint: 'current user',
       timestamp: 'Agora mesmo',
@@ -258,15 +262,18 @@ export default function PostCard({
 
     setLocalCommentsData(prevComments =>
       prevComments.map(comment => {
+        // Replying to a top-level comment
         if (replyingTo.type === 'comment' && comment.id === replyingTo.parentId) {
           return { ...comment, replies: [newReply, ...(comment.replies || [])] };
-        } else if (replyingTo.type === 'reply' && comment.id === replyingTo.grandParentId) {
+        } 
+        // Replying to a reply (nested reply)
+        else if (replyingTo.type === 'reply' && comment.id === replyingTo.grandParentId) {
           const addNestedReply = (replies: ReplyProps[]): ReplyProps[] => {
             return replies.map(reply => {
               if (reply.id === replyingTo.parentId) {
                 return { ...reply, replies: [newReply, ...(reply.replies || [])] };
               }
-              if (reply.replies) {
+              if (reply.replies) { // Recursively search in deeper replies
                 return { ...reply, replies: addNestedReply(reply.replies) };
               }
               return reply;
@@ -308,7 +315,7 @@ export default function PostCard({
 
   const renderReplies = (replies: ReplyProps[] | undefined, commentIdForReply: string, depth = 0) => {
     if (!replies || replies.length === 0) return null;
-    const MAX_DEPTH = 1;
+    const MAX_DEPTH = 1; // Allow one level of nested replies (reply to a reply)
 
     return (
       <div className={`ml-6 mt-2 space-y-2 pt-2 ${depth > 0 ? 'pl-3 border-l-2 border-muted/30' : 'pl-3 border-l-2 border-muted/50'}`}>
@@ -395,10 +402,10 @@ export default function PostCard({
     <>
     <Card className="w-full max-w-2xl mx-auto mb-6 shadow-lg rounded-xl overflow-hidden">
       <CardHeader className="flex flex-row items-start space-x-3 p-4">
-        <Avatar>
+        <Avatar className="h-10 w-10">
           {userAvatarUrl ? <AvatarImage src={userAvatarUrl as string} alt={userName} data-ai-hint={dataAIAvatarHint} /> : null}
           <AvatarFallback>
-            <UserCircle className="h-10 w-10" /> {/* Aumentado para h-10 w-10 */}
+            {userName ? userName.substring(0,2).toUpperCase() : <UserCircle className="h-10 w-10" />}
           </AvatarFallback>
         </Avatar>
         <div className="flex justify-between items-start w-full">
@@ -418,7 +425,7 @@ export default function PostCard({
             className="p-0 h-auto text-xs text-primary mb-3"
             onClick={() => setIsTextExpanded(!isTextExpanded)}
           >
-            {isTextExpanded ? 'Ver menos' : 'Ver mais...'}
+            {isTextExpanded ? 'Ver menos.' : 'Ver mais...'}
           </Button>
         )}
         {imageUrl && (
@@ -456,12 +463,12 @@ export default function PostCard({
                 <ThumbsDown className={`h-5 w-5 ${currentUserPostReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
                  {localPostReactions.thumbsDown > 0 && <span className="ml-1 text-xs tabular-nums">({localPostReactions.thumbsDown})</span>}
             </Button>
-            <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary p-1.5 h-auto" onClick={() => setIsSheetOpen(true)}>
-                    <MessageSquare className="h-5 w-5" />
-                    {localCommentsData.length > 0 && <span className="ml-1 text-xs tabular-nums">({localCommentsData.length})</span>}
-                </Button>
-            </SheetTrigger>
+            
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary p-1.5 h-auto" onClick={() => setIsSheetOpen(true)}>
+                <MessageSquare className="h-5 w-5" />
+                {localCommentsData.length > 0 && <span className="ml-1 text-xs tabular-nums">({localCommentsData.length})</span>}
+            </Button>
+            
              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary p-1.5 h-auto">
                 <Share2 className="h-5 w-5" />
             </Button>
@@ -493,7 +500,6 @@ export default function PostCard({
 
 
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            {/* SheetTrigger is now part of CardFooter, no need for it here explicitly if CardFooter button controls it */}
             <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0">
                 <SheetHeader className="p-4 border-b border-border flex flex-row justify-center items-center relative">
                   <SheetTitle className="sr-only">Comentários e Reações do Post</SheetTitle>
@@ -599,7 +605,7 @@ export default function PostCard({
 
                 <div className="p-4 border-t border-border bg-background">
                     <form onSubmit={handleAddComment} className="flex gap-2 items-start">
-                        <Avatar className="mt-1">
+                        <Avatar className="mt-1 h-10 w-10">
                         <AvatarImage src="https://placehold.co/40x40.png?text=UA" alt="Usuário Atual" data-ai-hint="current user" />
                         <AvatarFallback>UA</AvatarFallback>
                         </Avatar>
@@ -610,7 +616,7 @@ export default function PostCard({
                         className="rounded-lg flex-grow bg-background/70 min-h-[40px] resize-none text-base"
                         rows={1}
                         />
-                        <Button type="submit" size="icon" className="rounded-lg shrink-0">
+                        <Button type="submit" size="icon" className="rounded-lg shrink-0 h-10 w-10">
                         <Send className="h-4 w-4" />
                         </Button>
                     </form>
@@ -658,5 +664,3 @@ export default function PostCard({
     </>
   );
 }
-
-    
