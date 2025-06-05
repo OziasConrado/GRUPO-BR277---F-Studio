@@ -7,16 +7,11 @@ import StoryViewerModal from '@/components/stories/StoryViewerModal';
 import { Separator } from '@/components/ui/separator';
 import { AlertCircle, Star, TrendingUp, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import Link from 'next/link'; 
+import Link from 'next/link';
 
 const defaultReactions: PostReactions = {
   thumbsUp: 0,
   thumbsDown: 0,
-  heart: 0,
-  laugh: 0,
-  wow: 0,
-  sad: 0,
-  angry: 0,
 };
 
 const mockAdminStories: StoryCircleProps[] = [
@@ -77,11 +72,12 @@ const mockPosts: PostCardProps[] = [
     userName: 'Carlos Caminhoneiro',
     userAvatarUrl: 'https://placehold.co/40x40.png?text=CC',
     dataAIAvatarHint: 'truck driver',
+    userLocation: 'Curitiba, PR',
     timestamp: '2 horas atrás',
-    text: 'Estrada tranquila hoje na BR-116! Sol brilhando e sem trânsito. Bom dia a todos! Aproveitando para testar o novo sistema de posts aqui no app. A interface está bem fluida e fácil de usar. Espero que todos tenham uma ótima viagem e que o dia seja produtivo para quem está na lida. Cuidado nas curvas e mantenham a atenção!',
+    text: 'Estrada tranquila hoje na BR-116! Sol brilhando e sem trânsito. Bom dia a todos! Aproveitando para testar o novo sistema de posts aqui no app. A interface está bem fluida e fácil de usar. Espero que todos tenham uma ótima viagem e que o dia seja produtivo para quem está na lida. Cuidado nas curvas e mantenham a atenção! Mais um pouco de texto para testar a funcionalidade de ver mais e ver menos, garantindo que tenhamos mais de 170 caracteres para que o botão apareça corretamente.',
     imageUrl: 'https://placehold.co/600x600.png',
     dataAIImageHint: 'highway sunny day square',
-    reactions: { ...defaultReactions, thumbsUp: 152, heart: 25, laugh: 10, thumbsDown: 5, wow: 12 },
+    reactions: { ...defaultReactions, thumbsUp: 152, thumbsDown: 5 },
     commentsData: [
       {
         id: 'c1-1',
@@ -90,6 +86,7 @@ const mockPosts: PostCardProps[] = [
         dataAIAvatarHint: 'logistics woman',
         timestamp: '1 hora atrás',
         text: 'Que ótimo, Carlos! Boas viagens!',
+        reactions: { thumbsUp: 10, thumbsDown: 1, userReaction: null },
         replies: [
           {
             id: 'r1-1-1',
@@ -98,10 +95,9 @@ const mockPosts: PostCardProps[] = [
             dataAIAvatarHint: 'truck driver',
             timestamp: '30 minutos atrás',
             text: 'Obrigado, Mariana!',
-            reactions: { thumbsUp: 0, thumbsDown: 0 }
+            reactions: { thumbsUp: 2, thumbsDown: 0, userReaction: null }
           }
         ],
-        reactions: { thumbsUp: 0, thumbsDown: 0 }
       },
       {
         id: 'c1-2',
@@ -110,7 +106,7 @@ const mockPosts: PostCardProps[] = [
         dataAIAvatarHint: 'male traveler',
         timestamp: '45 minutos atrás',
         text: 'Também passei por lá, realmente um dia bom pra rodar.',
-        reactions: { thumbsUp: 0, thumbsDown: 0 }
+        reactions: { thumbsUp: 5, thumbsDown: 0, userReaction: null }
       }
     ],
   },
@@ -119,11 +115,12 @@ const mockPosts: PostCardProps[] = [
     userName: 'Ana Viajante',
     userAvatarUrl: 'https://placehold.co/40x40.png?text=AV',
     dataAIAvatarHint: 'woman traveler',
+    userLocation: 'São Paulo, SP',
     timestamp: '5 horas atrás',
     text: 'Alerta de neblina densa na Serra do Mar. Redobrem a atenção, pessoal! A visibilidade está bastante comprometida e a pista pode estar escorregadia. Recomendo acender os faróis de neblina e reduzir a velocidade consideravelmente.',
     imageUrl: 'https://placehold.co/600x600.png',
     dataAIImageHint: 'foggy mountain road square',
-    reactions: { ...defaultReactions, thumbsUp: 98, heart: 15, sad: 20, thumbsDown: 2 },
+    reactions: { ...defaultReactions, thumbsUp: 98, thumbsDown: 2 },
     commentsData: [
       {
         id: 'c2-1',
@@ -132,7 +129,7 @@ const mockPosts: PostCardProps[] = [
         dataAIAvatarHint: 'safety logo',
         timestamp: '4 horas atrás',
         text: 'Obrigado pelo alerta, Ana! Informação crucial.',
-        reactions: { thumbsUp: 0, thumbsDown: 0 }
+        reactions: { thumbsUp: 15, thumbsDown: 0, userReaction: null }
       }
     ],
   },
@@ -141,11 +138,12 @@ const mockPosts: PostCardProps[] = [
     userName: 'Rota Segura Admin',
     userAvatarUrl: 'https://placehold.co/40x40.png?text=RS',
     dataAIAvatarHint: 'app logo',
+    userLocation: 'Brasil',
     timestamp: '1 dia atrás',
     text: 'Nova funcionalidade no app: Checklist de Viagem aprimorado! Confira na seção de Ferramentas. Agora com mais itens e a possibilidade de salvar seus checklists para viagens futuras. Feedback é sempre bem-vindo!',
     imageUrl: 'https://placehold.co/600x600.png',
     dataAIImageHint: 'app interface checklist square',
-    reactions: { ...defaultReactions, thumbsUp: 210, heart: 50, wow: 30 },
+    reactions: { ...defaultReactions, thumbsUp: 210, thumbsDown: 3 },
     commentsData: [],
   },
 ];

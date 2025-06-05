@@ -8,10 +8,31 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send } from 'lucide-react';
-import { useState, type ChangeEvent, type FormEvent, useCallback } from 'react';
+import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send, MoreVertical, Trash2, Edit3, Flag } from 'lucide-react';
+import { useState, type ChangeEvent, type FormEvent, useCallback, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from '@/components/ui/sheet';
-import { Separator } from '@/components/ui/separator';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useToast } from '@/hooks/use-toast';
+
 
 export interface ReactionState {
   thumbsUp: number;
@@ -44,11 +65,7 @@ export interface CommentProps {
 export interface PostReactions {
   thumbsUp: number;
   thumbsDown: number;
-  heart: number; 
-  laugh: number;
-  wow: number;
-  sad: number;
-  angry: number;
+  // heart, laugh, wow, sad, angry removed
 }
 
 
@@ -57,6 +74,7 @@ export interface PostCardProps {
   userName: string;
   userAvatarUrl?: string | StaticImageData;
   dataAIAvatarHint?: string;
+  userLocation?: string; // Nova propriedade
   dataAIImageHint?: string;
   timestamp: string;
   text: string;
@@ -68,10 +86,21 @@ export interface PostCardProps {
 
 interface ReplyingToInfo {
   type: 'comment' | 'reply';
-  parentId: string; 
-  grandParentId?: string; 
+  parentId: string;
+  grandParentId?: string;
   userNameToReply?: string;
 }
+
+const reportReasons = [
+  { id: "suicide", label: "Suicídio, Imagem forte e/ou Automutilação." },
+  { id: "minor", label: "Problema envolvendo menor de 18 anos." },
+  { id: "bullying", label: "Bullying, assédio ou abuso." },
+  { id: "violence", label: "Conteúdo violento que promove o ódio ou é perturbador." },
+  { id: "adult", label: "Conteúdo adulto ou nudez direcionado." },
+  { id: "scam", label: "Golpe, fraude ou perfil falso." },
+  { id: "ip", label: "Propriedade Intelectual." },
+  { id: "other", label: "Outros, informe o motivo..." },
+];
 
 
 export default function PostCard({
@@ -79,6 +108,7 @@ export default function PostCard({
   userName,
   userAvatarUrl,
   dataAIAvatarHint,
+  userLocation,
   timestamp,
   text,
   imageUrl,
@@ -89,6 +119,11 @@ export default function PostCard({
   const [currentUserPostReaction, setCurrentUserPostReaction] = useState<'thumbsUp' | 'thumbsDown' | null>(null);
   const [localPostReactions, setLocalPostReactions] = useState(initialReactions);
   const [isTextExpanded, setIsTextExpanded] = useState(false);
+  const { toast } = useToast();
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [selectedReportReason, setSelectedReportReason] = useState<string | undefined>(undefined);
+  const [otherReportReasonText, setOtherReportReasonText] = useState('');
+
 
   const MAX_CHARS = 170;
   const needsTruncation = text.length > MAX_CHARS;
@@ -114,7 +149,6 @@ export default function PostCard({
   const handlePostReactionClick = (reactionType: 'thumbsUp' | 'thumbsDown') => {
     setLocalPostReactions(prevReactions => {
       const newReactions = { ...prevReactions };
-      
       if (currentUserPostReaction === reactionType) {
         newReactions[reactionType]--;
         setCurrentUserPostReaction(null);
@@ -133,7 +167,7 @@ export default function PostCard({
     itemId: string,
     reactionType: 'thumbsUp' | 'thumbsDown',
     itemType: 'comment' | 'reply',
-    commentIdForReply?: string, 
+    commentIdForReply?: string,
   ) => {
     setLocalCommentsData(prevComments =>
       prevComments.map(comment => {
@@ -143,13 +177,13 @@ export default function PostCard({
           let newThumbsDown = item.reactions.thumbsDown;
           let newUserReaction: 'thumbsUp' | 'thumbsDown' | null = null;
 
-          if (currentReaction === reactionType) { 
+          if (currentReaction === reactionType) {
             if (reactionType === 'thumbsUp') newThumbsUp--;
             else newThumbsDown--;
             newUserReaction = null;
-          } else { 
-            if (currentReaction === 'thumbsUp') newThumbsUp--; 
-            if (currentReaction === 'thumbsDown') newThumbsDown--; 
+          } else {
+            if (currentReaction === 'thumbsUp') newThumbsUp--;
+            if (currentReaction === 'thumbsDown') newThumbsDown--;
             
             if (reactionType === 'thumbsUp') newThumbsUp++;
             else newThumbsDown++;
@@ -248,10 +282,33 @@ export default function PostCard({
     setReplyingTo(null);
   };
 
+  const handleDeletePost = () => {
+    toast({ title: "Post Excluído", description: "Esta ação seria implementada no backend." });
+  };
+
+  const handleEditPost = () => {
+    toast({ title: "Editar Post", description: "Funcionalidade de edição a ser implementada." });
+  };
+  
+  const handleReportSubmit = () => {
+    if (!selectedReportReason) {
+        toast({ variant: "destructive", title: "Erro", description: "Por favor, selecione um motivo." });
+        return;
+    }
+    if (selectedReportReason === "other" && !otherReportReasonText.trim()) {
+        toast({ variant: "destructive", title: "Erro", description: "Por favor, especifique o motivo em 'Outros'." });
+        return;
+    }
+    toast({ title: "Denúncia Enviada", description: `Motivo: ${selectedReportReason === "other" ? otherReportReasonText : reportReasons.find(r=>r.id === selectedReportReason)?.label}` });
+    setIsReportModalOpen(false);
+    setSelectedReportReason(undefined);
+    setOtherReportReasonText('');
+  };
+
 
   const renderReplies = (replies: ReplyProps[] | undefined, commentIdForReply: string, depth = 0) => {
     if (!replies || replies.length === 0) return null;
-    const MAX_DEPTH = 1; 
+    const MAX_DEPTH = 1;
 
     return (
       <div className={`ml-6 mt-2 space-y-2 pt-2 ${depth > 0 ? 'pl-3 border-l-2 border-muted/30' : 'pl-3 border-l-2 border-muted/50'}`}>
@@ -272,7 +329,7 @@ export default function PostCard({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="p-0 h-auto text-xs text-muted-foreground hover:text-primary hover:bg-transparent focus:bg-transparent"
+                    className="p-0 h-auto text-xs text-muted-foreground hover:text-primary focus:text-primary hover:bg-transparent focus:bg-transparent"
                     onClick={() => handleItemReaction(reply.id, 'thumbsUp', 'reply', commentIdForReply)}
                   >
                     <ThumbsUp className={`mr-1 h-3.5 w-3.5 ${reply.reactions.userReaction === 'thumbsUp' ? 'fill-primary text-primary' : ''}`} />
@@ -281,7 +338,7 @@ export default function PostCard({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="p-0 h-auto text-xs text-muted-foreground hover:text-destructive hover:bg-transparent focus:bg-transparent"
+                    className="p-0 h-auto text-xs text-muted-foreground hover:text-destructive focus:text-destructive hover:bg-transparent focus:bg-transparent"
                     onClick={() => handleItemReaction(reply.id, 'thumbsDown', 'reply', commentIdForReply)}
                   >
                     <ThumbsDown className={`mr-1 h-3.5 w-3.5 ${reply.reactions.userReaction === 'thumbsDown' ? 'fill-destructive text-destructive' : ''}`} />
@@ -335,17 +392,21 @@ export default function PostCard({
 
 
   return (
+    <>
     <Card className="w-full max-w-2xl mx-auto mb-6 shadow-lg rounded-xl overflow-hidden">
-      <CardHeader className="flex flex-row items-center space-x-3 p-4">
+      <CardHeader className="flex flex-row items-start space-x-3 p-4">
         <Avatar>
           {userAvatarUrl ? <AvatarImage src={userAvatarUrl as string} alt={userName} data-ai-hint={dataAIAvatarHint} /> : null}
           <AvatarFallback>
-            <UserCircle className="h-6 w-6" />
+            <UserCircle className="h-10 w-10" /> {/* Aumentado para h-10 w-10 */}
           </AvatarFallback>
         </Avatar>
-        <div>
-          <PostCardTitleUI className="text-base font-headline">{userName}</PostCardTitleUI>
-          <p className="text-xs text-muted-foreground">{timestamp}</p>
+        <div className="flex justify-between items-start w-full">
+            <div>
+                <PostCardTitleUI className="text-base font-headline">{userName}</PostCardTitleUI>
+                {userLocation && <p className="text-xs text-muted-foreground">{userLocation}</p>}
+            </div>
+            <p className="text-xs text-muted-foreground whitespace-nowrap pl-2">{timestamp}</p>
         </div>
       </CardHeader>
       <CardContent className="p-4 pt-0">
@@ -372,148 +433,229 @@ export default function PostCard({
           </div>
         )}
       </CardContent>
-      <CardFooter className="flex justify-end p-4 border-t border-border">
-        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary rounded-md">
-              <MessageSquare className="mr-2 h-4 w-4" /> {localCommentsData.length} Comentários
+
+      <CardFooter className="flex items-center justify-between p-2 pt-1 border-t border-border/50">
+        <div className="flex items-center gap-1">
+            <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handlePostReactionClick('thumbsUp')}
+                className={`p-1.5 h-auto hover:bg-transparent focus:bg-transparent ${currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
+                aria-label="Curtir"
+            >
+                <ThumbsUp className={`h-5 w-5 ${currentUserPostReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
+                {localPostReactions.thumbsUp > 0 && <span className="ml-1 text-xs tabular-nums">({localPostReactions.thumbsUp})</span>}
             </Button>
-          </SheetTrigger>
-          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary rounded-md ml-2">
-            <Share2 className="mr-2 h-4 w-4" /> Compartilhar
-          </Button>
-
-          <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0 rounded-t-[25px]">
-            <SheetHeader className="p-4 border-b border-border flex flex-row justify-center items-center relative">
-              <SheetTitle className="sr-only">Comentários e Reações do Post</SheetTitle>
-              <div className="flex items-center justify-center gap-4 py-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handlePostReactionClick('thumbsUp')}
-                  className={`p-1 h-auto hover:bg-transparent focus:bg-transparent ${currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground'}`}
-                  aria-label="Curtir"
-                >
-                  <ThumbsUp className={`h-5 w-5 ${currentUserPostReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
-                  <span className="ml-1 text-xs">({localPostReactions.thumbsUp})</span>
+            <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handlePostReactionClick('thumbsDown')}
+                className={`p-1.5 h-auto hover:bg-transparent focus:bg-transparent ${currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'}`}
+                aria-label="Não curtir"
+            >
+                <ThumbsDown className={`h-5 w-5 ${currentUserPostReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
+                 {localPostReactions.thumbsDown > 0 && <span className="ml-1 text-xs tabular-nums">({localPostReactions.thumbsDown})</span>}
+            </Button>
+            <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary p-1.5 h-auto" onClick={() => setIsSheetOpen(true)}>
+                    <MessageSquare className="h-5 w-5" />
+                    {localCommentsData.length > 0 && <span className="ml-1 text-xs tabular-nums">({localCommentsData.length})</span>}
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handlePostReactionClick('thumbsDown')}
-                  className={`p-1 h-auto hover:bg-transparent focus:bg-transparent ${currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground'}`}
-                  aria-label="Não curtir"
-                >
-                  <ThumbsDown className={`h-5 w-5 ${currentUserPostReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
-                  <span className="ml-1 text-xs">({localPostReactions.thumbsDown})</span>
+            </SheetTrigger>
+             <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary p-1.5 h-auto">
+                <Share2 className="h-5 w-5" />
+            </Button>
+        </div>
+
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary p-1.5 h-auto">
+                    <MoreVertical className="h-5 w-5" />
                 </Button>
-              </div>
-            </SheetHeader>
-
-            <div className="flex-grow overflow-y-auto p-4 space-y-4">
-              {localCommentsData.map(comment => (
-                <div key={comment.id} className="space-y-1">
-                  <div className="flex items-start space-x-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={comment.userAvatarUrl as string} alt={comment.userName} data-ai-hint={comment.dataAIAvatarHint} />
-                      <AvatarFallback>{comment.userName.substring(0, 2).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-grow p-3 rounded-lg bg-muted/30 dark:bg-slate-700/30">
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs font-semibold font-headline">{comment.userName}</p>
-                        <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
-                      </div>
-                      <p className="text-base mt-1">{comment.text}</p>
-                      <div className="flex items-center mt-1.5 space-x-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="p-0 h-auto text-xs text-muted-foreground hover:text-primary hover:bg-transparent focus:bg-transparent"
-                          onClick={() => handleItemReaction(comment.id, 'thumbsUp', 'comment')}
-                        >
-                          <ThumbsUp className={`mr-1 h-3.5 w-3.5 ${comment.reactions.userReaction === 'thumbsUp' ? 'fill-primary text-primary' : ''}`} />
-                           {comment.reactions.thumbsUp > 0 ? comment.reactions.thumbsUp : ''}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="p-0 h-auto text-xs text-muted-foreground hover:text-destructive hover:bg-transparent focus:bg-transparent"
-                          onClick={() => handleItemReaction(comment.id, 'thumbsDown', 'comment')}
-                        >
-                          <ThumbsDown className={`mr-1 h-3.5 w-3.5 ${comment.reactions.userReaction === 'thumbsDown' ? 'fill-destructive text-destructive' : ''}`} />
-                           {comment.reactions.thumbsDown > 0 ? comment.reactions.thumbsDown : ''}
-                        </Button>
-                        <Button
-                          variant="link"
-                          size="sm"
-                          className="p-0 h-auto text-xs text-primary ml-1"
-                          onClick={() => {
-                            if (replyingTo?.type === 'comment' && replyingTo.parentId === comment.id) {
-                              setReplyingTo(null);
-                              setNewReplyText('');
-                            } else {
-                              setReplyingTo({ type: 'comment', parentId: comment.id, userNameToReply: comment.userName });
-                              setNewReplyText('');
-                            }
-                          }}
-                        >
-                          Responder
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {replyingTo?.type === 'comment' && replyingTo.parentId === comment.id && (
-                    <form onSubmit={handleAddReply} className="flex gap-2 items-start ml-10 mt-1">
-                      <Avatar className="mt-1 h-8 w-8">
-                        <AvatarImage src="https://placehold.co/32x32.png?text=UA" alt="Usuário Atual" data-ai-hint="current user" />
-                        <AvatarFallback>UA</AvatarFallback>
-                      </Avatar>
-                      <Input
-                        placeholder={`Respondendo a ${comment.userName}...`}
-                        value={newReplyText}
-                        onChange={(e: ChangeEvent<HTMLInputElement>) => setNewReplyText(e.target.value)}
-                        className="rounded-lg flex-grow h-10 bg-background/70 text-base" 
-                        autoFocus
-                      />
-                      <Button type="submit" size="icon" className="rounded-lg h-10 w-10 shrink-0">
-                        <Send className="h-4 w-4" />
-                      </Button>
-                    </form>
-                  )}
-                  {renderReplies(comment.replies, comment.id)}
-                </div>
-              ))}
-            </div>
-            
-            <div className="p-4 border-t border-border bg-background">
-                 <form onSubmit={handleAddComment} className="flex gap-2 items-start">
-                    <Avatar className="mt-1">
-                    <AvatarImage src="https://placehold.co/40x40.png?text=UA" alt="Usuário Atual" data-ai-hint="current user" />
-                    <AvatarFallback>UA</AvatarFallback>
-                    </Avatar>
-                    <Textarea
-                    placeholder="Escreva um comentário..."
-                    value={newCommentText}
-                    onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setNewCommentText(e.target.value)}
-                    className="rounded-lg flex-grow bg-background/70 min-h-[40px] resize-none text-base" 
-                    rows={1}
-                    />
-                    <Button type="submit" size="icon" className="rounded-lg shrink-0">
-                    <Send className="h-4 w-4" />
-                    </Button>
-                </form>
-            </div>
-
-            <div className="p-4 border-t border-border bg-background">
-              <div className="h-[50px] bg-muted/30 rounded flex items-center justify-center text-sm text-muted-foreground">
-                Espaço para Publicidade AdMob (Ex: 320x50)
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleEditPost}>
+                    <Edit3 className="mr-2 h-4 w-4" />
+                    <span>Editar post</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsReportModalOpen(true)} >
+                    <Flag className="mr-2 h-4 w-4" />
+                    <span>Sinalizar conteúdo</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleDeletePost} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    <span>Excluir post</span>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
       </CardFooter>
+
+
+        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+            {/* SheetTrigger is now part of CardFooter, no need for it here explicitly if CardFooter button controls it */}
+            <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0">
+                <SheetHeader className="p-4 border-b border-border flex flex-row justify-center items-center relative">
+                  <SheetTitle className="sr-only">Comentários e Reações do Post</SheetTitle>
+                    <div className="flex items-center justify-center gap-4 py-2">
+                        <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handlePostReactionClick('thumbsUp')}
+                        className={`p-1 h-auto hover:bg-transparent focus:bg-transparent ${currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground'}`}
+                        aria-label="Curtir"
+                        >
+                        <ThumbsUp className={`h-5 w-5 ${currentUserPostReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
+                        <span className="ml-1 text-xs tabular-nums">({localPostReactions.thumbsUp})</span>
+                        </Button>
+                        <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handlePostReactionClick('thumbsDown')}
+                        className={`p-1 h-auto hover:bg-transparent focus:bg-transparent ${currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground'}`}
+                        aria-label="Não curtir"
+                        >
+                        <ThumbsDown className={`h-5 w-5 ${currentUserPostReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
+                        <span className="ml-1 text-xs tabular-nums">({localPostReactions.thumbsDown})</span>
+                        </Button>
+                    </div>
+                </SheetHeader>
+
+                <div className="flex-grow overflow-y-auto p-4 space-y-4">
+                {localCommentsData.map(comment => (
+                    <div key={comment.id} className="space-y-1">
+                    <div className="flex items-start space-x-2">
+                        <Avatar className="h-8 w-8">
+                        <AvatarImage src={comment.userAvatarUrl as string} alt={comment.userName} data-ai-hint={comment.dataAIAvatarHint} />
+                        <AvatarFallback>{comment.userName.substring(0, 2).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-grow p-3 rounded-lg bg-muted/30 dark:bg-slate-700/30">
+                        <div className="flex items-center justify-between">
+                            <p className="text-xs font-semibold font-headline">{comment.userName}</p>
+                            <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
+                        </div>
+                        <p className="text-base mt-1">{comment.text}</p>
+                        <div className="flex items-center mt-1.5 space-x-1">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="p-0 h-auto text-xs text-muted-foreground hover:text-primary focus:text-primary hover:bg-transparent focus:bg-transparent"
+                                onClick={() => handleItemReaction(comment.id, 'thumbsUp', 'comment')}
+                            >
+                            <ThumbsUp className={`mr-1 h-3.5 w-3.5 ${comment.reactions.userReaction === 'thumbsUp' ? 'fill-primary text-primary' : ''}`} />
+                            {comment.reactions.thumbsUp > 0 ? comment.reactions.thumbsUp : ''}
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="p-0 h-auto text-xs text-muted-foreground hover:text-destructive focus:text-destructive hover:bg-transparent focus:bg-transparent"
+                                onClick={() => handleItemReaction(comment.id, 'thumbsDown', 'comment')}
+                            >
+                            <ThumbsDown className={`mr-1 h-3.5 w-3.5 ${comment.reactions.userReaction === 'thumbsDown' ? 'fill-destructive text-destructive' : ''}`} />
+                            {comment.reactions.thumbsDown > 0 ? comment.reactions.thumbsDown : ''}
+                            </Button>
+                            <Button
+                            variant="link"
+                            size="sm"
+                            className="p-0 h-auto text-xs text-primary ml-1"
+                            onClick={() => {
+                                if (replyingTo?.type === 'comment' && replyingTo.parentId === comment.id) {
+                                setReplyingTo(null);
+                                setNewReplyText('');
+                                } else {
+                                setReplyingTo({ type: 'comment', parentId: comment.id, userNameToReply: comment.userName });
+                                setNewReplyText('');
+                                }
+                            }}
+                            >
+                            Responder
+                            </Button>
+                        </div>
+                        </div>
+                    </div>
+
+                    {replyingTo?.type === 'comment' && replyingTo.parentId === comment.id && (
+                        <form onSubmit={handleAddReply} className="flex gap-2 items-start ml-10 mt-1">
+                        <Avatar className="mt-1 h-8 w-8">
+                            <AvatarImage src="https://placehold.co/32x32.png?text=UA" alt="Usuário Atual" data-ai-hint="current user" />
+                            <AvatarFallback>UA</AvatarFallback>
+                        </Avatar>
+                        <Input
+                            placeholder={`Respondendo a ${comment.userName}...`}
+                            value={newReplyText}
+                            onChange={(e: ChangeEvent<HTMLInputElement>) => setNewReplyText(e.target.value)}
+                            className="rounded-lg flex-grow h-10 bg-background/70 text-base"
+                            autoFocus
+                        />
+                        <Button type="submit" size="icon" className="rounded-lg h-10 w-10 shrink-0">
+                            <Send className="h-4 w-4" />
+                        </Button>
+                        </form>
+                    )}
+                    {renderReplies(comment.replies, comment.id)}
+                    </div>
+                ))}
+                </div>
+
+                <div className="p-4 border-t border-border bg-background">
+                    <form onSubmit={handleAddComment} className="flex gap-2 items-start">
+                        <Avatar className="mt-1">
+                        <AvatarImage src="https://placehold.co/40x40.png?text=UA" alt="Usuário Atual" data-ai-hint="current user" />
+                        <AvatarFallback>UA</AvatarFallback>
+                        </Avatar>
+                        <Textarea
+                        placeholder="Escreva um comentário..."
+                        value={newCommentText}
+                        onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setNewCommentText(e.target.value)}
+                        className="rounded-lg flex-grow bg-background/70 min-h-[40px] resize-none text-base"
+                        rows={1}
+                        />
+                        <Button type="submit" size="icon" className="rounded-lg shrink-0">
+                        <Send className="h-4 w-4" />
+                        </Button>
+                    </form>
+                </div>
+
+                <div className="p-4 border-t border-border bg-background">
+                <div className="h-[50px] bg-muted/30 rounded flex items-center justify-center text-sm text-muted-foreground">
+                    Espaço para Publicidade AdMob (Ex: 320x50)
+                </div>
+                </div>
+            </SheetContent>
+        </Sheet>
     </Card>
+
+    <AlertDialog open={isReportModalOpen} onOpenChange={setIsReportModalOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sinalizar Conteúdo Inadequado</AlertDialogTitle>
+            <AlertDialogDescription>
+              Por favor, selecione o motivo da sua denúncia. Sua identidade será mantida em sigilo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <RadioGroup value={selectedReportReason} onValueChange={setSelectedReportReason} className="space-y-2 my-4">
+            {reportReasons.map((reason) => (
+              <div key={reason.id} className="flex items-center space-x-2">
+                <RadioGroupItem value={reason.id} id={reason.id} />
+                <Label htmlFor={reason.id} className="font-normal">{reason.label}</Label>
+              </div>
+            ))}
+          </RadioGroup>
+          {selectedReportReason === 'other' && (
+            <Textarea
+              placeholder="Por favor, descreva o motivo da denúncia..."
+              value={otherReportReasonText}
+              onChange={(e) => setOtherReportReasonText(e.target.value)}
+              className="min-h-[80px]"
+            />
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => { setSelectedReportReason(undefined); setOtherReportReasonText(''); }}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleReportSubmit}>Enviar Denúncia</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
