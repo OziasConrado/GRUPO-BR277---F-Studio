@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send } from 'lucide-react';
 import { useState, type ChangeEvent, type FormEvent, useCallback } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 
 export interface ReactionState {
@@ -44,8 +44,7 @@ export interface CommentProps {
 export interface PostReactions {
   thumbsUp: number;
   thumbsDown: number;
-  // Removed other emojis as they are no longer directly used for post reaction display
-  heart: number; // Kept in type for potential future use or backend compatibility
+  heart: number; 
   laugh: number;
   wow: number;
   sad: number;
@@ -69,8 +68,8 @@ export interface PostCardProps {
 
 interface ReplyingToInfo {
   type: 'comment' | 'reply';
-  parentId: string; // ID of the comment or reply being replied to
-  grandParentId?: string; // ID of the original comment if replying to a reply
+  parentId: string; 
+  grandParentId?: string; 
   userNameToReply?: string;
 }
 
@@ -89,6 +88,12 @@ export default function PostCard({
 }: PostCardProps) {
   const [currentUserPostReaction, setCurrentUserPostReaction] = useState<'thumbsUp' | 'thumbsDown' | null>(null);
   const [localPostReactions, setLocalPostReactions] = useState(initialReactions);
+  const [isTextExpanded, setIsTextExpanded] = useState(false);
+
+  const MAX_CHARS = 170;
+  const needsTruncation = text.length > MAX_CHARS;
+  const displayedText = isTextExpanded ? text : text.substring(0, MAX_CHARS) + (needsTruncation && !isTextExpanded ? '...' : '');
+
 
   const [localCommentsData, setLocalCommentsData] = useState<CommentProps[]>(
     initialCommentsData.map(c => ({
@@ -262,8 +267,8 @@ export default function PostCard({
                   <p className="text-xs font-semibold font-headline">{reply.userName}</p>
                   <p className="text-xs text-muted-foreground">{reply.timestamp}</p>
                 </div>
-                <p className="text-base mt-0.5">{reply.text}</p> {/* Changed from text-sm to text-base */}
-                <div className="flex items-center mt-1 space-x-2">
+                <p className="text-base mt-0.5">{reply.text}</p>
+                <div className="flex items-center mt-1 space-x-1">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -313,7 +318,7 @@ export default function PostCard({
                   placeholder={`Respondendo a ${reply.userName}...`}
                   value={newReplyText}
                   onChange={(e: ChangeEvent<HTMLInputElement>) => setNewReplyText(e.target.value)}
-                  className="rounded-lg flex-grow h-9 bg-background/70 text-base" // Ensure text-base
+                  className="rounded-lg flex-grow h-9 bg-background/70 text-base"
                   autoFocus
                 />
                 <Button type="submit" size="icon" className="rounded-lg h-9 w-9 shrink-0">
@@ -344,9 +349,19 @@ export default function PostCard({
         </div>
       </CardHeader>
       <CardContent className="p-4 pt-0">
-        <p className="mb-3 text-base leading-relaxed">{text}</p> {/* Changed from text-sm to text-base */}
+        <p className="mb-1 text-base leading-relaxed">{displayedText}</p>
+        {needsTruncation && (
+          <Button
+            variant="link"
+            size="sm"
+            className="p-0 h-auto text-xs text-primary mb-3"
+            onClick={() => setIsTextExpanded(!isTextExpanded)}
+          >
+            {isTextExpanded ? 'Ver menos' : 'Ver mais...'}
+          </Button>
+        )}
         {imageUrl && (
-          <div className="relative aspect-video rounded-lg overflow-hidden border">
+          <div className="relative aspect-square rounded-lg overflow-hidden border">
             <Image
               src={imageUrl}
               alt="Post image"
@@ -369,7 +384,7 @@ export default function PostCard({
           </Button>
 
           <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0 rounded-t-[25px]">
-             <SheetHeader className="p-4 border-b border-border flex flex-row justify-center items-center relative">
+            <SheetHeader className="p-4 border-b border-border flex flex-row justify-center items-center relative">
               <SheetTitle className="sr-only">Comentários e Reações do Post</SheetTitle>
               <div className="flex items-center justify-center gap-4 py-2">
                 <Button
@@ -393,87 +408,82 @@ export default function PostCard({
                   <span className="ml-1 text-xs">({localPostReactions.thumbsDown})</span>
                 </Button>
               </div>
-              {/* Default SheetClose (X button) is handled by SheetContent itself */}
             </SheetHeader>
 
             <div className="flex-grow overflow-y-auto p-4 space-y-4">
-              {localCommentsData.length > 0 && <Separator />}
-
-              <div className="space-y-3">
-                {localCommentsData.map(comment => (
-                  <div key={comment.id} className="space-y-1">
-                    <div className="flex items-start space-x-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={comment.userAvatarUrl as string} alt={comment.userName} data-ai-hint={comment.dataAIAvatarHint} />
-                        <AvatarFallback>{comment.userName.substring(0, 2).toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-grow p-3 rounded-lg bg-muted/30 dark:bg-slate-700/30">
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs font-semibold font-headline">{comment.userName}</p>
-                          <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
-                        </div>
-                        <p className="text-base mt-1">{comment.text}</p> {/* Changed from text-sm to text-base */}
-                        <div className="flex items-center mt-1.5 space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="p-0 h-auto text-xs text-muted-foreground hover:text-primary hover:bg-transparent focus:bg-transparent"
-                            onClick={() => handleItemReaction(comment.id, 'thumbsUp', 'comment')}
-                          >
-                            <ThumbsUp className={`mr-1 h-3.5 w-3.5 ${comment.reactions.userReaction === 'thumbsUp' ? 'fill-primary text-primary' : ''}`} />
-                             {comment.reactions.thumbsUp > 0 ? comment.reactions.thumbsUp : ''}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="p-0 h-auto text-xs text-muted-foreground hover:text-destructive hover:bg-transparent focus:bg-transparent"
-                            onClick={() => handleItemReaction(comment.id, 'thumbsDown', 'comment')}
-                          >
-                            <ThumbsDown className={`mr-1 h-3.5 w-3.5 ${comment.reactions.userReaction === 'thumbsDown' ? 'fill-destructive text-destructive' : ''}`} />
-                             {comment.reactions.thumbsDown > 0 ? comment.reactions.thumbsDown : ''}
-                          </Button>
-                          <Button
-                            variant="link"
-                            size="sm"
-                            className="p-0 h-auto text-xs text-primary ml-1"
-                            onClick={() => {
-                              if (replyingTo?.type === 'comment' && replyingTo.parentId === comment.id) {
-                                setReplyingTo(null);
-                                setNewReplyText('');
-                              } else {
-                                setReplyingTo({ type: 'comment', parentId: comment.id, userNameToReply: comment.userName });
-                                setNewReplyText('');
-                              }
-                            }}
-                          >
-                            Responder
-                          </Button>
-                        </div>
+              {localCommentsData.map(comment => (
+                <div key={comment.id} className="space-y-1">
+                  <div className="flex items-start space-x-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={comment.userAvatarUrl as string} alt={comment.userName} data-ai-hint={comment.dataAIAvatarHint} />
+                      <AvatarFallback>{comment.userName.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-grow p-3 rounded-lg bg-muted/30 dark:bg-slate-700/30">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-semibold font-headline">{comment.userName}</p>
+                        <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
+                      </div>
+                      <p className="text-base mt-1">{comment.text}</p>
+                      <div className="flex items-center mt-1.5 space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="p-0 h-auto text-xs text-muted-foreground hover:text-primary hover:bg-transparent focus:bg-transparent"
+                          onClick={() => handleItemReaction(comment.id, 'thumbsUp', 'comment')}
+                        >
+                          <ThumbsUp className={`mr-1 h-3.5 w-3.5 ${comment.reactions.userReaction === 'thumbsUp' ? 'fill-primary text-primary' : ''}`} />
+                           {comment.reactions.thumbsUp > 0 ? comment.reactions.thumbsUp : ''}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="p-0 h-auto text-xs text-muted-foreground hover:text-destructive hover:bg-transparent focus:bg-transparent"
+                          onClick={() => handleItemReaction(comment.id, 'thumbsDown', 'comment')}
+                        >
+                          <ThumbsDown className={`mr-1 h-3.5 w-3.5 ${comment.reactions.userReaction === 'thumbsDown' ? 'fill-destructive text-destructive' : ''}`} />
+                           {comment.reactions.thumbsDown > 0 ? comment.reactions.thumbsDown : ''}
+                        </Button>
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="p-0 h-auto text-xs text-primary ml-1"
+                          onClick={() => {
+                            if (replyingTo?.type === 'comment' && replyingTo.parentId === comment.id) {
+                              setReplyingTo(null);
+                              setNewReplyText('');
+                            } else {
+                              setReplyingTo({ type: 'comment', parentId: comment.id, userNameToReply: comment.userName });
+                              setNewReplyText('');
+                            }
+                          }}
+                        >
+                          Responder
+                        </Button>
                       </div>
                     </div>
-
-                    {replyingTo?.type === 'comment' && replyingTo.parentId === comment.id && (
-                      <form onSubmit={handleAddReply} className="flex gap-2 items-start ml-10 mt-1">
-                        <Avatar className="mt-1 h-8 w-8">
-                          <AvatarImage src="https://placehold.co/32x32.png?text=UA" alt="Usuário Atual" data-ai-hint="current user" />
-                          <AvatarFallback>UA</AvatarFallback>
-                        </Avatar>
-                        <Input
-                          placeholder={`Respondendo a ${comment.userName}...`}
-                          value={newReplyText}
-                          onChange={(e: ChangeEvent<HTMLInputElement>) => setNewReplyText(e.target.value)}
-                          className="rounded-lg flex-grow h-10 bg-background/70 text-base" // Ensure text-base
-                          autoFocus
-                        />
-                        <Button type="submit" size="icon" className="rounded-lg h-10 w-10 shrink-0">
-                          <Send className="h-4 w-4" />
-                        </Button>
-                      </form>
-                    )}
-                    {renderReplies(comment.replies, comment.id)}
                   </div>
-                ))}
-              </div>
+
+                  {replyingTo?.type === 'comment' && replyingTo.parentId === comment.id && (
+                    <form onSubmit={handleAddReply} className="flex gap-2 items-start ml-10 mt-1">
+                      <Avatar className="mt-1 h-8 w-8">
+                        <AvatarImage src="https://placehold.co/32x32.png?text=UA" alt="Usuário Atual" data-ai-hint="current user" />
+                        <AvatarFallback>UA</AvatarFallback>
+                      </Avatar>
+                      <Input
+                        placeholder={`Respondendo a ${comment.userName}...`}
+                        value={newReplyText}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => setNewReplyText(e.target.value)}
+                        className="rounded-lg flex-grow h-10 bg-background/70 text-base" 
+                        autoFocus
+                      />
+                      <Button type="submit" size="icon" className="rounded-lg h-10 w-10 shrink-0">
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </form>
+                  )}
+                  {renderReplies(comment.replies, comment.id)}
+                </div>
+              ))}
             </div>
             
             <div className="p-4 border-t border-border bg-background">
@@ -486,7 +496,7 @@ export default function PostCard({
                     placeholder="Escreva um comentário..."
                     value={newCommentText}
                     onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setNewCommentText(e.target.value)}
-                    className="rounded-lg flex-grow bg-background/70 min-h-[40px] resize-none text-base" // Ensure text-base
+                    className="rounded-lg flex-grow bg-background/70 min-h-[40px] resize-none text-base" 
                     rows={1}
                     />
                     <Button type="submit" size="icon" className="rounded-lg shrink-0">
@@ -506,3 +516,5 @@ export default function PostCard({
     </Card>
   );
 }
+
+    
