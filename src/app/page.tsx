@@ -14,6 +14,12 @@ const defaultReactions: PostReactions = {
   thumbsDown: 0,
 };
 
+// For mention detection in PostCard
+const MOCK_POST_USER_NAMES = [
+    'Carlos Caminhoneiro', 'Ana Viajante', 'Rota Segura Admin', 'Mariana Logística', 
+    'Pedro Estradeiro', 'Segurança Rodoviária', 'João Silva', 'Você', 'Ana Souza', 'Carlos Santos', 'Ozias Conrado'
+];
+
 const mockAdminStories: StoryCircleProps[] = [
   {
     id: 'story-admin-1',
@@ -66,7 +72,7 @@ const mockAdminStories: StoryCircleProps[] = [
 ];
 
 
-const mockPosts: PostCardProps[] = [
+const mockPosts: Omit<PostCardProps, 'allKnownUserNames'>[] = [ // Omit allKnownUserNames, PostCard will use its default
   {
     id: '1',
     userName: 'Carlos Caminhoneiro',
@@ -74,7 +80,7 @@ const mockPosts: PostCardProps[] = [
     dataAIAvatarHint: 'truck driver',
     userLocation: 'Curitiba, PR',
     timestamp: '2 horas atrás',
-    text: 'Estrada tranquila hoje na BR-116! Sol brilhando e sem trânsito. Bom dia a todos! Aproveitando para testar o novo sistema de posts aqui no app. A interface está bem fluida e fácil de usar. Espero que todos tenham uma ótima viagem e que o dia seja produtivo para quem está na lida. Cuidado nas curvas e mantenham a atenção! Mais um pouco de texto para testar a funcionalidade de ver mais e ver menos, garantindo que tenhamos mais de 170 caracteres para que o botão apareça corretamente.',
+    text: 'Estrada tranquila hoje na BR-116! Sol brilhando e sem trânsito. Bom dia a todos! @Ana Viajante, como está por aí? Aproveitando para testar o novo sistema de posts aqui no app. A interface está bem fluida e fácil de usar. Espero que todos tenham uma ótima viagem e que o dia seja produtivo para quem está na lida. @Ozias Conrado, tudo certo? Cuidado nas curvas e mantenham a atenção! Mais um pouco de texto para testar a funcionalidade de ver mais e ver menos, garantindo que tenhamos mais de 170 caracteres para que o botão apareça corretamente.',
     imageUrl: 'https://placehold.co/600x600.png',
     dataAIImageHint: 'highway sunny day square',
     reactions: { ...defaultReactions, thumbsUp: 152, thumbsDown: 5 },
@@ -85,7 +91,7 @@ const mockPosts: PostCardProps[] = [
         userAvatarUrl: 'https://placehold.co/40x40.png?text=ML',
         dataAIAvatarHint: 'logistics woman',
         timestamp: '1 hora atrás',
-        text: 'Que ótimo, Carlos! Boas viagens!',
+        text: 'Que ótimo, @Carlos Caminhoneiro! Boas viagens!',
         reactions: { thumbsUp: 10, thumbsDown: 1, userReaction: null },
         replies: [
           {
@@ -94,7 +100,7 @@ const mockPosts: PostCardProps[] = [
             userAvatarUrl: 'https://placehold.co/40x40.png?text=CC',
             dataAIAvatarHint: 'truck driver',
             timestamp: '30 minutos atrás',
-            text: 'Obrigado, Mariana!',
+            text: 'Obrigado, @Mariana Logística!',
             reactions: { thumbsUp: 2, thumbsDown: 0, userReaction: null }
           }
         ],
@@ -117,7 +123,7 @@ const mockPosts: PostCardProps[] = [
     dataAIAvatarHint: 'woman traveler',
     userLocation: 'São Paulo, SP',
     timestamp: '5 horas atrás',
-    text: 'Alerta de neblina densa na Serra do Mar. Redobrem a atenção, pessoal! A visibilidade está bastante comprometida e a pista pode estar escorregadia. Recomendo acender os faróis de neblina e reduzir a velocidade consideravelmente.',
+    text: 'Alerta de neblina densa na Serra do Mar. Redobrem a atenção, pessoal! A visibilidade está bastante comprometida e a pista pode estar escorregadia. Recomendo acender os faróis de neblina e reduzir a velocidade consideravelmente. @Segurança Rodoviária, por favor, verifiquem a área.',
     imageUrl: 'https://placehold.co/600x600.png',
     dataAIImageHint: 'foggy mountain road square',
     reactions: { ...defaultReactions, thumbsUp: 98, thumbsDown: 2 },
@@ -128,7 +134,7 @@ const mockPosts: PostCardProps[] = [
         userAvatarUrl: 'https://placehold.co/40x40.png?text=SR',
         dataAIAvatarHint: 'safety logo',
         timestamp: '4 horas atrás',
-        text: 'Obrigado pelo alerta, Ana! Informação crucial.',
+        text: 'Obrigado pelo alerta, @Ana Viajante! Informação crucial. Equipe já notificada.',
         reactions: { thumbsUp: 15, thumbsDown: 0, userReaction: null }
       }
     ],
@@ -227,7 +233,7 @@ export default function FeedPage() {
 
       <div className="space-y-6">
         {mockPosts.map((post) => (
-          <PostCard key={post.id} {...post} />
+          <PostCard key={post.id} {...post} allKnownUserNames={MOCK_POST_USER_NAMES}/>
         ))}
       </div>
       <StoryViewerModal
@@ -238,5 +244,3 @@ export default function FeedPage() {
     </div>
   );
 }
-
-    

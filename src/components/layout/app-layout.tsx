@@ -6,40 +6,21 @@ import { useState, useEffect, createContext, useContext } from 'react';
 import { useRouter } from 'next/navigation';
 import Navigation from './navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; 
-import { RefreshCcw, Moon, Sun, ArrowLeft } from 'lucide-react'; 
+import { RefreshCcw, Moon, Sun, ArrowLeft, Bell } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import ChatWindow from '@/components/chat/ChatWindow'; // Mantido caso o chat seja reativado de outra forma
+import ChatWindow from '@/components/chat/ChatWindow';
+import { useNotification } from '@/contexts/NotificationContext';
 
 interface AppLayoutProps {
   children: ReactNode;
 }
 
-// AppLayoutContext removido pois a funcionalidade de abrir chat pelo rodapé foi removida.
-// Se for necessário para outras funcionalidades globais do layout, pode ser reintroduzido.
-/*
-export interface AppLayoutContextType {
-  isChatOpen: boolean;
-  setIsChatOpen: Dispatch<SetStateAction<boolean>>;
-}
-
-const AppLayoutContext = createContext<AppLayoutContextType | undefined>(undefined);
-
-export function useAppLayout() {
-  const context = useContext(AppLayoutContext);
-  if (context === undefined) {
-    throw new Error('useAppLayout must be used within an AppLayoutProvider');
-  }
-  return context;
-}
-*/
-
 export default function AppLayout({ children }: AppLayoutProps) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  // isChatOpen e setIsChatOpen removidos daqui, pois o controle do chat não é mais via rodapé
-  // const [isChatOpen, setIsChatOpen] = useState(false); 
   const router = useRouter();
+  const { notificationCount, clearNotifications } = useNotification(); // Use clearNotifications for demo/reset
 
   useEffect(() => {
     setIsMounted(true);
@@ -64,6 +45,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
       localStorage.setItem('theme', 'light');
     }
     setIsDarkMode(newIsDarkMode);
+  };
+
+  // Placeholder for opening notifications - for now, it clears them
+  const handleNotificationClick = () => {
+    console.log("Notification icon clicked. Count was:", notificationCount);
+    // For now, let's clear notifications as a placeholder action
+    // clearNotifications(); 
+    // In a real app, this would open a notification drawer/page
   };
 
   const AppHeader = () => (
@@ -96,7 +85,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 className="text-primary-foreground hover:bg-white/10 rounded-full h-10 w-10 sm:h-11 sm:w-11"
                 aria-label="Alternar tema claro/escuro"
               >
-                {isDarkMode ? <Sun className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-400" /> : <Moon className="h-5 w-5 sm:h-6 sm:w-6" />}
+                {isDarkMode ? <Sun className="h-5 w-5 sm:h-6 sm:h-6 text-yellow-400" /> : <Moon className="h-5 w-5 sm:h-6 sm:h-6" />}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">
@@ -112,12 +101,34 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 onClick={() => window.location.reload()}
                 className="text-primary-foreground hover:bg-white/10 rounded-full h-10 w-10 sm:h-11 sm:w-11"
               >
-                <RefreshCcw className="h-5 w-5 sm:h-6 sm:w-6" />
+                <RefreshCcw className="h-5 w-5 sm:h-6 sm:h-6" />
                 <span className="sr-only">Recarregar Página</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">
               <p>Recarregar Página</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleNotificationClick} // Placeholder action
+                className="relative text-primary-foreground hover:bg-white/10 rounded-full h-10 w-10 sm:h-11 sm:w-11"
+                aria-label="Notificações"
+              >
+                <Bell className="h-5 w-5 sm:h-6 sm:w-6" />
+                {notificationCount > 0 && (
+                  <span className="notification-badge">
+                    {notificationCount > 9 ? '9+' : notificationCount}
+                  </span>
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p>Notificações {notificationCount > 0 ? `(${notificationCount})` : ''}</p>
             </TooltipContent>
           </Tooltip>
           
@@ -150,7 +161,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
     );
   }
 
-  // O AppLayoutContext.Provider é removido pois o contexto não está mais em uso aqui.
   return (
     <TooltipProvider>
       <div className="flex flex-col min-h-screen">
@@ -159,13 +169,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
           {children}
         </main>
         <Navigation />
-        {/* O ChatWindow pode ser mantido aqui se houver outra forma de abri-lo, 
-            caso contrário, pode ser removido se o único gatilho era o rodapé.
-            Por enquanto, vamos manter o ChatWindow, mas sem o isChatOpen para controlá-lo
-            a partir daqui, pois o AppLayoutContext foi removido.
-            Se você quiser um botão flutuante para o chat, podemos readicioná-lo.
-        */}
-        {/* {isChatOpen && <ChatWindow onClose={() => setIsChatOpen(false)} />} */}
       </div>
     </TooltipProvider>
   );

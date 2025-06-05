@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import type { StaticImageData } from 'next/image';
 import Image from "next/image";
 import { Paperclip, Mic, FileText, PlayCircle } from "lucide-react";
+import React from "react"; // Import React for React.ReactNode
 
 export interface ChatMessageData {
   id: string;
@@ -19,10 +20,12 @@ export interface ChatMessageData {
   file?: { name: string, type: 'image' | 'audio' | 'other' };
   timestamp: string;
   isCurrentUser: boolean;
+  // For mention highlighting
+  textElements?: React.ReactNode[]; 
 }
 
 export default function ChatMessageItem({ message }: { message: ChatMessageData }) {
-  const { senderName, avatarUrl, dataAIAvatarHint, text, imageUrl, dataAIImageHint, file, timestamp, isCurrentUser } = message;
+  const { senderName, avatarUrl, dataAIAvatarHint, text, imageUrl, dataAIImageHint, file, timestamp, isCurrentUser, textElements } = message;
 
   const getFileIcon = () => {
     if (!file) return null;
@@ -46,7 +49,11 @@ export default function ChatMessageItem({ message }: { message: ChatMessageData 
         )}
       >
         {!isCurrentUser && <p className="text-xs font-semibold mb-1 text-primary">{senderName}</p>}
-        {text && <p className="text-sm whitespace-pre-wrap">{text}</p>}
+        {textElements ? (
+          <p className="text-sm whitespace-pre-wrap">{textElements}</p>
+        ) : (
+          text && <p className="text-sm whitespace-pre-wrap">{text}</p>
+        )}
         {imageUrl && (
           <div className="mt-2 relative aspect-square max-w-xs rounded-lg overflow-hidden border">
             <Image src={imageUrl} alt={dataAIImageHint || "Imagem enviada"} fill style={{objectFit: 'cover'}} data-ai-hint={dataAIImageHint}/>

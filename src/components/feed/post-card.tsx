@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send, MoreVertical, Trash2, Edit3, Flag } from 'lucide-react';
-import { useState, type ChangeEvent, type FormEvent, useCallback, useEffect } from 'react';
+import { useState, type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
 import {
   DropdownMenu,
@@ -31,7 +31,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-
+import { useNotification } from '@/contexts/NotificationContext'; // Import notification context
 
 export interface ReactionState {
   thumbsUp: number;
@@ -79,13 +79,15 @@ export interface PostCardProps {
   imageUrl?: string | StaticImageData;
   reactions: PostReactions;
   commentsData: CommentProps[];
+  // For mention detection - ideally this would come from a global user list
+  allKnownUserNames?: string[]; 
 }
 
 
 interface ReplyingToInfo {
   type: 'comment' | 'reply';
   parentId: string;
-  grandParentId?: string; // Used when replying to a reply, to know the top-level comment
+  grandParentId?: string; 
   userNameToReply?: string;
 }
 
@@ -100,6 +102,36 @@ const reportReasons = [
   { id: "other", label: "Outros, informe o motivo..." },
 ];
 
+// Mock user names for mention detection (could be passed as prop or from context)
+const MOCK_USER_NAMES_FOR_MENTIONS = [
+    'Carlos Caminhoneiro', 'Ana Viajante', 'Rota Segura Admin', 'Mariana Logística', 
+    'Pedro Estradeiro', 'Segurança Rodoviária', 'João Silva', 'Você', 'Ana Souza', 'Carlos Santos', 'Ozias Conrado' 
+];
+
+
+const renderTextWithMentions = (text: string, knownUsers: string[]): React.ReactNode[] => {
+  if (!text) return [text];
+  const escapedUserNames = knownUsers.map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const mentionRegex = new RegExp(`(@(?:${escapedUserNames.join('|')}))(?=\\s|\\p{P}|$)`, 'gu');
+
+  const parts = text.split(mentionRegex);
+  const elements: React.ReactNode[] = [];
+
+  parts.forEach((part, index) => {
+    if (part.startsWith('@')) {
+      const mentionedName = part.substring(1);
+      if (knownUsers.includes(mentionedName)) {
+        elements.push(<strong key={`${index}-${part}`} className="text-accent font-semibold cursor-pointer hover:underline">{part}</strong>);
+      } else {
+        elements.push(part); 
+      }
+    } else {
+      elements.push(part);
+    }
+  });
+  return elements;
+};
+
 
 export default function PostCard({
   id: postId,
@@ -113,11 +145,13 @@ export default function PostCard({
   dataAIImageHint,
   reactions: initialReactions,
   commentsData: initialCommentsData,
+  allKnownUserNames = MOCK_USER_NAMES_FOR_MENTIONS, // Use mock by default
 }: PostCardProps) {
   const [currentUserPostReaction, setCurrentUserPostReaction] = useState<'thumbsUp' | 'thumbsDown' | null>(null);
   const [localPostReactions, setLocalPostReactions] = useState(initialReactions);
   const [isTextExpanded, setIsTextExpanded] = useState(false);
   const { toast } = useToast();
+  const { incrementNotificationCount } = useNotification();
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [selectedReportReason, setSelectedReportReason] = useState<string | undefined>(undefined);
   const [otherReportReasonText, setOtherReportReasonText] = useState('');
@@ -125,7 +159,13 @@ export default function PostCard({
 
   const MAX_CHARS = 170;
   const needsTruncation = text.length > MAX_CHARS;
-  const displayedText = isTextExpanded ? text : text.substring(0, MAX_CHARS) + (needsTruncation && !isTextExpanded ? '...' : '');
+  
+  const displayedTextElements = useMemo(() => renderTextWithMentions(text, allKnownUserNames), [text, allKnownUserNames]);
+  const displayedTextNode = isTextExpanded ? displayedTextElements : 
+    (typeof text === 'string' && text.length > MAX_CHARS ? 
+      [...renderTextWithMentions(text.substring(0, MAX_CHARS), allKnownUserNames), '...'] : 
+      displayedTextElements
+    );
 
 
   const [localCommentsData, setLocalCommentsData] = useState<CommentProps[]>(
@@ -165,7 +205,7 @@ export default function PostCard({
     itemId: string,
     reactionType: 'thumbsUp' | 'thumbsDown',
     itemType: 'comment' | 'reply',
-    commentIdForReply?: string, // This is the grandParentId for replies to replies
+    commentIdForReply?: string, 
   ) => {
     setLocalCommentsData(prevComments =>
       prevComments.map(comment => {
@@ -175,16 +215,14 @@ export default function PostCard({
           let newThumbsDown = item.reactions.thumbsDown;
           let newUserReaction: 'thumbsUp' | 'thumbsDown' | null = null;
 
-          if (currentReaction === reactionType) { // Deselecting current reaction
+          if (currentReaction === reactionType) { 
             if (reactionType === 'thumbsUp') newThumbsUp--;
             else newThumbsDown--;
             newUserReaction = null;
-          } else { // Selecting a new reaction or switching reaction
-            // First, undo the previous reaction if it exists
+          } else { 
             if (currentReaction === 'thumbsUp') newThumbsUp--;
             if (currentReaction === 'thumbsDown') newThumbsDown--;
             
-            // Apply the new reaction
             if (reactionType === 'thumbsUp') newThumbsUp++;
             else newThumbsDown++;
             newUserReaction = reactionType;
@@ -193,27 +231,23 @@ export default function PostCard({
           return {
             ...item,
             reactions: {
-              thumbsUp: Math.max(0, newThumbsUp), // Ensure count doesn't go below 0
+              thumbsUp: Math.max(0, newThumbsUp), 
               thumbsDown: Math.max(0, newThumbsDown),
               userReaction: newUserReaction,
             },
           };
         };
 
-        // Target is a top-level comment
         if (itemType === 'comment' && comment.id === itemId) {
           return updateReaction(comment) as CommentProps;
         }
 
-        // Target is a reply or a nested reply
         if (comment.replies) {
           const updateNestedReplies = (replies: ReplyProps[], currentGrandParentId: string): ReplyProps[] => {
             return replies.map(reply => {
-              // Target is a direct reply to the comment
               if (itemType === 'reply' && reply.id === itemId && commentIdForReply === currentGrandParentId) {
                 return updateReaction(reply) as ReplyProps;
               }
-              // Recursively update nested replies
               if (reply.replies) {
                 return { ...reply, replies: updateNestedReplies(reply.replies, currentGrandParentId) };
               }
@@ -227,10 +261,22 @@ export default function PostCard({
     );
   }, []);
 
+  const checkForMentionsAndNotify = (textToCheck: string) => {
+    allKnownUserNames.forEach(name => {
+      // Regex to match @Name followed by a word boundary (space, punctuation) or end of string
+      const mentionRegex = new RegExp(`@${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=\\s|\\p{P}|$)`, 'u');
+      if (mentionRegex.test(textToCheck)) {
+        console.log(`Mentioned: ${name}`);
+        incrementNotificationCount();
+        // In a real app, you'd specify *who* was mentioned to target the notification
+      }
+    });
+  };
 
   const handleAddComment = (e: FormEvent) => {
     e.preventDefault();
     if (!newCommentText.trim()) return;
+    checkForMentionsAndNotify(newCommentText);
     const newComment: CommentProps = {
       id: `c${Date.now()}`,
       userName: 'Usuário Atual', 
@@ -248,7 +294,7 @@ export default function PostCard({
   const handleAddReply = (e: FormEvent) => {
     e.preventDefault();
     if (!newReplyText.trim() || !replyingTo) return;
-
+    checkForMentionsAndNotify(newReplyText);
     const newReply: ReplyProps = {
       id: `r${Date.now()}`,
       userName: 'Usuário Atual',
@@ -262,18 +308,16 @@ export default function PostCard({
 
     setLocalCommentsData(prevComments =>
       prevComments.map(comment => {
-        // Replying to a top-level comment
         if (replyingTo.type === 'comment' && comment.id === replyingTo.parentId) {
           return { ...comment, replies: [newReply, ...(comment.replies || [])] };
         } 
-        // Replying to a reply (nested reply)
         else if (replyingTo.type === 'reply' && comment.id === replyingTo.grandParentId) {
           const addNestedReply = (replies: ReplyProps[]): ReplyProps[] => {
             return replies.map(reply => {
               if (reply.id === replyingTo.parentId) {
                 return { ...reply, replies: [newReply, ...(reply.replies || [])] };
               }
-              if (reply.replies) { // Recursively search in deeper replies
+              if (reply.replies) { 
                 return { ...reply, replies: addNestedReply(reply.replies) };
               }
               return reply;
@@ -317,7 +361,7 @@ export default function PostCard({
 
   const renderReplies = (replies: ReplyProps[] | undefined, commentIdForReply: string, depth = 0) => {
     if (!replies || replies.length === 0) return null;
-    const MAX_DEPTH = 1; // Allow one level of nested replies (reply to a reply)
+    const MAX_DEPTH = 1; 
 
     return (
       <div className={`ml-6 mt-2 space-y-2 pt-2 ${depth > 0 ? 'pl-3 border-l-2 border-muted/30' : 'pl-3 border-l-2 border-muted/50'}`}>
@@ -333,7 +377,7 @@ export default function PostCard({
                   <p className="text-xs font-semibold font-headline">{reply.userName}</p>
                   <p className="text-xs text-muted-foreground">{reply.timestamp}</p>
                 </div>
-                <p className="text-base mt-0.5">{reply.text}</p>
+                <p className="text-base mt-0.5">{renderTextWithMentions(reply.text, allKnownUserNames)}</p>
                 <div className="flex items-center mt-1 space-x-1">
                   <Button
                     variant="ghost"
@@ -419,7 +463,7 @@ export default function PostCard({
         </div>
       </CardHeader>
       <CardContent className="p-4 pt-0">
-        <p className="mb-1 text-base leading-relaxed">{displayedText}</p>
+        <p className="mb-1 text-base leading-relaxed">{displayedTextNode}</p>
         {needsTruncation && (
           <Button
             variant="link"
@@ -502,16 +546,16 @@ export default function PostCard({
 
 
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0">
+            <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0 rounded-t-[25px]">
                 <SheetHeader className="p-4 border-b border-border flex flex-row justify-center items-center relative">
-                    <SheetTitle className="sr-only">Comentários e Reações do Post</SheetTitle>
+                     <SheetTitle className="sr-only">Comentários e Reações do Post</SheetTitle>
                     <div className="flex items-center justify-center gap-4 py-1">
                         <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handlePostReactionClick('thumbsUp')}
                         className={`p-1 h-auto hover:bg-transparent focus:bg-transparent ${currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
-                        aria-label="Curtir"
+                        aria-label="Curtir Post"
                         >
                         <ThumbsUp className={`h-5 w-5 ${currentUserPostReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
                         <span className="ml-1 text-xs tabular-nums">({localPostReactions.thumbsUp})</span>
@@ -521,7 +565,7 @@ export default function PostCard({
                         size="sm"
                         onClick={() => handlePostReactionClick('thumbsDown')}
                         className={`p-1 h-auto hover:bg-transparent focus:bg-transparent ${currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'}`}
-                        aria-label="Não curtir"
+                        aria-label="Não Curtir Post"
                         >
                         <ThumbsDown className={`h-5 w-5 ${currentUserPostReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
                         <span className="ml-1 text-xs tabular-nums">({localPostReactions.thumbsDown})</span>
@@ -542,7 +586,7 @@ export default function PostCard({
                             <p className="text-xs font-semibold font-headline">{comment.userName}</p>
                             <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
                         </div>
-                        <p className="text-base mt-1">{comment.text}</p>
+                        <p className="text-base mt-1">{renderTextWithMentions(comment.text, allKnownUserNames)}</p>
                         <div className="flex items-center mt-1.5 space-x-1">
                             <Button
                                 variant="ghost"
@@ -666,4 +710,3 @@ export default function PostCard({
     </>
   );
 }
-

@@ -134,17 +134,16 @@
   align-items: center;
   justify-content: center;
   position: relative; /* For the pulse ring */
-  /* background-color, width, height, border-radius, shadow are set by Tailwind classes */
 }
 
 .pulse-ring-animation {
   position: absolute;
-  width: 100%; /* Same as the live-icon */
-  height: 100%; /* Same as the live-icon */
-  border: 2px solid hsla(var(--destructive) / 0.4); /* Use destructive color with opacity */
+  width: 100%; 
+  height: 100%; 
+  border: 2px solid hsla(var(--destructive) / 0.4); 
   border-radius: 50%;
   animation: pulse-ring-keyframes 1.5s infinite;
-  z-index: -1; /* Behind the icon itself */
+  z-index: -1; 
 }
 
 @keyframes pulse-ring-keyframes {
@@ -153,7 +152,7 @@
     opacity: 0.7;
   }
   70% {
-    transform: scale(1.5); /* Pulse effect */
+    transform: scale(1.5); 
     opacity: 0;
   }
   100% {
@@ -162,8 +161,27 @@
   }
 }
 
-/* Ensure buttons, inputs, textareas, selects use the base font size by default if not specified otherwise */
 button, input, textarea, select {
   @apply text-base;
 }
 
+.notification-badge {
+  position: absolute;
+  top: 2px; /* Adjusted for better visual alignment with 10-11px icon */
+  right: 2px; /* Adjusted for better visual alignment */
+  background-color: hsl(var(--destructive));
+  color: hsl(var(--destructive-foreground));
+  border-radius: 50%;
+  padding: 1px 5px; /* Slightly more padding for better shape */
+  font-size: 0.65rem; /* Smaller font for the badge text */
+  line-height: 1;
+  min-width: 1.3em; 
+  height: 1.3em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border: 1px solid hsl(var(--primary)); /* Border color matches header background */
+  font-weight: bold;
+  pointer-events: none; /* So it doesn't interfere with button click */
+}

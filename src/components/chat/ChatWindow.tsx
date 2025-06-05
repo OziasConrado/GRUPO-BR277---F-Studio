@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useState, useRef, useEffect, type ChangeEvent, type FormEvent } from 'react';
+import { useState, useRef, useEffect, type ChangeEvent, type FormEvent, useMemo } from 'react';
+import React from 'react'; // Import React for React.ReactNode
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -9,18 +10,48 @@ import { X, Send, Paperclip, Mic, Smile } from "lucide-react";
 import ChatMessageItem, { type ChatMessageData } from "./ChatMessageItem";
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { useToast } from '@/hooks/use-toast';
+import { useNotification } from '@/contexts/NotificationContext'; // Import notification context
 
 interface ChatWindowProps {
   onClose: () => void;
 }
 
-const initialMessages: ChatMessageData[] = [
+// Mock user names for mention detection
+const MOCK_CHAT_USER_NAMES = [
+    'João Silva', 'Você', 'Ana Souza', 'Carlos Santos', 'Ozias Conrado'
+];
+
+const renderTextWithMentionsForChat = (text: string, knownUsers: string[]): React.ReactNode[] => {
+  if (!text) return [text];
+  const escapedUserNames = knownUsers.map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const mentionRegex = new RegExp(`(@(?:${escapedUserNames.join('|')}))(?=\\s|\\p{P}|$)`, 'gu');
+  
+  const parts = text.split(mentionRegex);
+  const elements: React.ReactNode[] = [];
+
+  parts.forEach((part, index) => {
+    if (part.startsWith('@')) {
+      const mentionedName = part.substring(1);
+      if (knownUsers.includes(mentionedName)) {
+        elements.push(<strong key={`${index}-${part}`} className="text-accent font-semibold cursor-pointer hover:underline">{part}</strong>);
+      } else {
+        elements.push(part); 
+      }
+    } else {
+      elements.push(part);
+    }
+  });
+  return elements;
+};
+
+
+const initialMessagesRaw: Omit<ChatMessageData, 'textElements'>[] = [
   {
     id: '1',
     senderName: 'João Silva',
     avatarUrl: 'https://placehold.co/40x40.png?text=JS',
     dataAIAvatarHint: 'man portrait',
-    text: 'Olá pessoal! Alguma novidade na BR-277 hoje?',
+    text: 'Olá pessoal! Alguma novidade na BR-277 hoje? Alguém viu o @Ozias Conrado por aí?',
     timestamp: '10:30 AM',
     isCurrentUser: false,
   },
@@ -29,7 +60,7 @@ const initialMessages: ChatMessageData[] = [
     senderName: 'Você',
     avatarUrl: 'https://placehold.co/40x40.png?text=EU',
     dataAIAvatarHint: 'current user',
-    text: 'Acabei de passar pelo km 150, tudo tranquilo por enquanto.',
+    text: 'Acabei de passar pelo km 150, tudo tranquilo por enquanto. @João Silva, sem sinal dele.',
     timestamp: '10:32 AM',
     isCurrentUser: true,
   },
@@ -65,13 +96,21 @@ const initialMessages: ChatMessageData[] = [
   }
 ];
 
+const processMessagesWithMentions = (messages: Omit<ChatMessageData, 'textElements'>[]): ChatMessageData[] => {
+    return messages.map(msg => ({
+        ...msg,
+        textElements: msg.text ? renderTextWithMentionsForChat(msg.text, MOCK_CHAT_USER_NAMES) : undefined,
+    }));
+};
+
 
 export default function ChatWindow({ onClose }: ChatWindowProps) {
-  const [messages, setMessages] = useState<ChatMessageData[]>(initialMessages);
+  const [messages, setMessages] = useState<ChatMessageData[]>(() => processMessagesWithMentions(initialMessagesRaw));
   const [newMessage, setNewMessage] = useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { incrementNotificationCount } = useNotification();
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -82,11 +121,23 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     }
   }, [messages]);
 
+  const checkForMentionsAndNotifyChat = (textToCheck: string) => {
+    MOCK_CHAT_USER_NAMES.forEach(name => {
+      const mentionRegex = new RegExp(`@${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=\\s|\\p{P}|$)`, 'u');
+      if (mentionRegex.test(textToCheck)) {
+        console.log(`Chat Mentioned: ${name}`);
+        incrementNotificationCount();
+      }
+    });
+  };
+
   const handleSendMessage = (e?: FormEvent) => {
     if (e) e.preventDefault();
     if (newMessage.trim() === '') return;
 
-    const newMsg: ChatMessageData = {
+    checkForMentionsAndNotifyChat(newMessage);
+
+    const newMsgData: ChatMessageData = {
       id: Date.now().toString(),
       senderName: 'Você',
       avatarUrl: 'https://placehold.co/40x40.png?text=EU',
@@ -94,8 +145,9 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
       text: newMessage,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isCurrentUser: true,
+      textElements: renderTextWithMentionsForChat(newMessage, MOCK_CHAT_USER_NAMES),
     };
-    setMessages(prevMessages => [...prevMessages, newMsg]);
+    setMessages(prevMessages => [...prevMessages, newMsgData]);
     setNewMessage('');
   };
 
@@ -112,7 +164,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     
     const reader = new FileReader();
     reader.onload = (e) => {
-        const newMsg: ChatMessageData = {
+        const newMsgData: ChatMessageData = {
             id: Date.now().toString(),
             senderName: 'Você',
             avatarUrl: 'https://placehold.co/40x40.png?text=EU',
@@ -122,14 +174,13 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
             ...(fileType === 'image' && { imageUrl: e.target?.result as string, dataAIImageHint: 'uploaded image' }),
             file: { name: file.name, type: fileType }
         };
-        setMessages(prevMessages => [...prevMessages, newMsg]);
+        setMessages(prevMessages => [...prevMessages, newMsgData]);
     };
 
     if (fileType === 'image') {
         reader.readAsDataURL(file);
     } else {
-        // For audio and other files, we don't need to read the content for this simulation
-        const newMsg: ChatMessageData = {
+        const newMsgData: ChatMessageData = {
             id: Date.now().toString(),
             senderName: 'Você',
             avatarUrl: 'https://placehold.co/40x40.png?text=EU',
@@ -138,10 +189,9 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
             isCurrentUser: true,
             file: { name: file.name, type: fileType }
         };
-        setMessages(prevMessages => [...prevMessages, newMsg]);
+        setMessages(prevMessages => [...prevMessages, newMsgData]);
     }
     
-    // Reset file input
     if(fileInputRef.current) {
         fileInputRef.current.value = "";
     }
