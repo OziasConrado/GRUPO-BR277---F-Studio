@@ -31,8 +31,11 @@ const registerBusinessSchema = z.object({
   phone: z.string().optional().refine(val => !val || /^\d{10,11}$/.test(val.replace(/\D/g, '')), {
     message: "Telefone inválido (use DDD + número)."
   }),
-  whatsapp: z.string().optional().refine(val => !val || /^\d{10,15}$/.test(val.replace(/\D/g, '')), { // Adjusted to allow for country code + DDD + number
+  whatsapp: z.string().optional().refine(val => !val || /^\d{10,15}$/.test(val.replace(/\D/g, '')), {
     message: "WhatsApp inválido (Ex: 5541999998888)."
+  }),
+  instagramUsername: z.string().optional().refine(val => !val || /^[\w](?!.*?\.{2})[\w.]{1,28}[\w]$/.test(val), {
+    message: "Nome de usuário do Instagram inválido."
   }),
   description: z.string().min(20, "Descrição é obrigatória (mín. 20 caracteres).").max(500),
   imageFile: z.custom<File>(
@@ -44,7 +47,7 @@ const registerBusinessSchema = z.object({
       (file) => ["image/jpeg", "image/png", "image/webp"].includes(file.type),
       "Formato de imagem inválido (aceito: JPG, PNG, WebP)."
     ),
-  servicesOffered: z.string().optional(), // Comma-separated string, then split
+  servicesOffered: z.string().optional(),
   operatingHours: z.string().max(100).optional(),
   isPremium: z.boolean().default(false),
 });
@@ -54,7 +57,7 @@ type RegisterBusinessFormValues = z.infer<typeof registerBusinessSchema>;
 interface RegisterBusinessModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: Omit<BusinessData, 'id'>) => void;
+  onSubmit: (data: Omit<BusinessData, 'id' | 'imageUrl' | 'dataAIImageHint'> & { imagePreviewUrl: string }) => void;
 }
 
 export default function RegisterBusinessModal({ isOpen, onClose, onSubmit }: RegisterBusinessModalProps) {
@@ -69,21 +72,21 @@ export default function RegisterBusinessModal({ isOpen, onClose, onSubmit }: Reg
       address: "",
       description: "",
       isPremium: false,
+      instagramUsername: "",
     },
   });
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Validate here or rely on Zod, for immediate feedback better here
       if (file.size > MAX_FILE_SIZE_BYTES) {
         toast({ variant: "destructive", title: "Erro na Imagem", description: `Tamanho máximo da imagem: ${MAX_FILE_SIZE_MB}MB.`});
-        if(fileInputRef.current) fileInputRef.current.value = ""; // Clear input
+        if(fileInputRef.current) fileInputRef.current.value = "";
         return;
       }
       if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
         toast({ variant: "destructive", title: "Erro na Imagem", description: "Formato de imagem inválido (aceito: JPG, PNG, WebP)."});
-        if(fileInputRef.current) fileInputRef.current.value = ""; // Clear input
+        if(fileInputRef.current) fileInputRef.current.value = "";
         return;
       }
       form.setValue("imageFile", file, { shouldValidate: true });
@@ -93,7 +96,7 @@ export default function RegisterBusinessModal({ isOpen, onClose, onSubmit }: Reg
       };
       reader.readAsDataURL(file);
     } else {
-      form.setValue("imageFile", undefined); // Use undefined for react-hook-form to clear
+      form.setValue("imageFile", undefined);
       setImagePreview(null);
     }
   };
@@ -102,32 +105,32 @@ export default function RegisterBusinessModal({ isOpen, onClose, onSubmit }: Reg
     form.setValue("imageFile", undefined, { shouldValidate: true });
     setImagePreview(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = ""; // Reset the file input
+      fileInputRef.current.value = "";
     }
   };
 
   const handleFormSubmit = async (data: RegisterBusinessFormValues) => {
     if (!data.imageFile || !imagePreview) {
         toast({ variant: "destructive", title: "Erro de Validação", description: "Por favor, envie uma foto principal para o comércio."});
-        return; // Should be caught by Zod, but good practice
+        return;
     }
     
-    const businessData: Omit<BusinessData, 'id'> = {
-      name: data.name,
-      category: data.category,
-      address: data.address,
-      phone: data.phone,
-      whatsapp: data.whatsapp,
-      description: data.description,
-      imageUrl: imagePreview, // Use the preview (Data URL) for the prototype
-      dataAIImageHint: "user uploaded business photo",
-      servicesOffered: data.servicesOffered?.split(',').map(s => s.trim()).filter(s => s) || [],
-      operatingHours: data.operatingHours,
-      isPremium: data.isPremium,
+    const businessPayload = { // Explicitly create the payload for onSubmit
+        name: data.name,
+        category: data.category,
+        address: data.address,
+        phone: data.phone,
+        whatsapp: data.whatsapp,
+        instagramUsername: data.instagramUsername,
+        description: data.description,
+        servicesOffered: data.servicesOffered?.split(',').map(s => s.trim()).filter(s => s) || [],
+        operatingHours: data.operatingHours,
+        isPremium: data.isPremium,
+        imagePreviewUrl: imagePreview, // Pass the preview URL
     };
-    onSubmit(businessData);
+    onSubmit(businessPayload);
     form.reset();
-    removeImage(); // Also clear image preview and input
+    removeImage();
   };
 
   const handleCloseDialog = () => {
@@ -182,8 +185,8 @@ export default function RegisterBusinessModal({ isOpen, onClose, onSubmit }: Reg
                     ref={fileInputRef}
                     type="file" 
                     accept="image/png, image/jpeg, image/webp" 
-                    className="hidden" // Keep hidden, trigger via button
-                    onChange={handleImageChange} // Zod will handle .register part via Controller or setValue
+                    className="hidden"
+                    onChange={handleImageChange}
                   />
                 <Button 
                     type="button" 
@@ -240,6 +243,13 @@ export default function RegisterBusinessModal({ isOpen, onClose, onSubmit }: Reg
               </div>
 
               <div>
+                <Label htmlFor="instagramUsername-comercial">Usuário do Instagram</Label>
+                <Input id="instagramUsername-comercial" {...form.register("instagramUsername")} className="mt-1" placeholder="Ex: nome_do_meu_comercio"/>
+                {form.formState.errors.instagramUsername && <p className="text-sm text-destructive mt-1">{form.formState.errors.instagramUsername.message}</p>}
+              </div>
+
+
+              <div>
                 <Label htmlFor="servicesOffered-comercial">Serviços Oferecidos (separados por vírgula)</Label>
                 <Input id="servicesOffered-comercial" {...form.register("servicesOffered")} className="mt-1" placeholder="Ex: Wi-Fi, Banheiro, Café"/>
               </div>
@@ -247,6 +257,7 @@ export default function RegisterBusinessModal({ isOpen, onClose, onSubmit }: Reg
               <div>
                 <Label htmlFor="operatingHours-comercial">Horário de Funcionamento</Label>
                 <Input id="operatingHours-comercial" {...form.register("operatingHours")} className="mt-1" placeholder="Ex: Seg-Sex: 08:00-18:00"/>
+                {form.formState.errors.operatingHours && <p className="text-sm text-destructive mt-1">{form.formState.errors.operatingHours.message}</p>}
               </div>
 
               <div className="flex items-center space-x-2 pt-2">
@@ -262,7 +273,7 @@ export default function RegisterBusinessModal({ isOpen, onClose, onSubmit }: Reg
                     )}
                 />
                 <Label htmlFor="isPremium-comercial" className="font-normal text-sm">
-                  Optar pelo Plano Premium (sem anúncios no card, R$X,XX/mês - conceitual)
+                  Este é um Comércio Premium (Destaque e sem anúncios no card. Funcionalidade conceitual).
                 </Label>
               </div>
               <p className="text-xs text-muted-foreground pl-7">

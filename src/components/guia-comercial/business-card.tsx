@@ -6,15 +6,18 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { Phone, MessageCircle, MapPin, Tag, Clock, Settings, Info, ExternalLink } from 'lucide-react';
-import { cn } from '@/lib/utils'; // Added missing import
+import { Phone, MessageCircle, MapPin, Settings, Info, ExternalLink, Clock, Instagram, Star as StarIcon, Edit3, Navigation } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import StarDisplay from '@/components/sau/star-display'; // Reusing star display component
+import { useToast } from '@/hooks/use-toast';
 
 export default function BusinessCard({ business }: { business: BusinessData }) {
-  
+  const { toast } = useToast();
+
   const handleWhatsAppClick = () => {
     if (business.whatsapp) {
       let phoneNumber = business.whatsapp.replace(/\D/g, '');
-      if (!phoneNumber.startsWith('55')) { // Assuming Brazilian numbers, add 55 if not present
+      if (!phoneNumber.startsWith('55')) {
         phoneNumber = `55${phoneNumber}`;
       }
       window.open(`https://wa.me/${phoneNumber}`, '_blank');
@@ -26,6 +29,45 @@ export default function BusinessCard({ business }: { business: BusinessData }) {
       window.location.href = `tel:${business.phone.replace(/\D/g, '')}`;
     }
   };
+
+  const handleInstagramClick = () => {
+    if (business.instagramUsername) {
+        window.open(`https://instagram.com/${business.instagramUsername.replace('@','')}`, '_blank');
+    }
+  };
+  
+  const handleReviewClick = () => {
+    toast({
+        title: "Avaliar Local",
+        description: "Funcionalidade de avaliação estará disponível em breve!",
+    });
+  };
+
+  const handleNavigate = () => {
+    if (business.latitude && business.longitude) {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(position => {
+                const userLat = position.coords.latitude;
+                const userLng = position.coords.longitude;
+                const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${userLat},${userLng}&destination=${business.latitude},${business.longitude}`;
+                window.open(mapsUrl, '_blank');
+            }, () => {
+                // Fallback if user location cannot be obtained, but business location is known
+                const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${business.latitude},${business.longitude}`;
+                window.open(mapsUrl, '_blank');
+            });
+        } else {
+            // Fallback if geolocation API not supported
+            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${business.latitude},${business.longitude}`;
+            window.open(mapsUrl, '_blank');
+        }
+    } else {
+        // Fallback if business location is not known, search by address
+        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business.address)}`;
+        window.open(mapsUrl, '_blank');
+    }
+  };
+
 
   return (
     <Card className="w-full overflow-hidden shadow-lg rounded-xl flex flex-col h-full bg-card/80 dark:bg-card/80 backdrop-blur-sm border-white/10 dark:border-slate-700/10">
@@ -42,17 +84,31 @@ export default function BusinessCard({ business }: { business: BusinessData }) {
             ANÚNCIO
           </div>
         )}
-         <Badge variant={business.isPremium ? "default" : "secondary"} className="absolute top-2 left-2 shadow-md">
+         <Badge variant={business.isPremium ? "default" : "secondary"} className="absolute top-2 left-2 shadow-md bg-opacity-80 backdrop-blur-sm">
             {business.category}
         </Badge>
       </div>
 
       <CardHeader className="pb-3">
         <CardTitle className="font-headline text-xl">{business.name}</CardTitle>
-        <CardDescription className="flex items-start text-sm mt-1">
-          <MapPin className="h-4 w-4 mr-1.5 mt-0.5 text-muted-foreground flex-shrink-0" />
-          {business.address}
-        </CardDescription>
+        <div className="flex items-center text-sm mt-1 text-muted-foreground">
+            <MapPin className="h-4 w-4 mr-1.5 mt-0.5 flex-shrink-0" />
+            <span>{business.address}</span>
+            {business.distance !== undefined && business.distance !== Infinity && (
+                <Badge variant="outline" className="ml-2 text-xs whitespace-nowrap">
+                    ~{business.distance.toFixed(1)} km
+                </Badge>
+            )}
+        </div>
+
+        {business.isPremium && business.averageRating !== undefined && business.reviewCount !== undefined && (
+            <div className="flex items-center gap-2 mt-1.5">
+                <StarDisplay rating={business.averageRating} size={16} />
+                <span className="text-xs text-muted-foreground">
+                    ({business.averageRating.toFixed(1)} de {business.reviewCount} avaliações)
+                </span>
+            </div>
+        )}
       </CardHeader>
 
       <CardContent className="space-y-3 pb-4 flex-grow">
@@ -84,24 +140,51 @@ export default function BusinessCard({ business }: { business: BusinessData }) {
 
       <CardFooter className="grid grid-cols-2 gap-2 pt-3 border-t">
         {business.phone && (
-          <Button variant="outline" onClick={handlePhoneCall} className="w-full">
-            <Phone className="mr-2 h-4 w-4" /> Ligar
+          <Button variant="outline" size="sm" onClick={handlePhoneCall} className="w-full">
+            <Phone className="mr-1.5 h-4 w-4" /> Ligar
           </Button>
         )}
         {business.whatsapp && (
-          <Button variant="outline" onClick={handleWhatsAppClick} className="w-full bg-green-500/10 border-green-500/50 text-green-700 hover:bg-green-500/20 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300">
-            <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp
+          <Button variant="outline" size="sm" onClick={handleWhatsAppClick} className="w-full bg-green-500/10 border-green-500/50 text-green-700 hover:bg-green-500/20 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300">
+            <MessageCircle className="mr-1.5 h-4 w-4" /> WhatsApp
           </Button>
         )}
-        {/* Show something if no contact buttons */}
-        {(!business.phone && business.whatsapp) && <div className="hidden"></div> /* Consume one grid cell if only whatsapp */}
-        {(!business.phone && !business.whatsapp) && (
-             <Button variant="link" size="sm" className="col-span-2 text-muted-foreground cursor-default">
-                Contato não disponível
+        
+        {business.isPremium && business.instagramUsername && (
+            <Button variant="outline" size="sm" onClick={handleInstagramClick} className="w-full bg-pink-500/10 border-pink-500/50 text-pink-700 hover:bg-pink-500/20 hover:text-pink-800 dark:text-pink-400 dark:hover:text-pink-300">
+                <Instagram className="mr-1.5 h-4 w-4" /> Instagram
             </Button>
         )}
-         <Button variant="default" className={cn("w-full", (business.phone && business.whatsapp) ? "col-span-2 mt-2" : (!business.phone && !business.whatsapp) ? "hidden" : "w-full")}>
-            <ExternalLink className="mr-2 h-4 w-4" />
+
+        {business.isPremium && (
+             <Button variant="outline" size="sm" onClick={handleReviewClick} className="w-full">
+                <Edit3 className="mr-1.5 h-4 w-4" /> Avaliar
+            </Button>
+        )}
+
+        {(!business.phone && !business.whatsapp && (!business.isPremium || !business.instagramUsername)) && (
+            <Button variant="link" size="sm" className="col-span-2 text-muted-foreground cursor-default opacity-70" disabled>
+                Nenhum contato direto
+            </Button>
+        )}
+        
+        {/* Logic to ensure the "Ver Detalhes" button spans correctly */}
+        <Button 
+            variant="default" 
+            size="sm"
+            className={cn(
+                "w-full",
+                // Span 2 if it's the only button or if other buttons leave an even number of slots
+                (!business.phone && !business.whatsapp && (!business.isPremium || !business.instagramUsername)) ||
+                (business.phone && business.whatsapp && business.isPremium && business.instagramUsername) || // All 4 present
+                (business.phone && business.whatsapp && !business.isPremium) || // Only call & WA
+                (!business.phone && !business.whatsapp && business.isPremium && business.instagramUsername) // Only IG & Review
+                ? "col-span-2 mt-2" 
+                : "w-full" 
+            )}
+            onClick={() => toast({title: "Ver Detalhes", description: "Página de detalhes em breve!"})}
+        >
+            <ExternalLink className="mr-1.5 h-4 w-4" />
             Ver Detalhes
         </Button>
       </CardFooter>

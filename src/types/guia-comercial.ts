@@ -12,12 +12,17 @@ export interface BusinessData {
   category: BusinessCategory;
   address: string;
   phone?: string;
-  whatsapp?: string; // Should be just the number, e.g., 5541999999999
+  whatsapp?: string;
   description: string;
   imageUrl: string;
   dataAIImageHint: string;
   servicesOffered?: string[];
   operatingHours?: string;
-  isPremium?: boolean; // True for paid (no in-card ads), false for free
-  // userWhoRegisteredId?: string; // For future use
+  isPremium?: boolean;
+  latitude?: number;
+  longitude?: number;
+  instagramUsername?: string;
+  averageRating?: number;
+  reviewCount?: number;
+  distance?: number; // Calculated client-side
 }
