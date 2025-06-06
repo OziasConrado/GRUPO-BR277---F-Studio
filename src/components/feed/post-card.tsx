@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send, MoreVertical, Trash2, Edit3, Flag } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send, MoreVertical, Trash2, Edit3, Flag, X } from 'lucide-react';
 import { useState, type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
 import {
@@ -26,8 +26,9 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialogTitle as RadixAlertDialogTitle, // Renamed to avoid conflict
 } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle as RadixDialogTitle, DialogClose as RadixDialogClose } from '@/components/ui/dialog'; // For Image Modal
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
@@ -165,15 +166,15 @@ export default function PostCard({
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedUserProfile, setSelectedUserProfile] = useState<UserProfileData | null>(null);
 
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [selectedPostImage, setSelectedPostImage] = useState<string | StaticImageData | null>(null);
+
   const MAX_CHARS = 170;
   const needsTruncation = text.length > MAX_CHARS;
 
-  const displayedTextElements = useMemo(() => renderTextWithMentions(text, allKnownUserNames), [text, allKnownUserNames]);
-  const displayedTextNode = isTextExpanded ? displayedTextElements :
-    (typeof text === 'string' && text.length > MAX_CHARS ?
-      [...renderTextWithMentions(text.substring(0, MAX_CHARS), allKnownUserNames), '...'] :
-      displayedTextElements
-    );
+  const textToShow = isTextExpanded ? text : text.substring(0, MAX_CHARS);
+  const processedTextElements = useMemo(() => renderTextWithMentions(textToShow, allKnownUserNames), [textToShow, allKnownUserNames]);
+
 
   const processCommentsAndRepliesWithMentions = useCallback((items: (CommentProps | ReplyProps)[]) : any[] => {
     return items.map(item => ({
@@ -388,6 +389,11 @@ export default function PostCard({
     setIsProfileModalOpen(true);
   };
 
+  const handleImageClick = (imgUrl: string | StaticImageData) => {
+    setSelectedPostImage(imgUrl);
+    setIsImageModalOpen(true);
+  };
+
 
   const renderReplies = (replies: ReplyProps[] | undefined, commentIdForReply: string, depth = 0) => {
     if (!replies || replies.length === 0) return null;
@@ -407,24 +413,24 @@ export default function PostCard({
                   <p className="text-xs font-semibold font-headline">{reply.userName}</p>
                   <p className="text-xs text-muted-foreground">{reply.timestamp}</p>
                 </div>
-                <p className="text-base mt-0.5">{reply.textElements || reply.text}</p>
-                <div className="flex items-center mt-1 space-x-1">
+                <p className="text-base mt-0.5 whitespace-pre-wrap">{reply.textElements || reply.text}</p>
+                <div className="flex items-center mt-1 space-x-0.5">
                   <Button
                     variant="ghost"
                     size="sm"
-                    className={`p-0 h-auto text-xs ${reply.reactions.userReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary focus:text-primary'}`}
+                    className={`p-1 h-auto text-xs ${reply.reactions.userReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary focus:text-primary'} hover:bg-muted/30 rounded-md`}
                     onClick={() => handleItemReaction(reply.id, 'thumbsUp', 'reply', commentIdForReply)}
                   >
-                    <ThumbsUp className={`mr-1 h-3.5 w-3.5 ${reply.reactions.userReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
+                    <ThumbsUp className={`mr-0.5 h-3.5 w-3.5 ${reply.reactions.userReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
                     {reply.reactions.thumbsUp > 0 ? reply.reactions.thumbsUp : ''}
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className={`p-0 h-auto text-xs ${reply.reactions.userReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive focus:text-destructive'}`}
+                    className={`p-1 h-auto text-xs ${reply.reactions.userReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive focus:text-destructive'} hover:bg-muted/30 rounded-md`}
                     onClick={() => handleItemReaction(reply.id, 'thumbsDown', 'reply', commentIdForReply)}
                   >
-                    <ThumbsDown className={`mr-1 h-3.5 w-3.5 ${reply.reactions.userReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
+                    <ThumbsDown className={`mr-0.5 h-3.5 w-3.5 ${reply.reactions.userReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
                     {reply.reactions.thumbsDown > 0 ? reply.reactions.thumbsDown : ''}
                   </Button>
                   {depth < MAX_DEPTH && (
@@ -495,67 +501,93 @@ export default function PostCard({
 
       <CardContent className="p-4 pt-0">
         <div className="mb-3">
-            <p className="text-base leading-relaxed">{displayedTextNode}</p>
-            {needsTruncation && (
-            <Button
-                variant="link"
-                size="sm"
-                className="p-0 h-auto text-xs text-primary"
-                onClick={() => setIsTextExpanded(!isTextExpanded)}
-            >
-                {isTextExpanded ? 'Ver menos.' : 'Ver mais...'}
-            </Button>
-            )}
+            <p className="text-base leading-relaxed whitespace-pre-wrap">
+              {processedTextElements}
+              {!isTextExpanded && needsTruncation && (
+                <>
+                  {'... '}
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="p-0 h-auto text-xs text-primary inline"
+                    onClick={() => setIsTextExpanded(true)}
+                  >
+                    Ver mais...
+                  </Button>
+                </>
+              )}
+              {isTextExpanded && needsTruncation && (
+                <>
+                  {' '}
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="p-0 h-auto text-xs text-primary inline"
+                    onClick={() => setIsTextExpanded(false)}
+                  >
+                    Ver menos.
+                  </Button>
+                </>
+              )}
+            </p>
         </div>
         {imageUrl && (
-          <div className="relative aspect-square -mx-4 rounded-lg overflow-hidden border">
-            <Image
-              src={imageUrl}
-              alt="Post image"
-              fill
-              style={{ objectFit: 'cover' }}
-              data-ai-hint={dataAIImageHint || "social media post"}
-            />
+          <div className="p-[3px] rounded-lg bg-muted/10 dark:bg-muted/20">
+            <button
+                type="button"
+                onClick={() => handleImageClick(imageUrl as string)}
+                className="block w-full relative aspect-square rounded-md overflow-hidden border border-border/50 group focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                aria-label="Ampliar imagem"
+            >
+                <Image
+                    src={imageUrl}
+                    alt={dataAIImageHint || "Post image"}
+                    fill
+                    style={{ objectFit: 'cover' }}
+                    data-ai-hint={dataAIImageHint || "social media post"}
+                    className="transition-transform duration-300 group-hover:scale-105 rounded-md"
+                />
+            </button>
           </div>
         )}
       </CardContent>
 
-      <CardFooter className="flex items-center justify-between p-2 pt-1 border-t border-border/50">
-        <div className="flex items-center gap-1">
+      <CardFooter className="flex items-center justify-between p-2 pt-2 border-t border-border/50">
+        <div className="flex items-center gap-0.5">
             <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => handlePostReactionClick('thumbsUp')}
-                className={`p-1.5 h-auto ${currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
+                className={`p-1.5 h-auto ${currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary'} hover:bg-muted/30 rounded-md`}
                 aria-label="Curtir"
             >
                 <ThumbsUp className={`h-5 w-5 ${currentUserPostReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
-                {localPostReactions.thumbsUp > 0 && <span className="ml-1 text-xs tabular-nums">({localPostReactions.thumbsUp})</span>}
+                {localPostReactions.thumbsUp > 0 && <span className="ml-0.5 text-xs tabular-nums">({localPostReactions.thumbsUp})</span>}
             </Button>
             <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => handlePostReactionClick('thumbsDown')}
-                className={`p-1.5 h-auto ${currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'}`}
+                className={`p-1.5 h-auto ${currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'} hover:bg-muted/30 rounded-md`}
                 aria-label="Não curtir"
             >
                 <ThumbsDown className={`h-5 w-5 ${currentUserPostReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
-                 {localPostReactions.thumbsDown > 0 && <span className="ml-1 text-xs tabular-nums">({localPostReactions.thumbsDown})</span>}
+                 {localPostReactions.thumbsDown > 0 && <span className="ml-0.5 text-xs tabular-nums">({localPostReactions.thumbsDown})</span>}
             </Button>
 
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary p-1.5 h-auto" onClick={() => setIsSheetOpen(true)}>
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary p-1.5 h-auto hover:bg-muted/30 rounded-md" onClick={() => setIsSheetOpen(true)}>
                 <MessageSquare className="h-5 w-5" />
-                {localCommentsData.length > 0 && <span className="ml-1 text-xs tabular-nums">({localCommentsData.length})</span>}
+                {localCommentsData.length > 0 && <span className="ml-0.5 text-xs tabular-nums">({localCommentsData.length})</span>}
             </Button>
 
-             <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary p-1.5 h-auto">
+             <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary p-1.5 h-auto hover:bg-muted/30 rounded-md">
                 <Share2 className="h-5 w-5" />
             </Button>
         </div>
 
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary p-1.5 h-auto">
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary p-1.5 h-auto hover:bg-muted/30 rounded-md">
                     <MoreVertical className="h-5 w-5" />
                 </Button>
             </DropdownMenuTrigger>
@@ -581,27 +613,27 @@ export default function PostCard({
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0 rounded-t-[25px]">
                 <SheetHeader className="p-4 border-b border-border flex flex-row justify-center items-center relative">
-                    <SheetTitle className="sr-only">Comentários e Reações do Post</SheetTitle>
-                    <div className="flex items-center justify-center gap-4 py-1">
+                     <SheetTitle className="sr-only">Comentários e Reações do Post</SheetTitle>
+                    <div className="flex items-center justify-center gap-2 py-1">
                         <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handlePostReactionClick('thumbsUp')}
-                        className={`p-1 h-auto ${currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
-                        aria-label="Curtir Post"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handlePostReactionClick('thumbsUp')}
+                            className={`p-1 h-auto ${currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary'} hover:bg-muted/30 rounded-md`}
+                            aria-label="Curtir Post"
                         >
-                        <ThumbsUp className={`h-5 w-5 ${currentUserPostReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
-                        <span className="ml-1 text-xs tabular-nums">({localPostReactions.thumbsUp})</span>
+                            <ThumbsUp className={`h-5 w-5 ${currentUserPostReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
+                            <span className="ml-0.5 text-xs tabular-nums">({localPostReactions.thumbsUp})</span>
                         </Button>
                         <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handlePostReactionClick('thumbsDown')}
-                        className={`p-1 h-auto ${currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'}`}
-                        aria-label="Não Curtir Post"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handlePostReactionClick('thumbsDown')}
+                            className={`p-1 h-auto ${currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'} hover:bg-muted/30 rounded-md`}
+                            aria-label="Não Curtir Post"
                         >
-                        <ThumbsDown className={`h-5 w-5 ${currentUserPostReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
-                        <span className="ml-1 text-xs tabular-nums">({localPostReactions.thumbsDown})</span>
+                            <ThumbsDown className={`h-5 w-5 ${currentUserPostReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
+                            <span className="ml-0.5 text-xs tabular-nums">({localPostReactions.thumbsDown})</span>
                         </Button>
                     </div>
                 </SheetHeader>
@@ -619,24 +651,24 @@ export default function PostCard({
                             <p className="text-xs font-semibold font-headline">{comment.userName}</p>
                             <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
                         </div>
-                        <p className="text-base mt-1">{comment.textElements || comment.text}</p>
-                        <div className="flex items-center mt-1.5 space-x-1">
+                        <p className="text-base mt-1 whitespace-pre-wrap">{comment.textElements || comment.text}</p>
+                        <div className="flex items-center mt-1.5 space-x-0.5">
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className={`p-0 h-auto text-xs ${comment.reactions.userReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary focus:text-primary'}`}
+                                className={`p-1 h-auto text-xs ${comment.reactions.userReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary focus:text-primary'} hover:bg-muted/30 rounded-md`}
                                 onClick={() => handleItemReaction(comment.id, 'thumbsUp', 'comment')}
                             >
-                            <ThumbsUp className={`mr-1 h-3.5 w-3.5 ${comment.reactions.userReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
+                            <ThumbsUp className={`mr-0.5 h-3.5 w-3.5 ${comment.reactions.userReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
                             {comment.reactions.thumbsUp > 0 ? comment.reactions.thumbsUp : ''}
                             </Button>
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className={`p-0 h-auto text-xs ${comment.reactions.userReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive focus:text-destructive'}`}
+                                className={`p-1 h-auto text-xs ${comment.reactions.userReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive focus:text-destructive'} hover:bg-muted/30 rounded-md`}
                                 onClick={() => handleItemReaction(comment.id, 'thumbsDown', 'comment')}
                             >
-                            <ThumbsDown className={`mr-1 h-3.5 w-3.5 ${comment.reactions.userReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
+                            <ThumbsDown className={`mr-0.5 h-3.5 w-3.5 ${comment.reactions.userReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
                             {comment.reactions.thumbsDown > 0 ? comment.reactions.thumbsDown : ''}
                             </Button>
                             <Button
@@ -710,7 +742,7 @@ export default function PostCard({
     <AlertDialog open={isReportModalOpen} onOpenChange={setIsReportModalOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Sinalizar Conteúdo Inadequado</AlertDialogTitle>
+            <RadixAlertDialogTitle>Sinalizar Conteúdo Inadequado</RadixAlertDialogTitle>
             <AlertDialogDescription>
               Por favor, selecione o motivo da sua denúncia. Sua identidade será mantida em sigilo.
             </AlertDialogDescription>
@@ -743,6 +775,42 @@ export default function PostCard({
         onClose={() => setIsProfileModalOpen(false)}
         user={selectedUserProfile}
       />
+
+    {/* Image Zoom Modal */}
+    <Dialog open={isImageModalOpen} onOpenChange={setIsImageModalOpen}>
+        <DialogContent 
+            className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none !bg-black/90 !p-0 flex flex-col !translate-x-0 !translate-y-0"
+            onEscapeKeyDown={() => setIsImageModalOpen(false)}
+        >
+            <DialogHeader className="shrink-0 p-2 sm:p-3 flex flex-row justify-end items-center bg-black/50 !z-[210]">
+                <RadixDialogTitle className="sr-only">Visualização de Imagem</RadixDialogTitle>
+                <RadixDialogClose asChild>
+                    <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full h-9 w-9 sm:h-10 sm:w-10 !z-[210] flex-shrink-0">
+                        <X className="h-5 w-5 sm:h-6 sm:h-6" />
+                    </Button>
+                </RadixDialogClose>
+            </DialogHeader>
+            
+            <div className="flex-grow flex items-center justify-center p-1 sm:p-2 overflow-hidden">
+            {selectedPostImage && (
+                <div className="relative w-full h-full max-w-full max-h-full mx-auto">
+                <Image
+                    src={selectedPostImage}
+                    alt={dataAIImageHint || "Post image ampliada"}
+                    fill
+                    style={{objectFit: 'contain'}}
+                    data-ai-hint={dataAIImageHint || "social media post zoomed"}
+                />
+                </div>
+            )}
+            </div>
+
+            <div className="shrink-0 h-[100px] bg-gray-700/50 flex items-center justify-center text-sm text-white/80 !z-[210]">
+                Espaço para Banner AdMob (Ex: 320x100 ou 728x90)
+            </div>
+        </DialogContent>
+    </Dialog>
+
     </>
   );
 }
