@@ -45,7 +45,7 @@ const registerBusinessSchema = z.object({
       "Formato de imagem inválido (aceito: JPG, PNG, WebP)."
     ),
   servicesOffered: z.string().optional(), // Comma-separated string, then split
-  operatingHours: z.string().optional().max(100),
+  operatingHours: z.string().max(100).optional(),
   isPremium: z.boolean().default(false),
 });
 
