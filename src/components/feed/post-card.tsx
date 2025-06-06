@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send, MoreVertical, Trash2, Edit3, Flag, X } from 'lucide-react';
 import { useState, type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -558,11 +558,11 @@ export default function PostCard({
             </p>
         </div>
         {imageUrl && (
-           <div className="bg-muted/10 dark:bg-muted/20"> {/* Removed p-[3px] */}
+           <div className="bg-muted/10 dark:bg-muted/20 border-y border-border/50">
             <button
                 type="button"
                 onClick={() => handleImageClick(imageUrl as string)}
-                className="block w-full relative aspect-square overflow-hidden border-y border-border/50 group focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                className="block w-full relative aspect-square overflow-hidden group focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                 aria-label="Ampliar imagem"
             >
                 <Image
@@ -571,53 +571,53 @@ export default function PostCard({
                     fill
                     style={{ objectFit: 'cover' }}
                     data-ai-hint={dataAIImageHint || "social media post"}
-                    className="transition-transform duration-300 group-hover:scale-105" // Removed rounded-md
+                    className="transition-transform duration-300 group-hover:scale-105"
                 />
             </button>
           </div>
         )}
       </CardContent>
 
-      <CardFooter className="flex items-center justify-between px-1 py-1.5 border-t border-border/50">
+      <CardFooter className="flex items-center justify-between px-4 py-2 border-t border-border/50">
         <div className="flex items-center gap-0.5">
             <Button
                 variant="ghost"
                 onClick={() => handlePostReactionClick('thumbsUp')}
-                className={`p-1 h-auto ${currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary'} hover:bg-muted/30 rounded-md flex items-center gap-0.5`}
+                className={`p-2 h-auto ${currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary'} hover:bg-muted/30 rounded-md flex items-center gap-0.5`}
                 aria-label="Curtir"
             >
-                <ThumbsUp className={`h-6 w-6 ${currentUserPostReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
+                <ThumbsUp className={`h-7 w-7 ${currentUserPostReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
                 {localPostReactions.thumbsUp > 0 && <span className="text-xs tabular-nums">({localPostReactions.thumbsUp})</span>}
             </Button>
             <Button
                 variant="ghost"
                 onClick={() => handlePostReactionClick('thumbsDown')}
-                className={`p-1 h-auto ${currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'} hover:bg-muted/30 rounded-md flex items-center gap-0.5`}
+                className={`p-2 h-auto ${currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'} hover:bg-muted/30 rounded-md flex items-center gap-0.5`}
                 aria-label="Não curtir"
             >
-                <ThumbsDown className={`h-6 w-6 ${currentUserPostReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
+                <ThumbsDown className={`h-7 w-7 ${currentUserPostReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
                  {localPostReactions.thumbsDown > 0 && <span className="text-xs tabular-nums">({localPostReactions.thumbsDown})</span>}
             </Button>
 
             <Button
                 variant="ghost"
                 onClick={() => setIsSheetOpen(true)}
-                className="text-muted-foreground hover:text-primary p-1 h-auto hover:bg-muted/30 rounded-md flex items-center gap-0.5"
+                className="text-muted-foreground hover:text-primary p-2 h-auto hover:bg-muted/30 rounded-md flex items-center gap-0.5"
                 aria-label="Comentários"
             >
-                <MessageSquare className="h-6 w-6" />
+                <MessageSquare className="h-7 w-7" />
                 {localCommentsData.length > 0 && <span className="text-xs tabular-nums">({localCommentsData.length})</span>}
             </Button>
 
-             <Button variant="ghost" className="text-muted-foreground hover:text-primary p-1 h-auto hover:bg-muted/30 rounded-md">
-                <Share2 className="h-6 w-6" />
+             <Button variant="ghost" className="text-muted-foreground hover:text-primary p-2 h-auto hover:bg-muted/30 rounded-md">
+                <Share2 className="h-7 w-7" />
             </Button>
         </div>
 
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="text-muted-foreground hover:text-primary p-1 h-auto hover:bg-muted/30 rounded-md">
-                    <MoreVertical className="h-6 w-6" />
+                <Button variant="ghost" className="text-muted-foreground hover:text-primary p-2 h-auto hover:bg-muted/30 rounded-md">
+                    <MoreVertical className="h-7 w-7" />
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -706,12 +706,12 @@ export default function PostCard({
                             className="p-0 h-auto text-xs text-primary ml-1"
                             onClick={() => {
                                 if (replyingTo?.type === 'comment' && replyingTo.parentId === comment.id) {
-                                setNewCommentText(''); // Limpar o campo de comentário principal se estiver respondendo a este comentário
+                                setNewCommentText(''); 
                                 setReplyingTo(null);
                                 setNewReplyText('');
                                 } else {
                                 setReplyingTo({ type: 'comment', parentId: comment.id, userNameToReply: comment.userName });
-                                setNewReplyText(''); // Limpar o campo de resposta ao selecionar um novo alvo
+                                setNewReplyText(''); 
                                 }
                             }}
                             >
