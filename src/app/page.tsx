@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import PostCard, { type PostCardProps, type PostReactions } from '@/components/feed/post-card';
 import StoryCircle, { type StoryCircleProps } from '@/components/stories/StoryCircle';
 import StoryViewerModal from '@/components/stories/StoryViewerModal';
-import { Separator } from '@/components/ui/separator';
-import { AlertCircle, Star, TrendingUp, Info } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { AlertCircle, Star, TrendingUp, Info, Edit } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 
@@ -71,7 +72,7 @@ const mockAdminStories: StoryCircleProps[] = [
 ];
 
 
-const mockPosts: PostCardProps[] = [
+const initialMockPosts: PostCardProps[] = [
   {
     id: '1',
     userName: 'Carlos Caminhoneiro',
@@ -165,6 +166,10 @@ const mockPosts: PostCardProps[] = [
 export default function FeedPage() {
   const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
   const [selectedStory, setSelectedStory] = useState<StoryCircleProps | null>(null);
+  const [isCreatingPost, setIsCreatingPost] = useState(false);
+  const [newPostText, setNewPostText] = useState('');
+  const [posts, setPosts] = useState<PostCardProps[]>(initialMockPosts);
+
 
   useEffect(() => {
     const style = document.createElement('style');
@@ -188,6 +193,37 @@ export default function FeedPage() {
     setIsStoryModalOpen(true);
   };
 
+  const handleToggleCreatePost = () => {
+    setIsCreatingPost(!isCreatingPost);
+    if (isCreatingPost) { // If was true and now is false (Cancel clicked)
+        setNewPostText('');
+    }
+  };
+
+  const handlePublishPost = () => {
+    if (newPostText.trim() === '') return;
+
+    const newPost: PostCardProps = {
+      id: `post-${Date.now()}`,
+      userName: 'Você', // Mock current user
+      userAvatarUrl: 'https://placehold.co/40x40.png?text=EU',
+      dataAIAvatarHint: 'current user',
+      userLocation: 'Sua Localização', // Mock location
+      timestamp: 'Agora mesmo',
+      text: newPostText,
+      reactions: { ...defaultReactions },
+      commentsData: [],
+      allKnownUserNames: MOCK_POST_USER_NAMES,
+      bio: 'Este é o seu perfil.',
+      instagramUsername: 'seu_insta',
+    };
+
+    setPosts(prevPosts => [newPost, ...prevPosts]);
+    setNewPostText('');
+    setIsCreatingPost(false);
+  };
+
+
   return (
     <div className="w-full">
       <div className="mb-6">
@@ -210,7 +246,41 @@ export default function FeedPage() {
         </div>
       </div>
 
-      <h2 className="text-2xl font-bold mb-4 font-headline text-left">Feed277</h2>
+      <h2 className="text-2xl font-bold mb-2 font-headline text-left">Feed277</h2>
+      
+      <div className="mb-4">
+        <Button 
+            onClick={handleToggleCreatePost} 
+            variant={isCreatingPost ? "outline" : "default"}
+            className={`w-full sm:w-auto rounded-lg ${isCreatingPost ? '' : 'bg-primary hover:bg-primary/90'}`}
+        >
+          <Edit className="mr-2 h-4 w-4" />
+          {isCreatingPost ? 'Cancelar Publicação' : 'Nova Publicação'}
+        </Button>
+      </div>
+
+      {isCreatingPost && (
+        <Card className="mb-6 rounded-xl shadow-md">
+          <CardContent className="p-4">
+            <Textarea
+              placeholder="No que você está pensando?"
+              value={newPostText}
+              onChange={(e) => setNewPostText(e.target.value)}
+              className="w-full rounded-lg min-h-[80px] text-base bg-background/70"
+              rows={3}
+            />
+            <div className="mt-3 flex justify-end">
+              <Button onClick={handlePublishPost} className="rounded-lg">
+                Publicar
+              </Button>
+            </div>
+            <div className="mt-4 h-[50px] bg-muted/30 rounded-lg flex items-center justify-center text-sm text-muted-foreground">
+              Espaço para Banner AdMob (Ex: 320x50)
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
 
       <div className="mb-6 grid grid-cols-2 gap-3">
         <Card className="rounded-xl">
@@ -219,7 +289,7 @@ export default function FeedPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="p-3 pt-1">
-            <div className="text-xl font-bold">+{mockPosts.length}</div>
+            <div className="text-xl font-bold">+{posts.length}</div>
             <p className="text-xs text-muted-foreground">
               Dos usuários
             </p>
@@ -240,7 +310,7 @@ export default function FeedPage() {
       </div>
 
       <div className="space-y-6">
-        {mockPosts.map((post) => (
+        {posts.map((post) => (
           <PostCard key={post.id} {...post} />
         ))}
       </div>
@@ -252,4 +322,3 @@ export default function FeedPage() {
     </div>
   );
 }
-
