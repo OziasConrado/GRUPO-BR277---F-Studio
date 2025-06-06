@@ -83,7 +83,7 @@ const initialMockPosts: PostCardProps[] = [
     userLocation: 'Curitiba, PR',
     timestamp: '2 horas atrás',
     text: 'Estrada tranquila hoje na BR-116! Sol brilhando e sem trânsito. Bom dia a todos! @Ana Viajante, como está por aí? Aproveitando para testar o novo sistema de posts aqui no app. A interface está bem fluida e fácil de usar. Espero que todos tenham uma ótima viagem e que o dia seja produtivo para quem está na lida. @Ozias Conrado, tudo certo? Cuidado nas curvas e mantenham a atenção! Mais um pouco de texto para testar a funcionalidade de ver mais e ver menos, garantindo que tenhamos mais de 170 caracteres para que o botão apareça corretamente.',
-    imageUrl: 'https://placehold.co/600x400.png', // Rectangular for testing
+    imageUrl: 'https://placehold.co/600x400.png',
     dataAIImageHint: 'highway sunny day',
     reactions: { ...defaultReactions, thumbsUp: 152, thumbsDown: 5 },
     commentsData: [
@@ -275,14 +275,14 @@ export default function FeedPage() {
     };
 
     if (selectedImageForUpload && imagePreviewUrl) {
-      newPost.uploadedImageUrl = imagePreviewUrl; // Use a different prop for uploaded images
+      newPost.uploadedImageUrl = imagePreviewUrl; 
       newPost.dataAIUploadedImageHint = 'user uploaded content';
     } else if (newPostText.length <= 150 && selectedPostBackground && selectedPostBackground.name !== 'Padrão') {
       newPost.cardStyle = {
         backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
         backgroundImage: selectedPostBackground.gradient,
         color: selectedPostBackground.text,
-        name: selectedPostBackground.name, // Keep track of the chosen style name
+        name: selectedPostBackground.name, 
       };
     }
 
@@ -329,9 +329,7 @@ export default function FeedPage() {
         <Button
             onClick={handleToggleCreatePost}
             variant="outline"
-            className={cn(
-                "w-full sm:w-auto rounded-lg text-primary border-primary hover:bg-primary/10",
-            )}
+            className="w-full sm:w-auto rounded-lg text-primary border-primary hover:bg-primary/10"
         >
           <Edit className="mr-2 h-4 w-4" />
           {isCreatingPost ? 'Cancelar Publicação' : 'Nova Publicação'}
@@ -394,7 +392,7 @@ export default function FeedPage() {
                 className="hidden"
               />
               <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} title="Adicionar imagem">
-                <ImageIcon className="h-6 w-6 text-primary" />
+                <ImageIcon className="h-7 w-7 text-primary" />
               </Button>
               <Button onClick={handlePublishPost} className="rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground">
                 Publicar
@@ -450,3 +448,4 @@ export default function FeedPage() {
   );
 }
 
+    
