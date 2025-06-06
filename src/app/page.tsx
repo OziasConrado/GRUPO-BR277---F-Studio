@@ -175,11 +175,11 @@ const backgroundOptions = [
 
 const featureButtons = [
   { title: 'Guia Comercial', Icon: Store, href: '/guia-comercial' },
-  { title: 'Turismo', Icon: Landmark, href: '#' },
+  { title: 'Turismo', Icon: Landmark, href: '/turismo' }, // Link atualizado
   { title: 'SAU', Icon: Headset, href: '/sau' },
   { title: 'Real Time', Icon: Radio, href: '/streaming' },
   { title: 'Bloqueios', Icon: ShieldAlert, href: '/alertas' },
-  { title: 'Notícias', Icon: Newspaper, href: '#' },
+  { title: 'Notícias', Icon: Newspaper, href: '#' }, // Link pendente
 ];
 
 
@@ -337,7 +337,7 @@ export default function FeedPage() {
       
       <div className="my-6">
         <EmergencyButtonModalTrigger 
-          className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90 py-3 text-base"
+          className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90 py-3 text-base rounded-full"
           iconClassName="h-5 w-5"
         >
           <Phone className="mr-2 h-5 w-5" />
@@ -363,7 +363,7 @@ export default function FeedPage() {
         <Button
             onClick={handleToggleCreatePost}
             className={cn(
-                "w-full sm:w-auto",
+                "w-full sm:w-auto rounded-full",
                 "bg-transparent border border-primary text-primary",
                 "hover:bg-primary/10 hover:text-primary"
             )}
@@ -390,7 +390,7 @@ export default function FeedPage() {
                 <Button
                   variant="destructive"
                   size="icon"
-                  className="absolute top-1 right-1 h-6 w-6 opacity-70 group-hover:opacity-100 transition-opacity"
+                  className="absolute top-1 right-1 h-6 w-6 opacity-70 group-hover:opacity-100 transition-opacity rounded-full"
                   onClick={handleRemoveImage}
                 >
                   <XCircle className="h-4 w-4" />
@@ -408,7 +408,7 @@ export default function FeedPage() {
                       variant="outline" 
                       size="sm"
                       onClick={() => setSelectedPostBackground(opt)}
-                      className={`h-8 w-8 p-0 border-2 ${selectedPostBackground.name === opt.name ? 'ring-2 ring-offset-2 ring-primary' : 'border-muted-foreground/50'}`}
+                      className={`h-8 w-8 p-0 border-2 rounded-md ${selectedPostBackground.name === opt.name ? 'ring-2 ring-offset-2 ring-primary' : 'border-muted-foreground/50'}`}
                       style={{ background: opt.gradient || opt.bg }}
                       aria-label={`Selecionar fundo ${opt.name}`}
                     >
@@ -428,10 +428,10 @@ export default function FeedPage() {
                 onChange={handleImageInputChange}
                 className="hidden"
               />
-              <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} title="Adicionar imagem" className="text-primary">
+              <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} title="Adicionar imagem" className="text-primary rounded-full">
                 <ImageIcon className="h-7 w-7" />
               </Button>
-              <Button onClick={handlePublishPost} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Button onClick={handlePublishPost} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
                 Publicar
               </Button>
             </div>
