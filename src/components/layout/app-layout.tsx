@@ -11,8 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ChatWindow from '@/components/chat/ChatWindow';
 import { useNotification } from '@/contexts/NotificationContext';
-import { useChat } from '@/contexts/ChatContext'; // Import useChat
-import ChatFloatingButton from '@/components/chat/ChatFloatingButton'; // Keep for now or decide later
+import { useChat } from '@/contexts/ChatContext'; 
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -23,7 +22,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
   const { notificationCount, clearNotifications } = useNotification();
-  const { isChatOpen, openChat, closeChat, setIsChatOpen } = useChat(); // Use ChatContext
+  const { isChatOpen, openChat, closeChat, setIsChatOpen } = useChat(); 
 
   useEffect(() => {
     setIsMounted(true);
@@ -63,7 +62,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
               variant="ghost"
               size="icon"
               onClick={() => router.back()}
-              className="text-primary-foreground hover:bg-white/10 rounded-full h-10 w-10 sm:h-11 sm:w-11"
+              className="text-primary-foreground hover:bg-white/10 h-10 w-10 sm:h-11 sm:w-11"
             >
               <ArrowLeft className="h-6 w-6 sm:h-7 sm:h-7" />
               <span className="sr-only">Voltar</span>
@@ -81,7 +80,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 variant="ghost"
                 size="icon"
                 onClick={toggleTheme}
-                className="text-primary-foreground hover:bg-white/10 rounded-full h-10 w-10 sm:h-11 sm:w-11"
+                className="text-primary-foreground hover:bg-white/10 h-10 w-10 sm:h-11 sm:w-11"
                 aria-label="Alternar tema claro/escuro"
               >
                 {isDarkMode ? <Sun className="h-5 w-5 sm:h-6 sm:h-6 text-yellow-400" /> : <Moon className="h-5 w-5 sm:h-6 sm:h-6" />}
@@ -98,7 +97,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 variant="ghost"
                 size="icon"
                 onClick={() => window.location.reload()}
-                className="text-primary-foreground hover:bg-white/10 rounded-full h-10 w-10 sm:h-11 sm:w-11"
+                className="text-primary-foreground hover:bg-white/10 h-10 w-10 sm:h-11 sm:w-11"
               >
                 <RefreshCcw className="h-5 w-5 sm:h-6 sm:h-6" />
                 <span className="sr-only">Recarregar Página</span>
@@ -115,7 +114,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 variant="ghost"
                 size="icon"
                 onClick={handleNotificationClick}
-                className="relative text-primary-foreground hover:bg-white/10 rounded-full h-10 w-10 sm:h-11 sm:w-11"
+                className="relative text-primary-foreground hover:bg-white/10 h-10 w-10 sm:h-11 sm:w-11"
                 aria-label="Notificações"
               >
                 <Bell className="h-5 w-5 sm:h-6 sm:h-6" />
@@ -133,7 +132,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10 rounded-full p-0 h-10 w-10 sm:h-11 sm:w-11">
+              <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10 p-0 h-10 w-10 sm:h-11 sm:w-11">
                 <Avatar className="h-8 w-8 sm:h-9 sm:w-9">
                   <AvatarImage src="https://placehold.co/80x80.png" alt="Foto do Usuário" data-ai-hint="user profile"/>
                   <AvatarFallback>U</AvatarFallback>
@@ -169,7 +168,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </main>
         <Navigation />
         {isChatOpen && <ChatWindow onClose={closeChat} />}
-        <ChatFloatingButton onClick={openChat} /> 
       </div>
     </TooltipProvider>
   );

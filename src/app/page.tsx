@@ -6,13 +6,13 @@ import StoryCircle, { type StoryCircleProps } from '@/components/stories/StoryCi
 import StoryViewerModal from '@/components/stories/StoryViewerModal';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, Star, TrendingUp, Info, Edit, Image as ImageIcon, XCircle, Check, Phone, Store, Landmark, Headset, Radio, ShieldAlert, Newspaper } from 'lucide-react'; // Added new icons
+import { AlertCircle, Star, TrendingUp, Info, Edit, Image as ImageIcon, XCircle, Check, Phone, Store, Landmark, Headset, Radio, ShieldAlert, Newspaper } from 'lucide-react'; 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import EmergencyButtonModalTrigger from '@/components/common/emergency-button'; // Re-using the modal trigger logic
-import FeatureCard from '@/components/common/FeatureCard'; // Import FeatureCard
+import EmergencyButtonModalTrigger from '@/components/common/emergency-button'; 
+import FeatureCard from '@/components/common/FeatureCard'; 
 
 const defaultReactions: PostReactions = {
   thumbsUp: 0,
@@ -221,13 +221,13 @@ export default function FeedPage() {
 
   const handleToggleCreatePost = () => {
     setIsCreatingPost(!isCreatingPost);
-    if (isCreatingPost) { // If was true and now is false (Cancel clicked)
+    if (isCreatingPost) { 
         setNewPostText('');
         setSelectedImageForUpload(null);
         setImagePreviewUrl(null);
         setSelectedPostBackground(backgroundOptions[0]);
         if (fileInputRef.current) {
-          fileInputRef.current.value = ""; // Reset file input
+          fileInputRef.current.value = ""; 
         }
     }
   };
@@ -235,7 +235,7 @@ export default function FeedPage() {
   const handleImageInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      if (file.size > 5 * 1024 * 1024) { 
         toast({
           variant: 'destructive',
           title: 'Imagem muito grande',
@@ -249,7 +249,7 @@ export default function FeedPage() {
         setImagePreviewUrl(reader.result as string);
       };
       reader.readAsDataURL(file);
-      setSelectedPostBackground(backgroundOptions[0]); // Reset background if image is chosen
+      setSelectedPostBackground(backgroundOptions[0]); 
     }
   };
 
@@ -335,10 +335,10 @@ export default function FeedPage() {
         </div>
       </div>
 
-      {/* Emergency Button */}
+      
       <div className="my-6">
         <EmergencyButtonModalTrigger 
-          className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90 py-3 text-base rounded-full"
+          className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90 py-3 text-base"
           iconClassName="h-5 w-5"
         >
           <Phone className="mr-2 h-5 w-5" />
@@ -346,7 +346,7 @@ export default function FeedPage() {
         </EmergencyButtonModalTrigger>
       </div>
 
-      {/* Feature Buttons Mosaic */}
+      
       <div className="mb-8 grid grid-cols-2 sm:grid-cols-3 gap-3">
         {featureButtons.map((feature) => (
           <FeatureCard
@@ -391,7 +391,7 @@ export default function FeedPage() {
                 <Button
                   variant="destructive"
                   size="icon"
-                  className="absolute top-1 right-1 h-6 w-6 opacity-70 group-hover:opacity-100 transition-opacity rounded-full"
+                  className="absolute top-1 right-1 h-6 w-6 opacity-70 group-hover:opacity-100 transition-opacity"
                   onClick={handleRemoveImage}
                 >
                   <XCircle className="h-4 w-4" />
@@ -406,10 +406,10 @@ export default function FeedPage() {
                   {backgroundOptions.map(opt => (
                     <Button
                       key={opt.name}
-                      variant="outline" // Changed to outline for better distinction or manage through style
+                      variant="outline" 
                       size="sm"
                       onClick={() => setSelectedPostBackground(opt)}
-                      className={`h-8 w-8 p-0 rounded-full border-2 ${selectedPostBackground.name === opt.name ? 'ring-2 ring-offset-2 ring-primary' : 'border-muted-foreground/50'}`}
+                      className={`h-8 w-8 p-0 border-2 ${selectedPostBackground.name === opt.name ? 'ring-2 ring-offset-2 ring-primary' : 'border-muted-foreground/50'}`}
                       style={{ background: opt.gradient || opt.bg }}
                       aria-label={`Selecionar fundo ${opt.name}`}
                     >
@@ -432,7 +432,7 @@ export default function FeedPage() {
               <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} title="Adicionar imagem" className="text-primary">
                 <ImageIcon className="h-7 w-7" />
               </Button>
-              <Button onClick={handlePublishPost} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
+              <Button onClick={handlePublishPost} className="bg-primary hover:bg-primary/90 text-primary-foreground">
                 Publicar
               </Button>
             </div>
