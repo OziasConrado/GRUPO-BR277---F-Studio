@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send, MoreVertical, Trash2, Edit3, Flag, X } from 'lucide-react';
 import { useState, type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,9 +26,9 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle as RadixAlertDialogTitle, 
+  AlertDialogTitle as RadixAlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogHeader, DialogTitle as RadixDialogTitle, DialogClose as RadixDialogClose } from '@/components/ui/dialog'; 
+import { Dialog, DialogContent, DialogHeader, DialogTitle as RadixDialogTitle, DialogClose as RadixDialogClose } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
@@ -121,19 +121,27 @@ const renderTextWithMentions = (text: string, knownUsers: string[]): React.React
 
   const parts = text.split(mentionRegex);
   const elements: React.ReactNode[] = [];
+  let currentString = '';
 
   parts.forEach((part, index) => {
     if (part.startsWith('@')) {
       const mentionedName = part.substring(1);
       if (knownUsers.includes(mentionedName)) {
+        if (currentString) {
+          elements.push(currentString);
+          currentString = '';
+        }
         elements.push(<strong key={`${index}-${part}`} className="text-accent font-semibold cursor-pointer hover:underline">{part}</strong>);
       } else {
-        elements.push(part);
+        currentString += part;
       }
     } else {
-      elements.push(part);
+      currentString += part;
     }
   });
+  if (currentString) {
+    elements.push(currentString);
+  }
   return elements;
 };
 
@@ -173,40 +181,51 @@ export default function PostCard({
   const needsTruncation = text.length > MAX_CHARS;
 
   const textToShow = isTextExpanded ? text : text.substring(0, MAX_CHARS);
+
   const processedTextElements = useMemo(() => {
-    const renderedText = renderTextWithMentions(textToShow, allKnownUserNames);
-    if (!isTextExpanded && needsTruncation) {
-      return [
-        ...renderedText,
-        '... ',
-        <Button
-          key="ver-mais"
-          variant="link"
-          size="sm"
-          className="p-0 h-auto text-xs text-primary inline"
-          onClick={() => setIsTextExpanded(true)}
-        >
-          Ver mais...
-        </Button>
-      ];
+    const baseElements = renderTextWithMentions(textToShow, allKnownUserNames);
+    const combinedElements: React.ReactNode[] = [];
+
+    baseElements.forEach(element => {
+        if (typeof element === 'string') {
+            combinedElements.push(element);
+        } else {
+            combinedElements.push(element);
+        }
+    });
+
+    if (needsTruncation) {
+        if (!isTextExpanded) {
+            combinedElements.push('... ');
+            combinedElements.push(
+                <Button
+                  key="ver-mais"
+                  variant="link"
+                  size="sm"
+                  className="p-0 h-auto text-xs text-primary inline"
+                  onClick={(e) => { e.stopPropagation(); setIsTextExpanded(true); }}
+                >
+                  Ver mais...
+                </Button>
+            );
+        } else {
+            combinedElements.push(' ');
+            combinedElements.push(
+                <Button
+                  key="ver-menos"
+                  variant="link"
+                  size="sm"
+                  className="p-0 h-auto text-xs text-primary inline"
+                  onClick={(e) => { e.stopPropagation(); setIsTextExpanded(false); }}
+                >
+                  Ver menos.
+                </Button>
+            );
+        }
     }
-    if (isTextExpanded && needsTruncation) {
-      return [
-        ...renderedText,
-        ' ',
-        <Button
-          key="ver-menos"
-          variant="link"
-          size="sm"
-          className="p-0 h-auto text-xs text-primary inline"
-          onClick={() => setIsTextExpanded(false)}
-        >
-          Ver menos.
-        </Button>
-      ];
-    }
-    return renderedText;
+    return combinedElements;
   }, [textToShow, allKnownUserNames, isTextExpanded, needsTruncation, text]);
+
 
 
   const processCommentsAndRepliesWithMentions = useCallback((items: (CommentProps | ReplyProps)[]) : any[] => {
@@ -539,11 +558,11 @@ export default function PostCard({
             </p>
         </div>
         {imageUrl && (
-          <div className="p-[3px] rounded-lg bg-muted/10 dark:bg-muted/20">
+           <div className="bg-muted/10 dark:bg-muted/20"> {/* Removed p-[3px] */}
             <button
                 type="button"
                 onClick={() => handleImageClick(imageUrl as string)}
-                className="block w-full relative aspect-square rounded-md overflow-hidden border border-border/50 group focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                className="block w-full relative aspect-square overflow-hidden border-y border-border/50 group focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                 aria-label="Ampliar imagem"
             >
                 <Image
@@ -552,14 +571,14 @@ export default function PostCard({
                     fill
                     style={{ objectFit: 'cover' }}
                     data-ai-hint={dataAIImageHint || "social media post"}
-                    className="transition-transform duration-300 group-hover:scale-105 rounded-md"
+                    className="transition-transform duration-300 group-hover:scale-105" // Removed rounded-md
                 />
             </button>
           </div>
         )}
       </CardContent>
 
-      <CardFooter className="flex items-center justify-between px-2 py-1.5 border-t border-border/50">
+      <CardFooter className="flex items-center justify-between px-1 py-1.5 border-t border-border/50">
         <div className="flex items-center gap-0.5">
             <Button
                 variant="ghost"
@@ -567,7 +586,7 @@ export default function PostCard({
                 className={`p-1 h-auto ${currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary'} hover:bg-muted/30 rounded-md flex items-center gap-0.5`}
                 aria-label="Curtir"
             >
-                <ThumbsUp className={`h-5 w-5 ${currentUserPostReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
+                <ThumbsUp className={`h-6 w-6 ${currentUserPostReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
                 {localPostReactions.thumbsUp > 0 && <span className="text-xs tabular-nums">({localPostReactions.thumbsUp})</span>}
             </Button>
             <Button
@@ -576,7 +595,7 @@ export default function PostCard({
                 className={`p-1 h-auto ${currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'} hover:bg-muted/30 rounded-md flex items-center gap-0.5`}
                 aria-label="Não curtir"
             >
-                <ThumbsDown className={`h-5 w-5 ${currentUserPostReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
+                <ThumbsDown className={`h-6 w-6 ${currentUserPostReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
                  {localPostReactions.thumbsDown > 0 && <span className="text-xs tabular-nums">({localPostReactions.thumbsDown})</span>}
             </Button>
 
@@ -586,19 +605,19 @@ export default function PostCard({
                 className="text-muted-foreground hover:text-primary p-1 h-auto hover:bg-muted/30 rounded-md flex items-center gap-0.5"
                 aria-label="Comentários"
             >
-                <MessageSquare className="h-5 w-5" />
+                <MessageSquare className="h-6 w-6" />
                 {localCommentsData.length > 0 && <span className="text-xs tabular-nums">({localCommentsData.length})</span>}
             </Button>
 
              <Button variant="ghost" className="text-muted-foreground hover:text-primary p-1 h-auto hover:bg-muted/30 rounded-md">
-                <Share2 className="h-5 w-5" />
+                <Share2 className="h-6 w-6" />
             </Button>
         </div>
 
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="text-muted-foreground hover:text-primary p-1 h-auto hover:bg-muted/30 rounded-md">
-                    <MoreVertical className="h-5 w-5" />
+                    <MoreVertical className="h-6 w-6" />
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -623,7 +642,7 @@ export default function PostCard({
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0 rounded-t-[25px]">
                 <SheetHeader className="p-4 border-b border-border flex flex-row justify-center items-center relative">
-                    <SheetTitle className="sr-only">Comentários e Reações do Post</SheetTitle>
+                  <SheetTitle className="sr-only">Comentários e Reações do Post</SheetTitle>
                     <div className="flex items-center justify-center gap-2 py-1">
                         <Button
                             variant="ghost"
@@ -687,11 +706,12 @@ export default function PostCard({
                             className="p-0 h-auto text-xs text-primary ml-1"
                             onClick={() => {
                                 if (replyingTo?.type === 'comment' && replyingTo.parentId === comment.id) {
+                                setNewCommentText(''); // Limpar o campo de comentário principal se estiver respondendo a este comentário
                                 setReplyingTo(null);
                                 setNewReplyText('');
                                 } else {
                                 setReplyingTo({ type: 'comment', parentId: comment.id, userNameToReply: comment.userName });
-                                setNewReplyText('');
+                                setNewReplyText(''); // Limpar o campo de resposta ao selecionar um novo alvo
                                 }
                             }}
                             >
@@ -788,7 +808,7 @@ export default function PostCard({
 
     {/* Image Zoom Modal */}
     <Dialog open={isImageModalOpen} onOpenChange={setIsImageModalOpen}>
-        <DialogContent 
+        <DialogContent
             className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none !bg-black/90 !p-0 flex flex-col !translate-x-0 !translate-y-0"
             onEscapeKeyDown={() => setIsImageModalOpen(false)}
         >
@@ -800,7 +820,7 @@ export default function PostCard({
                     </Button>
                 </RadixDialogClose>
             </DialogHeader>
-            
+
             <div className="flex-grow flex items-center justify-center p-1 sm:p-2 overflow-hidden">
             {selectedPostImage && (
                 <div className="relative w-full h-full max-w-full max-h-full mx-auto">
