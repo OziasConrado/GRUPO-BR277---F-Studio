@@ -174,7 +174,7 @@ const backgroundOptions = [
 ];
 
 const featureButtons = [
-  { title: 'Guia Comercial', Icon: Store, href: '#' },
+  { title: 'Guia Comercial', Icon: Store, href: '/guia-comercial' },
   { title: 'Turismo', Icon: Landmark, href: '#' },
   { title: 'SAU', Icon: Headset, href: '/sau' },
   { title: 'Real Time', Icon: Radio, href: '/streaming' },
@@ -194,7 +194,6 @@ export default function FeedPage() {
   const [selectedImageForUpload, setSelectedImageForUpload] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [selectedPostBackground, setSelectedPostBackground] = useState(backgroundOptions[0]);
-  const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
 
 
   useEffect(() => {
