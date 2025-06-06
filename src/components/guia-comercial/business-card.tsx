@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { Phone, MessageCircle, MapPin, Tag, Clock, Settings, Info, ExternalLink } from 'lucide-react';
+import { cn } from '@/lib/utils'; // Added missing import
 
 export default function BusinessCard({ business }: { business: BusinessData }) {
   
