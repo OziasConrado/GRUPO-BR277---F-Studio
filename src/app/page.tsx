@@ -1,14 +1,15 @@
 
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, type ChangeEvent } from 'react';
 import PostCard, { type PostCardProps, type PostReactions } from '@/components/feed/post-card';
 import StoryCircle, { type StoryCircleProps } from '@/components/stories/StoryCircle';
 import StoryViewerModal from '@/components/stories/StoryViewerModal';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, Star, TrendingUp, Info, Edit } from 'lucide-react';
+import { AlertCircle, Star, TrendingUp, Info, Edit, Image as ImageIcon, XCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 const defaultReactions: PostReactions = {
   thumbsUp: 0,
@@ -81,7 +82,7 @@ const initialMockPosts: PostCardProps[] = [
     userLocation: 'Curitiba, PR',
     timestamp: '2 horas atrás',
     text: 'Estrada tranquila hoje na BR-116! Sol brilhando e sem trânsito. Bom dia a todos! @Ana Viajante, como está por aí? Aproveitando para testar o novo sistema de posts aqui no app. A interface está bem fluida e fácil de usar. Espero que todos tenham uma ótima viagem e que o dia seja produtivo para quem está na lida. @Ozias Conrado, tudo certo? Cuidado nas curvas e mantenham a atenção! Mais um pouco de texto para testar a funcionalidade de ver mais e ver menos, garantindo que tenhamos mais de 170 caracteres para que o botão apareça corretamente.',
-    imageUrl: 'https://placehold.co/600x600.png',
+    imageUrl: 'https://placehold.co/600x600.png', // This remains for posts that don't have user-uploaded images or special backgrounds
     dataAIImageHint: 'highway sunny day square',
     reactions: { ...defaultReactions, thumbsUp: 152, thumbsDown: 5 },
     commentsData: [
@@ -153,8 +154,7 @@ const initialMockPosts: PostCardProps[] = [
     userLocation: 'Brasil',
     timestamp: '1 dia atrás',
     text: 'Nova funcionalidade no app: Checklist de Viagem aprimorado! Confira na seção de Ferramentas. Agora com mais itens e a possibilidade de salvar seus checklists para viagens futuras. Feedback é sempre bem-vindo!',
-    imageUrl: 'https://placehold.co/600x600.png',
-    dataAIImageHint: 'app interface checklist square',
+    // No imageUrl here to test cardStyle if we add one to this post later
     reactions: { ...defaultReactions, thumbsUp: 210, thumbsDown: 3 },
     commentsData: [],
     bio: 'Perfil oficial do app Rota Segura. Novidades, dicas e suporte para você, caminhoneiro e viajante!',
@@ -163,12 +163,26 @@ const initialMockPosts: PostCardProps[] = [
   },
 ];
 
+const backgroundOptions = [
+  { name: 'Padrão', bg: 'hsl(var(--card))', text: 'hsl(var(--card-foreground))' },
+  { name: 'Azul', bg: '#002776', text: '#FFFFFF' },
+  { name: 'Verde', bg: '#009c3b', text: '#FFFFFF' },
+  { name: 'Amarelo', bg: '#ffdf00', text: '#002776' },
+  { name: 'Gradiente', gradient: 'linear-gradient(to right, #002776, #009c3b, #ffdf00)', text: '#FFFFFF' },
+];
+
+
 export default function FeedPage() {
   const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
   const [selectedStory, setSelectedStory] = useState<StoryCircleProps | null>(null);
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [newPostText, setNewPostText] = useState('');
   const [posts, setPosts] = useState<PostCardProps[]>(initialMockPosts);
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedImageForUpload, setSelectedImageForUpload] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [selectedPostBackground, setSelectedPostBackground] = useState(backgroundOptions[0]);
 
 
   useEffect(() => {
@@ -197,18 +211,60 @@ export default function FeedPage() {
     setIsCreatingPost(!isCreatingPost);
     if (isCreatingPost) { // If was true and now is false (Cancel clicked)
         setNewPostText('');
+        setSelectedImageForUpload(null);
+        setImagePreviewUrl(null);
+        setSelectedPostBackground(backgroundOptions[0]);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ""; // Reset file input
+        }
+    }
+  };
+
+  const handleImageInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          variant: 'destructive',
+          title: 'Imagem muito grande',
+          description: 'Por favor, selecione uma imagem menor que 5MB.',
+        });
+        return;
+      }
+      setSelectedImageForUpload(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreviewUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      setSelectedPostBackground(backgroundOptions[0]); // Reset background if image is chosen
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImageForUpload(null);
+    setImagePreviewUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
   const handlePublishPost = () => {
-    if (newPostText.trim() === '') return;
+    if (newPostText.trim() === '' && !selectedImageForUpload) {
+      toast({
+        variant: 'destructive',
+        title: 'Publicação vazia',
+        description: 'Escreva algo ou adicione uma imagem para publicar.',
+      });
+      return;
+    }
 
     const newPost: PostCardProps = {
       id: `post-${Date.now()}`,
-      userName: 'Você', // Mock current user
+      userName: 'Você',
       userAvatarUrl: 'https://placehold.co/40x40.png?text=EU',
       dataAIAvatarHint: 'current user',
-      userLocation: 'Sua Localização', // Mock location
+      userLocation: 'Sua Localização',
       timestamp: 'Agora mesmo',
       text: newPostText,
       reactions: { ...defaultReactions },
@@ -218,10 +274,31 @@ export default function FeedPage() {
       instagramUsername: 'seu_insta',
     };
 
+    if (selectedImageForUpload && imagePreviewUrl) {
+      newPost.uploadedImageUrl = imagePreviewUrl;
+      newPost.dataAIUploadedImageHint = 'user uploaded content';
+    } else if (newPostText.length <= 150 && selectedPostBackground && selectedPostBackground.name !== 'Padrão') {
+      newPost.cardStyle = {
+        backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
+        backgroundImage: selectedPostBackground.gradient,
+        color: selectedPostBackground.text,
+        name: selectedPostBackground.name,
+      };
+    }
+
+
     setPosts(prevPosts => [newPost, ...prevPosts]);
     setNewPostText('');
+    setSelectedImageForUpload(null);
+    setImagePreviewUrl(null);
+    setSelectedPostBackground(backgroundOptions[0]);
+    if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+    }
     setIsCreatingPost(false);
   };
+
+  const showColorPalette = !selectedImageForUpload && newPostText.length <= 150 && newPostText.length > 0;
 
 
   return (
@@ -252,7 +329,7 @@ export default function FeedPage() {
         <Button 
             onClick={handleToggleCreatePost} 
             variant={isCreatingPost ? "outline" : "default"}
-            className={`w-full sm:w-auto rounded-lg ${isCreatingPost ? '' : 'bg-primary hover:bg-primary/90'}`}
+            className={`w-full sm:w-auto rounded-lg ${isCreatingPost ? '' : 'bg-primary hover:bg-primary/90 text-primary-foreground'}`}
         >
           <Edit className="mr-2 h-4 w-4" />
           {isCreatingPost ? 'Cancelar Publicação' : 'Nova Publicação'}
@@ -261,7 +338,7 @@ export default function FeedPage() {
 
       {isCreatingPost && (
         <Card className="mb-6 rounded-xl shadow-md">
-          <CardContent className="p-4">
+          <CardContent className="p-4 space-y-3">
             <Textarea
               placeholder="No que você está pensando?"
               value={newPostText}
@@ -269,11 +346,59 @@ export default function FeedPage() {
               className="w-full rounded-lg min-h-[80px] text-base bg-background/70"
               rows={3}
             />
-            <div className="mt-3 flex justify-end">
-              <Button onClick={handlePublishPost} className="rounded-lg">
+
+            {imagePreviewUrl && (
+              <div className="relative group w-32 h-32 rounded-md overflow-hidden border">
+                <img src={imagePreviewUrl} alt="Preview" className="w-full h-full object-cover" />
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-1 right-1 h-6 w-6 opacity-70 group-hover:opacity-100 transition-opacity"
+                  onClick={handleRemoveImage}
+                >
+                  <XCircle className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
+            {showColorPalette && (
+              <div className="pt-2">
+                <p className="text-xs text-muted-foreground mb-1.5">Escolha um fundo (para posts curtos):</p>
+                <div className="flex flex-wrap gap-2">
+                  {backgroundOptions.map(opt => (
+                    <Button
+                      key={opt.name}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedPostBackground(opt)}
+                      className={`h-8 w-8 p-0 rounded-full border-2 ${selectedPostBackground.name === opt.name ? 'ring-2 ring-offset-2 ring-primary' : ''}`}
+                      style={{ background: opt.gradient || opt.bg }}
+                      aria-label={`Selecionar fundo ${opt.name}`}
+                    >
+                       {selectedPostBackground.name === opt.name && opt.name === 'Padrão' && <Check className="h-4 w-4 text-primary"/>}
+                       {selectedPostBackground.name === opt.name && opt.name !== 'Padrão' && <Check className="h-4 w-4" style={{color: opt.text === '#FFFFFF' ? '#000000' : opt.text }}/>}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <div className="flex justify-between items-center pt-2">
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                onChange={handleImageInputChange}
+                className="hidden"
+              />
+              <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} title="Adicionar imagem">
+                <ImageIcon className="h-6 w-6 text-primary" />
+              </Button>
+              <Button onClick={handlePublishPost} className="rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground">
                 Publicar
               </Button>
             </div>
+            
             <div className="mt-4 h-[50px] bg-muted/30 rounded-lg flex items-center justify-center text-sm text-muted-foreground">
               Espaço para Banner AdMob (Ex: 320x50)
             </div>

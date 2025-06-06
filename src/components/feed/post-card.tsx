@@ -34,6 +34,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { useNotification } from '@/contexts/NotificationContext';
 import UserProfileModal, { type UserProfileData } from '@/components/profile/UserProfileModal';
+import { cn } from '@/lib/utils';
 
 
 export interface ReactionState {
@@ -80,13 +81,21 @@ export interface PostCardProps {
   userLocation?: string;
   timestamp: string;
   text: string;
-  imageUrl?: string | StaticImageData;
+  imageUrl?: string | StaticImageData; // For general placeholder images
   dataAIImageHint?: string;
+  uploadedImageUrl?: string | StaticImageData; // For user-uploaded image specific to this post
+  dataAIUploadedImageHint?: string;
   reactions: PostReactions;
   commentsData: CommentProps[];
   allKnownUserNames?: string[];
   bio?: string;
   instagramUsername?: string;
+  cardStyle?: {
+    backgroundColor?: string;
+    color: string;
+    backgroundImage?: string;
+    name: string;
+  };
 }
 
 
@@ -154,13 +163,16 @@ export default function PostCard({
   userLocation,
   timestamp,
   text,
-  imageUrl,
+  imageUrl, // General placeholder
   dataAIImageHint,
+  uploadedImageUrl, // User-specific upload
+  dataAIUploadedImageHint,
   reactions: initialReactions,
   commentsData: initialCommentsData,
   allKnownUserNames = MOCK_USER_NAMES_FOR_MENTIONS,
   bio,
   instagramUsername,
+  cardStyle,
 }: PostCardProps) {
   const [currentUserPostReaction, setCurrentUserPostReaction] = useState<'thumbsUp' | 'thumbsDown' | null>(null);
   const [localPostReactions, setLocalPostReactions] = useState(initialReactions);
@@ -187,11 +199,7 @@ export default function PostCard({
     const combinedElements: React.ReactNode[] = [];
 
     baseElements.forEach(element => {
-        if (typeof element === 'string') {
-            combinedElements.push(element);
-        } else {
-            combinedElements.push(element);
-        }
+        combinedElements.push(element);
     });
 
     if (needsTruncation) {
@@ -225,7 +233,6 @@ export default function PostCard({
     }
     return combinedElements;
   }, [textToShow, allKnownUserNames, isTextExpanded, needsTruncation, text]);
-
 
 
   const processCommentsAndRepliesWithMentions = useCallback((items: (CommentProps | ReplyProps)[]) : any[] => {
@@ -446,6 +453,13 @@ export default function PostCard({
     setIsImageModalOpen(true);
   };
 
+  const headerTextColor = cardStyle?.color === '#FFFFFF' ? 'text-primary-foreground' : 'text-foreground';
+  const mutedTextColor = cardStyle?.color === '#FFFFFF' ? 'text-primary-foreground/80' : 'text-muted-foreground';
+  const reactionButtonTextColor = cardStyle?.color === '#FFFFFF' ? 'text-primary-foreground/90 hover:text-primary-foreground' : 'text-muted-foreground hover:text-primary';
+  const reactionButtonActivePrimaryColor = cardStyle?.color === '#FFFFFF' ? 'text-yellow-400' : 'text-primary'; // Example: yellow for likes on dark bg
+  const reactionButtonActiveDestructiveColor = cardStyle?.color === '#FFFFFF' ? 'text-orange-400' : 'text-destructive'; // Example: orange for dislikes on dark bg
+  const reactionButtonHoverBg = cardStyle?.color === '#FFFFFF' ? 'hover:bg-white/10' : 'hover:bg-muted/30';
+  
 
   const renderReplies = (replies: ReplyProps[] | undefined, commentIdForReply: string, depth = 0) => {
     if (!replies || replies.length === 0) return null;
@@ -531,10 +545,16 @@ export default function PostCard({
     );
   };
 
+  const displayImageUrl = cardStyle ? null : (uploadedImageUrl || imageUrl);
+  const displayImageAlt = cardStyle ? '' : (uploadedImageUrl ? (dataAIUploadedImageHint || "Imagem do post") : (dataAIImageHint || "Imagem do post"));
+
 
   return (
     <>
-    <Card className="w-full max-w-2xl mx-auto mb-6 shadow-lg rounded-xl overflow-hidden">
+    <Card 
+      className="w-full max-w-2xl mx-auto mb-6 shadow-lg rounded-xl overflow-hidden"
+      style={cardStyle?.backgroundImage ? { backgroundImage: cardStyle.backgroundImage } : { backgroundColor: cardStyle?.backgroundColor }}
+    >
       <CardHeader className="flex flex-row items-start space-x-3 p-4">
         <Avatar className="h-10 w-10 cursor-pointer" onClick={handleAvatarOrNameClick}>
           {userAvatarUrl ? <AvatarImage src={userAvatarUrl as string} alt={userName} data-ai-hint={dataAIAvatarHint} /> : null}
@@ -544,33 +564,35 @@ export default function PostCard({
         </Avatar>
         <div className="flex justify-between items-start w-full">
             <div className="cursor-pointer" onClick={handleAvatarOrNameClick}>
-                <PostCardTitleUI className="text-base font-headline">{userName}</PostCardTitleUI>
-                {userLocation && <p className="text-xs text-muted-foreground">{userLocation}</p>}
+                <PostCardTitleUI className={cn("text-base font-headline", headerTextColor)} style={cardStyle ? { color: cardStyle.color } : {}}>{userName}</PostCardTitleUI>
+                {userLocation && <p className={cn("text-xs", mutedTextColor)} style={cardStyle ? { color: cardStyle.color, opacity: 0.8 } : {}}>{userLocation}</p>}
             </div>
-            <p className="text-xs text-muted-foreground whitespace-nowrap pl-2">{timestamp}</p>
+            <p className={cn("text-xs whitespace-nowrap pl-2", mutedTextColor)} style={cardStyle ? { color: cardStyle.color, opacity: 0.8 } : {}}>{timestamp}</p>
         </div>
       </CardHeader>
 
       <CardContent className="p-4 pt-0">
-        <div className="mb-3">
-            <p className="text-base leading-relaxed whitespace-pre-wrap">
-              {processedTextElements}
-            </p>
-        </div>
-        {imageUrl && (
+        {text && (
+          <div className="mb-3">
+              <p className="text-base leading-relaxed whitespace-pre-wrap" style={cardStyle ? { color: cardStyle.color } : {}}>
+                {processedTextElements}
+              </p>
+          </div>
+        )}
+        {displayImageUrl && (
            <div className="bg-muted/10 dark:bg-muted/20 border-y border-border/50">
             <button
                 type="button"
-                onClick={() => handleImageClick(imageUrl as string)}
+                onClick={() => handleImageClick(displayImageUrl!)}
                 className="block w-full relative aspect-square overflow-hidden group focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                 aria-label="Ampliar imagem"
             >
                 <Image
-                    src={imageUrl}
-                    alt={dataAIImageHint || "Post image"}
+                    src={displayImageUrl}
+                    alt={displayImageAlt}
                     fill
                     style={{ objectFit: 'cover' }}
-                    data-ai-hint={dataAIImageHint || "social media post"}
+                    data-ai-hint={displayImageAlt}
                     className="transition-transform duration-300 group-hover:scale-105"
                 />
             </button>
@@ -579,44 +601,44 @@ export default function PostCard({
       </CardContent>
 
       <CardFooter className="flex items-center justify-between px-4 py-2 border-t border-border/50">
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-1">
             <Button
                 variant="ghost"
                 onClick={() => handlePostReactionClick('thumbsUp')}
-                className={`p-2 h-auto ${currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary'} hover:bg-muted/30 rounded-md flex items-center gap-0.5`}
+                className={cn(`p-2 h-auto ${currentUserPostReaction === 'thumbsUp' ? reactionButtonActivePrimaryColor : reactionButtonTextColor} ${reactionButtonHoverBg} rounded-md flex items-center gap-0.5`)}
                 aria-label="Curtir"
             >
-                <ThumbsUp className={`h-7 w-7 ${currentUserPostReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
+                <ThumbsUp className={`h-7 w-7 ${currentUserPostReaction === 'thumbsUp' ? (cardStyle?.color === '#FFFFFF' ? 'fill-yellow-400' : 'fill-primary') : ''}`} />
                 {localPostReactions.thumbsUp > 0 && <span className="text-xs tabular-nums">({localPostReactions.thumbsUp})</span>}
             </Button>
             <Button
                 variant="ghost"
                 onClick={() => handlePostReactionClick('thumbsDown')}
-                className={`p-2 h-auto ${currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'} hover:bg-muted/30 rounded-md flex items-center gap-0.5`}
+                className={cn(`p-2 h-auto ${currentUserPostReaction === 'thumbsDown' ? reactionButtonActiveDestructiveColor : reactionButtonTextColor} ${reactionButtonHoverBg} rounded-md flex items-center gap-0.5`)}
                 aria-label="Não curtir"
             >
-                <ThumbsDown className={`h-7 w-7 ${currentUserPostReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
+                <ThumbsDown className={`h-7 w-7 ${currentUserPostReaction === 'thumbsDown' ? (cardStyle?.color === '#FFFFFF' ? 'fill-orange-400' : 'fill-destructive') : ''}`} />
                  {localPostReactions.thumbsDown > 0 && <span className="text-xs tabular-nums">({localPostReactions.thumbsDown})</span>}
             </Button>
 
             <Button
                 variant="ghost"
                 onClick={() => setIsSheetOpen(true)}
-                className="text-muted-foreground hover:text-primary p-2 h-auto hover:bg-muted/30 rounded-md flex items-center gap-0.5"
+                className={cn(reactionButtonTextColor, reactionButtonHoverBg, "p-2 h-auto rounded-md flex items-center gap-0.5")}
                 aria-label="Comentários"
             >
                 <MessageSquare className="h-7 w-7" />
                 {localCommentsData.length > 0 && <span className="text-xs tabular-nums">({localCommentsData.length})</span>}
             </Button>
 
-             <Button variant="ghost" className="text-muted-foreground hover:text-primary p-2 h-auto hover:bg-muted/30 rounded-md">
+             <Button variant="ghost" className={cn(reactionButtonTextColor, reactionButtonHoverBg, "p-2 h-auto rounded-md")}>
                 <Share2 className="h-7 w-7" />
             </Button>
         </div>
 
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="text-muted-foreground hover:text-primary p-2 h-auto hover:bg-muted/30 rounded-md">
+                <Button variant="ghost" className={cn(reactionButtonTextColor, reactionButtonHoverBg, "p-2 h-auto rounded-md")}>
                     <MoreVertical className="h-7 w-7" />
                 </Button>
             </DropdownMenuTrigger>
@@ -829,7 +851,7 @@ export default function PostCard({
                     alt={dataAIImageHint || "Post image ampliada"}
                     fill
                     style={{objectFit: 'contain'}}
-                    data-ai-hint={dataAIImageHint || "social media post zoomed"}
+                    data-ai-hint={dataAIUploadedImageHint || dataAIImageHint || "social media post zoomed"}
                 />
                 </div>
             )}
@@ -844,4 +866,3 @@ export default function PostCard({
     </>
   );
 }
-
