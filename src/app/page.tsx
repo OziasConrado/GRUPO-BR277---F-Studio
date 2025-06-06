@@ -6,10 +6,11 @@ import StoryCircle, { type StoryCircleProps } from '@/components/stories/StoryCi
 import StoryViewerModal from '@/components/stories/StoryViewerModal';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, Star, TrendingUp, Info, Edit, Image as ImageIcon, XCircle, Check } from 'lucide-react'; // Added Check here
+import { AlertCircle, Star, TrendingUp, Info, Edit, Image as ImageIcon, XCircle, Check } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 const defaultReactions: PostReactions = {
   thumbsUp: 0,
@@ -82,8 +83,8 @@ const initialMockPosts: PostCardProps[] = [
     userLocation: 'Curitiba, PR',
     timestamp: '2 horas atrás',
     text: 'Estrada tranquila hoje na BR-116! Sol brilhando e sem trânsito. Bom dia a todos! @Ana Viajante, como está por aí? Aproveitando para testar o novo sistema de posts aqui no app. A interface está bem fluida e fácil de usar. Espero que todos tenham uma ótima viagem e que o dia seja produtivo para quem está na lida. @Ozias Conrado, tudo certo? Cuidado nas curvas e mantenham a atenção! Mais um pouco de texto para testar a funcionalidade de ver mais e ver menos, garantindo que tenhamos mais de 170 caracteres para que o botão apareça corretamente.',
-    imageUrl: 'https://placehold.co/600x600.png',
-    dataAIImageHint: 'highway sunny day square',
+    imageUrl: 'https://placehold.co/600x400.png', // Rectangular for testing
+    dataAIImageHint: 'highway sunny day',
     reactions: { ...defaultReactions, thumbsUp: 152, thumbsDown: 5 },
     commentsData: [
       {
@@ -128,8 +129,8 @@ const initialMockPosts: PostCardProps[] = [
     userLocation: 'São Paulo, SP',
     timestamp: '5 horas atrás',
     text: 'Alerta de neblina densa na Serra do Mar. Redobrem a atenção, pessoal! A visibilidade está bastante comprometida e a pista pode estar escorregadia. Recomendo acender os faróis de neblina e reduzir a velocidade consideravelmente. @Segurança Rodoviária, por favor, verifiquem a área.',
-    imageUrl: 'https://placehold.co/600x600.png',
-    dataAIImageHint: 'foggy mountain road square',
+    imageUrl: 'https://placehold.co/600x400.png',
+    dataAIImageHint: 'foggy mountain road',
     reactions: { ...defaultReactions, thumbsUp: 98, thumbsDown: 2 },
     commentsData: [
       {
@@ -325,10 +326,15 @@ export default function FeedPage() {
       <h2 className="text-2xl font-bold mb-2 font-headline text-left">Feed277</h2>
       
       <div className="mb-4">
-        <Button 
-            onClick={handleToggleCreatePost} 
-            variant={isCreatingPost ? "outline" : "default"}
-            className={`w-full sm:w-auto rounded-lg ${isCreatingPost ? '' : 'bg-primary hover:bg-primary/90 text-primary-foreground'}`}
+        <Button
+            onClick={handleToggleCreatePost}
+            variant="outline"
+            className={cn(
+                "w-full sm:w-auto rounded-lg",
+                isCreatingPost
+                    ? "" // Default outline: border-input, text-foreground, hover:bg-accent hover:text-accent-foreground
+                    : "text-primary border-primary hover:bg-primary/10"
+            )}
         >
           <Edit className="mr-2 h-4 w-4" />
           {isCreatingPost ? 'Cancelar Publicação' : 'Nova Publicação'}
