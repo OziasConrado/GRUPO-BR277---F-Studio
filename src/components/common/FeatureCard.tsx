@@ -18,11 +18,11 @@ export default function FeatureCard({ title, Icon, href, className, iconClassNam
   return (
     <Link href={href} passHref className="block group">
       <Card className={cn("rounded-xl overflow-hidden h-full hover:shadow-lg transition-shadow duration-200 bg-card hover:bg-card/90", className)}>
-        <CardContent className="p-4 flex flex-col items-center justify-center text-center aspect-square">
-          <div className={cn("p-3 mb-2 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors", iconClassName)}>
-            <Icon className="h-7 w-7 text-primary" />
+        <CardContent className="p-3 flex flex-col items-center justify-center text-center">
+          <div className={cn("p-2 mb-1.5 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors", iconClassName)}>
+            <Icon className="h-6 w-6 text-primary" />
           </div>
-          <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">{title}</span>
+          <span className="text-xs font-medium text-foreground group-hover:text-primary transition-colors">{title}</span>
         </CardContent>
       </Card>
     </Link>
