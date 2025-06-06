@@ -6,11 +6,13 @@ import StoryCircle, { type StoryCircleProps } from '@/components/stories/StoryCi
 import StoryViewerModal from '@/components/stories/StoryViewerModal';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, Star, TrendingUp, Info, Edit, Image as ImageIcon, XCircle, Check } from 'lucide-react';
+import { AlertCircle, Star, TrendingUp, Info, Edit, Image as ImageIcon, XCircle, Check, Phone, Store, Landmark, Headset, Radio, ShieldAlert, Newspaper } from 'lucide-react'; // Added new icons
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import EmergencyButtonModalTrigger from '@/components/common/emergency-button'; // Re-using the modal trigger logic
+import FeatureCard from '@/components/common/FeatureCard'; // Import FeatureCard
 
 const defaultReactions: PostReactions = {
   thumbsUp: 0,
@@ -171,6 +173,15 @@ const backgroundOptions = [
   { name: 'Gradiente', gradient: 'linear-gradient(to right, #002776, #009c3b, #ffdf00)', text: '#FFFFFF' },
 ];
 
+const featureButtons = [
+  { title: 'Guia Comercial', Icon: Store, href: '#' },
+  { title: 'Turismo', Icon: Landmark, href: '#' },
+  { title: 'SAU', Icon: Headset, href: '/sau' },
+  { title: 'Real Time', Icon: Radio, href: '/streaming' },
+  { title: 'Bloqueios', Icon: ShieldAlert, href: '/alertas' },
+  { title: 'Notícias', Icon: Newspaper, href: '#' },
+];
+
 
 export default function FeedPage() {
   const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
@@ -183,6 +194,7 @@ export default function FeedPage() {
   const [selectedImageForUpload, setSelectedImageForUpload] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [selectedPostBackground, setSelectedPostBackground] = useState(backgroundOptions[0]);
+  const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
 
 
   useEffect(() => {
@@ -323,6 +335,29 @@ export default function FeedPage() {
         </div>
       </div>
 
+      {/* Emergency Button */}
+      <div className="my-6">
+        <EmergencyButtonModalTrigger 
+          className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90 py-3 text-base rounded-full"
+          iconClassName="h-5 w-5"
+        >
+          <Phone className="mr-2 h-5 w-5" />
+          Emergência
+        </EmergencyButtonModalTrigger>
+      </div>
+
+      {/* Feature Buttons Mosaic */}
+      <div className="mb-8 grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {featureButtons.map((feature) => (
+          <FeatureCard
+            key={feature.title}
+            title={feature.title}
+            Icon={feature.Icon}
+            href={feature.href}
+          />
+        ))}
+      </div>
+
       <h2 className="text-2xl font-bold mb-2 font-headline text-left">Feed277</h2>
       
       <div className="mb-4">
@@ -356,7 +391,7 @@ export default function FeedPage() {
                 <Button
                   variant="destructive"
                   size="icon"
-                  className="absolute top-1 right-1 h-6 w-6 opacity-70 group-hover:opacity-100 transition-opacity"
+                  className="absolute top-1 right-1 h-6 w-6 opacity-70 group-hover:opacity-100 transition-opacity rounded-full"
                   onClick={handleRemoveImage}
                 >
                   <XCircle className="h-4 w-4" />
@@ -371,10 +406,10 @@ export default function FeedPage() {
                   {backgroundOptions.map(opt => (
                     <Button
                       key={opt.name}
-                      variant="outline"
+                      variant="outline" // Changed to outline for better distinction or manage through style
                       size="sm"
                       onClick={() => setSelectedPostBackground(opt)}
-                      className={`h-8 w-8 p-0 rounded-full border-2 ${selectedPostBackground.name === opt.name ? 'ring-2 ring-offset-2 ring-primary' : ''}`}
+                      className={`h-8 w-8 p-0 rounded-full border-2 ${selectedPostBackground.name === opt.name ? 'ring-2 ring-offset-2 ring-primary' : 'border-muted-foreground/50'}`}
                       style={{ background: opt.gradient || opt.bg }}
                       aria-label={`Selecionar fundo ${opt.name}`}
                     >
@@ -397,7 +432,7 @@ export default function FeedPage() {
               <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} title="Adicionar imagem" className="text-primary">
                 <ImageIcon className="h-7 w-7" />
               </Button>
-              <Button onClick={handlePublishPost} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Button onClick={handlePublishPost} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
                 Publicar
               </Button>
             </div>
@@ -450,5 +485,3 @@ export default function FeedPage() {
     </div>
   );
 }
-
-    

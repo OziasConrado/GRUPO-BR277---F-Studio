@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ChatWindow from '@/components/chat/ChatWindow';
 import { useNotification } from '@/contexts/NotificationContext';
+import { useChat } from '@/contexts/ChatContext'; // Import useChat
+import ChatFloatingButton from '@/components/chat/ChatFloatingButton'; // Keep for now or decide later
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -20,7 +22,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
-  const { notificationCount, clearNotifications } = useNotification(); // Use clearNotifications for demo/reset
+  const { notificationCount, clearNotifications } = useNotification();
+  const { isChatOpen, openChat, closeChat, setIsChatOpen } = useChat(); // Use ChatContext
 
   useEffect(() => {
     setIsMounted(true);
@@ -47,12 +50,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
     setIsDarkMode(newIsDarkMode);
   };
 
-  // Placeholder for opening notifications - for now, it clears them
   const handleNotificationClick = () => {
     console.log("Notification icon clicked. Count was:", notificationCount);
-    // For now, let's clear notifications as a placeholder action
-    // clearNotifications(); 
-    // In a real app, this would open a notification drawer/page
   };
 
   const AppHeader = () => (
@@ -66,7 +65,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
               onClick={() => router.back()}
               className="text-primary-foreground hover:bg-white/10 rounded-full h-10 w-10 sm:h-11 sm:w-11"
             >
-              <ArrowLeft className="h-6 w-6 sm:h-7 sm:w-7" />
+              <ArrowLeft className="h-6 w-6 sm:h-7 sm:h-7" />
               <span className="sr-only">Voltar</span>
             </Button>
           </TooltipTrigger>
@@ -115,11 +114,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={handleNotificationClick} // Placeholder action
+                onClick={handleNotificationClick}
                 className="relative text-primary-foreground hover:bg-white/10 rounded-full h-10 w-10 sm:h-11 sm:w-11"
                 aria-label="Notificações"
               >
-                <Bell className="h-5 w-5 sm:h-6 sm:w-6" />
+                <Bell className="h-5 w-5 sm:h-6 sm:h-6" />
                 {notificationCount > 0 && (
                   <span className="notification-badge">
                     {notificationCount > 9 ? '9+' : notificationCount}
@@ -169,6 +168,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
           {children}
         </main>
         <Navigation />
+        {isChatOpen && <ChatWindow onClose={closeChat} />}
+        <ChatFloatingButton onClick={openChat} /> 
       </div>
     </TooltipProvider>
   );

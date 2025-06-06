@@ -4,6 +4,7 @@ import './globals.css';
 import AppLayout from '@/components/layout/app-layout';
 import { Toaster } from "@/components/ui/toaster";
 import { NotificationProvider } from '@/contexts/NotificationContext';
+import { ChatProvider } from '@/contexts/ChatContext'; // Import ChatProvider
 
 export const metadata: Metadata = {
   title: 'Rota Segura',
@@ -22,11 +23,12 @@ export default function RootLayout({
       </head>
       <body className="antialiased bg-background text-foreground"> {/* font-body class removed, Arial will be default */}
         <NotificationProvider>
-          <AppLayout>{children}</AppLayout>
+          <ChatProvider> {/* Wrap with ChatProvider */}
+            <AppLayout>{children}</AppLayout>
+          </ChatProvider>
         </NotificationProvider>
         <Toaster />
       </body>
     </html>
   );
 }
-
