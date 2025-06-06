@@ -3,12 +3,13 @@
 
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Map } from "lucide-react";
+import { PlusCircle, Map } from "lucide-react"; // Map icon added
 import type { TouristPointData } from '@/types/turismo';
 import TouristPointCard from '@/components/turismo/tourist-point-card';
-import type { BusinessData } from '@/types/guia-comercial'; // Reutilizando BusinessData para acomodações
-import BusinessCard from '@/components/guia-comercial/business-card'; // Reutilizando BusinessCard
-import { useToast } from "@/hooks/use-toast";
+import type { BusinessData } from '@/types/guia-comercial';
+import BusinessCard from '@/components/guia-comercial/business-card';
+import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent } from '@/components/ui/card'; // Import Card for new buttons
 
 // Mock data for Paraná tourist points
 const mockParanaTouristPoints: TouristPointData[] = [
@@ -48,18 +49,34 @@ const mockParanaTouristPoints: TouristPointData[] = [
     dataAIImageHint: 'vila velha park ponta grossa',
     category: 'Natureza',
   },
+  {
+    id: 'parana-tp-5',
+    name: 'Cânion Guartelá',
+    locationName: 'Tibagi, PR',
+    description: 'O sexto maior cânion do mundo em extensão, com paisagens deslumbrantes e trilhas.',
+    imageUrl: 'https://placehold.co/600x400.png',
+    dataAIImageHint: 'guartela canyon',
+    category: 'Aventura',
+  },
+  {
+    id: 'parana-tp-6',
+    name: 'Opera de Arame',
+    locationName: 'Curitiba, PR',
+    description: 'Teatro construído em estrutura tubular e teto transparente, integrado à natureza.',
+    imageUrl: 'https://placehold.co/600x400.png',
+    dataAIImageHint: 'opera de arame curitiba',
+    category: 'Cultural',
+  },
 ];
 
-// Mock data for businesses (simulating Guia Comercial data source for accommodations)
-// Copied relevant items from GuiaComercial mock data
 const mockBusinessesForAccommodation: BusinessData[] = [
   {
-    id: 'comercio-1-hotel', // Changed ID to avoid conflict if merging later
+    id: 'comercio-1-hotel',
     name: 'Hotel Descanso do Viajante (Premium)',
     category: 'Hotel/Pousada',
     address: 'Rua das Palmeiras, 789, Piraquara - PR',
     whatsapp: '5541977776666',
-    description: 'Quartos confortáveis com café da manhã incluso. Preços acessíveis para caminhoneiros e viajantes. Ambiente seguro e tranquilo.',
+    description: 'Quartos confortáveis com café da manhã incluso. Preços acessíveis para caminhoneiros e viajantes.',
     imageUrl: 'https://placehold.co/600x400.png',
     dataAIImageHint: 'motel facade',
     operatingHours: 'Recepção 24 horas',
@@ -80,18 +97,51 @@ const mockBusinessesForAccommodation: BusinessData[] = [
     imageUrl: 'https://placehold.co/600x400.png',
     dataAIImageHint: 'cozy inn mountain',
     operatingHours: 'Check-in: 14:00, Check-out: 12:00',
-    isPremium: false, // Example of non-premium
+    isPremium: false,
     latitude: -25.3880,
     longitude: -48.8460,
   },
+  {
+    id: 'comercio-Y-resort',
+    name: 'Resort Águas Claras',
+    category: 'Hotel/Pousada', // Assuming Resort fits here for simplicity
+    address: 'Rodovia das Cataratas, Km 20, Foz do Iguaçu - PR',
+    phone: '4521027000',
+    description: 'Luxuoso resort com piscinas, spa, e vista para a natureza exuberante.',
+    imageUrl: 'https://placehold.co/600x400.png',
+    dataAIImageHint: 'luxury resort pool',
+    operatingHours: '24 horas',
+    isPremium: true,
+    latitude: -25.6710,
+    longitude: -54.4772,
+  },
+   {
+    id: 'comercio-Z-camping',
+    name: 'Camping Paraíso Verde',
+    category: 'Hotel/Pousada', // Assuming Camping fits here
+    address: 'Estrada Colônia Cristina, s/n, Guaratuba - PR',
+    whatsapp: '5541988776655',
+    description: 'Área de camping com infraestrutura completa, banheiros, churrasqueiras e contato com a natureza.',
+    imageUrl: 'https://placehold.co/600x400.png',
+    dataAIImageHint: 'campsite nature',
+    operatingHours: 'Diariamente: 08:00 - 20:00',
+    isPremium: false,
+    latitude: -25.8700,
+    longitude: -48.6000,
+  },
 ];
+
+const AdPlaceholder = () => (
+  <div className="my-4 p-4 rounded-xl bg-muted/30 border border-dashed h-24 flex items-center justify-center col-span-1 md:col-span-2 lg:col-span-3">
+    <p className="text-muted-foreground text-sm">Espaço para Banner AdMob (Ex: 320x50 ou Responsivo)</p>
+  </div>
+);
 
 export default function TurismoPage() {
   const { toast } = useToast();
   const [paranaPoints] = useState<TouristPointData[]>(mockParanaTouristPoints);
-  // Filter for accommodations from the mock business data
   const accommodations = mockBusinessesForAccommodation.filter(
-    business => business.category === 'Hotel/Pousada' // Add 'Camping', 'Resort' if needed
+    business => business.category === 'Hotel/Pousada'
   );
 
   const handleIndicatePoint = () => {
@@ -101,11 +151,43 @@ export default function TurismoPage() {
     });
   };
 
+  const handleViajeParana = () => {
+    toast({
+      title: "Viaje Paraná",
+      description: "Mais informações sobre como viajar pelo Paraná em breve!",
+    });
+    // Potencialmente abrir um link externo ou uma seção específica no futuro
+    // window.open('https://www.viajeparana.com/', '_blank');
+  };
+
   return (
     <div className="w-full space-y-8">
       <div className="text-center">
         <h1 className="text-3xl font-bold font-headline">Explore o Turismo</h1>
         <p className="text-muted-foreground">Descubra lugares incríveis para visitar.</p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        <Button
+          variant="outline"
+          size="lg"
+          className="w-full py-4 h-auto rounded-xl border-2 hover:bg-primary/10 flex flex-col items-center justify-center"
+          onClick={handleViajeParana}
+        >
+          <Map className="h-8 w-8 mb-1 text-primary" />
+          <span className="font-semibold text-base">Viaje Paraná</span>
+          <span className="text-xs text-muted-foreground">Dicas e Roteiros</span>
+        </Button>
+        <Button
+          variant="outline"
+          size="lg"
+          className="w-full py-4 h-auto rounded-xl border-2 hover:bg-primary/10 flex flex-col items-center justify-center"
+          onClick={handleIndicatePoint}
+        >
+          <PlusCircle className="h-8 w-8 mb-1 text-primary" />
+          <span className="font-semibold text-base">Indicar Local</span>
+          <span className="text-xs text-muted-foreground">Contribua com a comunidade</span>
+        </Button>
       </div>
 
       <section>
@@ -114,8 +196,11 @@ export default function TurismoPage() {
         </div>
         {paranaPoints.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {paranaPoints.map(point => (
-              <TouristPointCard key={point.id} point={point} />
+            {paranaPoints.map((point, index) => (
+              <>
+                <TouristPointCard key={point.id} point={point} />
+                {(index + 1) % 3 === 0 && index < paranaPoints.length -1 && <AdPlaceholder />}
+              </>
             ))}
           </div>
         ) : (
@@ -129,8 +214,11 @@ export default function TurismoPage() {
         </div>
         {accommodations.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {accommodations.map(business => (
-              <BusinessCard key={business.id} business={business} />
+            {accommodations.map((business, index) => (
+              <>
+                <BusinessCard key={business.id} business={business} />
+                {(index + 1) % 3 === 0 && index < accommodations.length - 1 && <AdPlaceholder />}
+              </>
             ))}
           </div>
         ) : (
@@ -138,30 +226,20 @@ export default function TurismoPage() {
         )}
       </section>
       
-      <section className="text-center py-6 bg-card border rounded-xl">
-        <h2 className="text-xl font-semibold font-headline mb-2">Conhece um lugar legal?</h2>
-        <p className="text-muted-foreground mb-4">Ajude outros viajantes indicando novos pontos turísticos!</p>
-        <Button onClick={handleIndicatePoint} size="lg" className="rounded-full">
-          <PlusCircle className="mr-2 h-5 w-5" />
-          Indicar Ponto Turístico
-        </Button>
-      </section>
-
       <section>
         <h2 className="text-2xl font-semibold font-headline mb-4">Pontos Indicados pela Comunidade</h2>
         <div className="p-6 bg-muted/30 rounded-xl border border-dashed min-h-[100px] flex items-center justify-center">
           <p className="text-muted-foreground text-center">
             Ainda não há pontos indicados pela comunidade.<br/>
-            Seja o primeiro a adicionar um!
+            Use o botão "Indicar Local" acima para adicionar um!
           </p>
         </div>
       </section>
        
-       {/* Placeholder for AdMob Banner */}
-      <div className="my-4 p-4 rounded-xl bg-muted/30 border border-dashed h-24 flex items-center justify-center">
-        <p className="text-muted-foreground text-sm">Espaço para Banner AdMob (Ex: 320x50 ou Responsivo)</p>
-      </div>
+      <AdPlaceholder />
 
     </div>
   );
 }
+
+    
