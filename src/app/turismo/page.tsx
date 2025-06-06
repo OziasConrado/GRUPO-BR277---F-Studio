@@ -10,6 +10,7 @@ import type { BusinessData } from '@/types/guia-comercial';
 import BusinessCard from '@/components/guia-comercial/business-card';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card'; // Import Card for new buttons
+import React from 'react'; // Import React for React.Fragment
 
 // Mock data for Paraná tourist points
 const mockParanaTouristPoints: TouristPointData[] = [
@@ -197,10 +198,10 @@ export default function TurismoPage() {
         {paranaPoints.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {paranaPoints.map((point, index) => (
-              <>
+              <React.Fragment key={`${point.id}-fragment`}>
                 <TouristPointCard key={point.id} point={point} />
                 {(index + 1) % 3 === 0 && index < paranaPoints.length -1 && <AdPlaceholder />}
-              </>
+              </React.Fragment>
             ))}
           </div>
         ) : (
@@ -215,10 +216,10 @@ export default function TurismoPage() {
         {accommodations.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {accommodations.map((business, index) => (
-              <>
+              <React.Fragment key={`${business.id}-fragment`}>
                 <BusinessCard key={business.id} business={business} />
                 {(index + 1) % 3 === 0 && index < accommodations.length - 1 && <AdPlaceholder />}
-              </>
+              </React.Fragment>
             ))}
           </div>
         ) : (
