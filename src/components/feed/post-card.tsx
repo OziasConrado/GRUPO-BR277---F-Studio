@@ -26,9 +26,9 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle as RadixAlertDialogTitle, // Renamed to avoid conflict
+  AlertDialogTitle as RadixAlertDialogTitle, 
 } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogHeader, DialogTitle as RadixDialogTitle, DialogClose as RadixDialogClose } from '@/components/ui/dialog'; // For Image Modal
+import { Dialog, DialogContent, DialogHeader, DialogTitle as RadixDialogTitle, DialogClose as RadixDialogClose } from '@/components/ui/dialog'; 
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
@@ -173,7 +173,40 @@ export default function PostCard({
   const needsTruncation = text.length > MAX_CHARS;
 
   const textToShow = isTextExpanded ? text : text.substring(0, MAX_CHARS);
-  const processedTextElements = useMemo(() => renderTextWithMentions(textToShow, allKnownUserNames), [textToShow, allKnownUserNames]);
+  const processedTextElements = useMemo(() => {
+    const renderedText = renderTextWithMentions(textToShow, allKnownUserNames);
+    if (!isTextExpanded && needsTruncation) {
+      return [
+        ...renderedText,
+        '... ',
+        <Button
+          key="ver-mais"
+          variant="link"
+          size="sm"
+          className="p-0 h-auto text-xs text-primary inline"
+          onClick={() => setIsTextExpanded(true)}
+        >
+          Ver mais...
+        </Button>
+      ];
+    }
+    if (isTextExpanded && needsTruncation) {
+      return [
+        ...renderedText,
+        ' ',
+        <Button
+          key="ver-menos"
+          variant="link"
+          size="sm"
+          className="p-0 h-auto text-xs text-primary inline"
+          onClick={() => setIsTextExpanded(false)}
+        >
+          Ver menos.
+        </Button>
+      ];
+    }
+    return renderedText;
+  }, [textToShow, allKnownUserNames, isTextExpanded, needsTruncation, text]);
 
 
   const processCommentsAndRepliesWithMentions = useCallback((items: (CommentProps | ReplyProps)[]) : any[] => {
@@ -503,32 +536,6 @@ export default function PostCard({
         <div className="mb-3">
             <p className="text-base leading-relaxed whitespace-pre-wrap">
               {processedTextElements}
-              {!isTextExpanded && needsTruncation && (
-                <>
-                  {'... '}
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="p-0 h-auto text-xs text-primary inline"
-                    onClick={() => setIsTextExpanded(true)}
-                  >
-                    Ver mais...
-                  </Button>
-                </>
-              )}
-              {isTextExpanded && needsTruncation && (
-                <>
-                  {' '}
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="p-0 h-auto text-xs text-primary inline"
-                    onClick={() => setIsTextExpanded(false)}
-                  >
-                    Ver menos.
-                  </Button>
-                </>
-              )}
             </p>
         </div>
         {imageUrl && (
@@ -552,42 +559,45 @@ export default function PostCard({
         )}
       </CardContent>
 
-      <CardFooter className="flex items-center justify-between p-2 pt-2 border-t border-border/50">
+      <CardFooter className="flex items-center justify-between px-2 py-1.5 border-t border-border/50">
         <div className="flex items-center gap-0.5">
             <Button
                 variant="ghost"
-                size="icon"
                 onClick={() => handlePostReactionClick('thumbsUp')}
-                className={`p-1.5 h-auto ${currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary'} hover:bg-muted/30 rounded-md`}
+                className={`p-1 h-auto ${currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary'} hover:bg-muted/30 rounded-md flex items-center gap-0.5`}
                 aria-label="Curtir"
             >
                 <ThumbsUp className={`h-5 w-5 ${currentUserPostReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
-                {localPostReactions.thumbsUp > 0 && <span className="ml-0.5 text-xs tabular-nums">({localPostReactions.thumbsUp})</span>}
+                {localPostReactions.thumbsUp > 0 && <span className="text-xs tabular-nums">({localPostReactions.thumbsUp})</span>}
             </Button>
             <Button
                 variant="ghost"
-                size="icon"
                 onClick={() => handlePostReactionClick('thumbsDown')}
-                className={`p-1.5 h-auto ${currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'} hover:bg-muted/30 rounded-md`}
+                className={`p-1 h-auto ${currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'} hover:bg-muted/30 rounded-md flex items-center gap-0.5`}
                 aria-label="Não curtir"
             >
                 <ThumbsDown className={`h-5 w-5 ${currentUserPostReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
-                 {localPostReactions.thumbsDown > 0 && <span className="ml-0.5 text-xs tabular-nums">({localPostReactions.thumbsDown})</span>}
+                 {localPostReactions.thumbsDown > 0 && <span className="text-xs tabular-nums">({localPostReactions.thumbsDown})</span>}
             </Button>
 
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary p-1.5 h-auto hover:bg-muted/30 rounded-md" onClick={() => setIsSheetOpen(true)}>
+            <Button
+                variant="ghost"
+                onClick={() => setIsSheetOpen(true)}
+                className="text-muted-foreground hover:text-primary p-1 h-auto hover:bg-muted/30 rounded-md flex items-center gap-0.5"
+                aria-label="Comentários"
+            >
                 <MessageSquare className="h-5 w-5" />
-                {localCommentsData.length > 0 && <span className="ml-0.5 text-xs tabular-nums">({localCommentsData.length})</span>}
+                {localCommentsData.length > 0 && <span className="text-xs tabular-nums">({localCommentsData.length})</span>}
             </Button>
 
-             <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary p-1.5 h-auto hover:bg-muted/30 rounded-md">
+             <Button variant="ghost" className="text-muted-foreground hover:text-primary p-1 h-auto hover:bg-muted/30 rounded-md">
                 <Share2 className="h-5 w-5" />
             </Button>
         </div>
 
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary p-1.5 h-auto hover:bg-muted/30 rounded-md">
+                <Button variant="ghost" className="text-muted-foreground hover:text-primary p-1 h-auto hover:bg-muted/30 rounded-md">
                     <MoreVertical className="h-5 w-5" />
                 </Button>
             </DropdownMenuTrigger>
@@ -613,13 +623,13 @@ export default function PostCard({
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0 rounded-t-[25px]">
                 <SheetHeader className="p-4 border-b border-border flex flex-row justify-center items-center relative">
-                     <SheetTitle className="sr-only">Comentários e Reações do Post</SheetTitle>
+                    <SheetTitle className="sr-only">Comentários e Reações do Post</SheetTitle>
                     <div className="flex items-center justify-center gap-2 py-1">
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handlePostReactionClick('thumbsUp')}
-                            className={`p-1 h-auto ${currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary'} hover:bg-muted/30 rounded-md`}
+                            className={`p-1 h-auto ${currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary'} hover:bg-muted/30 rounded-md flex items-center gap-0.5`}
                             aria-label="Curtir Post"
                         >
                             <ThumbsUp className={`h-5 w-5 ${currentUserPostReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
@@ -629,7 +639,7 @@ export default function PostCard({
                             variant="ghost"
                             size="sm"
                             onClick={() => handlePostReactionClick('thumbsDown')}
-                            className={`p-1 h-auto ${currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'} hover:bg-muted/30 rounded-md`}
+                            className={`p-1 h-auto ${currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'} hover:bg-muted/30 rounded-md flex items-center gap-0.5`}
                             aria-label="Não Curtir Post"
                         >
                             <ThumbsDown className={`h-5 w-5 ${currentUserPostReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
@@ -656,20 +666,20 @@ export default function PostCard({
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className={`p-1 h-auto text-xs ${comment.reactions.userReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary focus:text-primary'} hover:bg-muted/30 rounded-md`}
+                                className={`p-1 h-auto text-xs ${comment.reactions.userReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary focus:text-primary'} hover:bg-muted/30 rounded-md flex items-center gap-0.5`}
                                 onClick={() => handleItemReaction(comment.id, 'thumbsUp', 'comment')}
                             >
                             <ThumbsUp className={`mr-0.5 h-3.5 w-3.5 ${comment.reactions.userReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
-                            {comment.reactions.thumbsUp > 0 ? comment.reactions.thumbsUp : ''}
+                            {comment.reactions.thumbsUp > 0 ? <span className="text-xs tabular-nums">({comment.reactions.thumbsUp})</span> : ''}
                             </Button>
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className={`p-1 h-auto text-xs ${comment.reactions.userReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive focus:text-destructive'} hover:bg-muted/30 rounded-md`}
+                                className={`p-1 h-auto text-xs ${comment.reactions.userReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive focus:text-destructive'} hover:bg-muted/30 rounded-md flex items-center gap-0.5`}
                                 onClick={() => handleItemReaction(comment.id, 'thumbsDown', 'comment')}
                             >
                             <ThumbsDown className={`mr-0.5 h-3.5 w-3.5 ${comment.reactions.userReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
-                            {comment.reactions.thumbsDown > 0 ? comment.reactions.thumbsDown : ''}
+                            {comment.reactions.thumbsDown > 0 ? <span className="text-xs tabular-nums">({comment.reactions.thumbsDown})</span> : ''}
                             </Button>
                             <Button
                             variant="link"
