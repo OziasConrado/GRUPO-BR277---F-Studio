@@ -1,14 +1,32 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { Button } from "@/components/ui/button";
-import { CardTitle, CardDescription } from "@/components/ui/card"; // Import CardTitle and CardDescription
-import { PlusCircle, ListFilter, ArrowLeft } from "lucide-react";
+import { CardTitle } from "@/components/ui/card";
+import { PlusCircle, ListFilter, ArrowLeft, Edit, XCircle, Check, Flame, Construction, MessageSquare } from "lucide-react";
 import Link from 'next/link';
 import AlertCard, { type AlertProps } from '@/components/alerts/alert-card';
-import ReportAlertModal from '@/components/alerts/report-alert-modal';
-import AlertFilters from '@/components/alerts/alert-filters';
+import UserProfileModal, { type UserProfileData } from '@/components/profile/UserProfileModal';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from '@/lib/utils';
+
+
+const alertTypesOptions = [
+  'Acidente', 'Obras na Pista', 'Congestionamento',
+  'Condição Climática Adversa', 'Animal na Pista', 'Alagamento',
+  'Neve/Gelo', 'Vento Forte', 'Queimada, fumaça densa sobre a pista', 'Remoção de veículo acidentado', 'Outro'
+];
+
 
 const mockAlertsData: AlertProps[] = [
   {
@@ -17,8 +35,11 @@ const mockAlertsData: AlertProps[] = [
     location: 'BR-116, Km 230, Próximo a Curitiba-PR',
     description: 'Colisão entre dois caminhões. Trânsito lento nos dois sentidos. Equipes de resgate no local.',
     timestamp: '2024-07-28T10:30:00Z',
-    severity: 'Alta',
-    reportedBy: 'Usuário_123',
+    userNameReportedBy: 'Usuário_123',
+    userAvatarUrl: 'https://placehold.co/40x40.png?text=U1',
+    dataAIAvatarHint: 'male driver',
+    bio: 'Contribuindo com a comunidade rodoviária.',
+    instagramUsername: 'user123_estrada',
   },
   {
     id: 'alert-2',
@@ -26,8 +47,10 @@ const mockAlertsData: AlertProps[] = [
     location: 'Rodovia dos Bandeirantes, Km 55, Sentido Interior',
     description: 'Recapeamento da via. Faixa da direita interditada. Previsão de término: 18:00.',
     timestamp: '2024-07-28T08:15:00Z',
-    severity: 'Média',
-    reportedBy: 'Admin RotaSegura',
+    userNameReportedBy: 'Admin RotaSegura',
+    userAvatarUrl: 'https://placehold.co/40x40.png?text=RS',
+    dataAIAvatarHint: 'app logo admin',
+    bio: 'Canal oficial de alertas do Rota Segura.',
   },
   {
     id: 'alert-3',
@@ -35,71 +58,92 @@ const mockAlertsData: AlertProps[] = [
     location: 'Marginal Tietê, Próximo à Ponte das Bandeiras, São Paulo-SP',
     description: 'Trânsito intenso devido a excesso de veículos. Evite a região se possível.',
     timestamp: '2024-07-28T11:00:00Z',
-    severity: 'Média',
-    reportedBy: 'Usuário_AB',
+    userNameReportedBy: 'Usuário_AB',
+    userAvatarUrl: 'https://placehold.co/40x40.png?text=UA',
+    dataAIAvatarHint: 'female traveler',
+    bio: 'Viajante frequente compartilhando informações.',
   },
   {
     id: 'alert-4',
-    type: 'Condição Climática Adversa',
-    location: 'Serra Dona Francisca, SC-418',
-    description: 'Neblina densa na serra. Visibilidade reduzida. Dirija com cautela.',
-    timestamp: '2024-07-27T23:50:00Z',
-    severity: 'Alta',
-    reportedBy: 'Admin RotaSegura',
+    type: 'Queimada, fumaça densa sobre a pista',
+    location: 'BR-070, Km 50, Próximo a Cáceres-MT',
+    description: 'Grande queimada às margens da rodovia, fumaça densa cobrindo a pista. Visibilidade muito reduzida. Incêndio se alastrando rapidamente.',
+    timestamp: '2024-07-29T14:00:00Z',
+    userNameReportedBy: 'FazendeiroLocal',
+    userAvatarUrl: 'https://placehold.co/40x40.png?text=FL',
+    dataAIAvatarHint: 'farmer man',
+    bio: 'Morador da região, sempre atento às estradas.',
   },
   {
     id: 'alert-5',
-    type: 'Animal na Pista',
-    location: 'BR-040, Km 70, Perto de Paraopeba-MG',
-    description: 'Cavalo solto na rodovia. Reduza a velocidade.',
-    timestamp: '2024-07-28T12:05:00Z',
-    severity: 'Média',
-    reportedBy: 'Usuário_789',
+    type: 'Remoção de veículo acidentado',
+    location: 'Via Dutra, Km 180, Sentido Rio',
+    description: 'Guincho e equipes da concessionária removendo caminhão acidentado. Duas faixas interditadas. Congestionamento de 3km.',
+    timestamp: '2024-07-29T15:30:00Z',
+    userNameReportedBy: 'ConcessionariaApoio',
+    userAvatarUrl: 'https://placehold.co/40x40.png?text=CA',
+    dataAIAvatarHint: 'road worker',
+    bio: 'Equipe de apoio da concessionária.',
   },
 ];
 
 
 export default function AlertasPage() {
-  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isReportingAlert, setIsReportingAlert] = useState(false);
+  const [newAlertDescription, setNewAlertDescription] = useState('');
+  const [newAlertType, setNewAlertType] = useState('');
   const [alerts, setAlerts] = useState<AlertProps[]>(mockAlertsData);
-  const [filteredAlerts, setFilteredAlerts] = useState<AlertProps[]>(mockAlertsData);
-  const [activeFilter, setActiveFilter] = useState<string>('Todos');
+  const { toast } = useToast();
 
-  useEffect(() => {
-    if (activeFilter === 'Todos') {
-      setFilteredAlerts(alerts);
-    } else {
-      setFilteredAlerts(alerts.filter(alert => alert.type === activeFilter));
-    }
-  }, [activeFilter, alerts]);
-
-  const handleNewAlertReported = (newAlert: Omit<AlertProps, 'id' | 'timestamp' | 'reportedBy'>) => {
-    const fullNewAlert: AlertProps = {
-      ...newAlert,
-      id: `alert-${Date.now()}`,
-      timestamp: new Date().toISOString(),
-      reportedBy: 'Você', // Simulação
-    };
-    setAlerts(prevAlerts => [fullNewAlert, ...prevAlerts]);
-    // Poderia adicionar à filteredAlerts também ou apenas confiar no useEffect para refiltrar
-    // Por simplicidade, vamos refiltrar todos
-    if (activeFilter === 'Todos' || fullNewAlert.type === activeFilter) {
-        setFilteredAlerts(prevFiltered => [fullNewAlert, ...prevFiltered].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
-    } else {
-        // Se o novo alerta não corresponder ao filtro atual, apenas atualiza `alerts`
-        // O useEffect cuidará da `filteredAlerts` se o filtro mudar
-    }
-  };
-  
-  // Ordenar alertas por data/hora mais recente
+  // Ordenar alertas por data/hora mais recente ao montar e quando novos alertas são adicionados
   useEffect(() => {
     const sortedAlerts = [...alerts].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-    setAlerts(sortedAlerts);
-    
-    const sortedFilteredAlerts = [...filteredAlerts].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-    setFilteredAlerts(sortedFilteredAlerts);
+    if (JSON.stringify(sortedAlerts) !== JSON.stringify(alerts)) {
+        setAlerts(sortedAlerts);
+    }
+  }, [alerts]);
 
-  }, []); // Executa uma vez ao montar para ordenar os mocks iniciais
+  const handleToggleReportAlert = () => {
+    setIsReportingAlert(!isReportingAlert);
+    if (isReportingAlert) { // Se estava aberto e vai fechar, limpa os campos
+        setNewAlertDescription('');
+        setNewAlertType('');
+    }
+  };
+
+  const handleReportAlert = (e: FormEvent) => {
+    e.preventDefault();
+    if (!newAlertDescription.trim() || !newAlertType) {
+      toast({
+        variant: 'destructive',
+        title: 'Campos incompletos',
+        description: 'Por favor, preencha a descrição e selecione o tipo de alerta.',
+      });
+      return;
+    }
+
+    const newAlert: AlertProps = {
+      id: `alert-${Date.now()}`,
+      type: newAlertType,
+      location: 'Localização a ser definida (ex: GPS)', // Simulação, localização precisaria ser obtida
+      description: newAlertDescription,
+      timestamp: new Date().toISOString(),
+      userNameReportedBy: 'Você',
+      userAvatarUrl: 'https://placehold.co/40x40.png?text=EU', // Placeholder para o avatar do usuário atual
+      dataAIAvatarHint: 'current user',
+      bio: 'Usuário ativo do Rota Segura.',
+      instagramUsername: 'seu_insta_aqui',
+    };
+
+    setAlerts(prevAlerts => [newAlert, ...prevAlerts]);
+    setNewAlertDescription('');
+    setNewAlertType('');
+    setIsReportingAlert(false);
+    toast({
+      title: "Alerta Reportado!",
+      description: "Obrigado por sua contribuição para a comunidade.",
+    });
+  };
 
   return (
     <div className="w-full space-y-6">
@@ -108,38 +152,72 @@ export default function AlertasPage() {
             <h1 className="text-3xl font-bold font-headline text-center sm:text-left">Alertas da Comunidade</h1>
             <p className="text-muted-foreground text-center sm:text-left text-sm">Informações em tempo real sobre as estradas.</p>
         </div>
-        <Button onClick={() => setIsReportModalOpen(true)} className="w-full sm:w-auto">
-          <PlusCircle className="mr-2 h-5 w-5" /> Reportar Novo Alerta
+        <Button
+            onClick={handleToggleReportAlert}
+            className={cn(
+                "w-full sm:w-auto",
+                "bg-transparent border border-primary text-primary",
+                "hover:bg-primary/10 hover:text-primary"
+            )}
+        >
+          <Edit className="mr-2 h-4 w-4" />
+          {isReportingAlert ? 'Cancelar Alerta' : 'Reportar Novo Alerta'}
         </Button>
       </div>
 
-      {/* Filtros diretamente na página, sem o Card envolvente */}
-      <div className="p-4 rounded-xl bg-card border"> {/* Opcional: manter um container visual para filtros */}
-        <CardTitle className="font-headline flex items-center text-lg mb-1"><ListFilter className="mr-2 h-5 w-5 text-primary"/> Filtros de Alertas</CardTitle>
-        <CardDescription className="text-xs mb-4">Filtre por tipo ou veja todos os alertas recentes.</CardDescription>
-        <AlertFilters
-          currentFilter={activeFilter}
-          onFilterChange={setActiveFilter}
-          alertTypes={['Todos', ...new Set(mockAlertsData.map(a => a.type))]}
-        />
+      {isReportingAlert && (
+        <div className="p-4 rounded-xl bg-card border shadow-md">
+          <CardTitle className="font-headline flex items-center text-lg mb-3">Novo Alerta</CardTitle>
+          <form onSubmit={handleReportAlert} className="space-y-4">
+            <div>
+              <Label htmlFor="alertType">Tipo de Alerta</Label>
+              <Select onValueChange={setNewAlertType} value={newAlertType}>
+                <SelectTrigger id="alertType" className="w-full rounded-lg mt-1 bg-background/70">
+                  <SelectValue placeholder="Selecione o tipo..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {alertTypesOptions.map(type => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="alertDescription">Descrição</Label>
+              <Textarea
+                id="alertDescription"
+                placeholder="Descreva a ocorrência..."
+                value={newAlertDescription}
+                onChange={(e) => setNewAlertDescription(e.target.value)}
+                className="rounded-lg mt-1 min-h-[100px] bg-background/70"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="ghost" onClick={handleToggleReportAlert}>Cancelar</Button>
+                <Button type="submit">
+                    <Check className="mr-2 h-4 w-4"/>
+                    Enviar Alerta
+                </Button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Banner AdMob Placeholder */}
+      <div className="my-4 p-4 rounded-xl bg-muted/30 border border-dashed h-24 flex items-center justify-center">
+        <p className="text-muted-foreground text-sm">Espaço para Banner AdMob (Ex: 320x50 ou Responsivo)</p>
       </div>
       
-      {/* Lista de Alertas */}
-      {filteredAlerts.length > 0 ? (
-        <div className="space-y-4"> {/* mt-6 removido, space-y-6 do pai deve cuidar disso */}
-          {filteredAlerts.map(alert => (
+      {alerts.length > 0 ? (
+        <div className="space-y-4">
+          {alerts.map(alert => (
             <AlertCard key={alert.id} alert={alert} />
           ))}
         </div>
       ) : (
-        <p className="text-center text-muted-foreground py-4">Nenhum alerta encontrado para este filtro.</p>
+        <p className="text-center text-muted-foreground py-4">Nenhum alerta encontrado.</p>
       )}
 
-      <ReportAlertModal
-        isOpen={isReportModalOpen}
-        onClose={() => setIsReportModalOpen(false)}
-        onAlertReported={handleNewAlertReported}
-      />
        <Link href="/" className="inline-flex items-center text-sm text-primary hover:underline mt-4">
         <ArrowLeft className="w-4 h-4 mr-1" />
         Voltar para o Feed
