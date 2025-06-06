@@ -275,14 +275,14 @@ export default function FeedPage() {
     };
 
     if (selectedImageForUpload && imagePreviewUrl) {
-      newPost.uploadedImageUrl = imagePreviewUrl;
+      newPost.uploadedImageUrl = imagePreviewUrl; // Use a different prop for uploaded images
       newPost.dataAIUploadedImageHint = 'user uploaded content';
     } else if (newPostText.length <= 150 && selectedPostBackground && selectedPostBackground.name !== 'Padrão') {
       newPost.cardStyle = {
         backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
         backgroundImage: selectedPostBackground.gradient,
         color: selectedPostBackground.text,
-        name: selectedPostBackground.name,
+        name: selectedPostBackground.name, // Keep track of the chosen style name
       };
     }
 
@@ -330,10 +330,7 @@ export default function FeedPage() {
             onClick={handleToggleCreatePost}
             variant="outline"
             className={cn(
-                "w-full sm:w-auto rounded-lg",
-                isCreatingPost
-                    ? "" // Default outline: border-input, text-foreground, hover:bg-accent hover:text-accent-foreground
-                    : "text-primary border-primary hover:bg-primary/10"
+                "w-full sm:w-auto rounded-lg text-primary border-primary hover:bg-primary/10",
             )}
         >
           <Edit className="mr-2 h-4 w-4" />
