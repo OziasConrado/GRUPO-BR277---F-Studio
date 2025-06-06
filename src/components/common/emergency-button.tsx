@@ -61,17 +61,17 @@ export default function EmergencyButton({ className, iconClassName }: { classNam
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="flex flex-col space-y-4 py-4">
-            <Button variant="outline" onClick={handleEmergencyCall} className="w-full rounded-lg py-6">
+            <Button variant="outline" onClick={handleEmergencyCall} className="w-full py-6">
               <Phone className="mr-2 h-5 w-5" />
               Ligar para Emergência
             </Button>
-            <Button variant="outline" onClick={handleLocationSend} className="w-full rounded-lg py-6">
+            <Button variant="outline" onClick={handleLocationSend} className="w-full py-6">
               <MapPin className="mr-2 h-5 w-5" />
               Enviar Localização para Suporte
             </Button>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel className="w-full rounded-lg">Cancelar</AlertDialogCancel>
+            <AlertDialogCancel className="w-full">Cancelar</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -21,7 +22,7 @@ export default function ScannerPage() {
             <Camera className="w-16 h-16 text-muted-foreground mb-2"/>
             <p className="text-muted-foreground">Toque para escanear</p>
           </div>
-           <Button className="mt-6 w-full rounded-lg" disabled>Iniciar Scanner</Button>
+           <Button className="mt-6 w-full" disabled>Iniciar Scanner</Button>
         </CardContent>
       </Card>
     </div>

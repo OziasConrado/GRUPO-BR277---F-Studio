@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -40,7 +41,7 @@ export default function DiagnosticoPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button className="w-full rounded-lg">Ver Diagnóstico</Button>
+            <Button className="w-full">Ver Diagnóstico</Button>
           </div>
 
           <div className="mt-6 p-4 bg-background/50 rounded-lg min-h-[100px]">

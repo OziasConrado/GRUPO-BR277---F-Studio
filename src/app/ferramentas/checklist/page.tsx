@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -39,7 +40,7 @@ export default function ChecklistPage() {
               </div>
             ))}
           </div>
-           <Button className="mt-6 w-full rounded-lg">Salvar Checklist</Button>
+           <Button className="mt-6 w-full">Salvar Checklist</Button>
         </CardContent>
       </Card>
     </div>

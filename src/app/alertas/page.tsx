@@ -108,7 +108,7 @@ export default function AlertasPage() {
             <h1 className="text-3xl font-bold font-headline text-center sm:text-left">Alertas da Comunidade</h1>
             <p className="text-muted-foreground text-center sm:text-left text-sm">Informações em tempo real sobre as estradas.</p>
         </div>
-        <Button onClick={() => setIsReportModalOpen(true)} className="w-full sm:w-auto rounded-lg">
+        <Button onClick={() => setIsReportModalOpen(true)} className="w-full sm:w-auto">
           <PlusCircle className="mr-2 h-5 w-5" /> Reportar Novo Alerta
         </Button>
       </div>

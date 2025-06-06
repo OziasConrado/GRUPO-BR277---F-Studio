@@ -104,11 +104,11 @@ export default function SauLocationCard({ sau, reviews, onAddReview }: SauLocati
                 </span>
             </div>
              <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" onClick={handleNavigate} className="rounded-md">
+                <Button variant="outline" size="sm" onClick={handleNavigate}>
                     <Navigation className="mr-1.5 h-4 w-4" />
                     Navegar
                 </Button>
-                <Button variant="default" size="sm" onClick={() => setIsReviewModalOpen(true)} className="rounded-md ml-2">
+                <Button variant="default" size="sm" onClick={() => setIsReviewModalOpen(true)} className="ml-2">
                   <Edit3 className="mr-1.5 h-4 w-4" />
                   Avaliar Serviço
                 </Button>

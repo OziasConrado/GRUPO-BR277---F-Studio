@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -31,7 +32,7 @@ export default function CalculadoraCombustivelPage() {
               <Label htmlFor="preco_combustivel">Preço do Combustível (R$/litro)</Label>
               <Input type="number" id="preco_combustivel" placeholder="Ex: 5.50" className="rounded-lg mt-1"/>
             </div>
-            <Button type="submit" className="w-full rounded-lg">Calcular</Button>
+            <Button type="submit" className="w-full">Calcular</Button>
           </form>
           <div className="mt-6 p-4 bg-background/50 rounded-lg">
             <h4 className="font-semibold mb-2">Resultado:</h4>

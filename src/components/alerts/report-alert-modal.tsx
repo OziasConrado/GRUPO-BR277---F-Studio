@@ -148,9 +148,9 @@ export default function ReportAlertModal({ isOpen, onClose, onAlertReported }: R
 
           <DialogFooter className="pt-4">
             <DialogClose asChild>
-              <Button type="button" variant="outline" className="rounded-lg">Cancelar</Button>
+              <Button type="button" variant="outline">Cancelar</Button>
             </DialogClose>
-            <Button type="submit" className="rounded-lg">Reportar Alerta</Button>
+            <Button type="submit">Reportar Alerta</Button>
           </DialogFooter>
         </form>
       </DialogContent>

@@ -91,9 +91,9 @@ export default function SubmitReviewModal({ isOpen, onClose, onSubmit, sauName }
 
           <DialogFooter className="pt-4">
             <DialogClose asChild>
-              <Button type="button" variant="outline" className="rounded-lg">Cancelar</Button>
+              <Button type="button" variant="outline">Cancelar</Button>
             </DialogClose>
-            <Button type="submit" className="rounded-lg">Enviar Avaliação</Button>
+            <Button type="submit">Enviar Avaliação</Button>
           </DialogFooter>
         </form>
       </DialogContent>

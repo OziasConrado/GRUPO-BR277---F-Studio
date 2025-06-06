@@ -484,7 +484,7 @@ export default function PostCard({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className={`p-1 h-auto text-xs ${reply.reactions.userReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary focus:text-primary'} hover:bg-muted/30 rounded-md`}
+                    className={`p-1 h-auto text-xs ${reply.reactions.userReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary focus:text-primary'} hover:bg-muted/30 flex items-center gap-0.5`}
                     onClick={() => handleItemReaction(reply.id, 'thumbsUp', 'reply', commentIdForReply)}
                   >
                     <ThumbsUp className={`mr-0.5 h-3.5 w-3.5 ${reply.reactions.userReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
@@ -493,7 +493,7 @@ export default function PostCard({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className={`p-1 h-auto text-xs ${reply.reactions.userReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive focus:text-destructive'} hover:bg-muted/30 rounded-md`}
+                    className={`p-1 h-auto text-xs ${reply.reactions.userReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive focus:text-destructive'} hover:bg-muted/30 flex items-center gap-0.5`}
                     onClick={() => handleItemReaction(reply.id, 'thumbsDown', 'reply', commentIdForReply)}
                   >
                     <ThumbsDown className={`mr-0.5 h-3.5 w-3.5 ${reply.reactions.userReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
@@ -533,7 +533,7 @@ export default function PostCard({
                   className="rounded-lg flex-grow h-9 bg-background/70 text-base"
                   autoFocus
                 />
-                <Button type="submit" size="icon" className="rounded-lg h-9 w-9 shrink-0">
+                <Button type="submit" size="icon" className="h-9 w-9 shrink-0">
                   <Send className="h-4 w-4" />
                 </Button>
               </form>
@@ -605,7 +605,7 @@ export default function PostCard({
             <Button
                 variant="ghost"
                 onClick={() => handlePostReactionClick('thumbsUp')}
-                className={cn(`p-2 h-auto ${currentUserPostReaction === 'thumbsUp' ? reactionButtonActivePrimaryColor : reactionButtonTextColor} ${reactionButtonHoverBg} rounded-md flex items-center gap-0.5`)}
+                className={cn(`p-2 h-auto ${currentUserPostReaction === 'thumbsUp' ? reactionButtonActivePrimaryColor : reactionButtonTextColor} ${reactionButtonHoverBg} flex items-center gap-0.5`)}
                 aria-label="Curtir"
             >
                 <ThumbsUp className={`h-7 w-7 ${currentUserPostReaction === 'thumbsUp' ? (cardStyle?.color === '#FFFFFF' ? 'fill-yellow-400' : 'fill-primary') : ''}`} />
@@ -614,7 +614,7 @@ export default function PostCard({
             <Button
                 variant="ghost"
                 onClick={() => handlePostReactionClick('thumbsDown')}
-                className={cn(`p-2 h-auto ${currentUserPostReaction === 'thumbsDown' ? reactionButtonActiveDestructiveColor : reactionButtonTextColor} ${reactionButtonHoverBg} rounded-md flex items-center gap-0.5`)}
+                className={cn(`p-2 h-auto ${currentUserPostReaction === 'thumbsDown' ? reactionButtonActiveDestructiveColor : reactionButtonTextColor} ${reactionButtonHoverBg} flex items-center gap-0.5`)}
                 aria-label="Não curtir"
             >
                 <ThumbsDown className={`h-7 w-7 ${currentUserPostReaction === 'thumbsDown' ? (cardStyle?.color === '#FFFFFF' ? 'fill-orange-400' : 'fill-destructive') : ''}`} />
@@ -624,21 +624,21 @@ export default function PostCard({
             <Button
                 variant="ghost"
                 onClick={() => setIsSheetOpen(true)}
-                className={cn(reactionButtonTextColor, reactionButtonHoverBg, "p-2 h-auto rounded-md flex items-center gap-0.5")}
+                className={cn(reactionButtonTextColor, reactionButtonHoverBg, "p-2 h-auto flex items-center gap-0.5")}
                 aria-label="Comentários"
             >
                 <MessageSquare className="h-7 w-7" />
                 {localCommentsData.length > 0 && <span className="text-xs tabular-nums">({localCommentsData.length})</span>}
             </Button>
 
-             <Button variant="ghost" className={cn(reactionButtonTextColor, reactionButtonHoverBg, "p-2 h-auto rounded-md")}>
+             <Button variant="ghost" className={cn(reactionButtonTextColor, reactionButtonHoverBg, "p-2 h-auto")}>
                 <Share2 className="h-7 w-7" />
             </Button>
         </div>
 
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className={cn(reactionButtonTextColor, reactionButtonHoverBg, "p-2 h-auto rounded-md")}>
+                <Button variant="ghost" className={cn(reactionButtonTextColor, reactionButtonHoverBg, "p-2 h-auto")}>
                     <MoreVertical className="h-7 w-7" />
                 </Button>
             </DropdownMenuTrigger>
@@ -670,7 +670,7 @@ export default function PostCard({
                             variant="ghost"
                             size="sm"
                             onClick={() => handlePostReactionClick('thumbsUp')}
-                            className={`p-1 h-auto ${currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary'} hover:bg-muted/30 rounded-md flex items-center gap-0.5`}
+                            className={`p-1 h-auto ${currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary'} hover:bg-muted/30 flex items-center gap-0.5`}
                             aria-label="Curtir Post"
                         >
                             <ThumbsUp className={`h-5 w-5 ${currentUserPostReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
@@ -680,7 +680,7 @@ export default function PostCard({
                             variant="ghost"
                             size="sm"
                             onClick={() => handlePostReactionClick('thumbsDown')}
-                            className={`p-1 h-auto ${currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'} hover:bg-muted/30 rounded-md flex items-center gap-0.5`}
+                            className={`p-1 h-auto ${currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'} hover:bg-muted/30 flex items-center gap-0.5`}
                             aria-label="Não Curtir Post"
                         >
                             <ThumbsDown className={`h-5 w-5 ${currentUserPostReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
@@ -707,7 +707,7 @@ export default function PostCard({
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className={`p-1 h-auto text-xs ${comment.reactions.userReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary focus:text-primary'} hover:bg-muted/30 rounded-md flex items-center gap-0.5`}
+                                className={`p-1 h-auto text-xs ${comment.reactions.userReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary focus:text-primary'} hover:bg-muted/30 flex items-center gap-0.5`}
                                 onClick={() => handleItemReaction(comment.id, 'thumbsUp', 'comment')}
                             >
                             <ThumbsUp className={`mr-0.5 h-3.5 w-3.5 ${comment.reactions.userReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
@@ -716,7 +716,7 @@ export default function PostCard({
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className={`p-1 h-auto text-xs ${comment.reactions.userReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive focus:text-destructive'} hover:bg-muted/30 rounded-md flex items-center gap-0.5`}
+                                className={`p-1 h-auto text-xs ${comment.reactions.userReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive focus:text-destructive'} hover:bg-muted/30 flex items-center gap-0.5`}
                                 onClick={() => handleItemReaction(comment.id, 'thumbsDown', 'comment')}
                             >
                             <ThumbsDown className={`mr-0.5 h-3.5 w-3.5 ${comment.reactions.userReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
@@ -756,7 +756,7 @@ export default function PostCard({
                             className="rounded-lg flex-grow h-10 bg-background/70 text-base"
                             autoFocus
                         />
-                        <Button type="submit" size="icon" className="rounded-lg shrink-0 h-10 w-10">
+                        <Button type="submit" size="icon" className="shrink-0 h-10 w-10">
                             <Send className="h-4 w-4" />
                         </Button>
                         </form>
@@ -779,7 +779,7 @@ export default function PostCard({
                         className="rounded-lg flex-grow bg-background/70 min-h-[40px] resize-none text-base"
                         rows={1}
                         />
-                        <Button type="submit" size="icon" className="rounded-lg shrink-0 h-10 w-10">
+                        <Button type="submit" size="icon" className="shrink-0 h-10 w-10">
                         <Send className="h-4 w-4" />
                         </Button>
                     </form>
