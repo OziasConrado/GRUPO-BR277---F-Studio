@@ -328,10 +328,13 @@ export default function FeedPage() {
       <div className="mb-4">
         <Button
             onClick={handleToggleCreatePost}
-            variant="outline"
-            className="w-full sm:w-auto rounded-lg text-primary border-primary hover:bg-primary/10"
+            className={cn(
+                "w-full sm:w-auto rounded-lg",
+                "bg-transparent border border-primary text-primary", // Explicit styles for transparent bg, blue border, blue text
+                "hover:bg-primary/10 hover:text-primary" // Hover maintains blue text
+            )}
         >
-          <Edit className="mr-2 h-4 w-4" />
+          <Edit className="mr-2 h-4 w-4" /> {/* Icon will inherit text-primary */}
           {isCreatingPost ? 'Cancelar Publicação' : 'Nova Publicação'}
         </Button>
       </div>
@@ -391,8 +394,8 @@ export default function FeedPage() {
                 onChange={handleImageInputChange}
                 className="hidden"
               />
-              <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} title="Adicionar imagem">
-                <ImageIcon className="h-7 w-7 text-primary" />
+              <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} title="Adicionar imagem" className="text-primary">
+                <ImageIcon className="h-7 w-7" />
               </Button>
               <Button onClick={handlePublishPost} className="rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground">
                 Publicar
