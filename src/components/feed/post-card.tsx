@@ -31,7 +31,9 @@ import {
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { useNotification } from '@/contexts/NotificationContext'; // Import notification context
+import { useNotification } from '@/contexts/NotificationContext';
+import UserProfileModal, { type UserProfileData } from '@/components/profile/UserProfileModal';
+
 
 export interface ReactionState {
   thumbsUp: number;
@@ -48,6 +50,7 @@ export interface ReplyProps {
   text: string;
   reactions: ReactionState;
   replies?: ReplyProps[];
+  textElements?: React.ReactNode[];
 }
 
 export interface CommentProps {
@@ -59,6 +62,7 @@ export interface CommentProps {
   text: string;
   reactions: ReactionState;
   replies?: ReplyProps[];
+  textElements?: React.ReactNode[];
 }
 
 export interface PostReactions {
@@ -72,22 +76,23 @@ export interface PostCardProps {
   userName: string;
   userAvatarUrl?: string | StaticImageData;
   dataAIAvatarHint?: string;
-  userLocation?: string; 
-  dataAIImageHint?: string;
+  userLocation?: string;
   timestamp: string;
   text: string;
   imageUrl?: string | StaticImageData;
+  dataAIImageHint?: string;
   reactions: PostReactions;
   commentsData: CommentProps[];
-  // For mention detection - ideally this would come from a global user list
-  allKnownUserNames?: string[]; 
+  allKnownUserNames?: string[];
+  bio?: string;
+  instagramUsername?: string;
 }
 
 
 interface ReplyingToInfo {
   type: 'comment' | 'reply';
   parentId: string;
-  grandParentId?: string; 
+  grandParentId?: string;
   userNameToReply?: string;
 }
 
@@ -102,10 +107,9 @@ const reportReasons = [
   { id: "other", label: "Outros, informe o motivo..." },
 ];
 
-// Mock user names for mention detection (could be passed as prop or from context)
 const MOCK_USER_NAMES_FOR_MENTIONS = [
-    'Carlos Caminhoneiro', 'Ana Viajante', 'Rota Segura Admin', 'Mariana Logística', 
-    'Pedro Estradeiro', 'Segurança Rodoviária', 'João Silva', 'Você', 'Ana Souza', 'Carlos Santos', 'Ozias Conrado' 
+    'Carlos Caminhoneiro', 'Ana Viajante', 'Rota Segura Admin', 'Mariana Logística',
+    'Pedro Estradeiro', 'Segurança Rodoviária', 'João Silva', 'Você', 'Ana Souza', 'Carlos Santos', 'Ozias Conrado'
 ];
 
 
@@ -123,7 +127,7 @@ const renderTextWithMentions = (text: string, knownUsers: string[]): React.React
       if (knownUsers.includes(mentionedName)) {
         elements.push(<strong key={`${index}-${part}`} className="text-accent font-semibold cursor-pointer hover:underline">{part}</strong>);
       } else {
-        elements.push(part); 
+        elements.push(part);
       }
     } else {
       elements.push(part);
@@ -145,7 +149,9 @@ export default function PostCard({
   dataAIImageHint,
   reactions: initialReactions,
   commentsData: initialCommentsData,
-  allKnownUserNames = MOCK_USER_NAMES_FOR_MENTIONS, // Use mock by default
+  allKnownUserNames = MOCK_USER_NAMES_FOR_MENTIONS,
+  bio,
+  instagramUsername,
 }: PostCardProps) {
   const [currentUserPostReaction, setCurrentUserPostReaction] = useState<'thumbsUp' | 'thumbsDown' | null>(null);
   const [localPostReactions, setLocalPostReactions] = useState(initialReactions);
@@ -156,28 +162,39 @@ export default function PostCard({
   const [selectedReportReason, setSelectedReportReason] = useState<string | undefined>(undefined);
   const [otherReportReasonText, setOtherReportReasonText] = useState('');
 
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [selectedUserProfile, setSelectedUserProfile] = useState<UserProfileData | null>(null);
 
   const MAX_CHARS = 170;
   const needsTruncation = text.length > MAX_CHARS;
-  
+
   const displayedTextElements = useMemo(() => renderTextWithMentions(text, allKnownUserNames), [text, allKnownUserNames]);
-  const displayedTextNode = isTextExpanded ? displayedTextElements : 
-    (typeof text === 'string' && text.length > MAX_CHARS ? 
-      [...renderTextWithMentions(text.substring(0, MAX_CHARS), allKnownUserNames), '...'] : 
+  const displayedTextNode = isTextExpanded ? displayedTextElements :
+    (typeof text === 'string' && text.length > MAX_CHARS ?
+      [...renderTextWithMentions(text.substring(0, MAX_CHARS), allKnownUserNames), '...'] :
       displayedTextElements
     );
 
+  const processCommentsAndRepliesWithMentions = useCallback((items: (CommentProps | ReplyProps)[]) : any[] => {
+    return items.map(item => ({
+      ...item,
+      textElements: item.text ? renderTextWithMentions(item.text, allKnownUserNames) : undefined,
+      replies: item.replies ? processCommentsAndRepliesWithMentions(item.replies) : [],
+    }));
+  }, [allKnownUserNames]);
+
 
   const [localCommentsData, setLocalCommentsData] = useState<CommentProps[]>(
-    initialCommentsData.map(c => ({
+     () => processCommentsAndRepliesWithMentions(initialCommentsData.map(c => ({
       ...c,
       reactions: c.reactions || { thumbsUp: 0, thumbsDown: 0, userReaction: null },
       replies: c.replies?.map(r => ({
         ...r,
         reactions: r.reactions || { thumbsUp: 0, thumbsDown: 0, userReaction: null },
       })) || []
-    }))
+    })))
   );
+
 
   const [newCommentText, setNewCommentText] = useState('');
   const [replyingTo, setReplyingTo] = useState<ReplyingToInfo | null>(null);
@@ -205,7 +222,7 @@ export default function PostCard({
     itemId: string,
     reactionType: 'thumbsUp' | 'thumbsDown',
     itemType: 'comment' | 'reply',
-    commentIdForReply?: string, 
+    commentIdForReply?: string,
   ) => {
     setLocalCommentsData(prevComments =>
       prevComments.map(comment => {
@@ -215,23 +232,23 @@ export default function PostCard({
           let newThumbsDown = item.reactions.thumbsDown;
           let newUserReaction: 'thumbsUp' | 'thumbsDown' | null = null;
 
-          if (currentReaction === reactionType) { 
+          if (currentReaction === reactionType) {
             if (reactionType === 'thumbsUp') newThumbsUp--;
             else newThumbsDown--;
             newUserReaction = null;
-          } else { 
+          } else {
             if (currentReaction === 'thumbsUp') newThumbsUp--;
             if (currentReaction === 'thumbsDown') newThumbsDown--;
-            
+
             if (reactionType === 'thumbsUp') newThumbsUp++;
             else newThumbsDown++;
             newUserReaction = reactionType;
           }
-          
+
           return {
             ...item,
             reactions: {
-              thumbsUp: Math.max(0, newThumbsUp), 
+              thumbsUp: Math.max(0, newThumbsUp),
               thumbsDown: Math.max(0, newThumbsDown),
               userReaction: newUserReaction,
             },
@@ -263,12 +280,10 @@ export default function PostCard({
 
   const checkForMentionsAndNotify = (textToCheck: string) => {
     allKnownUserNames.forEach(name => {
-      // Regex to match @Name followed by a word boundary (space, punctuation) or end of string
       const mentionRegex = new RegExp(`@${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=\\s|\\p{P}|$)`, 'u');
       if (mentionRegex.test(textToCheck)) {
         console.log(`Mentioned: ${name}`);
         incrementNotificationCount();
-        // In a real app, you'd specify *who* was mentioned to target the notification
       }
     });
   };
@@ -279,11 +294,12 @@ export default function PostCard({
     checkForMentionsAndNotify(newCommentText);
     const newComment: CommentProps = {
       id: `c${Date.now()}`,
-      userName: 'Usuário Atual', 
+      userName: 'Usuário Atual',
       userAvatarUrl: 'https://placehold.co/40x40.png?text=UA',
       dataAIAvatarHint: 'current user',
       timestamp: 'Agora mesmo',
       text: newCommentText,
+      textElements: renderTextWithMentions(newCommentText, allKnownUserNames),
       reactions: { thumbsUp: 0, thumbsDown: 0, userReaction: null },
       replies: [],
     };
@@ -302,6 +318,7 @@ export default function PostCard({
       dataAIAvatarHint: 'current user',
       timestamp: 'Agora mesmo',
       text: newReplyText,
+      textElements: renderTextWithMentions(newReplyText, allKnownUserNames),
       reactions: { thumbsUp: 0, thumbsDown: 0, userReaction: null },
       replies: [],
     };
@@ -310,14 +327,14 @@ export default function PostCard({
       prevComments.map(comment => {
         if (replyingTo.type === 'comment' && comment.id === replyingTo.parentId) {
           return { ...comment, replies: [newReply, ...(comment.replies || [])] };
-        } 
+        }
         else if (replyingTo.type === 'reply' && comment.id === replyingTo.grandParentId) {
           const addNestedReply = (replies: ReplyProps[]): ReplyProps[] => {
             return replies.map(reply => {
               if (reply.id === replyingTo.parentId) {
                 return { ...reply, replies: [newReply, ...(reply.replies || [])] };
               }
-              if (reply.replies) { 
+              if (reply.replies) {
                 return { ...reply, replies: addNestedReply(reply.replies) };
               }
               return reply;
@@ -340,7 +357,7 @@ export default function PostCard({
   const handleEditPost = () => {
     toast({ title: "Editar Post", description: "Funcionalidade de edição a ser implementada." });
   };
-  
+
   const handleReportSubmit = () => {
     if (!selectedReportReason) {
         toast({ variant: "destructive", title: "Erro", description: "Por favor, selecione um motivo." });
@@ -358,10 +375,23 @@ export default function PostCard({
     setOtherReportReasonText('');
   };
 
+  const handleAvatarOrNameClick = () => {
+    setSelectedUserProfile({
+      id: postId,
+      name: userName,
+      avatarUrl: userAvatarUrl,
+      dataAIAvatarHint: dataAIAvatarHint,
+      location: userLocation,
+      bio: bio,
+      instagramUsername: instagramUsername,
+    });
+    setIsProfileModalOpen(true);
+  };
+
 
   const renderReplies = (replies: ReplyProps[] | undefined, commentIdForReply: string, depth = 0) => {
     if (!replies || replies.length === 0) return null;
-    const MAX_DEPTH = 1; 
+    const MAX_DEPTH = 1;
 
     return (
       <div className={`ml-6 mt-2 space-y-2 pt-2 ${depth > 0 ? 'pl-3 border-l-2 border-muted/30' : 'pl-3 border-l-2 border-muted/50'}`}>
@@ -377,12 +407,12 @@ export default function PostCard({
                   <p className="text-xs font-semibold font-headline">{reply.userName}</p>
                   <p className="text-xs text-muted-foreground">{reply.timestamp}</p>
                 </div>
-                <p className="text-base mt-0.5">{renderTextWithMentions(reply.text, allKnownUserNames)}</p>
+                <p className="text-base mt-0.5">{reply.textElements || reply.text}</p>
                 <div className="flex items-center mt-1 space-x-1">
                   <Button
                     variant="ghost"
                     size="sm"
-                    className={`p-0 h-auto text-xs hover:bg-transparent focus:bg-transparent ${reply.reactions.userReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary focus:text-primary'}`}
+                    className={`p-0 h-auto text-xs ${reply.reactions.userReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary focus:text-primary'}`}
                     onClick={() => handleItemReaction(reply.id, 'thumbsUp', 'reply', commentIdForReply)}
                   >
                     <ThumbsUp className={`mr-1 h-3.5 w-3.5 ${reply.reactions.userReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
@@ -391,7 +421,7 @@ export default function PostCard({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className={`p-0 h-auto text-xs hover:bg-transparent focus:bg-transparent ${reply.reactions.userReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive focus:text-destructive'}`}
+                    className={`p-0 h-auto text-xs ${reply.reactions.userReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive focus:text-destructive'}`}
                     onClick={() => handleItemReaction(reply.id, 'thumbsDown', 'reply', commentIdForReply)}
                   >
                     <ThumbsDown className={`mr-1 h-3.5 w-3.5 ${reply.reactions.userReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
@@ -448,34 +478,37 @@ export default function PostCard({
     <>
     <Card className="w-full max-w-2xl mx-auto mb-6 shadow-lg rounded-xl overflow-hidden">
       <CardHeader className="flex flex-row items-start space-x-3 p-4">
-        <Avatar className="h-10 w-10">
+        <Avatar className="h-10 w-10 cursor-pointer" onClick={handleAvatarOrNameClick}>
           {userAvatarUrl ? <AvatarImage src={userAvatarUrl as string} alt={userName} data-ai-hint={dataAIAvatarHint} /> : null}
           <AvatarFallback>
             {userName ? userName.substring(0,2).toUpperCase() : <UserCircle className="h-10 w-10" />}
           </AvatarFallback>
         </Avatar>
         <div className="flex justify-between items-start w-full">
-            <div>
+            <div className="cursor-pointer" onClick={handleAvatarOrNameClick}>
                 <PostCardTitleUI className="text-base font-headline">{userName}</PostCardTitleUI>
                 {userLocation && <p className="text-xs text-muted-foreground">{userLocation}</p>}
             </div>
             <p className="text-xs text-muted-foreground whitespace-nowrap pl-2">{timestamp}</p>
         </div>
       </CardHeader>
+
       <CardContent className="p-4 pt-0">
-        <p className="mb-1 text-base leading-relaxed">{displayedTextNode}</p>
-        {needsTruncation && (
-          <Button
-            variant="link"
-            size="sm"
-            className="p-0 h-auto text-xs text-primary mb-3"
-            onClick={() => setIsTextExpanded(!isTextExpanded)}
-          >
-            {isTextExpanded ? 'Ver menos.' : 'Ver mais...'}
-          </Button>
-        )}
+        <div className="mb-3">
+            <p className="text-base leading-relaxed">{displayedTextNode}</p>
+            {needsTruncation && (
+            <Button
+                variant="link"
+                size="sm"
+                className="p-0 h-auto text-xs text-primary"
+                onClick={() => setIsTextExpanded(!isTextExpanded)}
+            >
+                {isTextExpanded ? 'Ver menos.' : 'Ver mais...'}
+            </Button>
+            )}
+        </div>
         {imageUrl && (
-          <div className="relative aspect-square rounded-lg overflow-hidden border">
+          <div className="relative aspect-square -mx-4 rounded-lg overflow-hidden border">
             <Image
               src={imageUrl}
               alt="Post image"
@@ -493,7 +526,7 @@ export default function PostCard({
                 variant="ghost"
                 size="icon"
                 onClick={() => handlePostReactionClick('thumbsUp')}
-                className={`p-1.5 h-auto hover:bg-transparent focus:bg-transparent ${currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
+                className={`p-1.5 h-auto ${currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
                 aria-label="Curtir"
             >
                 <ThumbsUp className={`h-5 w-5 ${currentUserPostReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
@@ -503,18 +536,18 @@ export default function PostCard({
                 variant="ghost"
                 size="icon"
                 onClick={() => handlePostReactionClick('thumbsDown')}
-                className={`p-1.5 h-auto hover:bg-transparent focus:bg-transparent ${currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'}`}
+                className={`p-1.5 h-auto ${currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'}`}
                 aria-label="Não curtir"
             >
                 <ThumbsDown className={`h-5 w-5 ${currentUserPostReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
                  {localPostReactions.thumbsDown > 0 && <span className="ml-1 text-xs tabular-nums">({localPostReactions.thumbsDown})</span>}
             </Button>
-            
+
             <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary p-1.5 h-auto" onClick={() => setIsSheetOpen(true)}>
                 <MessageSquare className="h-5 w-5" />
                 {localCommentsData.length > 0 && <span className="ml-1 text-xs tabular-nums">({localCommentsData.length})</span>}
             </Button>
-            
+
              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary p-1.5 h-auto">
                 <Share2 className="h-5 w-5" />
             </Button>
@@ -548,13 +581,13 @@ export default function PostCard({
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0 rounded-t-[25px]">
                 <SheetHeader className="p-4 border-b border-border flex flex-row justify-center items-center relative">
-                     <SheetTitle className="sr-only">Comentários e Reações do Post</SheetTitle>
+                    <SheetTitle className="sr-only">Comentários e Reações do Post</SheetTitle>
                     <div className="flex items-center justify-center gap-4 py-1">
                         <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handlePostReactionClick('thumbsUp')}
-                        className={`p-1 h-auto hover:bg-transparent focus:bg-transparent ${currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
+                        className={`p-1 h-auto ${currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
                         aria-label="Curtir Post"
                         >
                         <ThumbsUp className={`h-5 w-5 ${currentUserPostReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
@@ -564,7 +597,7 @@ export default function PostCard({
                         variant="ghost"
                         size="sm"
                         onClick={() => handlePostReactionClick('thumbsDown')}
-                        className={`p-1 h-auto hover:bg-transparent focus:bg-transparent ${currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'}`}
+                        className={`p-1 h-auto ${currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'}`}
                         aria-label="Não Curtir Post"
                         >
                         <ThumbsDown className={`h-5 w-5 ${currentUserPostReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
@@ -586,12 +619,12 @@ export default function PostCard({
                             <p className="text-xs font-semibold font-headline">{comment.userName}</p>
                             <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
                         </div>
-                        <p className="text-base mt-1">{renderTextWithMentions(comment.text, allKnownUserNames)}</p>
+                        <p className="text-base mt-1">{comment.textElements || comment.text}</p>
                         <div className="flex items-center mt-1.5 space-x-1">
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className={`p-0 h-auto text-xs hover:bg-transparent focus:bg-transparent ${comment.reactions.userReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary focus:text-primary'}`}
+                                className={`p-0 h-auto text-xs ${comment.reactions.userReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary focus:text-primary'}`}
                                 onClick={() => handleItemReaction(comment.id, 'thumbsUp', 'comment')}
                             >
                             <ThumbsUp className={`mr-1 h-3.5 w-3.5 ${comment.reactions.userReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
@@ -600,7 +633,7 @@ export default function PostCard({
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className={`p-0 h-auto text-xs hover:bg-transparent focus:bg-transparent ${comment.reactions.userReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive focus:text-destructive'}`}
+                                className={`p-0 h-auto text-xs ${comment.reactions.userReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive focus:text-destructive'}`}
                                 onClick={() => handleItemReaction(comment.id, 'thumbsDown', 'comment')}
                             >
                             <ThumbsDown className={`mr-1 h-3.5 w-3.5 ${comment.reactions.userReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
@@ -639,7 +672,7 @@ export default function PostCard({
                             className="rounded-lg flex-grow h-10 bg-background/70 text-base"
                             autoFocus
                         />
-                        <Button type="submit" size="icon" className="rounded-lg h-10 w-10 shrink-0">
+                        <Button type="submit" size="icon" className="rounded-lg shrink-0 h-10 w-10">
                             <Send className="h-4 w-4" />
                         </Button>
                         </form>
@@ -649,7 +682,7 @@ export default function PostCard({
                 ))}
                 </div>
 
-                <div className="p-4 border-t border-border bg-background">
+                <div className="p-4 border-t border-border bg-background sticky bottom-0">
                     <form onSubmit={handleAddComment} className="flex gap-2 items-start">
                         <Avatar className="mt-1 h-10 w-10">
                         <AvatarImage src="https://placehold.co/40x40.png?text=UA" alt="Usuário Atual" data-ai-hint="current user" />
@@ -666,12 +699,9 @@ export default function PostCard({
                         <Send className="h-4 w-4" />
                         </Button>
                     </form>
-                </div>
-
-                <div className="p-4 border-t border-border bg-background">
-                <div className="h-[50px] bg-muted/30 rounded flex items-center justify-center text-sm text-muted-foreground">
-                    Espaço para Publicidade AdMob (Ex: 320x50)
-                </div>
+                     <div className="mt-4 h-[50px] bg-muted/30 rounded flex items-center justify-center text-sm text-muted-foreground">
+                        Espaço para Publicidade AdMob (Ex: 320x50)
+                    </div>
                 </div>
             </SheetContent>
         </Sheet>
@@ -707,6 +737,13 @@ export default function PostCard({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <UserProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        user={selectedUserProfile}
+      />
     </>
   );
 }
+

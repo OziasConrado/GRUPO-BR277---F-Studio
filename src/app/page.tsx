@@ -14,9 +14,8 @@ const defaultReactions: PostReactions = {
   thumbsDown: 0,
 };
 
-// For mention detection in PostCard
 const MOCK_POST_USER_NAMES = [
-    'Carlos Caminhoneiro', 'Ana Viajante', 'Rota Segura Admin', 'Mariana Logística', 
+    'Carlos Caminhoneiro', 'Ana Viajante', 'Rota Segura Admin', 'Mariana Logística',
     'Pedro Estradeiro', 'Segurança Rodoviária', 'João Silva', 'Você', 'Ana Souza', 'Carlos Santos', 'Ozias Conrado'
 ];
 
@@ -72,7 +71,7 @@ const mockAdminStories: StoryCircleProps[] = [
 ];
 
 
-const mockPosts: Omit<PostCardProps, 'allKnownUserNames'>[] = [ // Omit allKnownUserNames, PostCard will use its default
+const mockPosts: PostCardProps[] = [
   {
     id: '1',
     userName: 'Carlos Caminhoneiro',
@@ -115,6 +114,9 @@ const mockPosts: Omit<PostCardProps, 'allKnownUserNames'>[] = [ // Omit allKnown
         reactions: { thumbsUp: 5, thumbsDown: 0, userReaction: null }
       }
     ],
+    bio: 'Caminhoneiro experiente, rodando pelas estradas do Brasil há mais de 20 anos. Compartilhando dicas e paisagens.',
+    instagramUsername: 'carlos_trucker',
+    allKnownUserNames: MOCK_POST_USER_NAMES,
   },
   {
     id: '2',
@@ -138,6 +140,9 @@ const mockPosts: Omit<PostCardProps, 'allKnownUserNames'>[] = [ // Omit allKnown
         reactions: { thumbsUp: 15, thumbsDown: 0, userReaction: null }
       }
     ],
+    bio: 'Aventureira e fotógrafa amadora. Adoro explorar novos lugares e compartilhar minhas experiências de viagem.',
+    instagramUsername: 'ana_explora',
+    allKnownUserNames: MOCK_POST_USER_NAMES,
   },
   {
     id: '3',
@@ -151,6 +156,9 @@ const mockPosts: Omit<PostCardProps, 'allKnownUserNames'>[] = [ // Omit allKnown
     dataAIImageHint: 'app interface checklist square',
     reactions: { ...defaultReactions, thumbsUp: 210, thumbsDown: 3 },
     commentsData: [],
+    bio: 'Perfil oficial do app Rota Segura. Novidades, dicas e suporte para você, caminhoneiro e viajante!',
+    instagramUsername: 'rotasegura_app',
+    allKnownUserNames: MOCK_POST_USER_NAMES,
   },
 ];
 
@@ -233,7 +241,7 @@ export default function FeedPage() {
 
       <div className="space-y-6">
         {mockPosts.map((post) => (
-          <PostCard key={post.id} {...post} allKnownUserNames={MOCK_POST_USER_NAMES}/>
+          <PostCard key={post.id} {...post} />
         ))}
       </div>
       <StoryViewerModal
@@ -244,3 +252,4 @@ export default function FeedPage() {
     </div>
   );
 }
+
