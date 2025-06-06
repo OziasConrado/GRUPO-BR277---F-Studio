@@ -6,7 +6,7 @@ import StoryCircle, { type StoryCircleProps } from '@/components/stories/StoryCi
 import StoryViewerModal from '@/components/stories/StoryViewerModal';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, Star, TrendingUp, Info, Edit, Image as ImageIcon, XCircle } from 'lucide-react';
+import { AlertCircle, Star, TrendingUp, Info, Edit, Image as ImageIcon, XCircle, Check } from 'lucide-react'; // Added Check here
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -82,7 +82,7 @@ const initialMockPosts: PostCardProps[] = [
     userLocation: 'Curitiba, PR',
     timestamp: '2 horas atrás',
     text: 'Estrada tranquila hoje na BR-116! Sol brilhando e sem trânsito. Bom dia a todos! @Ana Viajante, como está por aí? Aproveitando para testar o novo sistema de posts aqui no app. A interface está bem fluida e fácil de usar. Espero que todos tenham uma ótima viagem e que o dia seja produtivo para quem está na lida. @Ozias Conrado, tudo certo? Cuidado nas curvas e mantenham a atenção! Mais um pouco de texto para testar a funcionalidade de ver mais e ver menos, garantindo que tenhamos mais de 170 caracteres para que o botão apareça corretamente.',
-    imageUrl: 'https://placehold.co/600x600.png', // This remains for posts that don't have user-uploaded images or special backgrounds
+    imageUrl: 'https://placehold.co/600x600.png',
     dataAIImageHint: 'highway sunny day square',
     reactions: { ...defaultReactions, thumbsUp: 152, thumbsDown: 5 },
     commentsData: [
@@ -154,7 +154,6 @@ const initialMockPosts: PostCardProps[] = [
     userLocation: 'Brasil',
     timestamp: '1 dia atrás',
     text: 'Nova funcionalidade no app: Checklist de Viagem aprimorado! Confira na seção de Ferramentas. Agora com mais itens e a possibilidade de salvar seus checklists para viagens futuras. Feedback é sempre bem-vindo!',
-    // No imageUrl here to test cardStyle if we add one to this post later
     reactions: { ...defaultReactions, thumbsUp: 210, thumbsDown: 3 },
     commentsData: [],
     bio: 'Perfil oficial do app Rota Segura. Novidades, dicas e suporte para você, caminhoneiro e viajante!',
@@ -447,3 +446,4 @@ export default function FeedPage() {
     </div>
   );
 }
+
