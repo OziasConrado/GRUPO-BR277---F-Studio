@@ -11,9 +11,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Arial', 'sans-serif'], // Set Arial as default sans-serif
-        body: ['Arial', 'sans-serif'],   // Explicitly set Arial for body
-        headline: ['Arial', 'sans-serif'], // Explicitly set Arial for headlines
+        sans: ['Segoe UI', 'Tahoma', 'Geneva', 'Verdana', 'sans-serif'],
+        body: ['Segoe UI', 'Tahoma', 'Geneva', 'Verdana', 'sans-serif'],
+        headline: ['Segoe UI', 'Tahoma', 'Geneva', 'Verdana', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
@@ -102,4 +102,3 @@ export default {
   },
   plugins: [require('tailwindcss-animate')],
 } satisfies Config;
-
