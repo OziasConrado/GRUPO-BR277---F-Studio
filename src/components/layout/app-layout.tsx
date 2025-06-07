@@ -62,9 +62,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
               variant="ghost"
               size="icon"
               onClick={() => router.back()}
-              className="text-primary-foreground hover:bg-white/10 h-10 w-10 sm:h-11 sm:w-11"
+              className="text-primary-foreground hover:bg-white/10 h-10 w-10 sm:h-12 sm:w-12"
             >
-              <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+              <ArrowLeft className="h-5 w-5 sm:h-7 sm:w-7" />
               <span className="sr-only">Voltar</span>
             </Button>
           </TooltipTrigger>
@@ -73,17 +73,17 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </TooltipContent>
         </Tooltip>
 
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div className="flex items-center gap-1 sm:gap-3">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={toggleTheme}
-                className="text-primary-foreground hover:bg-white/10 h-10 w-10 sm:h-11 sm:w-11"
+                className="text-primary-foreground hover:bg-white/10 h-10 w-10 sm:h-12 sm:w-12"
                 aria-label="Alternar tema claro/escuro"
               >
-                {isDarkMode ? <Sun className="h-5 w-5 sm:h-6 sm:h-6 text-yellow-400" /> : <Moon className="h-5 w-5 sm:h-6 sm:h-6" />}
+                {isDarkMode ? <Sun className="h-5 w-5 sm:h-7 sm:w-7 text-yellow-400" /> : <Moon className="h-5 w-5 sm:h-7 sm:w-7" />}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">
@@ -97,9 +97,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 variant="ghost"
                 size="icon"
                 onClick={() => window.location.reload()}
-                className="text-primary-foreground hover:bg-white/10 h-10 w-10 sm:h-11 sm:w-11"
+                className="text-primary-foreground hover:bg-white/10 h-10 w-10 sm:h-12 sm:w-12"
               >
-                <RefreshCcw className="h-5 w-5 sm:h-6 sm:h-6" />
+                <RefreshCcw className="h-5 w-5 sm:h-7 sm:w-7" />
                 <span className="sr-only">Recarregar Página</span>
               </Button>
             </TooltipTrigger>
@@ -114,10 +114,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 variant="ghost"
                 size="icon"
                 onClick={handleNotificationClick}
-                className="relative text-primary-foreground hover:bg-white/10 h-10 w-10 sm:h-11 sm:w-11"
+                className="relative text-primary-foreground hover:bg-white/10 h-10 w-10 sm:h-12 sm:w-12"
                 aria-label="Notificações"
               >
-                <Bell className="h-5 w-5 sm:h-6 sm:h-6" />
+                <Bell className="h-5 w-5 sm:h-7 sm:w-7" />
                 {notificationCount > 0 && (
                   <span className="notification-badge">
                     {notificationCount > 9 ? '9+' : notificationCount}
@@ -132,8 +132,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
           
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10 p-0 h-10 w-10 sm:h-11 sm:w-11">
-                <Avatar className="h-8 w-8 sm:h-9 sm:w-9">
+              <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10 p-0 h-10 w-10 sm:h-12 sm:w-12">
+                <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
                   <AvatarImage src="https://placehold.co/80x80.png" alt="Foto do Usuário" data-ai-hint="user profile"/>
                   <AvatarFallback>U</AvatarFallback>
                 </Avatar>
