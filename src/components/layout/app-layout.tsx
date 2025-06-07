@@ -64,7 +64,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
               onClick={() => router.back()}
               className="text-primary-foreground hover:bg-white/10 h-10 w-10 sm:h-11 sm:w-11"
             >
-              <ArrowLeft className="h-6 w-6 sm:h-7 sm:h-7" />
+              <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6" />
               <span className="sr-only">Voltar</span>
             </Button>
           </TooltipTrigger>
