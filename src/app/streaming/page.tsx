@@ -170,7 +170,7 @@ const mockStreamsData: StreamCardProps[] = [
   {
     id: 'stream-guaratuba-3',
     title: 'Obra Nova Ponte',
-    description: 'Câmera 1', // Corrigido de "câmera 1"
+    description: 'Câmera 1', 
     thumbnailUrl: 'https://placehold.co/160x90.png',
     dataAIThumbnailHint: 'construction site bridge',
     category: 'Guaratuba-PR',
@@ -203,7 +203,7 @@ const mockStreamsData: StreamCardProps[] = [
     id: 'stream-outros-1',
     title: 'Paraguai',
     description: 'Ponte da Amizade | Sentido Brasil',
-    thumbnailUrl: 'https://placehold.co/160x90.png', // Corrigido de "Otros" para "Outros"
+    thumbnailUrl: 'https://placehold.co/160x90.png', 
     dataAIThumbnailHint: 'international border bridge',
     category: 'Outros',
     isLive: true,
@@ -232,25 +232,37 @@ export default function StreamingPage() {
   const streamCategories = ['Todos', ...new Set(mockStreamsData.map(s => s.category))];
 
   const canEmbedPreview = (url: string) => {
-    const nonEmbeddableHosts = ['cloud.fullcam.me']; // Hosts que não funcionam bem em iframes pequenos ou múltiplos
+    const nonEmbeddableHosts = ['cloud.fullcam.me', 'playerv.logicahost.com.br', 'giseleimoveis.com.br'];
     try {
       const hostname = new URL(url).hostname;
-      // Para miniaturas, podemos ser mais restritivos. Alguns que funcionam em tela cheia podem não funcionar bem aqui.
       if (nonEmbeddableHosts.some(host => hostname.includes(host))) return false;
-      if (hostname.includes('playerv.logicahost.com.br')) return false; // Muitas vezes não carrega em iframes pequenos
-      if (hostname.includes('giseleimoveis.com.br')) return false; // Página web completa
       return true; 
     } catch (e) {
       return false; 
     }
+  };
+  
+  const getAutoplayStreamUrl = (originalUrl: string, forThumbnail: boolean = false) => {
+    try {
+      const url = new URL(originalUrl);
+      if (url.hostname.includes('rtsp.me')) {
+        url.searchParams.set('autoplay', '1');
+        // Mute for thumbnails to increase autoplay likelihood
+        if (forThumbnail) url.searchParams.set('mute', '1');
+        return url.toString();
+      }
+    } catch (e) {
+      // Invalid URL or other issue, return original
+    }
+    return originalUrl;
   };
 
 
   return (
     <div className="w-full space-y-6">
       <div>
-        <h1 className="text-3xl font-bold font-headline text-center sm:text-left">Transmissões Ao Vivo</h1>
-        <p className="text-muted-foreground text-center sm:text-left text-sm">Acompanhe o trânsito e condições das estradas.</p>
+        <h1 className="text-3xl font-bold font-headline text-center sm:text-left">Live Cam</h1>
+        <p className="text-muted-foreground text-center sm:text-left text-sm">Acompanhe o trânsito AO VIVO 24 horas, entre outros locais e pontos turísticos.</p>
       </div>
       
       <div className="p-4 rounded-xl bg-card border">
@@ -265,6 +277,8 @@ export default function StreamingPage() {
         <div className="space-y-3">
           {filteredStreams.map((stream) => {
             const embedPreview = canEmbedPreview(stream.streamUrl);
+            const previewUrl = embedPreview ? getAutoplayStreamUrl(stream.streamUrl, true) : stream.thumbnailUrl;
+
             return (
               <Card 
                 key={stream.id} 
@@ -274,40 +288,41 @@ export default function StreamingPage() {
                   <div className="w-28 sm:w-32 aspect-video rounded-md overflow-hidden relative flex-shrink-0 bg-black/10">
                     {embedPreview ? (
                         <iframe
-                        src={stream.streamUrl}
+                        src={previewUrl}
                         title={`Miniatura: ${stream.title}`}
                         className="w-full h-full border-0"
                         sandbox="allow-scripts allow-same-origin allow-presentation"
+                        allow="autoplay; encrypted-media"
                         scrolling="no"
                       ></iframe>
                     ) : (
-                      <img // Fallback para imagem estática
+                      <img 
                         src={stream.thumbnailUrl}
                         alt={`Thumbnail para ${stream.title}`}
                         className="w-full h-full object-cover"
                         data-ai-hint={stream.dataAIThumbnailHint || "live stream thumbnail"}
                       />
                     )}
-                    {stream.isLive && !embedPreview && ( // Mostra 'AO VIVO' apenas se for fallback de imagem
+                    {stream.isLive && !embedPreview && ( 
                       <div className="absolute top-1 left-1 bg-red-600 text-white px-1.5 py-0.5 rounded text-[0.6rem] font-bold animate-pulse">
                         AO VIVO
                       </div>
                     )}
                   </div>
 
-                  <div className="flex-grow flex flex-col justify-between self-stretch"> {/* Alterado para self-stretch e justify-between */}
-                    <div> {/* Título e Descrição */}
+                  <div className="flex-grow flex flex-col justify-between self-stretch">
+                    <div> 
                       <h3 className="text-sm sm:text-md font-semibold font-headline line-clamp-2">{stream.title}</h3>
                       <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{stream.description}</p>
                     </div>
-                    <div className="self-end"> {/* Botão alinhado à direita/fim */}
+                    <div className="self-end"> 
                       <Button 
                         variant="default" 
                         size="sm" 
                         onClick={() => handleWatchStream(stream)}
-                        className="mt-1.5 rounded-md text-xs py-1 px-2 h-auto"
+                        className="mt-1.5 rounded-full text-xs py-1 px-2 h-auto"
                       >
-                        <PlayCircle className="mr-1.5 h-4 w-4" /> Assistir
+                        <PlayCircle className="mr-1 h-4 w-4" /> Assistir
                       </Button>
                     </div>
                   </div>

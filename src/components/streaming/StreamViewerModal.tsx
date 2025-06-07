@@ -15,14 +15,28 @@ interface StreamViewerModalProps {
 export default function StreamViewerModal({ isOpen, onClose, stream }: StreamViewerModalProps) {
   if (!isOpen || !stream) return null;
 
-  // Placeholder para a área de publicidade superior (patrocinador)
+  const getAutoplayStreamUrlForModal = (originalUrl: string) => {
+    try {
+      const url = new URL(originalUrl);
+      if (url.hostname.includes('rtsp.me')) {
+        url.searchParams.set('autoplay', '1');
+        return url.toString();
+      }
+      // For other types, rely on allow="autoplay" or provider's default behavior for now
+    } catch (e) {
+      // Invalid URL or other issue, return original
+    }
+    return originalUrl;
+  };
+
+  const streamUrlForModal = getAutoplayStreamUrlForModal(stream.streamUrl);
+
   const SponsorAdSpace = () => (
     <div className="shrink-0 h-[60px] bg-primary/20 flex items-center justify-center text-sm text-primary-foreground">
       Espaço do Patrocinador (Logo)
     </div>
   );
 
-  // Placeholder para a área de publicidade inferior (AdMob)
   const AdMobSpace = () => (
     <div className="shrink-0 h-[100px] bg-secondary/20 flex items-center justify-center text-sm text-secondary-foreground">
       Banner AdMob (320x50 ou similar)
@@ -49,14 +63,12 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
           </DialogClose>
         </DialogHeader>
         
-        {/* Espaço do Patrocinador (simulado) */}
         <SponsorAdSpace />
 
         <div className="flex-grow flex items-center justify-center p-1 sm:p-2 overflow-hidden">
-          {/* Conteúdo do Stream (Vídeo) */}
           <div className="w-full max-w-4xl mx-auto aspect-video bg-black rounded-md overflow-hidden">
             <iframe
-              src={stream.streamUrl}
+              src={streamUrlForModal}
               title={stream.title}
               className="w-full h-full border-0"
               allow="autoplay; encrypted-media; picture-in-picture"
@@ -66,7 +78,6 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
           </div>
         </div>
 
-         {/* Banner AdMob (simulado) */}
         <AdMobSpace />
 
       </DialogContent>
