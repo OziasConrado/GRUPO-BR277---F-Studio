@@ -55,7 +55,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   const AppHeader = () => (
     <header className="sticky top-0 z-50 w-full bg-primary text-primary-foreground shadow-lg">
-      <div className="container px-4 flex h-16 sm:h-20 items-center justify-between">
+      <div className="px-4 flex h-16 sm:h-20 items-center justify-between max-w-screen-xl mx-auto"> {/* Alterado aqui */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
