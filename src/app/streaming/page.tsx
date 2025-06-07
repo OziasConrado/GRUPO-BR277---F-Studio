@@ -247,7 +247,6 @@ export default function StreamingPage() {
       const url = new URL(originalUrl);
       if (url.hostname.includes('rtsp.me')) {
         url.searchParams.set('autoplay', '1');
-        // Mute for thumbnails to increase autoplay likelihood
         if (forThumbnail) url.searchParams.set('mute', '1');
         return url.toString();
       }
@@ -292,7 +291,7 @@ export default function StreamingPage() {
                         title={`Miniatura: ${stream.title}`}
                         className="w-full h-full border-0"
                         sandbox="allow-scripts allow-same-origin allow-presentation"
-                        allow="autoplay; encrypted-media"
+                        allow="autoplay; encrypted-media; picture-in-picture" // Added picture-in-picture
                         scrolling="no"
                       ></iframe>
                     ) : (
@@ -303,7 +302,7 @@ export default function StreamingPage() {
                         data-ai-hint={stream.dataAIThumbnailHint || "live stream thumbnail"}
                       />
                     )}
-                    {stream.isLive && !embedPreview && ( 
+                    {stream.isLive && (embedPreview || (!embedPreview && stream.thumbnailUrl.includes('placehold.co'))) && ( 
                       <div className="absolute top-1 left-1 bg-red-600 text-white px-1.5 py-0.5 rounded text-[0.6rem] font-bold animate-pulse">
                         AO VIVO
                       </div>
@@ -320,7 +319,7 @@ export default function StreamingPage() {
                         variant="default" 
                         size="sm" 
                         onClick={() => handleWatchStream(stream)}
-                        className="mt-1.5 rounded-full text-xs py-1 px-2 h-auto"
+                        className="mt-1.5 rounded-full text-xs py-1 px-3 h-auto" // Adjusted px
                       >
                         <PlayCircle className="mr-1 h-4 w-4" /> Assistir
                       </Button>
@@ -348,3 +347,4 @@ export default function StreamingPage() {
     </div>
   );
 }
+
