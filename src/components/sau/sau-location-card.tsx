@@ -67,7 +67,6 @@ export default function SauLocationCard({ sau, reviews, onAddReview }: SauLocati
           />
           <div className="flex-grow">
             <h2 className="text-md font-semibold text-foreground">{sau.concessionaire}</h2>
-            {/* <p className="text-sm text-muted-foreground mt-0.5">{sau.name}</p>  Removido conforme solicitado */}
             {sau.distance !== undefined && (
               <Badge variant="outline" className="mt-1.5 text-xs whitespace-nowrap">
                 <MapPin className="h-3 w-3 mr-1" />
@@ -113,27 +112,18 @@ export default function SauLocationCard({ sau, reviews, onAddReview }: SauLocati
           <Separator />
 
           <div className="pt-1">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-col">
                 <StarDisplay rating={sau.averageRating || 0} size={18}/>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-muted-foreground mt-0.5">
                     ({(sau.averageRating || 0).toFixed(1)} de {sau.reviewCount || 0} avaliações)
                 </span>
+              </div>
+              <Button variant="default" size="sm" onClick={() => setIsReviewModalOpen(true)}>
+                <Edit3 className="mr-1.5 h-4 w-4" />
+                Avaliar Serviço
+              </Button>
             </div>
-             <div className="flex gap-2"> {/* Container flex para os botões */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleNavigate}
-                  className="text-primary border-primary hover:bg-primary/10 hover:text-primary focus-visible:ring-primary flex-1" // flex-1 adicionado
-                >
-                    <Navigation className="mr-1.5 h-4 w-4" />
-                    Abrir no Maps {/* Texto alterado */}
-                </Button>
-                <Button variant="default" size="sm" onClick={() => setIsReviewModalOpen(true)} className="flex-1"> {/* flex-1 adicionado */}
-                  <Edit3 className="mr-1.5 h-4 w-4" />
-                  Avaliar Serviço
-                </Button>
-             </div>
           </div>
 
         </CardContent>
@@ -175,4 +165,3 @@ export default function SauLocationCard({ sau, reviews, onAddReview }: SauLocati
     </>
   );
 }
-
