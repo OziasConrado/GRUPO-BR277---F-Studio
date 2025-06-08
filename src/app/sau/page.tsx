@@ -18,6 +18,7 @@ const concessionairesForFilter = [
 ];
 
 const standardSauServices = ["Banheiros/Adequados para pessoas com deficiência", "Fraldários", "bebedouros", "Totens de autoatendimento", "Ambulâncias", "Outros"];
+const ccrPrviasServices = ["Fraldário", "Bebedouros", "Banheiros", "Informações"];
 
 // Increased mock data with more diverse locations (approximated for Brazil)
 const mockSauLocations: SAULocation[] = [
@@ -84,14 +85,28 @@ const mockSauLocations: SAULocation[] = [
   { id: 'arb-new-10', concessionaire: 'Arteris Régis Bitencourt', name: 'SAU Km 57 (Sentido Curitiba) - BR-116', address: 'BR-116, Km 57 (sentido Curitiba), Campina Grande do Sul - PR', latitude: -25.3033, longitude: -49.0528, services: standardSauServices, operatingHours: '24 horas' },
   { id: 'arb-new-11', concessionaire: 'Arteris Régis Bitencourt', name: 'SAU Km 70 (Sentido Curitiba) - BR-116', address: 'BR-116, Km 70 (sentido Curitiba), Quatro Barras - PR', latitude: -25.3683, longitude: -49.0769, services: standardSauServices, operatingHours: '24 horas' },
   
-  // CCR PRVias (Paraná) - Renamed to Via Araucária for some stretches, keeping as example if distinct.
-  { id: 'ccr-prv-1', concessionaire: 'CCR PRVias', name: 'SAU Km 200 - BR-376', address: 'BR-376, Km 200, Ponta Grossa - PR', latitude: -25.0907, longitude: -50.2632, services: ['Banheiros', 'Água', 'Wi-Fi'], operatingHours: '24 horas' },
+  // CCR PRVias - New entries
+  { id: 'ccr-prvias-1', concessionaire: 'CCR PRVias', name: 'SAU Km 194 (Sul) - BR-369/PR', address: 'BR-369/PR - Rodovia Melo Peixoto, km 194 (Sentido Sul), Arapongas - PR', latitude: -23.4197, longitude: -51.4244, services: ccrPrviasServices, operatingHours: '24 horas' },
+  { id: 'ccr-prvias-2', concessionaire: 'CCR PRVias', name: 'SAU Km 213 (Sul) - BR-369/PR', address: 'BR-369/PR - Rodovia Melo Peixoto, km 213 (Sentido Sul), Apucarana - PR', latitude: -23.5508, longitude: -51.4600, services: ccrPrviasServices, operatingHours: '24 horas' },
+  { id: 'ccr-prvias-3', concessionaire: 'CCR PRVias', name: 'SAU Km 181 (Norte) - BR-373', address: 'BR-373 – Rodovia do Café Governador Ney Braga, km 181 (Sentido Norte), Ponta Grossa - PR', latitude: -25.1567, longitude: -50.1039, services: ccrPrviasServices, operatingHours: '24 horas' }, // Adjusted coords for BR-373 km 181 near PG
+  { id: 'ccr-prvias-4', concessionaire: 'CCR PRVias', name: 'SAU Km 511 (Norte) - BR-376/PR', address: 'BR-376/PR - Rodovia do Café Governador Ney Braga, km 511 (Sentido Norte), Ponta Grossa - PR', latitude: -24.9980, longitude: -50.1592, services: ccrPrviasServices, operatingHours: '24 horas' }, // Adjusted coords for BR-376 km 511 near PG
+  { id: 'ccr-prvias-5', concessionaire: 'CCR PRVias', name: 'SAU Km 389 (Norte) - BR-376/PR', address: 'BR-376/PR - Rodovia do Café Governador Ney Braga, km 389 (Sentido Norte), Imbaú - PR', latitude: -24.4458, longitude: -50.7744, services: ccrPrviasServices, operatingHours: '24 horas' },
+  { id: 'ccr-prvias-6', concessionaire: 'CCR PRVias', name: 'SAU Km 26 (Norte) - PR-445', address: 'PR-445 - Rodovia Celso Garcia Cid, km 26 (Sentido Norte), Londrina - PR', latitude: -23.4215, longitude: -51.1851, services: ccrPrviasServices, operatingHours: '24 horas' }, // Approx PR-445 km 26 near Londrina
+  { id: 'ccr-prvias-7', concessionaire: 'CCR PRVias', name: 'SAU Km 59 (Norte) - PR-445', address: 'PR-445 - Rodovia Celso Garcia Cid, km 59 (Sentido Norte), Londrina - PR', latitude: -23.3379, longitude: -51.1707, services: ccrPrviasServices, operatingHours: '24 horas' }, // Approx PR-445 km 59 near Londrina
+  { id: 'ccr-prvias-8', concessionaire: 'CCR PRVias', name: 'SAU Km 27 (Sul) - PR-323', address: 'PR-323 – Rodovia Celso Garcia Cid, km 27 (Sentido Sul), Sertanópolis - PR', latitude: -23.0583, longitude: -51.0375, services: ccrPrviasServices, operatingHours: '24 horas' },
+  { id: 'ccr-prvias-9', concessionaire: 'CCR PRVias', name: 'SAU Km 54 (Sul) - PR-323', address: 'PR-323 – Rodovia Celso Garcia Cid, km 54 (Sentido Sul), Sertanópolis - PR', latitude: -23.0700, longitude: -50.8000, services: ccrPrviasServices, operatingHours: '24 horas' }, // Adjusted for km 54 further along PR-323
+  { id: 'ccr-prvias-10', concessionaire: 'CCR PRVias', name: 'SAU Km 278 (Norte) - BR-376/PR', address: 'BR-376/PR - Rodovia do Café Governador Ney Braga, km 278 (Sentido Norte), Marilândia do Sul - PR', latitude: -23.7500, longitude: -51.3000, services: ccrPrviasServices, operatingHours: '24 horas' },
+  { id: 'ccr-prvias-11', concessionaire: 'CCR PRVias', name: 'SAU Km 347 (Norte) - BR-376/PR', address: 'BR-376/PR - Rodovia do Café Governador Ney Braga, km 347 (Sentido Norte), Ortigueira - PR', latitude: -24.2081, longitude: -50.9494, services: ccrPrviasServices, operatingHours: '24 horas' },
+  { id: 'ccr-prvias-12', concessionaire: 'CCR PRVias', name: 'SAU Km 294 (Norte) - BR-376/PR', address: 'BR-376/PR - Rodovia do Café Governador Ney Braga, km 294 (Sentido Norte), Mauá da Serra - PR', latitude: -23.8989, longitude: -51.2208, services: ccrPrviasServices, operatingHours: '24 horas' },
+  { id: 'ccr-prvias-13', concessionaire: 'CCR PRVias', name: 'SAU Km 436 (Norte) - BR-376/PR', address: 'BR-376/PR - Rodovia do Café Governador Ney Braga, km 436 (Sentido Norte), Tibagi - PR', latitude: -24.5128, longitude: -50.4169, services: ccrPrviasServices, operatingHours: '24 horas' },
+
   // CCR RioSP (Rio de Janeiro/São Paulo)
   { id: 'ccr-rsp-1', concessionaire: 'CCR RioSP', name: 'SAU Km 229 - BR-116 (Via Dutra)', address: 'BR-116, Km 229, Piraí - RJ', latitude: -22.6292, longitude: -43.8984, services: ['Banheiros', 'Água', 'Atendimento 24h'], operatingHours: '24 horas' },
   { id: 'ccr-rsp-2', concessionaire: 'CCR RioSP', name: 'SAU Km 150 - BR-116 (Via Dutra)', address: 'BR-116, Km 150, Jacareí - SP', latitude: -23.3047, longitude: -45.9620, services: ['Banheiros', 'Fraldário', 'Restaurante'], operatingHours: '24 horas' },
   // COI DER/PR (Paraná - Operated by DER)
   { id: 'coi-der-1', concessionaire: 'COI DER/PR', name: 'Posto de Apoio PR-445 Km 50', address: 'PR-445, Km 50, Londrina - PR', latitude: -23.3874, longitude: -51.1311, services: ['Banheiros', 'Informações'], operatingHours: '08:00 - 18:00' },
-].filter(sau => sau.concessionaire !== 'Arteris Régis Bitencourt' || sau.id.startsWith('arb-new-')); // Keep new ARB, remove old ARB
+].filter(sau => sau.id !== 'ccr-prv-1'); // Remove old CCR PRVias entry
+
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371; // Radius of the Earth in km
@@ -251,3 +266,4 @@ export default function SAUPage() {
     </div>
   );
 }
+
