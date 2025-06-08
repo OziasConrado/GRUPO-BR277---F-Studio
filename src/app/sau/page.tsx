@@ -122,7 +122,7 @@ const mockSauLocations: SAULocation[] = [
   { id: 'ccr-rsp-new-19', concessionaire: 'CCR RioSP', name: 'SAU Km 392 (Sul) - BR-101 (Rio Santos)', address: 'BR-101 (Rio Santos), Km 392 - Sentido SP (Sul), Itaguaí - RJ', latitude: -22.8519, longitude: -43.7758, services: standardSauServices, operatingHours: '24 horas' },
   { id: 'ccr-rsp-new-20', concessionaire: 'CCR RioSP', name: 'SAU Km 579 (Sul) - BR-101 (Rio Santos)', address: 'BR-101 (Rio Santos), Km 579 - Sentido SP (Sul), Paraty - RJ', latitude: -23.1000, longitude: -44.6000, services: standardSauServices, operatingHours: '24 horas' },
   { id: 'ccr-rsp-new-21', concessionaire: 'CCR RioSP', name: 'SAU Km 527 (Sul) - BR-101 (Rio Santos)', address: 'BR-101 (Rio Santos), Km 527 - Sentido SP (Sul), Angra dos Reis - RJ', latitude: -22.8000, longitude: -44.1000, services: standardSauServices, operatingHours: '24 horas' },
-].filter(sau => sau.concessionaire !== 'COI DER/PR');
+];
 
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -222,7 +222,7 @@ export default function SAUPage() {
   return (
     <div className="w-full space-y-6">
       <div className="text-center sm:text-left">
-        <h1 className="text-xl sm:text-2xl font-bold font-headline">Serviços de Atendimento ao Usuário (SAU)</h1>
+        <h1 className="text-2xl lg:text-3xl font-bold font-headline">Serviços de Atendimento ao Usuário (SAU)</h1>
         <p className="text-muted-foreground">Encontre os SAUs das concessionárias.</p>
       </div>
 
@@ -294,4 +294,5 @@ export default function SAUPage() {
   );
 }
 
+    
     

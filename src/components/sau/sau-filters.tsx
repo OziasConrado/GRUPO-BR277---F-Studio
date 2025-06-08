@@ -24,7 +24,7 @@ export default function SauFilters({ concessionaires, currentFilter, onFilterCha
             variant={currentFilter === concessionaire ? "default" : "outline"}
             size="sm"
             onClick={() => onFilterChange(concessionaire)}
-            className="rounded-full px-2.5 py-0.5 h-auto text-xs"
+            className="rounded-full px-3 py-1 h-auto"
           >
             {concessionaire}
           </Button>
@@ -34,4 +34,5 @@ export default function SauFilters({ concessionaires, currentFilter, onFilterCha
   );
 }
 
+    
     
