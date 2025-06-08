@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send, MoreVertical, Trash2, Edit3, Flag, X } from 'lucide-react';
-import { useState, type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo } from 'react';
+import { useState, type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
 import {
   DropdownMenu,
@@ -101,9 +101,9 @@ export interface PostCardProps {
 
 interface ReplyingToInfo {
   type: 'comment' | 'reply';
-  parentId: string;
-  grandParentId?: string;
-  userNameToReply?: string;
+  parentId: string; // ID of the comment or reply being replied to
+  grandParentId?: string; // ID of the original comment if replying to a nested reply
+  userNameToReply: string;
 }
 
 const reportReasons = [
@@ -194,6 +194,8 @@ export default function PostCard({
 
   const textToShow = isTextExpanded ? text : text.substring(0, MAX_CHARS);
 
+  const footerTextareaRef = useRef<HTMLTextAreaElement>(null);
+
   const processedTextElements = useMemo(() => {
     const baseElements = renderTextWithMentions(textToShow, allKnownUserNames);
     const combinedElements: React.ReactNode[] = [];
@@ -258,8 +260,22 @@ export default function PostCard({
 
   const [newCommentText, setNewCommentText] = useState('');
   const [replyingTo, setReplyingTo] = useState<ReplyingToInfo | null>(null);
-  const [newReplyText, setNewReplyText] = useState('');
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+
+  useEffect(() => {
+    if (replyingTo && footerTextareaRef.current) {
+      footerTextareaRef.current.focus();
+    }
+  }, [replyingTo]);
+
+   const handleTextareaInput = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    setNewCommentText(event.target.value);
+    // Auto-resize textarea
+    const textarea = event.target;
+    textarea.rows = 1; // Reset rows to 1 to correctly calculate scrollHeight
+    const newRows = Math.min(5, Math.ceil(textarea.scrollHeight / 24)); // 24px is approx line height for text-base
+    textarea.rows = newRows;
+  };
 
   const handlePostReactionClick = (reactionType: 'thumbsUp' | 'thumbsDown') => {
     setLocalPostReactions(prevReactions => {
@@ -348,67 +364,79 @@ export default function PostCard({
     });
   };
 
-  const handleAddComment = (e: FormEvent) => {
+  const handleFooterSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!newCommentText.trim()) return;
     checkForMentionsAndNotify(newCommentText);
-    const newComment: CommentProps = {
-      id: `c${Date.now()}`,
-      userName: 'Usuário Atual',
-      userAvatarUrl: 'https://placehold.co/40x40.png?text=UA',
-      dataAIAvatarHint: 'current user',
-      timestamp: 'Agora mesmo',
-      text: newCommentText,
-      textElements: renderTextWithMentions(newCommentText, allKnownUserNames),
-      reactions: { thumbsUp: 0, thumbsDown: 0, userReaction: null },
-      replies: [],
-    };
-    setLocalCommentsData(prevComments => [newComment, ...prevComments]);
+
+    if (replyingTo) {
+      // Logic to add a reply
+      const newReply: ReplyProps = {
+        id: `r${Date.now()}`,
+        userName: 'Usuário Atual',
+        userAvatarUrl: 'https://placehold.co/32x32.png?text=UA',
+        dataAIAvatarHint: 'current user',
+        timestamp: 'Agora mesmo',
+        text: newCommentText,
+        textElements: renderTextWithMentions(newCommentText, allKnownUserNames),
+        reactions: { thumbsUp: 0, thumbsDown: 0, userReaction: null },
+        replies: [],
+      };
+
+      setLocalCommentsData(prevComments =>
+        prevComments.map(comment => {
+          if (replyingTo.type === 'comment' && comment.id === replyingTo.parentId) {
+            return { ...comment, replies: [newReply, ...(comment.replies || [])] };
+          }
+          else if (replyingTo.type === 'reply' && comment.id === replyingTo.grandParentId) {
+            const addNestedReply = (replies: ReplyProps[]): ReplyProps[] => {
+              return replies.map(reply => {
+                if (reply.id === replyingTo.parentId) {
+                  return { ...reply, replies: [newReply, ...(reply.replies || [])] };
+                }
+                if (reply.replies) {
+                  return { ...reply, replies: addNestedReply(reply.replies) };
+                }
+                return reply;
+              });
+            };
+            return { ...comment, replies: addNestedReply(comment.replies || []) };
+          }
+          return comment;
+        })
+      );
+    } else {
+      // Logic to add a new comment
+      const newComment: CommentProps = {
+        id: `c${Date.now()}`,
+        userName: 'Usuário Atual',
+        userAvatarUrl: 'https://placehold.co/40x40.png?text=UA',
+        dataAIAvatarHint: 'current user',
+        timestamp: 'Agora mesmo',
+        text: newCommentText,
+        textElements: renderTextWithMentions(newCommentText, allKnownUserNames),
+        reactions: { thumbsUp: 0, thumbsDown: 0, userReaction: null },
+        replies: [],
+      };
+      setLocalCommentsData(prevComments => [newComment, ...prevComments]);
+    }
+
     setNewCommentText('');
-  };
-
-  const handleAddReply = (e: FormEvent) => {
-    e.preventDefault();
-    if (!newReplyText.trim() || !replyingTo) return;
-    checkForMentionsAndNotify(newReplyText);
-    const newReply: ReplyProps = {
-      id: `r${Date.now()}`,
-      userName: 'Usuário Atual',
-      userAvatarUrl: 'https://placehold.co/32x32.png?text=UA',
-      dataAIAvatarHint: 'current user',
-      timestamp: 'Agora mesmo',
-      text: newReplyText,
-      textElements: renderTextWithMentions(newReplyText, allKnownUserNames),
-      reactions: { thumbsUp: 0, thumbsDown: 0, userReaction: null },
-      replies: [],
-    };
-
-    setLocalCommentsData(prevComments =>
-      prevComments.map(comment => {
-        if (replyingTo.type === 'comment' && comment.id === replyingTo.parentId) {
-          return { ...comment, replies: [newReply, ...(comment.replies || [])] };
-        }
-        else if (replyingTo.type === 'reply' && comment.id === replyingTo.grandParentId) {
-          const addNestedReply = (replies: ReplyProps[]): ReplyProps[] => {
-            return replies.map(reply => {
-              if (reply.id === replyingTo.parentId) {
-                return { ...reply, replies: [newReply, ...(reply.replies || [])] };
-              }
-              if (reply.replies) {
-                return { ...reply, replies: addNestedReply(reply.replies) };
-              }
-              return reply;
-            });
-          };
-          return { ...comment, replies: addNestedReply(comment.replies || []) };
-        }
-        return comment;
-      })
-    );
-
-    setNewReplyText('');
     setReplyingTo(null);
+    if (footerTextareaRef.current) {
+        footerTextareaRef.current.rows = 1;
+    }
   };
+
+  const handleCancelReply = () => {
+    setReplyingTo(null);
+    setNewCommentText('');
+    if (footerTextareaRef.current) {
+        footerTextareaRef.current.rows = 1;
+        footerTextareaRef.current.focus();
+    }
+  };
+
 
   const handleDeletePost = () => {
     toast({ title: "Post Excluído", description: "Esta ação seria implementada no backend." });
@@ -505,13 +533,8 @@ export default function PostCard({
                       size="sm"
                       className="p-0 h-auto text-xs text-primary ml-1"
                       onClick={() => {
-                        if (replyingTo?.type === 'reply' && replyingTo.parentId === reply.id) {
-                          setReplyingTo(null);
-                          setNewReplyText('');
-                        } else {
-                          setReplyingTo({ type: 'reply', parentId: reply.id, grandParentId: commentIdForReply, userNameToReply: reply.userName });
-                          setNewReplyText('');
-                        }
+                        setReplyingTo({ type: 'reply', parentId: reply.id, grandParentId: commentIdForReply, userNameToReply: reply.userName });
+                        setNewCommentText(`@${reply.userName} `);
                       }}
                     >
                       Responder
@@ -520,24 +543,7 @@ export default function PostCard({
                 </div>
               </div>
             </div>
-            {replyingTo?.type === 'reply' && replyingTo.parentId === reply.id && (
-              <form onSubmit={handleAddReply} className="flex gap-2 items-start ml-9 mt-1">
-                <Avatar className="mt-1 h-7 w-7">
-                  <AvatarImage src="https://placehold.co/32x32.png?text=UA" alt="Usuário Atual" data-ai-hint="current user" />
-                  <AvatarFallback>UA</AvatarFallback>
-                </Avatar>
-                <Input
-                  placeholder={`Respondendo a ${reply.userName}...`}
-                  value={newReplyText}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => setNewReplyText(e.target.value)}
-                  className="rounded-lg flex-grow h-9 bg-background/70 text-base"
-                  autoFocus
-                />
-                <Button type="submit" size="icon" className="h-9 w-9 shrink-0">
-                  <Send className="h-4 w-4" />
-                </Button>
-              </form>
-            )}
+            {/* Inline reply form removed from here */}
             {depth < MAX_DEPTH && renderReplies(reply.replies, commentIdForReply, depth + 1)}
           </div>
         ))}
@@ -661,9 +667,9 @@ export default function PostCard({
       </CardFooter>
 
 
-        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <Sheet open={isSheetOpen} onOpenChange={(open) => { setIsSheetOpen(open); if (!open) setReplyingTo(null); }}>
             <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0 rounded-t-[25px]">
-                <SheetHeader className="p-4 border-b border-border flex flex-row justify-center items-center relative">
+                <SheetHeader className="p-3 border-b border-border flex flex-row justify-center items-center relative">
                   <SheetTitle className="sr-only">Comentários e Reações do Post</SheetTitle>
                     <div className="flex items-center justify-center gap-2 py-1">
                         <Button
@@ -688,6 +694,10 @@ export default function PostCard({
                         </Button>
                     </div>
                 </SheetHeader>
+
+                <div className="h-[50px] bg-muted/30 flex items-center justify-center text-sm text-muted-foreground shrink-0">
+                    Espaço para Publicidade AdMob (Ex: 320x50)
+                </div>
 
                 <div className="flex-grow overflow-y-auto p-4 space-y-4">
                 {localCommentsData.map(comment => (
@@ -727,14 +737,8 @@ export default function PostCard({
                             size="sm"
                             className="p-0 h-auto text-xs text-primary ml-1"
                             onClick={() => {
-                                if (replyingTo?.type === 'comment' && replyingTo.parentId === comment.id) {
-                                setNewCommentText(''); 
-                                setReplyingTo(null);
-                                setNewReplyText('');
-                                } else {
                                 setReplyingTo({ type: 'comment', parentId: comment.id, userNameToReply: comment.userName });
-                                setNewReplyText(''); 
-                                }
+                                setNewCommentText(`@${comment.userName} `);
                             }}
                             >
                             Responder
@@ -742,50 +746,34 @@ export default function PostCard({
                         </div>
                         </div>
                     </div>
-
-                    {replyingTo?.type === 'comment' && replyingTo.parentId === comment.id && (
-                        <form onSubmit={handleAddReply} className="flex gap-2 items-start ml-10 mt-1">
-                        <Avatar className="mt-1 h-8 w-8">
-                            <AvatarImage src="https://placehold.co/32x32.png?text=UA" alt="Usuário Atual" data-ai-hint="current user" />
-                            <AvatarFallback>UA</AvatarFallback>
-                        </Avatar>
-                        <Input
-                            placeholder={`Respondendo a ${comment.userName}...`}
-                            value={newReplyText}
-                            onChange={(e: ChangeEvent<HTMLInputElement>) => setNewReplyText(e.target.value)}
-                            className="rounded-lg flex-grow h-10 bg-background/70 text-base"
-                            autoFocus
-                        />
-                        <Button type="submit" size="icon" className="shrink-0 h-10 w-10">
-                            <Send className="h-4 w-4" />
-                        </Button>
-                        </form>
-                    )}
+                    {/* Inline reply form removed, replies handled by footer form */}
                     {renderReplies(comment.replies, comment.id)}
                     </div>
                 ))}
                 </div>
 
-                <div className="p-4 border-t border-border bg-background sticky bottom-0">
-                    <form onSubmit={handleAddComment} className="flex gap-2 items-start">
-                        <Avatar className="mt-1 h-10 w-10">
-                        <AvatarImage src="https://placehold.co/40x40.png?text=UA" alt="Usuário Atual" data-ai-hint="current user" />
-                        <AvatarFallback>UA</AvatarFallback>
-                        </Avatar>
+                <div className="p-3 border-t border-border bg-background sticky bottom-0 space-y-2">
+                    {replyingTo && (
+                        <div className="flex justify-between items-center text-xs text-muted-foreground px-1">
+                            <span>Respondendo a <strong className="text-primary">@{replyingTo.userNameToReply}</strong></span>
+                            <Button variant="link" size="xs" className="p-0 h-auto text-destructive" onClick={handleCancelReply}>
+                                Cancelar
+                            </Button>
+                        </div>
+                    )}
+                    <form onSubmit={handleFooterSubmit} className="flex gap-2 items-end">
                         <Textarea
-                        placeholder="Escreva um comentário..."
+                        ref={footerTextareaRef}
+                        placeholder={replyingTo ? `Responder a @${replyingTo.userNameToReply}...` : "Escreva um comentário..."}
                         value={newCommentText}
-                        onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setNewCommentText(e.target.value)}
-                        className="rounded-lg flex-grow bg-background/70 min-h-[40px] resize-none text-base"
+                        onChange={handleTextareaInput}
+                        className="rounded-lg flex-grow bg-background/70 min-h-[40px] max-h-[120px] resize-none text-base"
                         rows={1}
                         />
-                        <Button type="submit" size="icon" className="shrink-0 h-10 w-10">
-                        <Send className="h-4 w-4" />
+                        <Button type="submit" size="icon" className="shrink-0 h-10 w-10 self-end">
+                            <Send className="h-4 w-4" />
                         </Button>
                     </form>
-                     <div className="mt-4 h-[50px] bg-muted/30 rounded flex items-center justify-center text-sm text-muted-foreground">
-                        Espaço para Publicidade AdMob (Ex: 320x50)
-                    </div>
                 </div>
             </SheetContent>
         </Sheet>
@@ -866,3 +854,4 @@ export default function PostCard({
     </>
   );
 }
+
