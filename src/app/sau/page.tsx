@@ -48,9 +48,18 @@ const mockSauLocations: SAULocation[] = [
   { id: 'epr-lp-bso-11', concessionaire: 'EPR Litoral Pioneiro', name: 'BSO 11: BR-277, Km 10,7 - Paranaguá', address: 'BR-277, Km 10,7, Paranaguá - PR', latitude: -25.520, longitude: -48.530, services: standardSauServices, operatingHours: '24 horas' },
   { id: 'epr-lp-bso-12', concessionaire: 'EPR Litoral Pioneiro', name: 'BSO 12: BR-277, Km 35 - Morretes', address: 'BR-277, Km 35, Morretes - PR', latitude: -25.470, longitude: -48.830, services: standardSauServices, operatingHours: '24 horas' },
 
-  // Arteris Litoral Sul (Paraná/Santa Catarina)
-  { id: 'als-1', concessionaire: 'Arteris Litoral Sul', name: 'SAU Km 668 - BR-376', address: 'BR-376, Km 668, Guaratuba - PR', latitude: -25.8889, longitude: -48.6782, services: ['Banheiros', 'Água', 'Guincho', 'Wi-Fi'], operatingHours: '24 horas' },
-  { id: 'als-2', concessionaire: 'Arteris Litoral Sul', name: 'SAU Km 10 - BR-101', address: 'BR-101, Km 10, Garuva - SC', latitude: -26.0373, longitude: -48.8384, services: ['Banheiros', 'Fraldário', 'Café'], operatingHours: '24 horas' },
+  // Arteris Litoral Sul (Paraná/Santa Catarina) - Updated
+  { id: 'als-1', concessionaire: 'Arteris Litoral Sul', name: 'SAU Km 1.3 (Sul) - BR-101/SC', address: 'BR-101/SC, Km 1.3 (sentido Sul), Garuva - SC', latitude: -26.0261, longitude: -48.8519, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'als-2', concessionaire: 'Arteris Litoral Sul', name: 'SAU Km 46.8 (Norte) - BR-101/SC', address: 'BR-101/SC, Km 46.8 (sentido Norte), Joinville - SC', latitude: -26.3031, longitude: -48.8416, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'als-3', concessionaire: 'Arteris Litoral Sul', name: 'SAU Km 79.4 (Sul) - BR-101/SC', address: 'BR-101/SC, Km 79.4 (sentido Sul), Araquari - SC', latitude: -26.3708, longitude: -48.7222, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'als-4', concessionaire: 'Arteris Litoral Sul', name: 'SAU Km 129.8 (Norte) - BR-101/SC', address: 'BR-101/SC, Km 129.8 (sentido Norte), Camboriú - SC', latitude: -27.0272, longitude: -48.6303, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'als-5', concessionaire: 'Arteris Litoral Sul', name: 'SAU Km 157.4 (Sul) - BR-101/SC', address: 'BR-101/SC, Km 157.4 (sentido Sul), Porto Belo - SC', latitude: -27.1575, longitude: -48.5528, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'als-6', concessionaire: 'Arteris Litoral Sul', name: 'SAU Km 192.4 (Norte) - BR-101/SC', address: 'BR-101/SC, Km 192.4 (sentido Norte), Biguaçu - SC', latitude: -27.4931, longitude: -48.6544, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'als-7', concessionaire: 'Arteris Litoral Sul', name: 'SAU Km 243 (Norte) - BR-101/SC', address: 'BR-101/SC, Km 243 (sentido Norte), Palhoça - SC', latitude: -27.6464, longitude: -48.6678, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'als-8', concessionaire: 'Arteris Litoral Sul', name: 'SAU Km 205 (Sul) - BR-101/SC', address: 'BR-101/SC, Km 205 (sentido Sul), São José - SC', latitude: -27.6146, longitude: -48.6280, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'als-9', concessionaire: 'Arteris Litoral Sul', name: 'SAU Km 90.3 (Sul) - BR-116/PR (Contorno Leste)', address: 'BR-116/PR (Contorno Leste), Km 90.3 (sentido Sul), Piraquara - PR', latitude: -25.4442, longitude: -49.0628, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'als-10', concessionaire: 'Arteris Litoral Sul', name: 'SAU Km 635.4 (Norte) - BR-376/PR', address: 'BR-376/PR, Km 635.4 (sentido Norte), São José dos Pinhais - PR', latitude: -25.5313, longitude: -49.1959, services: standardSauServices, operatingHours: '24 horas' },
+  
   // Arteris Planalto Sul (Paraná/Santa Catarina)
   { id: 'aps-1', concessionaire: 'Arteris Planalto Sul', name: 'SAU Km 134 - BR-116', address: 'BR-116, Km 134, Fazenda Rio Grande - PR', latitude: -25.6578, longitude: -49.3103, services: ['Banheiros', 'Água', 'Mecânico Básico'], operatingHours: '24 horas' },
   { id: 'aps-2', concessionaire: 'Arteris Planalto Sul', name: 'SAU Km 298 - BR-116', address: 'BR-116, Km 298, Capão Alto - SC', latitude: -27.9286, longitude: -50.4953, services: ['Banheiros', 'Wi-Fi'], operatingHours: '06:00 - 22:00' },
