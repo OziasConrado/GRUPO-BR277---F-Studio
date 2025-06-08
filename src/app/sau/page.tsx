@@ -71,9 +71,19 @@ const mockSauLocations: SAULocation[] = [
   { id: 'aps-new-8', concessionaire: 'Arteris Planalto Sul', name: 'SAU Km 134 - BR-116', address: 'BR-116, Km 134, Fazenda Rio Grande - PR', latitude: -25.6578, longitude: -49.3103, services: standardSauServices, operatingHours: '24 horas' },
   { id: 'aps-new-9', concessionaire: 'Arteris Planalto Sul', name: 'SAU Km 204 - BR-116', address: 'BR-116, Km 204, Rio Negro - PR', latitude: -26.0980, longitude: -49.7950, services: standardSauServices, operatingHours: '24 horas' },
   
-  // Arteris Régis Bittencourt (São Paulo/Paraná)
-  { id: 'arb-1', concessionaire: 'Arteris Régis Bitencourt', name: 'SAU Km 357 - BR-116', address: 'BR-116, Km 357, Miracatu - SP', latitude: -24.2796, longitude: -47.4612, services: ['Banheiros', 'Água', 'Ambulância'], operatingHours: '24 horas' },
-  { id: 'arb-2', concessionaire: 'Arteris Régis Bitencourt', name: 'SAU Km 545 - BR-116', address: 'BR-116, Km 545, Barra do Turvo - SP', latitude: -24.9111, longitude: -48.3653, services: ['Banheiros', 'Água', 'Guincho'], operatingHours: '24 horas' },
+  // Arteris Régis Bittencourt (São Paulo/Paraná) - Updated
+  { id: 'arb-new-1', concessionaire: 'Arteris Régis Bitencourt', name: 'SAU Km 287 (Sentido Curitiba) - BR-116', address: 'BR-116, Km 287 (sentido Curitiba), Itapecerica da Serra - SP', latitude: -23.7169, longitude: -46.8487, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'arb-new-2', concessionaire: 'Arteris Régis Bitencourt', name: 'SAU Km 299 (Sentido Curitiba) - BR-116', address: 'BR-116, Km 299 (sentido Curitiba), São Lourenço da Serra - SP', latitude: -23.8614, longitude: -46.9419, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'arb-new-3', concessionaire: 'Arteris Régis Bitencourt', name: 'SAU Km 343 (Sentido São Paulo) - BR-116', address: 'BR-116, Km 343 (sentido São Paulo), Miracatu - SP', latitude: -24.2796, longitude: -47.4612, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'arb-new-4', concessionaire: 'Arteris Régis Bitencourt', name: 'SAU Km 357 (Sentido Curitiba) - BR-116', address: 'BR-116, Km 357 (sentido Curitiba), Miracatu - SP', latitude: -24.2796, longitude: -47.4612, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'arb-new-5', concessionaire: 'Arteris Régis Bitencourt', name: 'SAU Km 370 (Sentido São Paulo) - BR-116', address: 'BR-116, Km 370 (sentido São Paulo), Miracatu - SP', latitude: -24.2796, longitude: -47.4612, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'arb-new-6', concessionaire: 'Arteris Régis Bitencourt', name: 'SAU Km 426 (Sentido Curitiba) - BR-116', address: 'BR-116, Km 426 (sentido Curitiba), Juquiá - SP', latitude: -24.3194, longitude: -47.6369, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'arb-new-7', concessionaire: 'Arteris Régis Bitencourt', name: 'SAU Km 485 (Sentido São Paulo) - BR-116', address: 'BR-116, Km 485 (sentido São Paulo), Cajati - SP', latitude: -24.7378, longitude: -48.1042, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'arb-new-8', concessionaire: 'Arteris Régis Bitencourt', name: 'SAU Km 542 (Sentido Curitiba) - BR-116', address: 'BR-116, Km 542 (sentido Curitiba), Barra do Turvo - SP', latitude: -24.9111, longitude: -48.3653, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'arb-new-9', concessionaire: 'Arteris Régis Bitencourt', name: 'SAU Km 31 (Sentido São Paulo) - BR-116', address: 'BR-116, Km 31 (sentido São Paulo), Campina Grande do Sul - PR', latitude: -25.3033, longitude: -49.0528, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'arb-new-10', concessionaire: 'Arteris Régis Bitencourt', name: 'SAU Km 57 (Sentido Curitiba) - BR-116', address: 'BR-116, Km 57 (sentido Curitiba), Campina Grande do Sul - PR', latitude: -25.3033, longitude: -49.0528, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'arb-new-11', concessionaire: 'Arteris Régis Bitencourt', name: 'SAU Km 70 (Sentido Curitiba) - BR-116', address: 'BR-116, Km 70 (sentido Curitiba), Quatro Barras - PR', latitude: -25.3683, longitude: -49.0769, services: standardSauServices, operatingHours: '24 horas' },
+  
   // CCR PRVias (Paraná) - Renamed to Via Araucária for some stretches, keeping as example if distinct.
   { id: 'ccr-prv-1', concessionaire: 'CCR PRVias', name: 'SAU Km 200 - BR-376', address: 'BR-376, Km 200, Ponta Grossa - PR', latitude: -25.0907, longitude: -50.2632, services: ['Banheiros', 'Água', 'Wi-Fi'], operatingHours: '24 horas' },
   // CCR RioSP (Rio de Janeiro/São Paulo)
@@ -81,7 +91,7 @@ const mockSauLocations: SAULocation[] = [
   { id: 'ccr-rsp-2', concessionaire: 'CCR RioSP', name: 'SAU Km 150 - BR-116 (Via Dutra)', address: 'BR-116, Km 150, Jacareí - SP', latitude: -23.3047, longitude: -45.9620, services: ['Banheiros', 'Fraldário', 'Restaurante'], operatingHours: '24 horas' },
   // COI DER/PR (Paraná - Operated by DER)
   { id: 'coi-der-1', concessionaire: 'COI DER/PR', name: 'Posto de Apoio PR-445 Km 50', address: 'PR-445, Km 50, Londrina - PR', latitude: -23.3874, longitude: -51.1311, services: ['Banheiros', 'Informações'], operatingHours: '08:00 - 18:00' },
-];
+].filter(sau => sau.concessionaire !== 'Arteris Régis Bitencourt' || sau.id.startsWith('arb-new-')); // Keep new ARB, remove old ARB
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371; // Radius of the Earth in km
@@ -241,4 +251,3 @@ export default function SAUPage() {
     </div>
   );
 }
-
