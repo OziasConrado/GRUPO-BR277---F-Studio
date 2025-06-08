@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 const concessionairesForFilter = [
   "Todos", "Via Araucária", "EPR Litoral Pioneiro", "Arteris Litoral Sul",
   "Arteris Planalto Sul", "Arteris Régis Bitencourt", "CCR PRVias",
-  "CCR RioSP" // Removido "COI DER/PR"
+  "CCR RioSP"
 ];
 
 // Serviços padronizados para todas as concessionárias
@@ -222,7 +222,7 @@ export default function SAUPage() {
   return (
     <div className="w-full space-y-6">
       <div className="text-center sm:text-left">
-        <h1 className="text-2xl lg:text-3xl font-bold font-headline">Serviços de Atendimento ao Usuário (SAU)</h1>
+        <h1 className="text-xl sm:text-2xl font-bold font-headline">Serviços de Atendimento ao Usuário (SAU)</h1>
         <p className="text-muted-foreground">Encontre os SAUs das concessionárias.</p>
       </div>
 
@@ -293,3 +293,5 @@ export default function SAUPage() {
     </div>
   );
 }
+
+    
