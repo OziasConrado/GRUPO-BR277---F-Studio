@@ -60,9 +60,17 @@ const mockSauLocations: SAULocation[] = [
   { id: 'als-9', concessionaire: 'Arteris Litoral Sul', name: 'SAU Km 90.3 (Sul) - BR-116/PR (Contorno Leste)', address: 'BR-116/PR (Contorno Leste), Km 90.3 (sentido Sul), Piraquara - PR', latitude: -25.4442, longitude: -49.0628, services: standardSauServices, operatingHours: '24 horas' },
   { id: 'als-10', concessionaire: 'Arteris Litoral Sul', name: 'SAU Km 635.4 (Norte) - BR-376/PR', address: 'BR-376/PR, Km 635.4 (sentido Norte), São José dos Pinhais - PR', latitude: -25.5313, longitude: -49.1959, services: standardSauServices, operatingHours: '24 horas' },
   
-  // Arteris Planalto Sul (Paraná/Santa Catarina)
-  { id: 'aps-1', concessionaire: 'Arteris Planalto Sul', name: 'SAU Km 134 - BR-116', address: 'BR-116, Km 134, Fazenda Rio Grande - PR', latitude: -25.6578, longitude: -49.3103, services: ['Banheiros', 'Água', 'Mecânico Básico'], operatingHours: '24 horas' },
-  { id: 'aps-2', concessionaire: 'Arteris Planalto Sul', name: 'SAU Km 298 - BR-116', address: 'BR-116, Km 298, Capão Alto - SC', latitude: -27.9286, longitude: -50.4953, services: ['Banheiros', 'Wi-Fi'], operatingHours: '06:00 - 22:00' },
+  // Arteris Planalto Sul (Paraná/Santa Catarina) - Updated
+  { id: 'aps-new-1', concessionaire: 'Arteris Planalto Sul', name: 'SAU Km 42 - BR-116', address: 'BR-116, Km 42, Itaiópolis - SC', latitude: -26.3312, longitude: -49.9015, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'aps-new-2', concessionaire: 'Arteris Planalto Sul', name: 'SAU Km 82 - BR-116', address: 'BR-116, Km 82, Monte Castelo - SC', latitude: -26.4530, longitude: -50.2300, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'aps-new-3', concessionaire: 'Arteris Planalto Sul', name: 'SAU Km 120 - BR-116', address: 'BR-116, Km 120, Monte Castelo - SC', latitude: -26.6200, longitude: -50.3200, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'aps-new-4', concessionaire: 'Arteris Planalto Sul', name: 'SAU Km 152 - BR-116', address: 'BR-116, Km 152, Santa Cecília - SC', latitude: -26.9450, longitude: -50.4320, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'aps-new-5', concessionaire: 'Arteris Planalto Sul', name: 'SAU Km 195 - BR-116', address: 'BR-116, Km 195, São Cristóvão do Sul - SC', latitude: -27.2780, longitude: -50.4250, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'aps-new-6', concessionaire: 'Arteris Planalto Sul', name: 'SAU Km 233 - BR-116', address: 'BR-116, Km 233, Correia Pinto - SC', latitude: -27.5860, longitude: -50.3610, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'aps-new-7', concessionaire: 'Arteris Planalto Sul', name: 'SAU Km 276 - BR-116', address: 'BR-116, Km 276, Capão Alto - SC', latitude: -27.9350, longitude: -50.5040, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'aps-new-8', concessionaire: 'Arteris Planalto Sul', name: 'SAU Km 134 - BR-116', address: 'BR-116, Km 134, Fazenda Rio Grande - PR', latitude: -25.6578, longitude: -49.3103, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'aps-new-9', concessionaire: 'Arteris Planalto Sul', name: 'SAU Km 204 - BR-116', address: 'BR-116, Km 204, Rio Negro - PR', latitude: -26.0980, longitude: -49.7950, services: standardSauServices, operatingHours: '24 horas' },
+  
   // Arteris Régis Bittencourt (São Paulo/Paraná)
   { id: 'arb-1', concessionaire: 'Arteris Régis Bitencourt', name: 'SAU Km 357 - BR-116', address: 'BR-116, Km 357, Miracatu - SP', latitude: -24.2796, longitude: -47.4612, services: ['Banheiros', 'Água', 'Ambulância'], operatingHours: '24 horas' },
   { id: 'arb-2', concessionaire: 'Arteris Régis Bitencourt', name: 'SAU Km 545 - BR-116', address: 'BR-116, Km 545, Barra do Turvo - SP', latitude: -24.9111, longitude: -48.3653, services: ['Banheiros', 'Água', 'Guincho'], operatingHours: '24 horas' },
