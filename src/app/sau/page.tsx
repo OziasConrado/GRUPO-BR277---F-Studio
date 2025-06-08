@@ -17,11 +17,23 @@ const concessionairesForFilter = [
   "CCR RioSP", "COI DER/PR"
 ];
 
+const newViaAraucariaServices = ["Banheiros/Adequados para pessoas com deficiência", "Fraldários", "bebedouros", "Totens de autoatendimento", "Ambulâncias", "Outros"];
+
 // Increased mock data with more diverse locations (approximated for Brazil)
 const mockSauLocations: SAULocation[] = [
-  // Via Araucária (Paraná)
-  { id: 'va-1', concessionaire: 'Via Araucária', name: 'SAU Km 520 - BR-277', address: 'BR-277, Km 520, Nova Laranjeiras - PR', latitude: -25.3303, longitude: -52.5414, services: ['Banheiros', 'Água', 'Wi-Fi', 'Totem Infos'], operatingHours: '24 horas' },
-  { id: 'va-2', concessionaire: 'Via Araucária', name: 'SAU Km 450 - BR-373', address: 'BR-373, Km 450, Candói - PR', latitude: -25.6037, longitude: -52.0305, services: ['Banheiros', 'Fraldário', 'Água'], operatingHours: '24 horas' },
+  // Via Araucária (Paraná) - Existing updated and new BSOs
+  { id: 'va-1', concessionaire: 'Via Araucária', name: 'SAU Km 520 - BR-277', address: 'BR-277, Km 520, Nova Laranjeiras - PR', latitude: -25.3303, longitude: -52.5414, services: newViaAraucariaServices, operatingHours: '24 horas' },
+  { id: 'va-2', concessionaire: 'Via Araucária', name: 'SAU Km 450 - BR-373', address: 'BR-373, Km 450, Candói - PR', latitude: -25.6037, longitude: -52.0305, services: newViaAraucariaServices, operatingHours: '24 horas' },
+  { id: 'va-bso-1', concessionaire: 'Via Araucária', name: 'BSO 1: BR-277, km 108,80 - Curitiba', address: 'BR-277, km 108,80, Curitiba - PR', latitude: -25.4284, longitude: -49.2733, services: newViaAraucariaServices, operatingHours: '24 horas' },
+  { id: 'va-bso-2', concessionaire: 'Via Araucária', name: 'BSO 2: BR-277, km 165,70 - Porto Amazonas', address: 'BR-277, km 165,70, Porto Amazonas - PR', latitude: -25.5380, longitude: -49.8930, services: newViaAraucariaServices, operatingHours: '24 horas' },
+  { id: 'va-bso-3', concessionaire: 'Via Araucária', name: 'BSO 3: BR-277, km 211,70 - Palmeira', address: 'BR-277, km 211,70, Palmeira - PR', latitude: -25.4290, longitude: -50.0060, services: newViaAraucariaServices, operatingHours: '24 horas' },
+  { id: 'va-bso-4', concessionaire: 'Via Araucária', name: 'BSO 4: BR-277, km 256,10 - Irati', address: 'BR-277, km 256,10, Irati - PR', latitude: -25.4670, longitude: -50.6510, services: newViaAraucariaServices, operatingHours: '24 horas' },
+  { id: 'va-bso-5', concessionaire: 'Via Araucária', name: 'BSO 5: BR-277, km 300,30 - Prudentópolis', address: 'BR-277, km 300,30, Prudentópolis - PR', latitude: -25.2130, longitude: -50.9770, services: newViaAraucariaServices, operatingHours: '24 horas' },
+  { id: 'va-bso-6', concessionaire: 'Via Araucária', name: 'BSO 6: BR-373, km 240,40 - Guamiranga', address: 'BR-373, km 240,40, Guamiranga - PR', latitude: -25.2180, longitude: -50.7890, services: newViaAraucariaServices, operatingHours: '24 horas' },
+  { id: 'va-bso-7', concessionaire: 'Via Araucária', name: 'BSO 7: BR-373, km 201,80 - Ipiranga', address: 'BR-373, km 201,80, Ipiranga - PR', latitude: -25.0270, longitude: -50.5860, services: newViaAraucariaServices, operatingHours: '24 horas' },
+  { id: 'va-bso-8', concessionaire: 'Via Araucária', name: 'BSO 8: PR-423, km 15,00 - Araucária', address: 'PR-423, km 15,00, Araucária - PR', latitude: -25.5920, longitude: -49.3999, services: newViaAraucariaServices, operatingHours: '24 horas' }, // Slightly adjusted lat/lon from existing Araucaria
+  { id: 'va-bso-9', concessionaire: 'Via Araucária', name: 'BSO 9: BR-476, km 188,30 - Lapa', address: 'BR-476, km 188,30, Lapa - PR', latitude: -25.7690, longitude: -49.7160, services: newViaAraucariaServices, operatingHours: '24 horas' },
+
   // EPR Litoral Pioneiro (Paraná)
   { id: 'epr-lp-1', concessionaire: 'EPR Litoral Pioneiro', name: 'SAU Km 60 - BR-277', address: 'BR-277, Km 60, São José dos Pinhais - PR', latitude: -25.5546, longitude: -49.0011, services: ['Banheiros', 'Água', 'Atendimento Médico'], operatingHours: '24 horas' },
   { id: 'epr-lp-2', concessionaire: 'EPR Litoral Pioneiro', name: 'SAU Km 25 - PR-407', address: 'PR-407, Km 25, Paranaguá - PR', latitude: -25.5924, longitude: -48.5458, services: ['Banheiros', 'Wi-Fi', 'Segurança'], operatingHours: '07:00 - 19:00' },
@@ -201,3 +213,4 @@ export default function SAUPage() {
     </div>
   );
 }
+
