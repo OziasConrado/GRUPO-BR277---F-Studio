@@ -39,16 +39,16 @@ export default function Navigation() {
               <>
                 <item.icon
                   className={cn(
-                    'mb-0.5 h-5 w-5 transition-transform duration-200 ease-out group-hover:scale-105',
+                    'mb-0.5 h-6 w-6 transition-transform duration-200 ease-out group-hover:scale-105', // Aumentado para h-6 w-6
                     isActive && !isCentralButton ? 'scale-110 text-primary' : '',
                     isActive && isCentralButton ? 'scale-110' : '',
-                    isCentralButton && 'h-6 w-6 text-destructive-foreground mb-0.5', // Adjusted size and margin
+                    isCentralButton && 'text-destructive-foreground mb-0.5',
                     isChatButton && 'text-primary' 
                   )}
                 />
                 <span className={cn(
                   "truncate text-[10px] leading-tight",
-                  isCentralButton ? "font-semibold text-destructive-foreground" : "text-muted-foreground", // Removed mt-1 for central
+                  isCentralButton ? "font-semibold text-destructive-foreground" : "text-muted-foreground",
                   isActive && !isCentralButton ? 'text-primary font-semibold' : '',
                   !isCentralButton && !isActive && 'group-hover:text-primary/80',
                    isChatButton ? 'text-primary font-semibold' : '' 
@@ -70,13 +70,13 @@ export default function Navigation() {
                 <Link
                   href={item.href}
                   key={item.href}
-                  className="menu-item-central relative flex flex-col items-center justify-center -top-3" // This parent Link already has flex-col
+                  className="menu-item-central relative flex flex-col items-center justify-center -top-3"
                   passHref
                   onClick={(e) => handleNavItemClick(e, item.href)}
                 >
-                  <div className="live-icon-wrapper z-10">
+                  <div className="live-icon-wrapper"> {/* Removido z-10 */}
                     <div className={cn(
-                      "live-icon bg-destructive w-14 h-14 rounded-full flex flex-col items-center justify-center shadow-lg relative", // Changed to flex-col
+                      "live-icon bg-destructive w-14 h-14 rounded-full flex flex-col items-center justify-center shadow-lg relative",
                       isActive ? "ring-2 ring-offset-2 ring-destructive ring-offset-background" : ""
                     )}>
                       <div className="pulse-ring-animation"></div>

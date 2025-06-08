@@ -22,14 +22,14 @@ export default function StoryCircle({ adminName, avatarUrl, dataAIAvatarHint, ha
       onClick={onClick}
       className={cn(
         'group flex-shrink-0 rounded-lg transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
-        // Anel de destaque aplicado ao botão externo
-        hasNewStory ? 'ring-2 ring-primary ring-offset-1 ring-offset-background' : 'ring-1 ring-border ring-offset-1 ring-offset-background'
+        'transform-gpu transition-transform group-hover:scale-[1.03]', // Efeito de escala movido para o botão
+        hasNewStory ? 'ring-2 ring-primary' : 'ring-1 ring-border' // Removido ring-offset temporariamente
       )}
       aria-label={`Ver story de ${adminName}`}
     >
       <div
         className={cn(
-          "relative w-[76px] h-[135px] bg-card rounded-md overflow-hidden transition-transform duration-300 ease-in-out group-hover:scale-[1.03]"
+          "relative w-[76px] h-[135px] bg-card rounded-md overflow-hidden" // Removido group-hover:scale daqui
         )}
       >
         <Image
