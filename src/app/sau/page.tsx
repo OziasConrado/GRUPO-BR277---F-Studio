@@ -17,26 +17,37 @@ const concessionairesForFilter = [
   "CCR RioSP", "COI DER/PR"
 ];
 
-const newViaAraucariaServices = ["Banheiros/Adequados para pessoas com deficiência", "Fraldários", "bebedouros", "Totens de autoatendimento", "Ambulâncias", "Outros"];
+const standardSauServices = ["Banheiros/Adequados para pessoas com deficiência", "Fraldários", "bebedouros", "Totens de autoatendimento", "Ambulâncias", "Outros"];
 
 // Increased mock data with more diverse locations (approximated for Brazil)
 const mockSauLocations: SAULocation[] = [
   // Via Araucária (Paraná) - Existing updated and new BSOs
-  { id: 'va-1', concessionaire: 'Via Araucária', name: 'SAU Km 520 - BR-277', address: 'BR-277, Km 520, Nova Laranjeiras - PR', latitude: -25.3303, longitude: -52.5414, services: newViaAraucariaServices, operatingHours: '24 horas' },
-  { id: 'va-2', concessionaire: 'Via Araucária', name: 'SAU Km 450 - BR-373', address: 'BR-373, Km 450, Candói - PR', latitude: -25.6037, longitude: -52.0305, services: newViaAraucariaServices, operatingHours: '24 horas' },
-  { id: 'va-bso-1', concessionaire: 'Via Araucária', name: 'BSO 1: BR-277, km 108,80 - Curitiba', address: 'BR-277, km 108,80, Curitiba - PR', latitude: -25.4284, longitude: -49.2733, services: newViaAraucariaServices, operatingHours: '24 horas' },
-  { id: 'va-bso-2', concessionaire: 'Via Araucária', name: 'BSO 2: BR-277, km 165,70 - Porto Amazonas', address: 'BR-277, km 165,70, Porto Amazonas - PR', latitude: -25.5380, longitude: -49.8930, services: newViaAraucariaServices, operatingHours: '24 horas' },
-  { id: 'va-bso-3', concessionaire: 'Via Araucária', name: 'BSO 3: BR-277, km 211,70 - Palmeira', address: 'BR-277, km 211,70, Palmeira - PR', latitude: -25.4290, longitude: -50.0060, services: newViaAraucariaServices, operatingHours: '24 horas' },
-  { id: 'va-bso-4', concessionaire: 'Via Araucária', name: 'BSO 4: BR-277, km 256,10 - Irati', address: 'BR-277, km 256,10, Irati - PR', latitude: -25.4670, longitude: -50.6510, services: newViaAraucariaServices, operatingHours: '24 horas' },
-  { id: 'va-bso-5', concessionaire: 'Via Araucária', name: 'BSO 5: BR-277, km 300,30 - Prudentópolis', address: 'BR-277, km 300,30, Prudentópolis - PR', latitude: -25.2130, longitude: -50.9770, services: newViaAraucariaServices, operatingHours: '24 horas' },
-  { id: 'va-bso-6', concessionaire: 'Via Araucária', name: 'BSO 6: BR-373, km 240,40 - Guamiranga', address: 'BR-373, km 240,40, Guamiranga - PR', latitude: -25.2180, longitude: -50.7890, services: newViaAraucariaServices, operatingHours: '24 horas' },
-  { id: 'va-bso-7', concessionaire: 'Via Araucária', name: 'BSO 7: BR-373, km 201,80 - Ipiranga', address: 'BR-373, km 201,80, Ipiranga - PR', latitude: -25.0270, longitude: -50.5860, services: newViaAraucariaServices, operatingHours: '24 horas' },
-  { id: 'va-bso-8', concessionaire: 'Via Araucária', name: 'BSO 8: PR-423, km 15,00 - Araucária', address: 'PR-423, km 15,00, Araucária - PR', latitude: -25.5920, longitude: -49.3999, services: newViaAraucariaServices, operatingHours: '24 horas' }, // Slightly adjusted lat/lon from existing Araucaria
-  { id: 'va-bso-9', concessionaire: 'Via Araucária', name: 'BSO 9: BR-476, km 188,30 - Lapa', address: 'BR-476, km 188,30, Lapa - PR', latitude: -25.7690, longitude: -49.7160, services: newViaAraucariaServices, operatingHours: '24 horas' },
+  { id: 'va-1', concessionaire: 'Via Araucária', name: 'SAU Km 520 - BR-277', address: 'BR-277, Km 520, Nova Laranjeiras - PR', latitude: -25.3303, longitude: -52.5414, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'va-2', concessionaire: 'Via Araucária', name: 'SAU Km 450 - BR-373', address: 'BR-373, Km 450, Candói - PR', latitude: -25.6037, longitude: -52.0305, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'va-bso-1', concessionaire: 'Via Araucária', name: 'BSO 1: BR-277, km 108,80 - Curitiba', address: 'BR-277, km 108,80, Curitiba - PR', latitude: -25.4284, longitude: -49.2733, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'va-bso-2', concessionaire: 'Via Araucária', name: 'BSO 2: BR-277, km 165,70 - Porto Amazonas', address: 'BR-277, km 165,70, Porto Amazonas - PR', latitude: -25.5380, longitude: -49.8930, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'va-bso-3', concessionaire: 'Via Araucária', name: 'BSO 3: BR-277, km 211,70 - Palmeira', address: 'BR-277, km 211,70, Palmeira - PR', latitude: -25.4290, longitude: -50.0060, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'va-bso-4', concessionaire: 'Via Araucária', name: 'BSO 4: BR-277, km 256,10 - Irati', address: 'BR-277, km 256,10, Irati - PR', latitude: -25.4670, longitude: -50.6510, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'va-bso-5', concessionaire: 'Via Araucária', name: 'BSO 5: BR-277, km 300,30 - Prudentópolis', address: 'BR-277, km 300,30, Prudentópolis - PR', latitude: -25.2130, longitude: -50.9770, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'va-bso-6', concessionaire: 'Via Araucária', name: 'BSO 6: BR-373, km 240,40 - Guamiranga', address: 'BR-373, km 240,40, Guamiranga - PR', latitude: -25.2180, longitude: -50.7890, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'va-bso-7', concessionaire: 'Via Araucária', name: 'BSO 7: BR-373, km 201,80 - Ipiranga', address: 'BR-373, km 201,80, Ipiranga - PR', latitude: -25.0270, longitude: -50.5860, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'va-bso-8', concessionaire: 'Via Araucária', name: 'BSO 8: PR-423, km 15,00 - Araucária', address: 'PR-423, km 15,00, Araucária - PR', latitude: -25.5920, longitude: -49.3999, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'va-bso-9', concessionaire: 'Via Araucária', name: 'BSO 9: BR-476, km 188,30 - Lapa', address: 'BR-476, km 188,30, Lapa - PR', latitude: -25.7690, longitude: -49.7160, services: standardSauServices, operatingHours: '24 horas' },
 
-  // EPR Litoral Pioneiro (Paraná)
-  { id: 'epr-lp-1', concessionaire: 'EPR Litoral Pioneiro', name: 'SAU Km 60 - BR-277', address: 'BR-277, Km 60, São José dos Pinhais - PR', latitude: -25.5546, longitude: -49.0011, services: ['Banheiros', 'Água', 'Atendimento Médico'], operatingHours: '24 horas' },
-  { id: 'epr-lp-2', concessionaire: 'EPR Litoral Pioneiro', name: 'SAU Km 25 - PR-407', address: 'PR-407, Km 25, Paranaguá - PR', latitude: -25.5924, longitude: -48.5458, services: ['Banheiros', 'Wi-Fi', 'Segurança'], operatingHours: '07:00 - 19:00' },
+  // EPR Litoral Pioneiro (Paraná) - New BSOs
+  { id: 'epr-lp-bso-1', concessionaire: 'EPR Litoral Pioneiro', name: 'BSO 1: BR-369, Km 68,2 - Santa Mariana', address: 'BR-369, Km 68,2, Santa Mariana - PR', latitude: -23.145, longitude: -50.565, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'epr-lp-bso-2', concessionaire: 'EPR Litoral Pioneiro', name: 'BSO 2: BR-369, Km 10 - Cambará', address: 'BR-369, Km 10, Cambará - PR', latitude: -23.048, longitude: -50.073, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'epr-lp-bso-3', concessionaire: 'EPR Litoral Pioneiro', name: 'BSO 3: BR-153, Km 31,4 - Santo Antônio da Platina', address: 'BR-153, Km 31,4, Santo Antônio da Platina - PR', latitude: -23.295, longitude: -50.079, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'epr-lp-bso-4', concessionaire: 'EPR Litoral Pioneiro', name: 'BSO 4: PR-092, Km 300,4 - Quatiguá', address: 'PR-092, Km 300,4, Quatiguá - PR', latitude: -23.573, longitude: -50.134, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'epr-lp-bso-5', concessionaire: 'EPR Litoral Pioneiro', name: 'BSO 5: PR-092, Km 255,3 - Wenceslau Braz', address: 'PR-092, Km 255,3, Wenceslau Braz - PR', latitude: -23.875, longitude: -49.806, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'epr-lp-bso-6', concessionaire: 'EPR Litoral Pioneiro', name: 'BSO 6: PR-092, Km 217 - Arapoti', address: 'PR-092, Km 217, Arapoti - PR', latitude: -24.156, longitude: -49.829, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'epr-lp-bso-7', concessionaire: 'EPR Litoral Pioneiro', name: 'BSO 7: BR-153, Km 187,4 - Sengés', address: 'BR-153, Km 187,4, Sengés - PR', latitude: -24.113, longitude: -49.563, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'epr-lp-bso-8', concessionaire: 'EPR Litoral Pioneiro', name: 'BSO 8: PR-151, Km 252,8 - Piraí do Sul', address: 'PR-151, Km 252,8, Piraí do Sul - PR', latitude: -24.527, longitude: -49.941, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'epr-lp-bso-9', concessionaire: 'EPR Litoral Pioneiro', name: 'BSO 9: PR-151, Km 305,2 - Carambeí', address: 'PR-151, Km 305,2, Carambeí - PR', latitude: -24.917, longitude: -50.098, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'epr-lp-bso-10', concessionaire: 'EPR Litoral Pioneiro', name: 'BSO 10: BR-277, Km 60,6 - São José dos Pinhais', address: 'BR-277, Km 60,6, São José dos Pinhais - PR', latitude: -25.5546, longitude: -49.0011, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'epr-lp-bso-11', concessionaire: 'EPR Litoral Pioneiro', name: 'BSO 11: BR-277, Km 10,7 - Paranaguá', address: 'BR-277, Km 10,7, Paranaguá - PR', latitude: -25.520, longitude: -48.530, services: standardSauServices, operatingHours: '24 horas' },
+  { id: 'epr-lp-bso-12', concessionaire: 'EPR Litoral Pioneiro', name: 'BSO 12: BR-277, Km 35 - Morretes', address: 'BR-277, Km 35, Morretes - PR', latitude: -25.470, longitude: -48.830, services: standardSauServices, operatingHours: '24 horas' },
+
   // Arteris Litoral Sul (Paraná/Santa Catarina)
   { id: 'als-1', concessionaire: 'Arteris Litoral Sul', name: 'SAU Km 668 - BR-376', address: 'BR-376, Km 668, Guaratuba - PR', latitude: -25.8889, longitude: -48.6782, services: ['Banheiros', 'Água', 'Guincho', 'Wi-Fi'], operatingHours: '24 horas' },
   { id: 'als-2', concessionaire: 'Arteris Litoral Sul', name: 'SAU Km 10 - BR-101', address: 'BR-101, Km 10, Garuva - SC', latitude: -26.0373, longitude: -48.8384, services: ['Banheiros', 'Fraldário', 'Café'], operatingHours: '24 horas' },
