@@ -39,7 +39,7 @@ export default function Navigation() {
               <>
                 <item.icon
                   className={cn(
-                    'mb-0.5 h-6 w-6 transition-transform duration-200 ease-out group-hover:scale-105', // Aumentado para h-6 w-6
+                    'mb-0.5 h-6 w-6 transition-transform duration-200 ease-out group-hover:scale-105',
                     isActive && !isCentralButton ? 'scale-110 text-primary' : '',
                     isActive && isCentralButton ? 'scale-110' : '',
                     isCentralButton && 'text-destructive-foreground mb-0.5',
@@ -74,12 +74,12 @@ export default function Navigation() {
                   passHref
                   onClick={(e) => handleNavItemClick(e, item.href)}
                 >
-                  <div className="live-icon-wrapper"> {/* Removido z-10 */}
+                  <div className="live-icon-wrapper">
                     <div className={cn(
                       "live-icon bg-destructive w-14 h-14 rounded-full flex flex-col items-center justify-center shadow-lg relative",
                       isActive ? "ring-2 ring-offset-2 ring-destructive ring-offset-background" : ""
                     )}>
-                      <div className="pulse-ring-animation"></div>
+                      <div className="pulse-ring-animation"></div> {/* Pulse animation div */}
                       {itemContent}
                     </div>
                   </div>

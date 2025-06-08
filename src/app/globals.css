@@ -129,7 +129,6 @@
 /* Styling for the central "AO VIVO" button in the navigation */
 .menu-item-central .live-icon-wrapper {
   position: relative;
-  z-index: 1; /* To ensure it's above other items if absolutely positioned */
 }
 
 .menu-item-central .live-icon {
@@ -139,14 +138,14 @@
   position: relative; /* For the pulse ring */
 }
 
-/* Pulse ring animation for "AO VIVO" button - RESTORED */
+/* Pulse ring animation for "AO VIVO" button */
 @keyframes pulse-ring {
   0% {
-    transform: scale(0.85); /* Slightly smaller start */
+    transform: scale(0.85);
     opacity: 0.8;
   }
   50% {
-    transform: scale(1.05); /* Slightly larger peak */
+    transform: scale(1.05);
     opacity: 0.4;
   }
   100% {
@@ -160,12 +159,12 @@
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 110%; /* Adjust size of pulse relative to button */
-  height: 110%; /* Adjust size of pulse relative to button */
+  width: 110%; 
+  height: 110%; 
   border-radius: 50%;
-  background-color: hsla(var(--destructive), 0.3); /* Use destructive color with alpha */
+  background-color: hsla(var(--destructive), 0.3); 
   animation: pulse-ring 2s infinite ease-in-out;
-  z-index: -1; /* Behind the icon and text */
+  z-index: -1; 
 }
 
 
@@ -175,13 +174,13 @@ button, input, textarea, select {
 
 .notification-badge {
   position: absolute;
-  top: 2px; /* Adjusted for better visual alignment with 10-11px icon */
-  right: 2px; /* Adjusted for better visual alignment */
+  top: 2px; 
+  right: 2px; 
   background-color: hsl(var(--destructive));
   color: hsl(var(--destructive-foreground));
   border-radius: 50%;
-  padding: 1px 5px; /* Slightly more padding for better shape */
-  font-size: 0.65rem; /* Smaller font for the badge text */
+  padding: 1px 5px; 
+  font-size: 0.65rem; 
   line-height: 1;
   min-width: 1.3em; 
   height: 1.3em;
@@ -189,7 +188,7 @@ button, input, textarea, select {
   align-items: center;
   justify-content: center;
   text-align: center;
-  border: 1px solid hsl(var(--primary)); /* Border color matches header background */
+  border: 1px solid hsl(var(--primary)); 
   font-weight: bold;
-  pointer-events: none; /* So it doesn't interfere with button click */
+  pointer-events: none; 
 }
