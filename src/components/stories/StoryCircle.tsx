@@ -21,17 +21,16 @@ export default function StoryCircle({ adminName, avatarUrl, dataAIAvatarHint, ha
       type="button"
       onClick={onClick}
       className={cn(
-        'group flex-shrink-0 rounded-lg transition-all duration-300 shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2'
-        // Removido p-0.5 e bg-gradient/bg-muted para tirar a borda colorida/cinza
+        'group flex-shrink-0 rounded-lg transition-all duration-300 shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
+        // Anel de destaque movido para o botão externo
+        hasNewStory ? 'ring-2 ring-primary ring-offset-1 ring-offset-background' : 'ring-1 ring-border'
       )}
       aria-label={`Ver story de ${adminName}`}
     >
       <div
         className={cn(
-          "relative w-[76px] h-[135px] bg-card rounded-md overflow-hidden transition-transform duration-300 ease-in-out group-hover:scale-[1.03]",
-          // A borda interna agora é controlada pelo bg-card e rounded-md.
-          // A borda de destaque (se hasNewStory) foi removida.
-          hasNewStory ? 'ring-2 ring-primary ring-offset-1 ring-offset-background' : 'ring-1 ring-border'
+          "relative w-[76px] h-[135px] bg-card rounded-md overflow-hidden transition-transform duration-300 ease-in-out group-hover:scale-[1.03]"
+          // Removido o ring daqui
         )}
       >
         <Image
@@ -39,7 +38,7 @@ export default function StoryCircle({ adminName, avatarUrl, dataAIAvatarHint, ha
           alt={adminName}
           layout="fill"
           objectFit="cover"
-          className="rounded-sm" // Garante que a imagem respeite o arredondamento interno se necessário
+          className="rounded-sm" 
           data-ai-hint={dataAIAvatarHint || 'admin story content'}
         />
 

@@ -136,33 +136,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative; /* For the pulse ring */
+  position: relative; /* For the pulse ring if re-added */
 }
 
-.pulse-ring-animation {
-  position: absolute;
-  width: 100%; 
-  height: 100%; 
-  border: 2px solid hsla(var(--destructive) / 0.4); 
-  border-radius: 50%;
-  animation: pulse-ring-keyframes 1.5s infinite;
-  z-index: -1; 
-}
-
-@keyframes pulse-ring-keyframes {
-  0% {
-    transform: scale(1);
-    opacity: 0.7;
-  }
-  70% {
-    transform: scale(1.5); 
-    opacity: 0;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 0;
-  }
-}
+/* Pulse ring animation and keyframes removed */
 
 button, input, textarea, select {
   @apply text-base; /* Will now be 16px */
