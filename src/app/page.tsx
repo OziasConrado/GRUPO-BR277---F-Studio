@@ -336,7 +336,7 @@ export default function FeedPage() {
 
       <div className="my-6">
         <EmergencyButtonModalTrigger
-          className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90 py-3 text-base rounded-full"
+          className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90 py-3 text-base rounded-full shadow-none"
           iconClassName="h-5 w-5"
         >
           <Phone className="mr-2 h-5 w-5" />

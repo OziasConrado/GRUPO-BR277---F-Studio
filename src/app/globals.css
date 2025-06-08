@@ -136,10 +136,38 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative; /* For the pulse ring if re-added */
+  position: relative; /* For the pulse ring */
 }
 
-/* Pulse ring animation and keyframes removed */
+/* Pulse ring animation for "AO VIVO" button - RESTORED */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.85); /* Slightly smaller start */
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.05); /* Slightly larger peak */
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(0.85);
+    opacity: 0.8;
+  }
+}
+
+.pulse-ring-animation {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 110%; /* Adjust size of pulse relative to button */
+  height: 110%; /* Adjust size of pulse relative to button */
+  border-radius: 50%;
+  background-color: hsla(var(--destructive), 0.3); /* Use destructive color with alpha */
+  animation: pulse-ring 2s infinite ease-in-out;
+  z-index: -1; /* Behind the icon and text */
+}
+
 
 button, input, textarea, select {
   @apply text-base; /* Will now be 16px */
