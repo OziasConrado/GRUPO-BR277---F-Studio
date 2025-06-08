@@ -6,13 +6,13 @@ import StoryCircle, { type StoryCircleProps } from '@/components/stories/StoryCi
 import StoryViewerModal from '@/components/stories/StoryViewerModal';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, Star, TrendingUp, Info, Edit, Image as ImageIcon, XCircle, Check, Phone, Store, Landmark, Headset, Radio, ShieldAlert, Newspaper } from 'lucide-react'; 
+import { AlertCircle, Star, TrendingUp, Info, Edit, Image as ImageIcon, XCircle, Check, Phone, Store, Landmark, Headset, Radio, ShieldAlert, Newspaper, Wrench, MapIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import EmergencyButtonModalTrigger from '@/components/common/emergency-button'; 
-import FeatureCard from '@/components/common/FeatureCard'; 
+import EmergencyButtonModalTrigger from '@/components/common/emergency-button';
+import FeatureCard from '@/components/common/FeatureCard';
 
 const defaultReactions: PostReactions = {
   thumbsUp: 0,
@@ -175,11 +175,11 @@ const backgroundOptions = [
 
 const featureButtons = [
   { title: 'Guia Comercial', Icon: Store, href: '/guia-comercial' },
-  { title: 'Turismo', Icon: Landmark, href: '/turismo' }, // Link atualizado
+  { title: 'Turismo', Icon: Landmark, href: '/turismo' },
   { title: 'SAU', Icon: Headset, href: '/sau' },
   { title: 'Real Time', Icon: Radio, href: '/streaming' },
   { title: 'Bloqueios', Icon: ShieldAlert, href: '/alertas' },
-  { title: 'Notícias', Icon: Newspaper, href: '#' }, // Link pendente
+  { title: 'Notícias', Icon: Newspaper, href: '#' },
 ];
 
 
@@ -220,13 +220,13 @@ export default function FeedPage() {
 
   const handleToggleCreatePost = () => {
     setIsCreatingPost(!isCreatingPost);
-    if (isCreatingPost) { 
+    if (isCreatingPost) {
         setNewPostText('');
         setSelectedImageForUpload(null);
         setImagePreviewUrl(null);
         setSelectedPostBackground(backgroundOptions[0]);
         if (fileInputRef.current) {
-          fileInputRef.current.value = ""; 
+          fileInputRef.current.value = "";
         }
     }
   };
@@ -234,7 +234,7 @@ export default function FeedPage() {
   const handleImageInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { 
+      if (file.size > 5 * 1024 * 1024) {
         toast({
           variant: 'destructive',
           title: 'Imagem muito grande',
@@ -248,7 +248,7 @@ export default function FeedPage() {
         setImagePreviewUrl(reader.result as string);
       };
       reader.readAsDataURL(file);
-      setSelectedPostBackground(backgroundOptions[0]); 
+      setSelectedPostBackground(backgroundOptions[0]);
     }
   };
 
@@ -286,14 +286,14 @@ export default function FeedPage() {
     };
 
     if (selectedImageForUpload && imagePreviewUrl) {
-      newPost.uploadedImageUrl = imagePreviewUrl; 
+      newPost.uploadedImageUrl = imagePreviewUrl;
       newPost.dataAIUploadedImageHint = 'user uploaded content';
     } else if (newPostText.length <= 150 && selectedPostBackground && selectedPostBackground.name !== 'Padrão') {
       newPost.cardStyle = {
         backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
         backgroundImage: selectedPostBackground.gradient,
         color: selectedPostBackground.text,
-        name: selectedPostBackground.name, 
+        name: selectedPostBackground.name,
       };
     }
 
@@ -316,14 +316,13 @@ export default function FeedPage() {
     <div className="w-full">
       <div className="mb-6">
         <div className="px-1">
-          <h2 className="text-xl font-bold font-headline flex items-center mb-1 text-foreground">
-            <Info className="h-5 w-5 mr-2 text-primary" />
-            Destaques dos Administradores
+          <h2 className="text-xl font-bold font-headline flex items-center mb-3 text-foreground">
+            <Star className="h-5 w-5 mr-2 text-primary" />
+            Destaques
           </h2>
-          <p className="text-xs text-muted-foreground ml-7">Avisos importantes e novidades da equipe Rota Segura.</p>
         </div>
 
-        <div className="mt-4 flex overflow-x-auto space-x-2 pb-3 -mx-4 px-4 no-scrollbar">
+        <div className="flex overflow-x-auto space-x-2 pb-3 -mx-4 px-4 no-scrollbar">
           {mockAdminStories.map((story) => (
             <StoryCircle
               key={story.id}
@@ -334,9 +333,9 @@ export default function FeedPage() {
         </div>
       </div>
 
-      
+
       <div className="my-6">
-        <EmergencyButtonModalTrigger 
+        <EmergencyButtonModalTrigger
           className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90 py-3 text-base rounded-full"
           iconClassName="h-5 w-5"
         >
@@ -345,7 +344,22 @@ export default function FeedPage() {
         </EmergencyButtonModalTrigger>
       </div>
 
-      
+      <div className="my-6 flex gap-3">
+        <Button asChild className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full py-3 text-base">
+          <Link href="/sau">
+            <Headset className="mr-2 h-5 w-5" />
+            SAU
+          </Link>
+        </Button>
+        <Button asChild className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full py-3 text-base">
+          <Link href="/ferramentas">
+            <Wrench className="mr-2 h-5 w-5" />
+            Ferramentas
+          </Link>
+        </Button>
+      </div>
+
+
       <div className="mb-8 grid grid-cols-2 sm:grid-cols-3 gap-3">
         {featureButtons.map((feature) => (
           <FeatureCard
@@ -358,7 +372,7 @@ export default function FeedPage() {
       </div>
 
       <h2 className="text-2xl font-bold mb-2 font-headline text-left">Feed277</h2>
-      
+
       <div className="mb-4">
         <Button
             onClick={handleToggleCreatePost}
@@ -405,7 +419,7 @@ export default function FeedPage() {
                   {backgroundOptions.map(opt => (
                     <Button
                       key={opt.name}
-                      variant="outline" 
+                      variant="outline"
                       size="sm"
                       onClick={() => setSelectedPostBackground(opt)}
                       className={`h-8 w-8 p-0 border-2 rounded-md ${selectedPostBackground.name === opt.name ? 'ring-2 ring-offset-2 ring-primary' : 'border-muted-foreground/50'}`}
@@ -419,7 +433,7 @@ export default function FeedPage() {
                 </div>
               </div>
             )}
-            
+
             <div className="flex justify-between items-center pt-2">
               <input
                 type="file"
@@ -435,8 +449,8 @@ export default function FeedPage() {
                 Publicar
               </Button>
             </div>
-            
-            <div className="mt-4 h-[50px] bg-muted/30 rounded-lg flex items-center justify-center text-sm text-muted-foreground">
+
+            <div className="mt-4 h-[50px] bg-muted/30 rounded flex items-center justify-center text-sm text-muted-foreground">
               Espaço para Banner AdMob (Ex: 320x50)
             </div>
           </CardContent>
