@@ -373,8 +373,8 @@ export default function PostCard({
       // Logic to add a reply
       const newReply: ReplyProps = {
         id: `r${Date.now()}`,
-        userName: 'Usuário Atual',
-        userAvatarUrl: 'https://placehold.co/32x32.png?text=UA',
+        userName: 'Você', // Assuming current user is 'Você'
+        userAvatarUrl: 'https://placehold.co/32x32.png?text=VC', // Placeholder for current user avatar
         dataAIAvatarHint: 'current user',
         timestamp: 'Agora mesmo',
         text: newCommentText,
@@ -409,8 +409,8 @@ export default function PostCard({
       // Logic to add a new comment
       const newComment: CommentProps = {
         id: `c${Date.now()}`,
-        userName: 'Usuário Atual',
-        userAvatarUrl: 'https://placehold.co/40x40.png?text=UA',
+        userName: 'Você', // Assuming current user is 'Você'
+        userAvatarUrl: 'https://placehold.co/40x40.png?text=VC', // Placeholder for current user avatar
         dataAIAvatarHint: 'current user',
         timestamp: 'Agora mesmo',
         text: newCommentText,
@@ -433,7 +433,7 @@ export default function PostCard({
     setNewCommentText('');
     if (footerTextareaRef.current) {
         footerTextareaRef.current.rows = 1;
-        footerTextareaRef.current.focus();
+        footerTextareaRef.current.focus(); // Keep focus on the main textarea
     }
   };
 
@@ -494,7 +494,7 @@ export default function PostCard({
     const MAX_DEPTH = 1;
 
     return (
-      <div className={`ml-6 mt-2 space-y-2 pt-2 ${depth > 0 ? 'pl-3 border-l-2 border-muted/30' : 'pl-3 border-l-2 border-muted/50'}`}>
+      <div className={`ml-6 mt-2 space-y-2 pt-2 ${depth > 0 ? 'pl-3 border-l-2 border-muted/30 dark:border-slate-700/30' : 'pl-3 border-l-2 border-muted/50 dark:border-slate-600/50'}`}>
         {replies.map(reply => (
           <div key={reply.id} className="space-y-1">
             <div className="flex items-start space-x-2">
@@ -543,7 +543,6 @@ export default function PostCard({
                 </div>
               </div>
             </div>
-            {/* Inline reply form removed from here */}
             {depth < MAX_DEPTH && renderReplies(reply.replies, commentIdForReply, depth + 1)}
           </div>
         ))}
@@ -695,7 +694,7 @@ export default function PostCard({
                     </div>
                 </SheetHeader>
 
-                <div className="h-[50px] bg-muted/30 flex items-center justify-center text-sm text-muted-foreground shrink-0">
+                <div className="h-[50px] bg-muted/30 dark:bg-slate-800/30 flex items-center justify-center text-sm text-muted-foreground shrink-0">
                     Espaço para Publicidade AdMob (Ex: 320x50)
                 </div>
 
@@ -739,6 +738,7 @@ export default function PostCard({
                             onClick={() => {
                                 setReplyingTo({ type: 'comment', parentId: comment.id, userNameToReply: comment.userName });
                                 setNewCommentText(`@${comment.userName} `);
+                                if (footerTextareaRef.current) footerTextareaRef.current.focus();
                             }}
                             >
                             Responder
@@ -746,7 +746,6 @@ export default function PostCard({
                         </div>
                         </div>
                     </div>
-                    {/* Inline reply form removed, replies handled by footer form */}
                     {renderReplies(comment.replies, comment.id)}
                     </div>
                 ))}
@@ -756,7 +755,7 @@ export default function PostCard({
                     {replyingTo && (
                         <div className="flex justify-between items-center text-xs text-muted-foreground px-1">
                             <span>Respondendo a <strong className="text-primary">@{replyingTo.userNameToReply}</strong></span>
-                            <Button variant="link" size="xs" className="p-0 h-auto text-destructive" onClick={handleCancelReply}>
+                            <Button variant="link" size="xs" className="p-0 h-auto text-destructive hover:text-destructive/80" onClick={handleCancelReply}>
                                 Cancelar
                             </Button>
                         </div>
