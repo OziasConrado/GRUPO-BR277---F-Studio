@@ -1,6 +1,6 @@
 
 import ToolCard, { type ToolCardProps } from '@/components/tools/tool-card';
-import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench, Droplets, Truck, ClipboardList, ClipboardSignature, ClipboardCopy, Send, QrCode, UserSquare, HeartPulse, Scale, ActivitySquare, Bed } from 'lucide-react';
+import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench, Droplets, Truck, ClipboardList, ClipboardSignature, ClipboardCopy, Send, QrCode, UserSquare, HeartPulse, Scale, ActivitySquare, Bed, Flame } from 'lucide-react';
 
 const tools: ToolCardProps[] = [
   {
@@ -104,6 +104,12 @@ const tools: ToolCardProps[] = [
     Icon: Bed,
     href: '/ferramentas/qualidade-sono',
     description: 'Monitore e analise a qualidade do seu sono.',
+  },
+  {
+    title: 'Calculadora de Calorias',
+    Icon: Flame,
+    href: '/ferramentas/calculadora-calorias',
+    description: 'Estime sua TMB e necessidade calórica diária.',
   },
 ];
 
