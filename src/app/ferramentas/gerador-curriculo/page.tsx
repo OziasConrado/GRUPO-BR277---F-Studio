@@ -5,7 +5,7 @@ import { useState, useRef, type ChangeEvent } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, UserSquare, PlusCircle, Trash2, Download, UploadCloud, X } from "lucide-react"; // Alterado Printer para Download
+import { ArrowLeft, UserSquare, PlusCircle, Trash2, Download, UploadCloud, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -263,27 +263,29 @@ export default function GeradorCurriculoPage() {
                   <Button 
                       type="button" 
                       variant="outline" 
-                      className="w-full mt-1 flex items-center justify-center h-20 border-dashed hover:border-primary rounded-lg"
+                      className="w-full mt-1 flex flex-col items-center justify-center h-32 border-dashed hover:border-primary rounded-lg"
                       onClick={() => fileInputRef.current?.click()}
                   >
                       {imagePreview ? (
-                          <div className="relative w-16 h-16">
+                          <div className="relative w-24 h-24">
                               <Image src={imagePreview} alt="Preview da foto" layout="fill" objectFit="cover" className="rounded"/>
-                              <Button 
-                                  type="button" 
-                                  variant="destructive" 
-                                  size="icon" 
-                                  className="absolute -top-2 -right-2 h-5 w-5 z-10 opacity-80 hover:opacity-100 rounded-full p-0.5"
+                              <div // Changed from Button to div to fix hydration error
+                                  role="button"
+                                  tabIndex={0}
+                                  aria-label="Remover foto"
+                                  className="absolute -top-2 -right-2 h-6 w-6 z-10 bg-destructive text-destructive-foreground rounded-full p-1 flex items-center justify-center cursor-pointer opacity-70 hover:opacity-100 transition-opacity"
                                   onClick={(e) => { e.stopPropagation(); removeImage(); }}
+                                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); removeImage(); }}}
                               >
-                                  <X className="h-3 w-3"/>
-                              </Button>
+                                  <X className="h-4 w-4"/>
+                              </div>
                           </div>
                       ) : (
-                          <div className="text-center">
-                              <UploadCloud className="mx-auto h-6 w-6 text-muted-foreground"/>
-                              <span className="text-muted-foreground text-xs">Enviar foto (Max {MAX_FILE_SIZE_MB}MB)</span>
-                          </div>
+                          <>
+                              <UploadCloud className="mx-auto h-8 w-8 text-muted-foreground"/>
+                              <span className="text-muted-foreground text-sm mt-1">Enviar foto (Max {MAX_FILE_SIZE_MB}MB)</span>
+                              <span className="text-xs text-muted-foreground/80 mt-0.5">JPG, PNG, WebP</span>
+                          </>
                       )}
                   </Button>
                   {errors.foto && <p className="text-sm text-destructive mt-1">{errors.foto.message}</p>}
