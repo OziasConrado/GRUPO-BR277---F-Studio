@@ -1,6 +1,6 @@
 
 import ToolCard, { type ToolCardProps } from '@/components/tools/tool-card';
-import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench, Droplets, Truck, ClipboardList, ClipboardSignature, ClipboardCopy, Send, QrCode, UserSquare, HeartPulse, Scale, ActivitySquare } from 'lucide-react';
+import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench, Droplets, Truck, ClipboardList, ClipboardSignature, ClipboardCopy, Send, QrCode, UserSquare, HeartPulse, Scale, ActivitySquare, Bed } from 'lucide-react';
 
 const tools: ToolCardProps[] = [
   {
@@ -99,6 +99,12 @@ const tools: ToolCardProps[] = [
     href: '/ferramentas/monitoramento-pressao',
     description: 'Registre e acompanhe sua pressão arterial.',
   },
+  {
+    title: 'Qualidade do Sono',
+    Icon: Bed,
+    href: '/ferramentas/qualidade-sono',
+    description: 'Monitore e analise a qualidade do seu sono.',
+  },
 ];
 
 export default function FerramentasPage() {
@@ -113,6 +119,8 @@ export default function FerramentasPage() {
     </div>
   );
 }
+    
+
     
 
     
