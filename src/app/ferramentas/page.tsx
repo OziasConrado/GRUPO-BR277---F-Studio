@@ -1,6 +1,6 @@
 
 import ToolCard, { type ToolCardProps } from '@/components/tools/tool-card';
-import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench, Droplets, Truck, ClipboardList } from 'lucide-react'; // Added ClipboardList
+import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench, Droplets, Truck, ClipboardList, ClipboardSignature } from 'lucide-react'; // Added ClipboardList & ClipboardSignature
 
 const tools: ToolCardProps[] = [
   {
@@ -28,16 +28,22 @@ const tools: ToolCardProps[] = [
     description: 'Digitalize documentos de forma rápida e fácil.',
   },
   {
-    title: 'Calculadora de Combustível Simples', // Renomeado para diferenciar
+    title: 'Calculadora de Combustível Simples',
     Icon: Fuel,
     href: '/ferramentas/calculadora-combustivel',
     description: 'Planeje seus gastos com combustível (sem Arla).',
   },
    {
     title: 'Custo de Viagem (Diesel + Arla)',
-    Icon: ClipboardList, // Novo ícone para esta ferramenta
+    Icon: Truck, // Changed from ClipboardList to Truck for visual diversity
     href: '/ferramentas/custo-viagem',
     description: 'Calcule diesel, Arla32 e custo total.',
+  },
+  {
+    title: 'Declaração de Transporte',
+    Icon: ClipboardSignature,
+    href: '/ferramentas/declaracao-transporte',
+    description: 'Gere uma declaração de transporte rapidamente.',
   },
   {
     title: 'Diagnóstico Básico',
