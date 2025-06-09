@@ -1,5 +1,6 @@
+
 import ToolCard, { type ToolCardProps } from '@/components/tools/tool-card';
-import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench } from 'lucide-react'; // Added Fuel and Wrench
+import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench, Droplets } from 'lucide-react'; // Added Droplets
 
 const tools: ToolCardProps[] = [
   {
@@ -38,6 +39,12 @@ const tools: ToolCardProps[] = [
     href: '/ferramentas/diagnostico',
     description: 'Verifique problemas comuns do veículo.',
   },
+  {
+    title: 'Álcool ou Gasolina?',
+    Icon: Droplets, // Novo ícone
+    href: '/ferramentas/etanol-gasolina', // Novo link
+    description: 'Descubra qual combustível vale mais a pena.', // Nova descrição
+  },
 ];
 
 export default function FerramentasPage() {
@@ -52,3 +59,5 @@ export default function FerramentasPage() {
     </div>
   );
 }
+
+    
