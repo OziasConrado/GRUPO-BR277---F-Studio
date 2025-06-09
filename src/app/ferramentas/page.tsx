@@ -1,6 +1,6 @@
 
 import ToolCard, { type ToolCardProps } from '@/components/tools/tool-card';
-import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench, Droplets, Truck, ClipboardList, ClipboardSignature } from 'lucide-react'; // Added ClipboardList & ClipboardSignature
+import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench, Droplets, Truck, ClipboardList, ClipboardSignature, ClipboardCopy } from 'lucide-react'; // Added ClipboardCopy
 
 const tools: ToolCardProps[] = [
   {
@@ -35,7 +35,7 @@ const tools: ToolCardProps[] = [
   },
    {
     title: 'Custo de Viagem (Diesel + Arla)',
-    Icon: Truck,
+    Icon: Truck, // Mantido, ou poderia ser ClipboardList se preferir
     href: '/ferramentas/custo-viagem',
     description: 'Calcule diesel, Arla32 e custo total.',
   },
@@ -44,6 +44,12 @@ const tools: ToolCardProps[] = [
     Icon: ClipboardSignature,
     href: '/ferramentas/declaracao-transporte',
     description: 'Gere uma declaração de transporte rapidamente.',
+  },
+  {
+    title: 'Gerador de Link Pix',
+    Icon: ClipboardCopy,
+    href: '/ferramentas/gerador-pix',
+    description: 'Crie códigos Pix Copia e Cola facilmente.',
   },
   {
     title: 'Diagnóstico Básico',
