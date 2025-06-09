@@ -1,6 +1,6 @@
 
 import ToolCard, { type ToolCardProps } from '@/components/tools/tool-card';
-import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench, Droplets, Truck, ClipboardList, ClipboardSignature, ClipboardCopy, Send, QrCode, UserSquare, HeartPulse } from 'lucide-react';
+import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench, Droplets, Truck, ClipboardList, ClipboardSignature, ClipboardCopy, Send, QrCode, UserSquare, HeartPulse, Scale } from 'lucide-react';
 
 const tools: ToolCardProps[] = [
   {
@@ -87,6 +87,12 @@ const tools: ToolCardProps[] = [
     href: '/ferramentas/monitoramento-glicemia',
     description: 'Registre e acompanhe seus níveis de glicose.',
   },
+  {
+    title: 'Calculadora de IMC',
+    Icon: Scale,
+    href: '/ferramentas/calculadora-imc',
+    description: 'Calcule seu Índice de Massa Corporal.',
+  },
 ];
 
 export default function FerramentasPage() {
@@ -101,6 +107,8 @@ export default function FerramentasPage() {
     </div>
   );
 }
+    
+
     
 
     
