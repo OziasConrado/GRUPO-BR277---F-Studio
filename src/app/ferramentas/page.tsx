@@ -1,6 +1,6 @@
 
 import ToolCard, { type ToolCardProps } from '@/components/tools/tool-card';
-import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench, Droplets, Truck, ClipboardList, ClipboardSignature, ClipboardCopy, Send, QrCode } from 'lucide-react';
+import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench, Droplets, Truck, ClipboardList, ClipboardSignature, ClipboardCopy, Send, QrCode, ClipboardUser } from 'lucide-react';
 
 const tools: ToolCardProps[] = [
   {
@@ -35,7 +35,7 @@ const tools: ToolCardProps[] = [
   },
    {
     title: 'Custo de Viagem (Diesel + Arla)',
-    Icon: Truck,
+    Icon: Truck, // Alterado para Truck conforme PRD para diferenciar
     href: '/ferramentas/custo-viagem',
     description: 'Calcule diesel, Arla32 e custo total.',
   },
@@ -64,6 +64,12 @@ const tools: ToolCardProps[] = [
     description: 'Transforme links ou textos em QR Codes.',
   },
   {
+    title: 'Gerador de Currículo',
+    Icon: ClipboardUser,
+    href: '/ferramentas/gerador-curriculo',
+    description: 'Crie um currículo profissional rapidamente.',
+  },
+  {
     title: 'Diagnóstico Básico',
     Icon: Wrench,
     href: '/ferramentas/diagnostico',
@@ -82,11 +88,13 @@ export default function FerramentasPage() {
     <div className="w-full">
       <h1 className="text-3xl font-bold mb-8 font-headline text-center sm:text-left">Galeria de Ferramentas</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {tools.map((tool) => (
+        {tools.sort((a,b) => a.title.localeCompare(b.title)).map((tool) => (
           <ToolCard key={tool.title} {...tool} />
         ))}
       </div>
     </div>
   );
 }
+    
+
     
