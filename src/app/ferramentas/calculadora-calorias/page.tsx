@@ -110,7 +110,7 @@ export default function CalculadoraCaloriasPage() {
                 <SelectTrigger id="sexo" className="w-full rounded-lg mt-1">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="item-aligned">
                   <SelectItem value="masculino">Masculino</SelectItem>
                   <SelectItem value="feminino">Feminino</SelectItem>
                 </SelectContent>
@@ -134,7 +134,7 @@ export default function CalculadoraCaloriasPage() {
                 <SelectTrigger id="atividade" className="w-full rounded-lg mt-1">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="item-aligned">
                   {niveisAtividade.map(nivel => (
                     <SelectItem key={nivel.value} value={nivel.value}>{nivel.label}</SelectItem>
                   ))}
