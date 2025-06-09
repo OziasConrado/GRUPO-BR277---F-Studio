@@ -1,6 +1,6 @@
 
 import ToolCard, { type ToolCardProps } from '@/components/tools/tool-card';
-import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench, Droplets } from 'lucide-react'; // Added Droplets
+import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench, Droplets, Truck, ClipboardList } from 'lucide-react'; // Added ClipboardList
 
 const tools: ToolCardProps[] = [
   {
@@ -28,10 +28,16 @@ const tools: ToolCardProps[] = [
     description: 'Digitalize documentos de forma rápida e fácil.',
   },
   {
-    title: 'Calculadora de Combustível',
+    title: 'Calculadora de Combustível Simples', // Renomeado para diferenciar
     Icon: Fuel,
     href: '/ferramentas/calculadora-combustivel',
-    description: 'Planeje seus gastos com combustível.',
+    description: 'Planeje seus gastos com combustível (sem Arla).',
+  },
+   {
+    title: 'Custo de Viagem (Diesel + Arla)',
+    Icon: ClipboardList, // Novo ícone para esta ferramenta
+    href: '/ferramentas/custo-viagem',
+    description: 'Calcule diesel, Arla32 e custo total.',
   },
   {
     title: 'Diagnóstico Básico',
@@ -41,9 +47,9 @@ const tools: ToolCardProps[] = [
   },
   {
     title: 'Álcool ou Gasolina?',
-    Icon: Droplets, // Novo ícone
-    href: '/ferramentas/etanol-gasolina', // Novo link
-    description: 'Descubra qual combustível vale mais a pena.', // Nova descrição
+    Icon: Droplets,
+    href: '/ferramentas/etanol-gasolina',
+    description: 'Descubra qual combustível vale mais a pena.',
   },
 ];
 
