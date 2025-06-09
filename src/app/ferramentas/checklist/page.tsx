@@ -5,9 +5,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, CheckSquare, FileText, Share2, Car, Truck, Bus } from "lucide-react";
+import { ArrowLeft, CheckSquare, FileText, Share2, Car, Truck, Bus, CalendarIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import Script from 'next/script';
 import { cn } from '@/lib/utils';
@@ -95,6 +100,9 @@ const allChecklists: Record<VehicleType, ChecklistItem[]> = {
 export default function ChecklistVeicularPage() {
   const [activeChecklist, setActiveChecklist] = useState<VehicleType>('passeio');
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
+  const [driverName, setDriverName] = useState('');
+  const [vehicleInfo, setVehicleInfo] = useState('');
+  const [checklistDate, setChecklistDate] = useState<Date | undefined>(new Date());
   const { toast } = useToast();
 
   useEffect(() => {
@@ -104,11 +112,11 @@ export default function ChecklistVeicularPage() {
         if (stored) {
           setCheckedItems(JSON.parse(stored));
         } else {
-          setCheckedItems({}); // Nenhum item salvo, começa vazio
+          setCheckedItems({});
         }
       } catch (error) {
         console.error("Erro ao carregar itens do localStorage:", error);
-        setCheckedItems({}); // Em caso de erro, reseta
+        setCheckedItems({});
       }
     };
     loadCheckedItems();
@@ -147,26 +155,41 @@ export default function ChecklistVeicularPage() {
 
     const opt = {
       margin:       1,
-      filename:     `Checklist_${activeChecklist.charAt(0).toUpperCase() + activeChecklist.slice(1)}.pdf`,
+      filename:     `Checklist_${activeChecklist.charAt(0).toUpperCase() + activeChecklist.slice(1)}_${checklistDate ? format(checklistDate, "yyyy-MM-dd") : 'data'}.pdf`,
       image:        { type: 'jpeg', quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true },
       jsPDF:        { unit: 'cm', format: 'a4', orientation: 'portrait' }
     };
 
-    // Clonar o elemento e adicionar título para o PDF
-    const contentToPrint = checklistElement.cloneNode(true) as HTMLElement;
-    const titleElement = document.createElement('h3');
+    const contentToPrint = document.createElement('div');
+    
+    const titleElement = document.createElement('h2');
     titleElement.innerText = `Checklist Veicular - ${activeChecklist.charAt(0).toUpperCase() + activeChecklist.slice(1)}`;
     titleElement.style.textAlign = 'center';
-    titleElement.style.marginBottom = '1cm';
+    titleElement.style.marginBottom = '0.5cm';
     titleElement.style.fontSize = '16pt';
-    contentToPrint.insertBefore(titleElement, contentToPrint.firstChild);
+    contentToPrint.appendChild(titleElement);
+
+    const infoDiv = document.createElement('div');
+    infoDiv.style.marginBottom = '0.5cm';
+    infoDiv.style.fontSize = '10pt';
+    infoDiv.innerHTML = `
+      <p><strong>Motorista:</strong> ${driverName || 'Não informado'}</p>
+      <p><strong>Veículo:</strong> ${vehicleInfo || 'Não informado'}</p>
+      <p><strong>Data:</strong> ${checklistDate ? format(checklistDate, "dd/MM/yyyy", { locale: ptBR }) : 'Não informada'}</p>
+    `;
+    contentToPrint.appendChild(infoDiv);
+    
+    contentToPrint.appendChild(checklistElement.cloneNode(true) as HTMLElement);
     
     (window as any).html2pdf().from(contentToPrint).set(opt).save();
   };
 
   const enviarChecklistWhatsApp = () => {
-    let mensagem = `*Checklist Veicular - ${activeChecklist.charAt(0).toUpperCase() + activeChecklist.slice(1)}:*\n\n`;
+    let mensagem = `*Checklist Veicular - ${activeChecklist.charAt(0).toUpperCase() + activeChecklist.slice(1)}:*\n`;
+    mensagem += `Motorista: ${driverName || 'N/A'}\n`;
+    mensagem += `Veículo: ${vehicleInfo || 'N/A'}\n`;
+    mensagem += `Data: ${checklistDate ? format(checklistDate, "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}\n\n`;
     currentList.forEach(item => {
       mensagem += `${checkedItems[item.id] ? "✅" : "◻️"} ${item.label}\n`;
     });
@@ -200,6 +223,47 @@ export default function ChecklistVeicularPage() {
             <CardDescription>Selecione o tipo de veículo e verifique os itens essenciais para uma viagem segura.</CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="space-y-4 mb-6 p-4 border rounded-lg bg-muted/30">
+              <h4 className="text-md font-semibold text-foreground">Informações do Checklist</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="driverName">Nome do Motorista</Label>
+                  <Input id="driverName" value={driverName} onChange={(e) => setDriverName(e.target.value)} className="rounded-lg mt-1 bg-background/70"/>
+                </div>
+                <div>
+                  <Label htmlFor="vehicleInfo">Veículo (Placa/Modelo)</Label>
+                  <Input id="vehicleInfo" value={vehicleInfo} onChange={(e) => setVehicleInfo(e.target.value)} className="rounded-lg mt-1 bg-background/70"/>
+                </div>
+                <div>
+                  <Label htmlFor="checklistDate">Data do Checklist</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal rounded-lg mt-1 bg-background/70",
+                          !checklistDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {checklistDate ? format(checklistDate, "PPP", { locale: ptBR }) : <span>Escolha uma data</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={checklistDate}
+                        onSelect={setChecklistDate}
+                        initialFocus
+                        locale={ptBR}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+            </div>
+
+
             <div className="mb-6 flex flex-wrap gap-2">
               {(['passeio', 'caminhao', 'onibus'] as VehicleType[]).map(type => (
                 <Button
