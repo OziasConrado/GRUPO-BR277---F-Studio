@@ -27,12 +27,6 @@ const tools: ToolCardProps[] = [
     href: '/ferramentas/scanner',
     description: 'Digitalize documentos de forma rápida e fácil.',
   },
-  {
-    title: 'Calculadora de Combustível Simples',
-    Icon: Fuel,
-    href: '/ferramentas/calculadora-combustivel',
-    description: 'Planeje seus gastos com combustível (sem Arla).',
-  },
    {
     title: 'Custo de Viagem (Diesel + Arla)',
     Icon: ClipboardList, 
@@ -132,3 +126,4 @@ export default function FerramentasPage() {
     
 
     
+

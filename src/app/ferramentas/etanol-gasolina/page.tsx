@@ -47,7 +47,7 @@ export default function EtanolGasolinaPage() {
     }
 
     const ratio = ethanol / gasoline;
-    const compensaEtanol = ratio < 0.7;
+    const compensaEtanol = ratio < 0.7; // Common rule of thumb is 70%
     const mensagem = compensaEtanol ? "Álcool compensa mais!" : "Gasolina compensa mais!";
     
     setResultMessage(mensagem);
@@ -61,7 +61,7 @@ export default function EtanolGasolinaPage() {
   };
 
   useEffect(() => {
-    // Se os campos de preço forem limpos, esconder a seção de resultados.
+    // If price fields are cleared, hide the results section.
     if (ethanolPrice === '' || gasolinePrice === '') {
       setShowResultSection(false);
       setResultMessage(null);
@@ -145,7 +145,7 @@ export default function EtanolGasolinaPage() {
                 </div>
               )}
               <AdPlaceholder className="mt-8" />
-              {/* Placeholder para sugestões de ferramentas futuras */}
+              {/* Placeholder for future tool suggestions */}
               <div className="mt-6 text-center">
                 <p className="text-sm text-muted-foreground">Em breve: outras ferramentas úteis para você!</p>
               </div>
@@ -156,5 +156,4 @@ export default function EtanolGasolinaPage() {
     </div>
   );
 }
-
     

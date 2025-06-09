@@ -65,13 +65,13 @@ export default function CustoViagemPage() {
       return;
     }
 
-    let prArla = 0;
-    let percArla = 0;
+    let prArlaNum = 0;
+    let percArlaNum = 0;
 
     if (usarArla) {
-      prArla = parseFloat(precoArla);
-      percArla = parseFloat(percentualArla);
-      if (isNaN(prArla) || isNaN(percArla) || prArla <= 0 || percArla <= 0) {
+      prArlaNum = parseFloat(precoArla);
+      percArlaNum = parseFloat(percentualArla);
+      if (isNaN(prArlaNum) || isNaN(percArlaNum) || prArlaNum <= 0 || percArlaNum <= 0) {
         setErrorMessage('Se Arla 32 estiver ativo, preencha Percentual e Preço do Arla com valores válidos e maiores que zero.');
         return;
       }
@@ -83,9 +83,9 @@ export default function CustoViagemPage() {
     let litrosArlaCalc = 0;
     let custoArlaCalc = 0;
 
-    if (usarArla && percArla > 0 && prArla > 0) {
-      litrosArlaCalc = litrosDieselCalc * (percArla / 100);
-      custoArlaCalc = litrosArlaCalc * prArla;
+    if (usarArla && percArlaNum > 0 && prArlaNum > 0) {
+      litrosArlaCalc = litrosDieselCalc * (percArlaNum / 100);
+      custoArlaCalc = litrosArlaCalc * prArlaNum;
     }
     
     const custoTotalCalc = custoDieselCalc + custoArlaCalc;
@@ -103,7 +103,7 @@ export default function CustoViagemPage() {
     ];
 
     if (usarArla && custoArlaCalc > 0) {
-      resultData.percentualArla = percArla;
+      resultData.percentualArla = percArlaNum;
       resultData.litrosArla = litrosArlaCalc;
       resultData.custoArla = custoArlaCalc;
       newChartData.push({ name: 'Arla 32', cost: parseFloat(custoArlaCalc.toFixed(2)) });
@@ -273,5 +273,4 @@ export default function CustoViagemPage() {
     </div>
   );
 }
-
     
