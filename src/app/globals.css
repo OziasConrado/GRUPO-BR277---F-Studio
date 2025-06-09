@@ -13,7 +13,7 @@
     --background: 210 17% 96%; /* #f4f6f8 */
     --foreground: 210 11% 15%; /* #212529 */
 
-    --card: 210 17% 96%; 
+    --card: 210 17% 96%;
     --card-foreground: 210 11% 15%;
 
     --popover: 210 17% 96%;
@@ -22,19 +22,19 @@
     --primary: 220 100% 23.1%; /* #002776 Blue (Kept from original) */
     --primary-foreground: 0 0% 98%; /* White text on blue (Kept from original) */
 
-    --secondary: 0 0% 93%; 
+    --secondary: 0 0% 93%;
     --secondary-foreground: 210 11% 15%;
 
     --muted: 0 0% 93%;
-    --muted-foreground: 215.4 16.3% 46.9%; 
+    --muted-foreground: 215.4 16.3% 46.9%;
 
     --accent: 217 91% 60%; /* #2196F3 Blue (Kept from original PRD accent) */
-    --accent-foreground: 0 0% 98%; 
+    --accent-foreground: 0 0% 98%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 89.8%; 
+    --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
     --ring: 220 100% 23.1%; /* Blue for focus rings (Kept from original) */
 
@@ -84,7 +84,7 @@
     --border: 0 0% 23%; /* #3a3a3a (border-color) */
     --input: 0 0% 23%; /* #3a3a3a */
     --ring: 220 100% 23.1%; /* Blue for focus rings (Kept from original) */
-    
+
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -108,13 +108,12 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground text-base; 
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    line-height: 1.6;
+    @apply bg-background text-foreground;
+    /* Rely on Tailwind's font-sans for Segoe UI from tailwind.config.ts */
+    /* line-height will default or can be set via utility classes if needed */
   }
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-  }
+  /* h1, h2, h3, h4, h5, h6 will inherit font-family from body,
+     or use font-headline if specific utility classes are applied */
 }
 
 /* Hide scrollbar for elements with this class */
@@ -159,12 +158,12 @@
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 110%; 
-  height: 110%; 
+  width: 110%;
+  height: 110%;
   border-radius: 50%;
-  background-color: hsla(var(--destructive), 0.3); 
+  background-color: hsla(var(--destructive), 0.3);
   animation: pulse-ring 2s infinite ease-in-out;
-  z-index: -1; 
+  z-index: -1;
 }
 
 
@@ -174,21 +173,21 @@ button, input, textarea, select {
 
 .notification-badge {
   position: absolute;
-  top: 2px; 
-  right: 2px; 
+  top: 2px;
+  right: 2px;
   background-color: hsl(var(--destructive));
   color: hsl(var(--destructive-foreground));
   border-radius: 50%;
-  padding: 1px 5px; 
-  font-size: 0.65rem; 
+  padding: 1px 5px;
+  font-size: 0.65rem;
   line-height: 1;
-  min-width: 1.3em; 
+  min-width: 1.3em;
   height: 1.3em;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
-  border: 1px solid hsl(var(--primary)); 
+  border: 1px solid hsl(var(--primary));
   font-weight: bold;
-  pointer-events: none; 
+  pointer-events: none;
 }
