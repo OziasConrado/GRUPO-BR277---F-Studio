@@ -1,6 +1,6 @@
 
 import ToolCard, { type ToolCardProps } from '@/components/tools/tool-card';
-import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench, Droplets, Truck, ClipboardList, ClipboardSignature, ClipboardCopy } from 'lucide-react'; // Added ClipboardCopy
+import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench, Droplets, Truck, ClipboardList, ClipboardSignature, ClipboardCopy, Send, QrCode } from 'lucide-react';
 
 const tools: ToolCardProps[] = [
   {
@@ -35,7 +35,7 @@ const tools: ToolCardProps[] = [
   },
    {
     title: 'Custo de Viagem (Diesel + Arla)',
-    Icon: Truck, // Mantido, ou poderia ser ClipboardList se preferir
+    Icon: Truck,
     href: '/ferramentas/custo-viagem',
     description: 'Calcule diesel, Arla32 e custo total.',
   },
@@ -50,6 +50,18 @@ const tools: ToolCardProps[] = [
     Icon: ClipboardCopy,
     href: '/ferramentas/gerador-pix',
     description: 'Crie códigos Pix Copia e Cola facilmente.',
+  },
+  {
+    title: 'Gerador de Link WhatsApp',
+    Icon: Send,
+    href: '/ferramentas/gerador-link-whatsapp',
+    description: 'Crie links diretos para conversas no WhatsApp.',
+  },
+  {
+    title: 'Gerador de QR Code',
+    Icon: QrCode,
+    href: '/ferramentas/gerador-qr-code',
+    description: 'Transforme links ou textos em QR Codes.',
   },
   {
     title: 'Diagnóstico Básico',
@@ -77,5 +89,4 @@ export default function FerramentasPage() {
     </div>
   );
 }
-
     
