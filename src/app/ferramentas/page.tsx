@@ -35,7 +35,7 @@ const tools: ToolCardProps[] = [
   },
    {
     title: 'Custo de Viagem (Diesel + Arla)',
-    Icon: Truck, // Changed from ClipboardList to Truck for visual diversity
+    Icon: Truck,
     href: '/ferramentas/custo-viagem',
     description: 'Calcule diesel, Arla32 e custo total.',
   },
