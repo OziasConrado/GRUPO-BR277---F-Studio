@@ -15,7 +15,7 @@ import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
 import { Alert, AlertTitle, AlertDescription as ShadcnAlertDescription } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator"; // Added missing import
+import { Separator } from "@/components/ui/separator"; // Ensuring Separator is imported
 
 const AdPlaceholder = ({ className }: { className?: string }) => (
   <div className={cn("my-6 p-4 rounded-xl bg-muted/30 border border-dashed h-24 flex items-center justify-center", className)}>
@@ -55,6 +55,10 @@ export default function CalculadoraFretePage() {
     resolver: zodResolver(freteSchema),
     defaultValues: {
       tipoCarga: "normal",
+      // Explicitly initializing optional number fields to avoid undefined issues if not touched
+      pedagios: undefined, 
+      consumoVeiculo: undefined,
+      precoCombustivel: undefined,
     }
   });
 
@@ -67,7 +71,7 @@ export default function CalculadoraFretePage() {
     }
 
     const custoDistanciaCalc = data.distancia * data.tarifaBase;
-    const custoPesoCalc = data.peso * 0.05; // Ajustado para R$ 0,05 por kg para maior impacto
+    const custoPesoCalc = data.peso * 0.05; 
     const custoTipoCalc = custoDistanciaCalc * adicionalTipo;
     const custoPedagiosCalc = data.pedagios || 0;
 
@@ -165,7 +169,7 @@ export default function CalculadoraFretePage() {
                     </div>
                 </div>
                 {(form.formState.errors.consumoVeiculo || form.formState.errors.precoCombustivel) && (
-                    <p className="text-sm text-destructive mt-2">Se preencher um campo do combustível, preencha o outro.</p>
+                    <p className="text-sm text-destructive mt-2">Se preencher um campo do combustível, preencha o outro ou deixe ambos vazios.</p>
                 )}
             </Card>
 
@@ -236,3 +240,5 @@ export default function CalculadoraFretePage() {
     </div>
   );
 }
+
+    
