@@ -1,6 +1,6 @@
 
 import ToolCard, { type ToolCardProps } from '@/components/tools/tool-card';
-import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench, Droplets, Truck, ClipboardList, ClipboardSignature, ClipboardCopy, Send, QrCode, ClipboardUser } from 'lucide-react';
+import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench, Droplets, Truck, ClipboardList, ClipboardSignature, ClipboardCopy, Send, QrCode, UserSquare } from 'lucide-react';
 
 const tools: ToolCardProps[] = [
   {
@@ -35,7 +35,7 @@ const tools: ToolCardProps[] = [
   },
    {
     title: 'Custo de Viagem (Diesel + Arla)',
-    Icon: Truck, // Alterado para Truck conforme PRD para diferenciar
+    Icon: ClipboardList, // Alterado para ClipboardList
     href: '/ferramentas/custo-viagem',
     description: 'Calcule diesel, Arla32 e custo total.',
   },
@@ -65,7 +65,7 @@ const tools: ToolCardProps[] = [
   },
   {
     title: 'Gerador de Currículo',
-    Icon: ClipboardUser,
+    Icon: UserSquare, // Corrigido de ClipboardUser para UserSquare
     href: '/ferramentas/gerador-curriculo',
     description: 'Crie um currículo profissional rapidamente.',
   },
