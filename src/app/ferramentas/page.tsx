@@ -17,7 +17,7 @@ const tools: ToolCardProps[] = [
   },
   {
     title: 'Calculadora de Frete',
-    Icon: Calculator,
+    Icon: Calculator, // Mantido, mas a ferramenta foi melhorada
     href: '/ferramentas/calculadora-frete',
     description: 'Estime os custos do seu frete com precisão.',
   },
@@ -34,7 +34,7 @@ const tools: ToolCardProps[] = [
     description: 'Não esqueça nada importante para sua jornada.',
   },
   {
-    title: 'Custo de Viagem (Diesel + Arla)',
+    title: 'Custo de Viagem (Diesel + Arla)', // Novo
     Icon: ClipboardList, 
     href: '/ferramentas/custo-viagem',
     description: 'Calcule diesel, Arla32 e custo total.',
@@ -93,7 +93,7 @@ const tools: ToolCardProps[] = [
     href: '/ferramentas/monitoramento-glicemia',
     description: 'Registre e acompanhe seus níveis de glicose.',
   },
-  {
+   {
     title: 'Qualidade do Sono',
     Icon: Bed,
     href: '/ferramentas/qualidade-sono',
@@ -119,12 +119,4 @@ export default function FerramentasPage() {
     </div>
   );
 }
-    
-
-    
-
-    
-
-    
-
     
