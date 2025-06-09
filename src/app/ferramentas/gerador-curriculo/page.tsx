@@ -5,7 +5,7 @@ import { useState, useRef, type ChangeEvent } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, ClipboardUser, PlusCircle, Trash2, Printer, UploadCloud, X } from "lucide-react";
+import { ArrowLeft, UserSquare, PlusCircle, Trash2, Download, UploadCloud, X } from "lucide-react"; // Alterado Printer para Download
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -59,6 +59,7 @@ export default function GeradorCurriculoPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const [curriculoNomeParaTitulo, setCurriculoNomeParaTitulo] = useState<string>('Curriculo');
 
   const { control, register, handleSubmit, reset, setValue, formState: { errors } } = useForm<CurriculoFormValues>({
     resolver: zodResolver(curriculoSchema),
@@ -119,6 +120,7 @@ export default function GeradorCurriculoPage() {
   };
 
   const onSubmitForm = (data: CurriculoFormValues) => {
+    setCurriculoNomeParaTitulo(data.nome || 'Curriculo');
     let html = `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px;">`;
 
     if (imagePreview) {
@@ -182,14 +184,18 @@ export default function GeradorCurriculoPage() {
     toast({ title: "Campos Limpos" });
   };
 
-  const handlePrint = () => {
+  const handleDownloadPdf = () => {
     if (!generatedCurriculoHtml) {
-      toast({ variant: "destructive", title: "Nada para Imprimir", description: "Gere o currículo primeiro." });
+      toast({ variant: "destructive", title: "Nada para Baixar", description: "Gere o currículo primeiro." });
       return;
     }
+    toast({
+        title: "Preparando para Impressão/PDF",
+        description: "Na janela de impressão do seu navegador, selecione 'Salvar como PDF' como destino.",
+        duration: 7000,
+    });
     const printWindow = window.open('', '_blank');
-    printWindow?.document.write('<html><head><title>Currículo</title>');
-    // Basic styling for print
+    printWindow?.document.write(`<html><head><title>Currículo - ${curriculoNomeParaTitulo}</title>`);
     printWindow?.document.write(`
       <style>
         body { font-family: Arial, sans-serif; line-height: 1.5; color: #333; margin: 20px; }
@@ -201,7 +207,7 @@ export default function GeradorCurriculoPage() {
         a { color: #002776; text-decoration: none; }
         strong { font-weight: bold; }
         @media print {
-          body { margin: 0; padding: 0; transform: scale(0.95); transform-origin: top left;} /* Adjust scale for better fit */
+          body { margin: 0; padding: 0; transform: scale(0.95); transform-origin: top left;}
           button { display: none; }
           .no-print { display: none; }
         }
@@ -212,9 +218,8 @@ export default function GeradorCurriculoPage() {
     printWindow?.document.write('</body></html>');
     printWindow?.document.close();
     printWindow?.focus();
-    setTimeout(() => { // Timeout to ensure content is loaded before print dialog
+    setTimeout(() => {
         printWindow?.print();
-        // printWindow?.close(); // Optionally close after printing
     }, 500);
   };
 
@@ -228,7 +233,7 @@ export default function GeradorCurriculoPage() {
       <Card className="rounded-xl shadow-md">
         <CardHeader>
           <div className="flex items-center gap-2">
-            <ClipboardUser className="w-7 h-7 text-primary" />
+            <UserSquare className="w-7 h-7 text-primary" />
             <CardTitle className="font-headline text-xl sm:text-2xl">Gerador de Currículo</CardTitle>
           </div>
           <CardDescription>Crie um currículo profissional de forma simples.</CardDescription>
@@ -317,8 +322,8 @@ export default function GeradorCurriculoPage() {
                        {errors.experiencias?.[index]?.cargo && <p className="text-sm text-destructive mt-1">{errors.experiencias[index]?.cargo?.message}</p>}
                     </div>
                     <div>
-                      <Label htmlFor={`experiencias.${index}.periodo`}>Período (Ex: Jan/2020 - Dez/2022)</Label>
-                      <Input id={`experiencias.${index}.periodo`} {...register(`experiencias.${index}.periodo`)} className="rounded-lg mt-1" />
+                      <Label htmlFor={`experiencias.${index}.periodo`}>Período</Label>
+                      <Input id={`experiencias.${index}.periodo`} {...register(`experiencias.${index}.periodo`)} className="rounded-lg mt-1" placeholder="Ex: Jan/2020 - Dez/2022 ou 2021 - Atual"/>
                        {errors.experiencias?.[index]?.periodo && <p className="text-sm text-destructive mt-1">{errors.experiencias[index]?.periodo?.message}</p>}
                     </div>
                     <div>
@@ -355,8 +360,8 @@ export default function GeradorCurriculoPage() {
                       {errors.formacoes?.[index]?.curso && <p className="text-sm text-destructive mt-1">{errors.formacoes[index]?.curso?.message}</p>}
                     </div>
                     <div>
-                      <Label htmlFor={`formacoes.${index}.periodo`}>Período (Ex: 2016 - 2019)</Label>
-                      <Input id={`formacoes.${index}.periodo`} {...register(`formacoes.${index}.periodo`)} className="rounded-lg mt-1" />
+                      <Label htmlFor={`formacoes.${index}.periodo`}>Período</Label>
+                      <Input id={`formacoes.${index}.periodo`} {...register(`formacoes.${index}.periodo`)} className="rounded-lg mt-1" placeholder="Ex: 2016 - 2019 ou Concluído em 2020"/>
                       {errors.formacoes?.[index]?.periodo && <p className="text-sm text-destructive mt-1">{errors.formacoes[index]?.periodo?.message}</p>}
                     </div>
                   </div>
@@ -392,7 +397,7 @@ export default function GeradorCurriculoPage() {
                 Limpar Campos
               </Button>
               <Button type="submit" className="w-full sm:flex-1 rounded-full py-3 text-base">
-                <ClipboardUser className="mr-2 h-5 w-5" /> Gerar Preview do Currículo
+                <UserSquare className="mr-2 h-5 w-5" /> Gerar Preview do Currículo
               </Button>
             </div>
           </form>
@@ -401,15 +406,16 @@ export default function GeradorCurriculoPage() {
             <div className="mt-10 pt-6 border-t">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-semibold">Preview do Currículo:</h3>
-                <Button onClick={handlePrint} variant="outline" className="rounded-full">
-                    <Printer className="mr-2 h-4 w-4" /> Imprimir
-                </Button>
               </div>
               <Card className="rounded-lg shadow-inner">
-                <CardContent className="p-4 md:p-6 min-h-[300px] bg-white text-black">
+                <CardContent className="px-2 py-4 md:px-3 md:py-6 min-h-[300px] bg-white text-black">
                   <div dangerouslySetInnerHTML={{ __html: generatedCurriculoHtml }} />
                 </CardContent>
               </Card>
+              <Button onClick={handleDownloadPdf} variant="default" className="rounded-full w-full mt-6 sm:max-w-xs sm:mx-auto">
+                  <Download className="mr-2 h-4 w-4" /> Baixar Currículo (PDF)
+              </Button>
+
               <AdPlaceholder className="mt-8" />
               <div className="mt-8 text-center">
                 <h4 className="text-md font-semibold mb-3">Outras Ferramentas Úteis:</h4>
@@ -417,7 +423,7 @@ export default function GeradorCurriculoPage() {
                      <Link href="/ferramentas/gerador-link-whatsapp" passHref>
                         <Card className="hover:shadow-md transition-shadow cursor-pointer rounded-lg">
                             <CardContent className="p-4 flex items-center gap-3">
-                                <ClipboardUser className="w-6 h-6 text-primary"/>
+                                <UserSquare className="w-6 h-6 text-primary"/>
                                 <div>
                                   <p className="font-semibold text-sm">Gerador de Link WhatsApp</p>
                                   <p className="text-xs text-muted-foreground">Crie links diretos para WhatsApp.</p>
@@ -428,7 +434,7 @@ export default function GeradorCurriculoPage() {
                     <Link href="/ferramentas/declaracao-transporte" passHref>
                          <Card className="hover:shadow-md transition-shadow cursor-pointer rounded-lg">
                             <CardContent className="p-4 flex items-center gap-3">
-                                <ClipboardUser className="w-6 h-6 text-primary"/>
+                                <UserSquare className="w-6 h-6 text-primary"/>
                                 <div>
                                   <p className="font-semibold text-sm">Declaração de Transporte</p>
                                   <p className="text-xs text-muted-foreground">Gere sua declaração rapidamente.</p>
@@ -446,4 +452,3 @@ export default function GeradorCurriculoPage() {
   );
 }
 
-    
