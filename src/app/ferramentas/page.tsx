@@ -1,6 +1,6 @@
 
 import ToolCard, { type ToolCardProps } from '@/components/tools/tool-card';
-import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench, Droplets, Truck, ClipboardList, ClipboardSignature, ClipboardCopy, Send, QrCode, UserSquare } from 'lucide-react';
+import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench, Droplets, Truck, ClipboardList, ClipboardSignature, ClipboardCopy, Send, QrCode, UserSquare, HeartPulse } from 'lucide-react';
 
 const tools: ToolCardProps[] = [
   {
@@ -35,7 +35,7 @@ const tools: ToolCardProps[] = [
   },
    {
     title: 'Custo de Viagem (Diesel + Arla)',
-    Icon: ClipboardList, // Alterado para ClipboardList
+    Icon: ClipboardList, 
     href: '/ferramentas/custo-viagem',
     description: 'Calcule diesel, Arla32 e custo total.',
   },
@@ -65,7 +65,7 @@ const tools: ToolCardProps[] = [
   },
   {
     title: 'Gerador de Currículo',
-    Icon: UserSquare, // Corrigido de ClipboardUser para UserSquare
+    Icon: UserSquare, 
     href: '/ferramentas/gerador-curriculo',
     description: 'Crie um currículo profissional rapidamente.',
   },
@@ -80,6 +80,12 @@ const tools: ToolCardProps[] = [
     Icon: Droplets,
     href: '/ferramentas/etanol-gasolina',
     description: 'Descubra qual combustível vale mais a pena.',
+  },
+  {
+    title: 'Monitoramento de Glicemia',
+    Icon: HeartPulse,
+    href: '/ferramentas/monitoramento-glicemia',
+    description: 'Registre e acompanhe seus níveis de glicose.',
   },
 ];
 
