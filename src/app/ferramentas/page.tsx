@@ -4,16 +4,28 @@ import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench, Droplets, Tr
 
 const tools: ToolCardProps[] = [
   {
+    title: 'Álcool ou Gasolina?',
+    Icon: Droplets,
+    href: '/ferramentas/etanol-gasolina',
+    description: 'Descubra qual combustível vale mais a pena.',
+  },
+  {
+    title: 'Calculadora de Calorias',
+    Icon: Flame,
+    href: '/ferramentas/calculadora-calorias',
+    description: 'Estime sua TMB e necessidade calórica diária.',
+  },
+  {
     title: 'Calculadora de Frete',
     Icon: Calculator,
     href: '/ferramentas/calculadora-frete',
     description: 'Estime os custos do seu frete com precisão.',
   },
   {
-    title: 'Mapa Interativo',
-    Icon: MapPinned,
-    href: '/ferramentas/mapa',
-    description: 'Navegue e encontre pontos de interesse.',
+    title: 'Calculadora de IMC',
+    Icon: Scale,
+    href: '/ferramentas/calculadora-imc',
+    description: 'Calcule seu Índice de Massa Corporal.',
   },
   {
     title: 'Checklist de Viagem',
@@ -22,12 +34,6 @@ const tools: ToolCardProps[] = [
     description: 'Não esqueça nada importante para sua jornada.',
   },
   {
-    title: 'Scanner de Documentos',
-    Icon: ScanLine,
-    href: '/ferramentas/scanner',
-    description: 'Digitalize documentos de forma rápida e fácil.',
-  },
-   {
     title: 'Custo de Viagem (Diesel + Arla)',
     Icon: ClipboardList, 
     href: '/ferramentas/custo-viagem',
@@ -38,6 +44,18 @@ const tools: ToolCardProps[] = [
     Icon: ClipboardSignature,
     href: '/ferramentas/declaracao-transporte',
     description: 'Gere uma declaração de transporte rapidamente.',
+  },
+  {
+    title: 'Diagnóstico Básico',
+    Icon: Wrench,
+    href: '/ferramentas/diagnostico',
+    description: 'Verifique problemas comuns do veículo.',
+  },
+   {
+    title: 'Gerador de Currículo',
+    Icon: UserSquare, 
+    href: '/ferramentas/gerador-curriculo',
+    description: 'Crie um currículo profissional rapidamente.',
   },
   {
     title: 'Gerador de Link Pix',
@@ -58,34 +76,10 @@ const tools: ToolCardProps[] = [
     description: 'Transforme links ou textos em QR Codes.',
   },
   {
-    title: 'Gerador de Currículo',
-    Icon: UserSquare, 
-    href: '/ferramentas/gerador-curriculo',
-    description: 'Crie um currículo profissional rapidamente.',
-  },
-  {
-    title: 'Diagnóstico Básico',
-    Icon: Wrench,
-    href: '/ferramentas/diagnostico',
-    description: 'Verifique problemas comuns do veículo.',
-  },
-  {
-    title: 'Álcool ou Gasolina?',
-    Icon: Droplets,
-    href: '/ferramentas/etanol-gasolina',
-    description: 'Descubra qual combustível vale mais a pena.',
-  },
-  {
-    title: 'Monitoramento de Glicemia',
-    Icon: HeartPulse,
-    href: '/ferramentas/monitoramento-glicemia',
-    description: 'Registre e acompanhe seus níveis de glicose.',
-  },
-  {
-    title: 'Calculadora de IMC',
-    Icon: Scale,
-    href: '/ferramentas/calculadora-imc',
-    description: 'Calcule seu Índice de Massa Corporal.',
+    title: 'Mapa Interativo',
+    Icon: MapPinned,
+    href: '/ferramentas/mapa',
+    description: 'Navegue e encontre pontos de interesse.',
   },
   {
     title: 'Monitorar Pressão Arterial',
@@ -94,16 +88,22 @@ const tools: ToolCardProps[] = [
     description: 'Registre e acompanhe sua pressão arterial.',
   },
   {
+    title: 'Monitoramento de Glicemia',
+    Icon: HeartPulse,
+    href: '/ferramentas/monitoramento-glicemia',
+    description: 'Registre e acompanhe seus níveis de glicose.',
+  },
+  {
     title: 'Qualidade do Sono',
     Icon: Bed,
     href: '/ferramentas/qualidade-sono',
     description: 'Monitore e analise a qualidade do seu sono.',
   },
   {
-    title: 'Calculadora de Calorias',
-    Icon: Flame,
-    href: '/ferramentas/calculadora-calorias',
-    description: 'Estime sua TMB e necessidade calórica diária.',
+    title: 'Scanner de Documentos',
+    Icon: ScanLine,
+    href: '/ferramentas/scanner',
+    description: 'Digitalize documentos de forma rápida e fácil.',
   },
 ];
 
@@ -127,3 +127,4 @@ export default function FerramentasPage() {
 
     
 
+    

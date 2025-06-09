@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default function CalculadoraCombustivelPage() {
+  // Esta página foi simplificada e o card removido da galeria principal.
+  // Será revisitada para uma calculadora mais completa no futuro.
   return (
     <div className="w-full">
       <Link href="/ferramentas" className="inline-flex items-center text-sm text-primary hover:underline mb-4">
@@ -15,7 +17,7 @@ export default function CalculadoraCombustivelPage() {
       </Link>
       <Card className="rounded-xl">
         <CardHeader>
-          <CardTitle className="font-headline text-2xl">Calculadora de Combustível</CardTitle>
+          <CardTitle className="font-headline text-2xl">Calculadora de Combustível (Simples)</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground mb-4">Calcule o consumo e custo de combustível para sua viagem.</p>
@@ -39,9 +41,12 @@ export default function CalculadoraCombustivelPage() {
             <p>Litros necessários: <span className="font-bold">-</span></p>
             <p>Custo total: <span className="font-bold">R$ -</span></p>
           </div>
+           <p className="text-xs text-muted-foreground mt-4">Nota: Esta é uma calculadora simplificada. Para cálculos mais detalhados de Diesel+Arla ou comparação Etanol/Gasolina, utilize as ferramentas específicas na galeria.</p>
         </CardContent>
       </Card>
     </div>
   );
 }
 
+
+    
