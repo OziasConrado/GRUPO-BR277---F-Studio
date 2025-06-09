@@ -1,6 +1,6 @@
 
 import ToolCard, { type ToolCardProps } from '@/components/tools/tool-card';
-import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench, Droplets, Truck, ClipboardList, ClipboardSignature, ClipboardCopy, Send, QrCode, UserSquare, HeartPulse, Scale } from 'lucide-react';
+import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench, Droplets, Truck, ClipboardList, ClipboardSignature, ClipboardCopy, Send, QrCode, UserSquare, HeartPulse, Scale, ActivitySquare } from 'lucide-react';
 
 const tools: ToolCardProps[] = [
   {
@@ -92,6 +92,12 @@ const tools: ToolCardProps[] = [
     Icon: Scale,
     href: '/ferramentas/calculadora-imc',
     description: 'Calcule seu Índice de Massa Corporal.',
+  },
+  {
+    title: 'Monitorar Pressão Arterial',
+    Icon: ActivitySquare,
+    href: '/ferramentas/monitoramento-pressao',
+    description: 'Registre e acompanhe sua pressão arterial.',
   },
 ];
 
