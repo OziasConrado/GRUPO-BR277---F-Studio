@@ -4,7 +4,8 @@ import './globals.css';
 import AppLayout from '@/components/layout/app-layout';
 import { Toaster } from "@/components/ui/toaster";
 import { NotificationProvider } from '@/contexts/NotificationContext';
-import { ChatProvider } from '@/contexts/ChatContext'; // Import ChatProvider
+import { ChatProvider } from '@/contexts/ChatContext';
+import { AuthProvider } from '@/contexts/AuthContext'; // Import AuthProvider
 
 export const metadata: Metadata = {
   title: 'Rota Segura',
@@ -22,11 +23,13 @@ export default function RootLayout({
         {/* PT Sans font import removed */}
       </head>
       <body className="antialiased bg-background text-foreground"> {/* font-body class removed, Arial will be default */}
-        <NotificationProvider>
-          <ChatProvider> {/* Wrap with ChatProvider */}
-            <AppLayout>{children}</AppLayout>
-          </ChatProvider>
-        </NotificationProvider>
+        <AuthProvider> {/* Wrap with AuthProvider */}
+          <NotificationProvider>
+            <ChatProvider>
+              <AppLayout>{children}</AppLayout>
+            </ChatProvider>
+          </NotificationProvider>
+        </AuthProvider>
         <Toaster />
       </body>
     </html>
