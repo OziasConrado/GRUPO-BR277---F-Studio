@@ -189,14 +189,14 @@ export default function PostCard({
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [selectedPostImage, setSelectedPostImage] = useState<string | StaticImageData | null>(null);
 
-  const MAX_CHARS = 170;
+  const MAX_CHARS = 130; // Adjusted character limit
   const needsTruncation = text.length > MAX_CHARS;
 
   const textToShow = isTextExpanded ? text : text.substring(0, MAX_CHARS);
 
   const footerTextareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const processedTextElements = useMemo(() => {
+  const processedTextElementsForStandardPost = useMemo(() => {
     const baseElements = renderTextWithMentions(textToShow, allKnownUserNames);
     const combinedElements: React.ReactNode[] = [];
 
@@ -576,32 +576,45 @@ export default function PostCard({
         </div>
       </CardHeader>
 
-      <CardContent className="p-4 pt-0">
-        {text && (
-          <div className="mb-3">
-              <p className="text-base leading-relaxed whitespace-pre-wrap" style={cardStyle ? { color: cardStyle.color } : {}}>
-                {processedTextElements}
-              </p>
-          </div>
-        )}
-        {displayImageUrl && (
-           <div className="bg-muted/10 dark:bg-muted/20 border-y border-border/50">
-            <button
-                type="button"
-                onClick={() => handleImageClick(displayImageUrl!)}
-                className="block w-full relative aspect-square overflow-hidden group focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                aria-label="Ampliar imagem"
-            >
-                <Image
-                    src={displayImageUrl}
-                    alt={displayImageAlt}
-                    fill
-                    style={{ objectFit: 'cover' }}
-                    data-ai-hint={displayImageAlt}
-                    className="transition-transform duration-300 group-hover:scale-105"
-                />
-            </button>
-          </div>
+      <CardContent className={cn(
+          "p-4 pt-0",
+          cardStyle && "flex flex-col items-center justify-center text-center min-h-[280px]"
+      )}>
+        {cardStyle ? (
+          text && (
+            <p className="text-2xl font-bold leading-tight" style={{ color: cardStyle.color }}>
+              {renderTextWithMentions(text, allKnownUserNames)}
+            </p>
+          )
+        ) : (
+          <>
+            {text && (
+              <div className="mb-3">
+                  <p className="text-base leading-relaxed whitespace-pre-wrap">
+                    {processedTextElementsForStandardPost}
+                  </p>
+              </div>
+            )}
+            {displayImageUrl && (
+               <div className="bg-muted/10 dark:bg-muted/20 border-y border-border/50">
+                <button
+                    type="button"
+                    onClick={() => handleImageClick(displayImageUrl!)}
+                    className="block w-full relative aspect-square overflow-hidden group focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                    aria-label="Ampliar imagem"
+                >
+                    <Image
+                        src={displayImageUrl}
+                        alt={displayImageAlt}
+                        fill
+                        style={{ objectFit: 'cover' }}
+                        data-ai-hint={displayImageAlt}
+                        className="transition-transform duration-300 group-hover:scale-105"
+                    />
+                </button>
+              </div>
+            )}
+          </>
         )}
       </CardContent>
 
