@@ -1,26 +1,53 @@
 
 'use client';
+
 import { useEffect, useState, useRef, type ChangeEvent } from 'react';
+import Link from 'next/link';
+import {
+  Star,
+  Phone,
+  Store,
+  Landmark,
+  Headset,
+  ShieldAlert,
+  Newspaper,
+  MapIcon,
+  Video,
+  ListChecks,
+  Image as ImageIcon,
+  XCircle,
+  Edit, // Added Edit back as it's used in the new "Criar Publicação" card
+  Beach, // Kept Beach as it's used for the Turismo button
+} from 'lucide-react';
+
 import PostCard, { type PostCardProps, type PostReactions } from '@/components/feed/post-card';
 import StoryCircle, { type StoryCircleProps } from '@/components/stories/StoryCircle';
 import StoryViewerModal from '@/components/stories/StoryViewerModal';
+import EmergencyButtonModalTrigger from '@/components/common/emergency-button';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Star, Phone, Store, Landmark, Headset, ShieldAlert, Newspaper, MapIcon, Video, ListChecks, Beach, Edit, Image as ImageIcon, XCircle, Check } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import EmergencyButtonModalTrigger from '@/components/common/emergency-button';
 
+// Mocks and Constants
 const defaultReactions: PostReactions = {
   thumbsUp: 0,
   thumbsDown: 0,
 };
 
 const MOCK_POST_USER_NAMES = [
-    'Carlos Caminhoneiro', 'Ana Viajante', 'Rota Segura Admin', 'Mariana Logística',
-    'Pedro Estradeiro', 'Segurança Rodoviária', 'João Silva', 'Você', 'Ana Souza', 'Carlos Santos', 'Ozias Conrado'
+  'Carlos Caminhoneiro',
+  'Ana Viajante',
+  'Rota Segura Admin',
+  'Mariana Logística',
+  'Pedro Estradeiro',
+  'Segurança Rodoviária',
+  'João Silva',
+  'Você',
+  'Ana Souza',
+  'Carlos Santos',
+  'Ozias Conrado',
 ];
 
 const mockAdminStories: StoryCircleProps[] = [
@@ -71,9 +98,8 @@ const mockAdminStories: StoryCircleProps[] = [
     dataAIAvatarHint: 'discount tag',
     hasNewStory: true,
     storyType: 'image',
-  }
+  },
 ];
-
 
 const initialMockPosts: PostCardProps[] = [
   {
@@ -104,8 +130,8 @@ const initialMockPosts: PostCardProps[] = [
             dataAIAvatarHint: 'truck driver',
             timestamp: '30 minutos atrás',
             text: 'Obrigado, @Mariana Logística!',
-            reactions: { thumbsUp: 2, thumbsDown: 0, userReaction: null }
-          }
+            reactions: { thumbsUp: 2, thumbsDown: 0, userReaction: null },
+          },
         ],
       },
       {
@@ -115,8 +141,8 @@ const initialMockPosts: PostCardProps[] = [
         dataAIAvatarHint: 'male traveler',
         timestamp: '45 minutos atrás',
         text: 'Também passei por lá, realmente um dia bom pra rodar.',
-        reactions: { thumbsUp: 5, thumbsDown: 0, userReaction: null }
-      }
+        reactions: { thumbsUp: 5, thumbsDown: 0, userReaction: null },
+      },
     ],
     bio: 'Caminhoneiro experiente, rodando pelas estradas do Brasil há mais de 20 anos. Compartilhando dicas e paisagens.',
     instagramUsername: 'carlos_trucker',
@@ -141,8 +167,8 @@ const initialMockPosts: PostCardProps[] = [
         dataAIAvatarHint: 'safety logo',
         timestamp: '4 horas atrás',
         text: 'Obrigado pelo alerta, @Ana Viajante! Informação crucial. Equipe já notificada.',
-        reactions: { thumbsUp: 15, thumbsDown: 0, userReaction: null }
-      }
+        reactions: { thumbsUp: 15, thumbsDown: 0, userReaction: null },
+      },
     ],
     bio: 'Aventureira e fotógrafa amadora. Adoro explorar novos lugares e compartilhar minhas experiências de viagem.',
     instagramUsername: 'ana_explora',
@@ -183,52 +209,56 @@ const iconGridFeatures = [
   { title: 'Contato SAU', Icon: Headset, href: '/sau' },
 ];
 
-
 export default function FeedPage() {
+  // State
   const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
   const [selectedStory, setSelectedStory] = useState<StoryCircleProps | null>(null);
-  const [isCreatingPost, setIsCreatingPost] = useState(false);
+  const [isCreatingPost, setIsCreatingPost] = useState(false); // Still present, though UI is always visible
   const [newPostText, setNewPostText] = useState('');
   const [posts, setPosts] = useState<PostCardProps[]>(initialMockPosts);
-  const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedImageForUpload, setSelectedImageForUpload] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [selectedPostBackground, setSelectedPostBackground] = useState(backgroundOptions[0]);
 
+  // Hooks
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Effects
   useEffect(() => {
     const style = document.createElement('style');
-    style.innerHTML = \`
-      .no-scrollbar::-webkit-scrollbar {
-        display: none;
-      }
-      .no-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-      }
-    \`;
+    const css = [
+      '.no-scrollbar::-webkit-scrollbar {',
+      '  display: none;',
+      '}',
+      '.no-scrollbar {',
+      '  -ms-overflow-style: none;',
+      '  scrollbar-width: none;',
+      '}',
+    ].join('\n');
+    style.innerHTML = css;
     document.head.appendChild(style);
     return () => {
       document.head.removeChild(style);
     };
   }, []);
 
+  // Handlers
   const handleStoryClick = (story: StoryCircleProps) => {
     setSelectedStory(story);
     setIsStoryModalOpen(true);
   };
 
-  const handleToggleCreatePost = () => {
+  const handleToggleCreatePost = () => { // Still present, though UI is always visible
     setIsCreatingPost(!isCreatingPost);
-    if (isCreatingPost) {
-        setNewPostText('');
-        setSelectedImageForUpload(null);
-        setImagePreviewUrl(null);
-        setSelectedPostBackground(backgroundOptions[0]);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
-        }
+    if (isCreatingPost) { // This block will run when UI is "closed" by this logic
+      setNewPostText('');
+      setSelectedImageForUpload(null);
+      setImagePreviewUrl(null);
+      setSelectedPostBackground(backgroundOptions[0]);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -249,7 +279,7 @@ export default function FeedPage() {
         setImagePreviewUrl(reader.result as string);
       };
       reader.readAsDataURL(file);
-      setSelectedPostBackground(backgroundOptions[0]);
+      setSelectedPostBackground(backgroundOptions[0]); // Reset background if image is selected
     }
   };
 
@@ -257,7 +287,7 @@ export default function FeedPage() {
     setSelectedImageForUpload(null);
     setImagePreviewUrl(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      fileInputRef.current.value = '';
     }
   };
 
@@ -272,7 +302,7 @@ export default function FeedPage() {
     }
 
     const newPost: PostCardProps = {
-      id: \`post-\${Date.now()}\`,
+      id: `post-${Date.now()}`,
       userName: 'Você',
       userAvatarUrl: 'https://placehold.co/40x40.png?text=EU',
       dataAIAvatarHint: 'current user',
@@ -289,7 +319,7 @@ export default function FeedPage() {
     if (selectedImageForUpload && imagePreviewUrl) {
       newPost.uploadedImageUrl = imagePreviewUrl;
       newPost.dataAIUploadedImageHint = 'user uploaded content';
-    } else if (newPostText.length <= 150 && selectedPostBackground && selectedPostBackground.name !== 'Padrão') {
+    } else if (newPostText.length <= 150 && selectedPostBackground?.name !== 'Padrão') {
       newPost.cardStyle = {
         backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
         backgroundImage: selectedPostBackground.gradient,
@@ -298,20 +328,19 @@ export default function FeedPage() {
       };
     }
 
-
-    setPosts(prevPosts => [newPost, ...prevPosts]);
+    setPosts((prevPosts) => [newPost, ...prevPosts]);
     setNewPostText('');
     setSelectedImageForUpload(null);
     setImagePreviewUrl(null);
     setSelectedPostBackground(backgroundOptions[0]);
     if (fileInputRef.current) {
-        fileInputRef.current.value = "";
+      fileInputRef.current.value = '';
     }
-    setIsCreatingPost(false);
+    setIsCreatingPost(false); // This will effectively do nothing to the UI visibility based on current JSX
   };
 
+  // Derived State
   const showColorPalette = !selectedImageForUpload && newPostText.length <= 150 && newPostText.length > 0;
-
 
   return (
     <div className="w-full space-y-6">
@@ -325,11 +354,7 @@ export default function FeedPage() {
         </div>
         <div className="flex overflow-x-auto space-x-2 pb-3 -mx-4 px-4 no-scrollbar">
           {mockAdminStories.map((story) => (
-            <StoryCircle
-              key={story.id}
-              {...story}
-              onClick={() => handleStoryClick(story)}
-            />
+            <StoryCircle key={story.id} {...story} onClick={() => handleStoryClick(story)} />
           ))}
         </div>
       </div>
@@ -347,13 +372,13 @@ export default function FeedPage() {
 
       {/* Botões SAU e Turismo */}
       <div className="grid grid-cols-2 gap-3">
-        <Button asChild variant="outline" className="py-3 text-base rounded-lg bg-blue-100 dark:bg-blue-800/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-primary/10 dark:hover:bg-primary/10">
+        <Button asChild variant="outline" className="py-3 text-base rounded-lg">
           <Link href="/sau">
             <Headset className="mr-2 h-5 w-5" />
-            SAU
+            Contato SAU
           </Link>
         </Button>
-        <Button asChild variant="outline" className="py-3 text-base rounded-lg bg-blue-100 dark:bg-blue-800/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-primary/10 dark:hover:bg-primary/10">
+        <Button asChild variant="outline" className="py-3 text-base rounded-lg">
           <Link href="/turismo">
             <Beach className="mr-2 h-5 w-5" />
             Turismo
@@ -361,14 +386,97 @@ export default function FeedPage() {
         </Button>
       </div>
 
-      {/* Grid de Ícones de Atalho */}
-      <div className="grid grid-cols-4 gap-3 text-center">
+      {/* Seção de Criação de Post */}
+      <Card className="p-4 shadow-sm">
+        <CardHeader className="p-0 pb-3">
+          <CardTitle className="text-lg font-semibold flex items-center">
+            <Edit className="h-5 w-5 mr-2 text-primary" />
+            Criar Publicação
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Textarea
+            placeholder="No que você está pensando, viajante?"
+            className="mb-3 h-24 resize-none"
+            value={newPostText}
+            onChange={(e) => setNewPostText(e.target.value)}
+            style={
+              !selectedImageForUpload && selectedPostBackground?.name !== 'Padrão'
+                ? {
+                    backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
+                    backgroundImage: selectedPostBackground.gradient,
+                    color: selectedPostBackground.text,
+                  }
+                : {}
+            }
+          />
+
+          {imagePreviewUrl && (
+            <div className="relative mb-3">
+              <img src={imagePreviewUrl} alt="Prévia da imagem" className="max-w-full h-auto rounded-md" />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-2 right-2 rounded-full bg-black/50 text-white hover:bg-black/70"
+                onClick={handleRemoveImage}
+              >
+                <XCircle className="h-5 w-5" />
+              </Button>
+            </div>
+          )}
+
+          {showColorPalette && (
+            <div className="flex space-x-2 mb-3 overflow-x-auto no-scrollbar">
+              {backgroundOptions.map((option) => (
+                <div
+                  key={option.name}
+                  className={cn(
+                    'w-8 h-8 rounded-full cursor-pointer border-2 border-transparent flex-shrink-0',
+                    selectedPostBackground.name === option.name && 'border-primary',
+                  )}
+                  style={{
+                    backgroundColor: option.gradient ? undefined : option.bg,
+                    backgroundImage: option.gradient,
+                  }}
+                  onClick={() => setSelectedPostBackground(option)}
+                  title={option.name}
+                />
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center justify-between mt-4">
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageInputChange}
+            />
+            <Button
+              variant="ghost"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center text-primary hover:text-primary/90"
+              disabled={!!selectedImageForUpload}
+            >
+              <ImageIcon className="h-5 w-5 mr-2" />
+              Foto/Vídeo
+            </Button>
+            <Button onClick={handlePublishPost} className="bg-primary hover:bg-primary/90 text-white">
+              Publicar
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Grid de Ícones de Funcionalidades */}
+      <div className="grid grid-cols-4 gap-4">
         {iconGridFeatures.map((feature) => (
-          <Link href={feature.href} key={feature.title} className="flex flex-col items-center p-2 group">
-            <div className="p-3 mb-1 bg-muted/50 group-hover:bg-primary/10 rounded-full transition-colors">
+          <Link href={feature.href} key={feature.title} className="flex flex-col items-center justify-center p-2">
+            <div className="p-3 bg-card rounded-full shadow-md mb-2">
               <feature.Icon className="h-6 w-6 text-primary" />
             </div>
-            <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors">{feature.title}</span>
+            <span className="text-center text-xs font-medium text-foreground">{feature.title}</span>
           </Link>
         ))}
       </div>
@@ -379,107 +487,25 @@ export default function FeedPage() {
       </div>
 
 
-      {/* Feed */}
-      <h2 className="text-2xl font-bold mb-2 font-headline text-left">
+      {/* Feed de Posts */}
+       <h2 className="text-2xl font-bold mb-2 font-headline text-left">
         <Star className="h-5 w-5 mr-2 text-primary inline-block" />
         Feed277
       </h2>
-
-      <div className="mb-4">
-        <Button
-            onClick={handleToggleCreatePost}
-            className={cn(
-                "w-full sm:w-auto rounded-full",
-                "bg-transparent border border-primary text-primary",
-                "hover:bg-primary/10 hover:text-primary"
-            )}
-        >
-          <Edit className="mr-2 h-4 w-4" />
-          {isCreatingPost ? 'Cancelar Publicação' : 'Nova Publicação'}
-        </Button>
-      </div>
-
-      {isCreatingPost && (
-        <Card className="mb-6 rounded-xl shadow-md">
-          <CardContent className="p-4 space-y-3">
-            <Textarea
-              placeholder="No que você está pensando?"
-              value={newPostText}
-              onChange={(e) => setNewPostText(e.target.value)}
-              className="w-full rounded-lg min-h-[80px] text-base bg-background/70"
-              rows={3}
-            />
-
-            {imagePreviewUrl && (
-              <div className="relative group w-32 h-32 rounded-md overflow-hidden border">
-                <img src={imagePreviewUrl} alt="Preview" className="w-full h-full object-cover" />
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  className="absolute top-1 right-1 h-6 w-6 opacity-70 group-hover:opacity-100 transition-opacity rounded-full"
-                  onClick={handleRemoveImage}
-                >
-                  <XCircle className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-
-            {showColorPalette && (
-              <div className="pt-2">
-                <p className="text-xs text-muted-foreground mb-1.5">Escolha um fundo (para posts curtos):</p>
-                <div className="flex flex-wrap gap-2">
-                  {backgroundOptions.map(opt => (
-                    <Button
-                      key={opt.name}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedPostBackground(opt)}
-                      className={\`h-8 w-8 p-0 border-2 rounded-md \${selectedPostBackground.name === opt.name ? 'ring-2 ring-offset-2 ring-primary' : 'border-muted-foreground/50'}\`}
-                      style={{ background: opt.gradient || opt.bg }}
-                      aria-label={\`Selecionar fundo \${opt.name}\`}
-                    >
-                       {selectedPostBackground.name === opt.name && opt.name === 'Padrão' && <Check className="h-4 w-4 text-primary"/>}
-                       {selectedPostBackground.name === opt.name && opt.name !== 'Padrão' && <Check className="h-4 w-4" style={{color: opt.text === '#FFFFFF' ? '#000000' : opt.text }}/>}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="flex justify-between items-center pt-2">
-              <input
-                type="file"
-                accept="image/*"
-                ref={fileInputRef}
-                onChange={handleImageInputChange}
-                className="hidden"
-              />
-              <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} title="Adicionar imagem" className="text-primary rounded-full">
-                <ImageIcon className="h-7 w-7" />
-              </Button>
-              <Button onClick={handlePublishPost} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
-                Publicar
-              </Button>
-            </div>
-            
-            {/* AdMob Banner Placeholder dentro do card de criar post */}
-            <div className="mt-4 h-[50px] bg-muted/30 rounded flex items-center justify-center text-sm text-muted-foreground">
-              Espaço para Banner AdMob (Ex: 320x50)
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="space-y-6">
+      <div className="space-y-4">
         {posts.map((post) => (
           <PostCard key={post.id} {...post} />
         ))}
       </div>
-      <StoryViewerModal
-        isOpen={isStoryModalOpen}
-        onClose={() => setIsStoryModalOpen(false)}
-        story={selectedStory}
-      />
+
+      {/* Modal de Visualização de Stories */}
+      {selectedStory && (
+        <StoryViewerModal
+          isOpen={isStoryModalOpen}
+          onClose={() => setIsStoryModalOpen(false)}
+          story={selectedStory}
+        />
+      )}
     </div>
   );
 }
