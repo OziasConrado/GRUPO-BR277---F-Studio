@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useRef, type ChangeEvent } from 'react';
@@ -16,8 +15,7 @@ import {
   ListChecks,
   Image as ImageIcon,
   XCircle,
-  Edit, // Added Edit back as it's used in the new "Criar Publicação" card
-  Beach, // Kept Beach as it's used for the Turismo button
+  Edit,
 } from 'lucide-react';
 
 import PostCard, { type PostCardProps, type PostReactions } from '@/components/feed/post-card';
@@ -213,7 +211,7 @@ export default function FeedPage() {
   // State
   const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
   const [selectedStory, setSelectedStory] = useState<StoryCircleProps | null>(null);
-  const [isCreatingPost, setIsCreatingPost] = useState(false); // Still present, though UI is always visible
+  const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [newPostText, setNewPostText] = useState('');
   const [posts, setPosts] = useState<PostCardProps[]>(initialMockPosts);
   const [selectedImageForUpload, setSelectedImageForUpload] = useState<File | null>(null);
@@ -249,9 +247,9 @@ export default function FeedPage() {
     setIsStoryModalOpen(true);
   };
 
-  const handleToggleCreatePost = () => { // Still present, though UI is always visible
+  const handleToggleCreatePost = () => {
     setIsCreatingPost(!isCreatingPost);
-    if (isCreatingPost) { // This block will run when UI is "closed" by this logic
+    if (isCreatingPost) {
       setNewPostText('');
       setSelectedImageForUpload(null);
       setImagePreviewUrl(null);
@@ -279,7 +277,7 @@ export default function FeedPage() {
         setImagePreviewUrl(reader.result as string);
       };
       reader.readAsDataURL(file);
-      setSelectedPostBackground(backgroundOptions[0]); // Reset background if image is selected
+      setSelectedPostBackground(backgroundOptions[0]);
     }
   };
 
@@ -336,7 +334,7 @@ export default function FeedPage() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-    setIsCreatingPost(false); // This will effectively do nothing to the UI visibility based on current JSX
+    setIsCreatingPost(false);
   };
 
   // Derived State
@@ -372,21 +370,44 @@ export default function FeedPage() {
 
       {/* Botões SAU e Turismo */}
       <div className="grid grid-cols-2 gap-3">
-        <Button asChild variant="outline" className="py-3 text-base rounded-lg">
+        <Button asChild variant="outline" className="py-3 text-base rounded-lg hover:bg-primary/10">
           <Link href="/sau">
             <Headset className="mr-2 h-5 w-5" />
             Contato SAU
           </Link>
         </Button>
-        <Button asChild variant="outline" className="py-3 text-base rounded-lg">
+        <Button asChild variant="outline" className="py-3 text-base rounded-lg hover:bg-primary/10">
           <Link href="/turismo">
-            <Beach className="mr-2 h-5 w-5" />
+            <Landmark className="mr-2 h-5 w-5" />
             Turismo
           </Link>
         </Button>
       </div>
 
-      {/* Seção de Criação de Post */}
+      {/* Grid de Ícones de Funcionalidades */}
+      <div className="grid grid-cols-4 gap-4">
+        {iconGridFeatures.map((feature) => (
+          <Link href={feature.href} key={feature.title} className="flex flex-col items-center justify-center p-2">
+            <div className="p-3 bg-card rounded-full shadow-md mb-2 hover:bg-primary/10">
+              <feature.Icon className="h-6 w-6 text-primary" />
+            </div>
+            <span className="text-center text-xs font-medium text-foreground">{feature.title}</span>
+          </Link>
+        ))}
+      </div>
+      
+      {/* AdMob Banner Placeholder */}
+      <div className="my-4 p-4 rounded-xl bg-muted/30 border border-dashed h-20 flex items-center justify-center">
+        <p className="text-muted-foreground text-sm">Espaço para Banner AdMob (Ex: 320x50)</p>
+      </div>
+
+      {/* Título Feed */}
+      <h2 className="text-2xl font-bold pt-2 font-headline text-left">
+        <Star className="h-5 w-5 mr-2 text-primary inline-block" />
+        Feed277
+      </h2>
+
+      {/* Seção de Criação de Post - MOVIDA PARA CÁ */}
       <Card className="p-4 shadow-sm">
         <CardHeader className="p-0 pb-3">
           <CardTitle className="text-lg font-semibold flex items-center">
@@ -469,29 +490,7 @@ export default function FeedPage() {
         </CardContent>
       </Card>
 
-      {/* Grid de Ícones de Funcionalidades */}
-      <div className="grid grid-cols-4 gap-4">
-        {iconGridFeatures.map((feature) => (
-          <Link href={feature.href} key={feature.title} className="flex flex-col items-center justify-center p-2">
-            <div className="p-3 bg-card rounded-full shadow-md mb-2">
-              <feature.Icon className="h-6 w-6 text-primary" />
-            </div>
-            <span className="text-center text-xs font-medium text-foreground">{feature.title}</span>
-          </Link>
-        ))}
-      </div>
-      
-      {/* AdMob Banner Placeholder */}
-      <div className="my-4 p-4 rounded-xl bg-muted/30 border border-dashed h-20 flex items-center justify-center">
-        <p className="text-muted-foreground text-sm">Espaço para Banner AdMob (Ex: 320x50)</p>
-      </div>
-
-
       {/* Feed de Posts */}
-       <h2 className="text-2xl font-bold mb-2 font-headline text-left">
-        <Star className="h-5 w-5 mr-2 text-primary inline-block" />
-        Feed277
-      </h2>
       <div className="space-y-4">
         {posts.map((post) => (
           <PostCard key={post.id} {...post} />
