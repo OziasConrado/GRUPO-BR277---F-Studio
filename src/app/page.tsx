@@ -6,13 +6,12 @@ import StoryCircle, { type StoryCircleProps } from '@/components/stories/StoryCi
 import StoryViewerModal from '@/components/stories/StoryViewerModal';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, Star, TrendingUp, Info, Edit, Image as ImageIcon, XCircle, Check, Phone, Store, Landmark, Headset, Radio, ShieldAlert, Newspaper, Wrench, MapIcon, Video, ListChecks, Calculator } from 'lucide-react';
+import { Star, Phone, Store, Landmark, Headset, ShieldAlert, Newspaper, MapIcon, Video, ListChecks, Beach, Edit, Image as ImageIcon, XCircle, Check } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import EmergencyButtonModalTrigger from '@/components/common/emergency-button';
-// FeatureCard não será mais usado aqui diretamente, a nova grade de ícones será implementada.
 
 const defaultReactions: PostReactions = {
   thumbsUp: 0,
@@ -84,7 +83,7 @@ const initialMockPosts: PostCardProps[] = [
     dataAIAvatarHint: 'truck driver',
     userLocation: 'Curitiba, PR',
     timestamp: '2 horas atrás',
-    text: 'Estrada tranquila hoje na BR-116! Sol brilhando e sem trânsito. Bom dia a todos! @Ana Viajante, como está por aí? Aproveitando para testar o novo sistema de posts aqui no app. A interface está bem fluida e fácil de usar. Espero que todos tenham uma ótima viagem e que o dia seja produtivo para quem está na lida. @Ozias Conrado, tudo certo? Cuidado nas curvas e mantenham a atenção! Mais um pouco de texto para testar a funcionalidade de ver mais e ver menos, garantindo que tenhamos mais de 170 caracteres para que o botão apareça corretamente.',
+    text: 'Estrada tranquila hoje na BR-116! Sol brilhando e sem trânsito. Bom dia a todos! @Ana Viajante, como está por aí? Aproveitando para testar o novo sistema de posts aqui no app. A interface está bem fluida e fácil de usar. Espero que todos tenham uma ótima viagem e que o dia seja produtivo para quem está na lida. @Ozias Conrado, tudo certo? Cuidado nas curvas e mantenham a atenção! Mais um pouco de texto para testar a funcionalidade de ver mais e ver menos, garantindo que tenhamos mais de 130 caracteres para que o botão apareça corretamente.',
     imageUrl: 'https://placehold.co/600x400.png',
     dataAIImageHint: 'highway sunny day',
     reactions: { ...defaultReactions, thumbsUp: 152, thumbsDown: 5 },
@@ -200,7 +199,7 @@ export default function FeedPage() {
 
   useEffect(() => {
     const style = document.createElement('style');
-    style.innerHTML = `
+    style.innerHTML = \`
       .no-scrollbar::-webkit-scrollbar {
         display: none;
       }
@@ -208,7 +207,7 @@ export default function FeedPage() {
         -ms-overflow-style: none;
         scrollbar-width: none;
       }
-    `;
+    \`;
     document.head.appendChild(style);
     return () => {
       document.head.removeChild(style);
@@ -273,7 +272,7 @@ export default function FeedPage() {
     }
 
     const newPost: PostCardProps = {
-      id: `post-${Date.now()}`,
+      id: \`post-\${Date.now()}\`,
       userName: 'Você',
       userAvatarUrl: 'https://placehold.co/40x40.png?text=EU',
       dataAIAvatarHint: 'current user',
@@ -346,7 +345,7 @@ export default function FeedPage() {
         EMERGÊNCIA
       </EmergencyButtonModalTrigger>
 
-      {/* Botões SAU e Ferramentas */}
+      {/* Botões SAU e Turismo */}
       <div className="grid grid-cols-2 gap-3">
         <Button asChild variant="outline" className="py-3 text-base rounded-lg bg-blue-100 dark:bg-blue-800/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-primary/10 dark:hover:bg-primary/10">
           <Link href="/sau">
@@ -355,9 +354,9 @@ export default function FeedPage() {
           </Link>
         </Button>
         <Button asChild variant="outline" className="py-3 text-base rounded-lg bg-blue-100 dark:bg-blue-800/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-primary/10 dark:hover:bg-primary/10">
-          <Link href="/ferramentas">
-            <Wrench className="mr-2 h-5 w-5" />
-            Ferramentas
+          <Link href="/turismo">
+            <Beach className="mr-2 h-5 w-5" />
+            Turismo
           </Link>
         </Button>
       </div>
@@ -435,9 +434,9 @@ export default function FeedPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => setSelectedPostBackground(opt)}
-                      className={`h-8 w-8 p-0 border-2 rounded-md ${selectedPostBackground.name === opt.name ? 'ring-2 ring-offset-2 ring-primary' : 'border-muted-foreground/50'}`}
+                      className={\`h-8 w-8 p-0 border-2 rounded-md \${selectedPostBackground.name === opt.name ? 'ring-2 ring-offset-2 ring-primary' : 'border-muted-foreground/50'}\`}
                       style={{ background: opt.gradient || opt.bg }}
-                      aria-label={`Selecionar fundo ${opt.name}`}
+                      aria-label={\`Selecionar fundo \${opt.name}\`}
                     >
                        {selectedPostBackground.name === opt.name && opt.name === 'Padrão' && <Check className="h-4 w-4 text-primary"/>}
                        {selectedPostBackground.name === opt.name && opt.name !== 'Padrão' && <Check className="h-4 w-4" style={{color: opt.text === '#FFFFFF' ? '#000000' : opt.text }}/>}
