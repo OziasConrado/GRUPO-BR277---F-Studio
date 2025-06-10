@@ -3,26 +3,26 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Wrench, Video, Store, MessageSquare } from 'lucide-react'; 
+import { Home, Wrench, Video, Store, MessageSquare, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useChat } from '@/contexts/ChatContext'; 
+import { useChat } from '@/contexts/ChatContext';
 
 const navItems = [
   { href: '/', label: 'Início', icon: Home },
-  { href: '/guia-comercial', label: 'Comercial', icon: Store }, // Changed from Ferramentas
+  { href: '/guia-comercial', label: 'Comercial', icon: Store },
   { href: '/streaming', label: 'AO VIVO', icon: Video },
-  { href: '/ferramentas', label: 'Ferramentas', icon: Wrench }, // Changed from Guia Comercial (previously Alertas)
-  { href: '/chat', label: 'Chat', icon: MessageSquare }, 
+  { href: '/alertas', label: 'Alertas', icon: ShieldAlert }, // Changed from Ferramentas to Alertas
+  { href: '/chat', label: 'Chat', icon: MessageSquare },
 ];
 
 export default function Navigation() {
   const pathname = usePathname();
-  const { openChat, setIsChatOpen } = useChat(); 
+  const { openChat, setIsChatOpen } = useChat();
 
   const handleNavItemClick = (e: React.MouseEvent, href: string) => {
     if (href === '/chat') {
-      e.preventDefault(); 
-      setIsChatOpen(true);   
+      e.preventDefault();
+      setIsChatOpen(true);
     }
   };
 
@@ -31,7 +31,7 @@ export default function Navigation() {
       <nav className="fixed bottom-0 left-0 right-0 z-40 h-[65px] border-t bg-background/95 backdrop-blur-md shadow-[0_-2px_10px_rgba(0,0,0,0.05)] sm:hidden">
         <div className="container mx-auto grid h-full grid-cols-5 items-stretch px-1">
           {navItems.map((item, index) => {
-            const isActive = pathname === item.href && item.href !== '/chat'; 
+            const isActive = pathname === item.href && item.href !== '/chat';
             const isChatButton = item.href === '/chat';
             const isCentralButton = index === 2 && item.label === 'AO VIVO';
 
@@ -43,7 +43,7 @@ export default function Navigation() {
                     isActive && !isCentralButton ? 'scale-110 text-primary' : '',
                     isActive && isCentralButton ? 'scale-110' : '',
                     isCentralButton && 'text-destructive-foreground mb-0.5',
-                    isChatButton && 'text-primary' 
+                    isChatButton && 'text-primary'
                   )}
                 />
                 <span className={cn(
@@ -51,18 +51,18 @@ export default function Navigation() {
                   isCentralButton ? "font-semibold text-destructive-foreground" : "text-muted-foreground",
                   isActive && !isCentralButton ? 'text-primary font-semibold' : '',
                   !isCentralButton && !isActive && 'group-hover:text-primary/80',
-                   isChatButton ? 'text-primary font-semibold' : '' 
+                   isChatButton ? 'text-primary font-semibold' : ''
                 )}>
                   {item.label}
                 </span>
               </>
             );
-            
+
             const commonClasses = cn(
               'group relative flex h-full flex-col items-center justify-center text-center no-underline transition-colors duration-150 pt-1 pb-0.5',
                isActive && !isCentralButton ? 'text-primary font-semibold' : 'text-muted-foreground hover:text-primary/80',
-               isChatButton ? 'text-primary font-semibold' : '', 
-               isActive && isCentralButton ? '' : '' 
+               isChatButton ? 'text-primary font-semibold' : '',
+               isActive && isCentralButton ? '' : ''
             );
 
             if (isCentralButton) {
@@ -86,7 +86,7 @@ export default function Navigation() {
                 </Link>
               );
             }
-            
+
             return (
               <Link
                 key={item.href}
