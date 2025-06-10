@@ -3,15 +3,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Wrench, Video, Store, MessageSquare } from 'lucide-react'; // Changed AlertTriangle to Store
+import { Home, Wrench, Video, Store, MessageSquare } from 'lucide-react'; 
 import { cn } from '@/lib/utils';
 import { useChat } from '@/contexts/ChatContext'; 
 
 const navItems = [
   { href: '/', label: 'Início', icon: Home },
-  { href: '/ferramentas', label: 'Ferramentas', icon: Wrench },
+  { href: '/guia-comercial', label: 'Comercial', icon: Store }, // Changed from Ferramentas
   { href: '/streaming', label: 'AO VIVO', icon: Video },
-  { href: '/guia-comercial', label: 'Comercial', icon: Store }, // Changed from Alertas to Guia Comercial
+  { href: '/ferramentas', label: 'Ferramentas', icon: Wrench }, // Changed from Guia Comercial (previously Alertas)
   { href: '/chat', label: 'Chat', icon: MessageSquare }, 
 ];
 
@@ -96,7 +96,6 @@ export default function Navigation() {
                 onClick={(e) => handleNavItemClick(e, item.href)}
               >
                 {itemContent}
-                {/* Badge de notificação removido, pois "Alertas" foi substituído */}
               </Link>
             );
           })}
