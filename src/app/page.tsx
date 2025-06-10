@@ -348,13 +348,13 @@ export default function FeedPage() {
 
       {/* Botões SAU e Ferramentas */}
       <div className="grid grid-cols-2 gap-3">
-        <Button asChild variant="outline" className="py-3 text-base rounded-lg bg-blue-100 dark:bg-blue-800/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800/50">
+        <Button asChild variant="outline" className="py-3 text-base rounded-lg bg-blue-100 dark:bg-blue-800/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-primary/10 dark:hover:bg-primary/10">
           <Link href="/sau">
             <Headset className="mr-2 h-5 w-5" />
             SAU
           </Link>
         </Button>
-        <Button asChild variant="outline" className="py-3 text-base rounded-lg bg-blue-100 dark:bg-blue-800/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800/50">
+        <Button asChild variant="outline" className="py-3 text-base rounded-lg bg-blue-100 dark:bg-blue-800/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-primary/10 dark:hover:bg-primary/10">
           <Link href="/ferramentas">
             <Wrench className="mr-2 h-5 w-5" />
             Ferramentas
