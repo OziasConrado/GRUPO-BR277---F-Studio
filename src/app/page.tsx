@@ -6,13 +6,13 @@ import StoryCircle, { type StoryCircleProps } from '@/components/stories/StoryCi
 import StoryViewerModal from '@/components/stories/StoryViewerModal';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, Star, TrendingUp, Info, Edit, Image as ImageIcon, XCircle, Check, Phone, Store, Landmark, Headset, Radio, ShieldAlert, Newspaper, Wrench, MapIcon } from 'lucide-react';
+import { AlertCircle, Star, TrendingUp, Info, Edit, Image as ImageIcon, XCircle, Check, Phone, Store, Landmark, Headset, Radio, ShieldAlert, Newspaper, Wrench, MapIcon, Video, ListChecks, Calculator } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import EmergencyButtonModalTrigger from '@/components/common/emergency-button';
-import FeatureCard from '@/components/common/FeatureCard';
+// FeatureCard não será mais usado aqui diretamente, a nova grade de ícones será implementada.
 
 const defaultReactions: PostReactions = {
   thumbsUp: 0,
@@ -173,13 +173,15 @@ const backgroundOptions = [
   { name: 'Gradiente', gradient: 'linear-gradient(to right, #002776, #009c3b, #ffdf00)', text: '#FFFFFF' },
 ];
 
-const featureButtons = [
+const iconGridFeatures = [
   { title: 'Guia Comercial', Icon: Store, href: '/guia-comercial' },
   { title: 'Turismo', Icon: Landmark, href: '/turismo' },
-  { title: 'SAU', Icon: Headset, href: '/sau' },
-  { title: 'Real Time', Icon: Radio, href: '/streaming' },
-  { title: 'Bloqueios', Icon: ShieldAlert, href: '/alertas' },
-  { title: 'Notícias', Icon: Newspaper, href: '#' },
+  { title: 'Streaming', Icon: Video, href: '/streaming' },
+  { title: 'Alertas', Icon: ShieldAlert, href: '/alertas' },
+  { title: 'Notícias', Icon: Newspaper, href: '#' }, // TODO: Criar página de notícias
+  { title: 'Mapa', Icon: MapIcon, href: '/ferramentas/mapa' },
+  { title: 'Checklist', Icon: ListChecks, href: '/ferramentas/checklist' },
+  { title: 'Contato SAU', Icon: Headset, href: '/sau' },
 ];
 
 
@@ -313,15 +315,15 @@ export default function FeedPage() {
 
 
   return (
-    <div className="w-full">
-      <div className="mb-6">
+    <div className="w-full space-y-6">
+      {/* Seção Destaque */}
+      <div className="mb-3">
         <div className="px-1">
           <h2 className="text-xl font-bold font-headline flex items-center mb-3 text-foreground">
             <Star className="h-5 w-5 mr-2 text-primary" />
-            Destaques
+            Destaque
           </h2>
         </div>
-
         <div className="flex overflow-x-auto space-x-2 pb-3 -mx-4 px-4 no-scrollbar">
           {mockAdminStories.map((story) => (
             <StoryCircle
@@ -333,25 +335,26 @@ export default function FeedPage() {
         </div>
       </div>
 
+      {/* Botão de Emergência */}
+      <EmergencyButtonModalTrigger
+        variant="destructive"
+        size="default"
+        className="w-full bg-red-500 hover:bg-red-600 text-white py-3 text-base font-semibold rounded-lg shadow-md"
+        iconClassName="h-5 w-5"
+      >
+        <Phone className="mr-2 h-5 w-5" />
+        EMERGÊNCIA
+      </EmergencyButtonModalTrigger>
 
-      <div className="my-6">
-        <EmergencyButtonModalTrigger
-          className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90 py-3 text-base rounded-full shadow-none"
-          iconClassName="h-5 w-5"
-        >
-          <Phone className="mr-2 h-5 w-5" />
-          Emergência
-        </EmergencyButtonModalTrigger>
-      </div>
-
-      <div className="my-6 flex gap-3">
-        <Button asChild className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full py-3 text-base">
+      {/* Botões SAU e Ferramentas */}
+      <div className="grid grid-cols-2 gap-3">
+        <Button asChild variant="outline" className="py-3 text-base rounded-lg bg-blue-100 dark:bg-blue-800/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800/50">
           <Link href="/sau">
             <Headset className="mr-2 h-5 w-5" />
             SAU
           </Link>
         </Button>
-        <Button asChild className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full py-3 text-base">
+        <Button asChild variant="outline" className="py-3 text-base rounded-lg bg-blue-100 dark:bg-blue-800/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800/50">
           <Link href="/ferramentas">
             <Wrench className="mr-2 h-5 w-5" />
             Ferramentas
@@ -359,19 +362,29 @@ export default function FeedPage() {
         </Button>
       </div>
 
-
-      <div className="mb-8 grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {featureButtons.map((feature) => (
-          <FeatureCard
-            key={feature.title}
-            title={feature.title}
-            Icon={feature.Icon}
-            href={feature.href}
-          />
+      {/* Grid de Ícones de Atalho */}
+      <div className="grid grid-cols-4 gap-3 text-center">
+        {iconGridFeatures.map((feature) => (
+          <Link href={feature.href} key={feature.title} className="flex flex-col items-center p-2 group">
+            <div className="p-3 mb-1 bg-muted/50 group-hover:bg-primary/10 rounded-full transition-colors">
+              <feature.Icon className="h-6 w-6 text-primary" />
+            </div>
+            <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors">{feature.title}</span>
+          </Link>
         ))}
       </div>
+      
+      {/* AdMob Banner Placeholder */}
+      <div className="my-4 p-4 rounded-xl bg-muted/30 border border-dashed h-20 flex items-center justify-center">
+        <p className="text-muted-foreground text-sm">Espaço para Banner AdMob (Ex: 320x50)</p>
+      </div>
 
-      <h2 className="text-2xl font-bold mb-2 font-headline text-left">Feed277</h2>
+
+      {/* Feed */}
+      <h2 className="text-2xl font-bold mb-2 font-headline text-left">
+        <Star className="h-5 w-5 mr-2 text-primary inline-block" />
+        Feed277
+      </h2>
 
       <div className="mb-4">
         <Button
@@ -449,41 +462,14 @@ export default function FeedPage() {
                 Publicar
               </Button>
             </div>
-
+            
+            {/* AdMob Banner Placeholder dentro do card de criar post */}
             <div className="mt-4 h-[50px] bg-muted/30 rounded flex items-center justify-center text-sm text-muted-foreground">
               Espaço para Banner AdMob (Ex: 320x50)
             </div>
           </CardContent>
         </Card>
       )}
-
-
-      <div className="mb-6 grid grid-cols-2 gap-3">
-        <Card className="rounded-xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1">
-            <CardTitle className="text-sm font-medium font-headline">Publicações</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="p-3 pt-1">
-            <div className="text-xl font-bold">+{posts.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Dos usuários
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="rounded-xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1">
-            <CardTitle className="text-sm font-medium font-headline">Destaques</CardTitle>
-            <Star className="h-4 w-4 text-accent" />
-          </CardHeader>
-          <CardContent className="p-3 pt-1">
-            <div className="text-xl font-bold">Top #1</div>
-            <p className="text-xs text-muted-foreground">
-              Mais engajado
-            </p>
-          </CardContent>
-        </Card>
-      </div>
 
       <div className="space-y-6">
         {posts.map((post) => (
