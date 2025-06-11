@@ -219,18 +219,18 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   return (
     <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center sm:p-4">
       <div className="bg-background w-full h-full sm:max-w-lg sm:max-h-[90vh] sm:rounded-xl shadow-2xl flex flex-col overflow-hidden">
-        <header className="p-4 border-b border-border/50 flex items-center justify-between bg-card">
+        <header className="p-4 border-b border-primary/50 flex items-center justify-between bg-primary text-primary-foreground">
           <div className="flex items-center gap-3">
             <Avatar>
-              <AvatarImage src="https://placehold.co/40x40.png?text=CG" alt="Chat em Grupo" data-ai-hint="group chat icon"/>
+              <AvatarImage src="https://placehold.co/40x40.png?text=CG" alt="Chat277" data-ai-hint="group chat icon"/>
               <AvatarFallback>CG</AvatarFallback>
             </Avatar>
             <div>
-              <h3 className="font-semibold font-headline text-lg">Chat da Comunidade</h3>
-              <p className="text-xs text-muted-foreground">Online</p>
+              <h3 className="font-semibold font-headline text-lg">Chat277</h3>
+              <p className="text-xs text-primary-foreground/80">Online</p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
+          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-primary-foreground/10">
             <X className="h-5 w-5" />
           </Button>
         </header>
