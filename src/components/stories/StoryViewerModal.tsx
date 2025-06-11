@@ -16,13 +16,6 @@ interface StoryViewerModalProps {
 export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewerModalProps) {
   if (!isOpen || !story) return null;
 
-  // Placeholder para a área de publicidade superior (patrocinador)
-  const SponsorAdSpace = () => (
-    <div className="shrink-0 h-[60px] bg-primary/20 flex items-center justify-center text-sm text-primary-foreground">
-      Espaço do Patrocinador (Logo)
-    </div>
-  );
-
   // Placeholder para a área de publicidade inferior (AdMob)
   const AdMobSpace = () => (
     <div className="shrink-0 h-[100px] bg-secondary/20 flex items-center justify-center text-sm text-secondary-foreground">
@@ -50,8 +43,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
           </DialogClose>
         </DialogHeader>
         
-        {/* Espaço do Patrocinador (simulado) */}
-        <SponsorAdSpace />
+        {/* Espaço do Patrocinador Removido daqui */}
 
         <div className="flex-grow flex items-center justify-center p-1 sm:p-2 overflow-hidden">
           {/* Conteúdo do Story (Imagem) */}
