@@ -6,7 +6,7 @@ import React from 'react'; // Import React for React.ReactNode
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { X, Send, Paperclip, Mic, Smile } from "lucide-react";
+import { X, Send, Paperclip, Mic } from "lucide-react";
 import ChatMessageItem, { type ChatMessageData } from "./ChatMessageItem";
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -208,14 +208,6 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     });
   };
 
-  const handleEmojiClick = () => {
-    toast({
-      title: "Seleção de Emoji",
-      description: "Funcionalidade de emoji ainda não implementada.",
-    });
-  }
-
-
   return (
     <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center sm:p-4">
       <div className="bg-background w-full h-full sm:max-w-lg sm:max-h-[90vh] sm:rounded-xl shadow-2xl flex flex-col overflow-hidden">
@@ -245,9 +237,6 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
 
         <footer className="p-3 border-t border-border/50 bg-card">
           <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-            <Button type="button" variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-primary" onClick={handleEmojiClick}>
-              <Smile className="h-5 w-5" />
-            </Button>
             <Input
               type="text"
               placeholder="Digite uma mensagem..."
