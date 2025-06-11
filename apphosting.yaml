@@ -5,3 +5,11 @@ runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   maxInstances: 1
+environmentVariables:
+  NEXT_PUBLIC_FIREBASE_API_KEY: "AIzaSyAXkHzsjAzoSbU0v2nJdfYnAemCP6-FrwY"
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: "grupo-br-277.firebaseapp.com"
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID: "grupo-br-277"
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: "grupo-br-277.appspot.com"
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "616095109370"
+  NEXT_PUBLIC_FIREBASE_APP_ID: "1:616095109370:web:484250c8b78950dad1f943"
+  NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: "G-ELT449B7FS"
