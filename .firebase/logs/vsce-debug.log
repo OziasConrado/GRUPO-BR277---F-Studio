@@ -1601,3 +1601,5 @@ I0611 18:30:25.262880   24524 dev.go:95] Listening on address (HTTP + gRPC): 127
 [warn] ⚠  Data Connect Emulator has exited upon receiving signal: SIGINT 
 [info] [Firebase Plugin] Stopping Data Connect toolkit
 [warn] ⚠  Data Connect Emulator has exited upon receiving signal: SIGINT 
+[info] [Firebase Plugin] Stopping Data Connect toolkit
+[warn] ⚠  Data Connect Emulator has exited upon receiving signal: SIGINT 
