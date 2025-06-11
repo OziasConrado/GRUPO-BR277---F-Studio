@@ -12,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import ChatWindow from '@/components/chat/ChatWindow';
 import { useNotification } from '@/contexts/NotificationContext';
 import { useChat } from '@/contexts/ChatContext'; 
+import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -23,6 +24,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const router = useRouter();
   const { notificationCount, clearNotifications } = useNotification();
   const { isChatOpen, openChat, closeChat, setIsChatOpen } = useChat(); 
+  const { currentUser } = useAuth(); // Get currentUser from AuthContext
 
   useEffect(() => {
     setIsMounted(true);
@@ -55,7 +57,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   const AppHeader = () => (
     <header className="sticky top-0 z-50 w-full bg-primary text-primary-foreground shadow-lg">
-      <div className="px-4 flex h-16 sm:h-20 items-center justify-between max-w-screen-xl mx-auto"> {/* Alterado aqui */}
+      <div className="px-4 flex h-16 sm:h-20 items-center justify-between max-w-screen-xl mx-auto">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -134,8 +136,18 @@ export default function AppLayout({ children }: AppLayoutProps) {
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10 p-0 h-10 w-10 sm:h-12 sm:w-12">
                 <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
-                  <AvatarImage src="https://placehold.co/80x80.png" alt="Foto do Usuário" data-ai-hint="user profile"/>
-                  <AvatarFallback>U</AvatarFallback>
+                  <AvatarImage
+                    src={currentUser?.photoURL || undefined}
+                    alt={currentUser?.displayName || 'User Avatar'}
+                    data-ai-hint="user profile"
+                  />
+                  <AvatarFallback>
+                    {currentUser?.displayName
+                      ? currentUser.displayName.charAt(0).toUpperCase()
+                      : currentUser?.email
+                        ? currentUser.email.charAt(0).toUpperCase()
+                        : 'P'}
+                  </AvatarFallback>
                 </Avatar>
                 <span className="sr-only">Meu Perfil</span>
               </Button>
