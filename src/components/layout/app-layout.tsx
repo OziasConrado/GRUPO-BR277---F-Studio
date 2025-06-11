@@ -6,7 +6,7 @@ import { useState, useEffect, createContext, useContext } from 'react';
 import { useRouter } from 'next/navigation';
 import Navigation from './navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; 
-import { RefreshCcw, Moon, Sun, ArrowLeft, Bell } from 'lucide-react'; 
+import { RefreshCcw, Moon, Sun, ArrowLeft, Bell, User } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ChatWindow from '@/components/chat/ChatWindow';
@@ -146,7 +146,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                       ? currentUser.displayName.charAt(0).toUpperCase()
                       : currentUser?.email
                         ? currentUser.email.charAt(0).toUpperCase()
-                        : 'P'}
+                        : <User className="h-5 w-5" />}
                   </AvatarFallback>
                 </Avatar>
                 <span className="sr-only">Meu Perfil</span>
