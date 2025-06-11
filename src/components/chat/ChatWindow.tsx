@@ -4,7 +4,7 @@
 import { useState, useRef, useEffect, type ChangeEvent, type FormEvent, useMemo } from 'react';
 import React from 'react'; // Import React for React.ReactNode
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea"; // Changed from Input
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { X, Send, Paperclip, Mic } from "lucide-react";
 import ChatMessageItem, { type ChatMessageData } from "./ChatMessageItem";
@@ -109,6 +109,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   const [newMessage, setNewMessage] = useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null); // Ref for Textarea
   const { toast } = useToast();
   const { incrementNotificationCount } = useNotification();
 
@@ -149,6 +150,9 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     };
     setMessages(prevMessages => [...prevMessages, newMsgData]);
     setNewMessage('');
+    if (textareaRef.current) { // Reset textarea height
+        textareaRef.current.rows = 1;
+    }
   };
 
   const handleFileUpload = (event: ChangeEvent<HTMLInputElement>) => {
@@ -204,9 +208,19 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   const handleMicClick = () => {
     toast({
       title: "Gravação de Áudio",
-      description: "Funcionalidade de gravação de áudio ainda não implementada.",
+      description: "Funcionalidade de gravação de áudio (máx. 1 minuto) ainda não implementada.",
     });
   };
+
+  const handleTextareaInput = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    setNewMessage(event.target.value);
+    // Auto-resize textarea
+    const textarea = event.target;
+    textarea.style.height = 'auto'; // Reset height to recalculate
+    const newScrollHeight = Math.min(textarea.scrollHeight, 120); // 120px is max-h-[120px]
+    textarea.style.height = `${newScrollHeight}px`;
+  };
+
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center sm:p-4">
@@ -236,13 +250,14 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
         </ScrollArea>
 
         <footer className="p-3 border-t border-border/50 bg-card">
-          <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-            <Input
-              type="text"
+          <form onSubmit={handleSendMessage} className="flex items-end gap-2">
+            <Textarea
+              ref={textareaRef}
               placeholder="Digite uma mensagem..."
               value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              className="flex-grow rounded-full px-4 py-2 bg-background/70 focus-visible:ring-primary h-11"
+              onChange={handleTextareaInput}
+              className="rounded-lg flex-grow bg-background/70 min-h-[44px] max-h-[120px] resize-none text-base p-2.5" // Adjusted padding and min-height
+              rows={1}
               onKeyPress={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   handleSendMessage(e);
@@ -250,15 +265,15 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
               }}
             />
              <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/png, image/jpeg, audio/*" className="hidden" />
-            <Button type="button" variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-primary" onClick={handleAttachmentClick}>
+            <Button type="button" variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-primary h-11 w-11 shrink-0">
               <Paperclip className="h-5 w-5" />
             </Button>
             {newMessage.trim() === '' ? (
-              <Button type="button" variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-primary" onClick={handleMicClick}>
+              <Button type="button" variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-primary h-11 w-11 shrink-0" onClick={handleMicClick}>
                 <Mic className="h-5 w-5" />
               </Button>
             ) : (
-              <Button type="submit" variant="default" size="icon" className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shrink-0">
+              <Button type="submit" variant="default" size="icon" className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground h-11 w-11 shrink-0">
                 <Send className="h-5 w-5" />
               </Button>
             )}
@@ -268,3 +283,4 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     </div>
   );
 }
+
