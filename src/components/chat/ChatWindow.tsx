@@ -150,8 +150,9 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     };
     setMessages(prevMessages => [...prevMessages, newMsgData]);
     setNewMessage('');
-    if (textareaRef.current) { // Reset textarea height
-        textareaRef.current.rows = 1;
+    if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto'; // Reset height
+        textareaRef.current.rows = 1; // Ensure rows are also reset
     }
   };
 
@@ -184,6 +185,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     if (fileType === 'image') {
         reader.readAsDataURL(file);
     } else {
+        // For non-image files, create message data without a data URL preview
         const newMsgData: ChatMessageData = {
             id: Date.now().toString(),
             senderName: 'Você',
@@ -197,7 +199,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     }
     
     if(fileInputRef.current) {
-        fileInputRef.current.value = "";
+        fileInputRef.current.value = ""; // Reset file input
     }
   };
 
@@ -256,7 +258,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
               placeholder="Digite uma mensagem..."
               value={newMessage}
               onChange={handleTextareaInput}
-              className="rounded-lg flex-grow bg-background/70 min-h-[44px] max-h-[120px] resize-none text-base p-2.5" // Adjusted padding and min-height
+              className="rounded-lg flex-grow bg-background/70 min-h-[44px] max-h-[120px] resize-none text-base p-2.5"
               rows={1}
               onKeyPress={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -265,7 +267,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
               }}
             />
              <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/png, image/jpeg, audio/*" className="hidden" />
-            <Button type="button" variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-primary h-11 w-11 shrink-0">
+            <Button type="button" variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-primary h-11 w-11 shrink-0" onClick={handleAttachmentClick}>
               <Paperclip className="h-5 w-5" />
             </Button>
             {newMessage.trim() === '' ? (
