@@ -1,22 +1,19 @@
 
 'use client';
 
-import { useState, useRef, useEffect, type ChangeEvent, type FormEvent, useMemo } from 'react';
-import React from 'react'; // Import React for React.ReactNode
+import { useState, useRef, useEffect, type ChangeEvent, type FormEvent } from 'react';
+import React from 'react'; 
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea"; // Changed from Input
+import { Textarea } from "@/components/ui/textarea"; 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { X, Send, Paperclip, Mic } from "lucide-react";
 import ChatMessageItem, { type ChatMessageData } from "./ChatMessageItem";
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { useNotification } from '@/contexts/NotificationContext'; // Import notification context
+import { useNotification } from '@/contexts/NotificationContext';
+import Image from 'next/image'; // For image preview
+import { cn } from '@/lib/utils';
 
-interface ChatWindowProps {
-  onClose: () => void;
-}
-
-// Mock user names for mention detection
 const MOCK_CHAT_USER_NAMES = [
     'João Silva', 'Você', 'Ana Souza', 'Carlos Santos', 'Ozias Conrado'
 ];
@@ -43,7 +40,6 @@ const renderTextWithMentionsForChat = (text: string, knownUsers: string[]): Reac
   });
   return elements;
 };
-
 
 const initialMessagesRaw: Omit<ChatMessageData, 'textElements'>[] = [
   {
@@ -78,7 +74,7 @@ const initialMessagesRaw: Omit<ChatMessageData, 'textElements'>[] = [
     senderName: 'Você',
     avatarUrl: 'https://placehold.co/40x40.png?text=EU',
     dataAIAvatarHint: 'current user',
-    imageUrl: 'https://placehold.co/300x200.png',
+    imageUrl: 'https://placehold.co/400x300.png', // Placeholder for an uploaded image
     dataAIImageHint: 'road fog',
     text: "Confirmo a neblina. Essa foto é de agora:",
     timestamp: '10:38 AM',
@@ -103,13 +99,19 @@ const processMessagesWithMentions = (messages: Omit<ChatMessageData, 'textElemen
     }));
 };
 
+interface ChatWindowProps {
+  onClose: () => void;
+}
 
 export default function ChatWindow({ onClose }: ChatWindowProps) {
   const [messages, setMessages] = useState<ChatMessageData[]>(() => processMessagesWithMentions(initialMessagesRaw));
   const [newMessage, setNewMessage] = useState('');
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null); // Ref for Textarea
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
   const { incrementNotificationCount } = useNotification();
 
@@ -134,25 +136,31 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
 
   const handleSendMessage = (e?: FormEvent) => {
     if (e) e.preventDefault();
-    if (newMessage.trim() === '') return;
+    if (newMessage.trim() === '' && !selectedImageFile) return;
 
-    checkForMentionsAndNotifyChat(newMessage);
+    if(newMessage.trim()) checkForMentionsAndNotifyChat(newMessage);
 
     const newMsgData: ChatMessageData = {
       id: Date.now().toString(),
       senderName: 'Você',
       avatarUrl: 'https://placehold.co/40x40.png?text=EU',
       dataAIAvatarHint: 'current user',
-      text: newMessage,
+      text: newMessage.trim() || undefined,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isCurrentUser: true,
-      textElements: renderTextWithMentionsForChat(newMessage, MOCK_CHAT_USER_NAMES),
+      textElements: newMessage.trim() ? renderTextWithMentionsForChat(newMessage.trim(), MOCK_CHAT_USER_NAMES) : undefined,
+      ...(selectedImageFile && imagePreviewUrl && { imageUrl: imagePreviewUrl, dataAIImageHint: 'uploaded image' }),
+      file: selectedImageFile ? { name: selectedImageFile.name, type: 'image' as const } : undefined,
     };
     setMessages(prevMessages => [...prevMessages, newMsgData]);
+    
     setNewMessage('');
+    setSelectedImageFile(null);
+    setImagePreviewUrl(null);
     if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto'; // Reset height
-        textareaRef.current.rows = 1; // Ensure rows are also reset
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.rows = 1;
+      textareaRef.current.focus();
     }
   };
 
@@ -160,46 +168,42 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    let fileType: 'image' | 'audio' | 'other' = 'other';
-    if (file.type.startsWith('image/')) {
-        fileType = 'image';
-    } else if (file.type.startsWith('audio/')) {
-        fileType = 'audio';
+    if (!file.type.startsWith('image/')) {
+      toast({
+        variant: 'destructive',
+        title: 'Tipo de arquivo não suportado',
+        description: 'Por favor, selecione apenas arquivos de imagem (PNG, JPG, WebP).',
+      });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
     }
     
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const newMsgData: ChatMessageData = {
-            id: Date.now().toString(),
-            senderName: 'Você',
-            avatarUrl: 'https://placehold.co/40x40.png?text=EU',
-            dataAIAvatarHint: 'current user',
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isCurrentUser: true,
-            ...(fileType === 'image' && { imageUrl: e.target?.result as string, dataAIImageHint: 'uploaded image' }),
-            file: { name: file.name, type: fileType }
-        };
-        setMessages(prevMessages => [...prevMessages, newMsgData]);
-    };
+    const MAX_SIZE_MB = 5;
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+        toast({
+            variant: "destructive",
+            title: "Arquivo muito grande",
+            description: `O tamanho máximo da imagem é de ${MAX_SIZE_MB}MB.`,
+        });
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+    }
 
-    if (fileType === 'image') {
-        reader.readAsDataURL(file);
-    } else {
-        // For non-image files, create message data without a data URL preview
-        const newMsgData: ChatMessageData = {
-            id: Date.now().toString(),
-            senderName: 'Você',
-            avatarUrl: 'https://placehold.co/40x40.png?text=EU',
-            dataAIAvatarHint: 'current user',
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isCurrentUser: true,
-            file: { name: file.name, type: fileType }
-        };
-        setMessages(prevMessages => [...prevMessages, newMsgData]);
-    }
+    setSelectedImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreviewUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
     
-    if(fileInputRef.current) {
-        fileInputRef.current.value = ""; // Reset file input
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleRemoveImagePreview = () => {
+    setSelectedImageFile(null);
+    setImagePreviewUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
@@ -216,13 +220,11 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
 
   const handleTextareaInput = (event: ChangeEvent<HTMLTextAreaElement>) => {
     setNewMessage(event.target.value);
-    // Auto-resize textarea
     const textarea = event.target;
-    textarea.style.height = 'auto'; // Reset height to recalculate
-    const newScrollHeight = Math.min(textarea.scrollHeight, 120); // 120px is max-h-[120px]
+    textarea.style.height = 'auto';
+    const newScrollHeight = Math.min(textarea.scrollHeight, 120); // Max height 120px
     textarea.style.height = `${newScrollHeight}px`;
   };
-
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center sm:p-4">
@@ -252,37 +254,53 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
         </ScrollArea>
 
         <footer className="p-3 border-t border-border/50 bg-card">
+          {imagePreviewUrl && (
+            <div className="relative mb-2 p-2 border rounded-lg bg-muted/30 w-fit"> {/* w-fit to shrink to content */}
+              <Image src={imagePreviewUrl} alt="Preview" width={80} height={80} className="rounded object-cover" />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/80 p-0"
+                onClick={handleRemoveImagePreview}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
           <form onSubmit={handleSendMessage} className="flex items-end gap-2">
-            <Textarea
-              ref={textareaRef}
-              placeholder="Digite uma mensagem..."
-              value={newMessage}
-              onChange={handleTextareaInput}
-              className="rounded-lg flex-grow bg-background/70 min-h-[44px] max-h-[120px] resize-none text-base p-2.5"
-              rows={1}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  handleSendMessage(e);
-                }
-              }}
-            />
-             <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/png, image/jpeg, audio/*" className="hidden" />
-            <Button type="button" variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-primary h-11 w-11 shrink-0" onClick={handleAttachmentClick}>
-              <Paperclip className="h-5 w-5" />
-            </Button>
-            {newMessage.trim() === '' ? (
-              <Button type="button" variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-primary h-11 w-11 shrink-0" onClick={handleMicClick}>
-                <Mic className="h-5 w-5" />
-              </Button>
-            ) : (
-              <Button type="submit" variant="default" size="icon" className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground h-11 w-11 shrink-0">
-                <Send className="h-5 w-5" />
-              </Button>
-            )}
+            <div className="relative flex-grow">
+              <Textarea
+                ref={textareaRef}
+                placeholder="Digite uma mensagem..."
+                value={newMessage}
+                onChange={handleTextareaInput}
+                className="rounded-lg bg-background/70 min-h-[44px] max-h-[120px] resize-none text-base p-2.5 pr-20" 
+                rows={1}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    handleSendMessage(e);
+                  }
+                }}
+              />
+              <div className="absolute right-1 bottom-1 flex items-center">
+                <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/png, image/jpeg, image/webp" className="hidden" />
+                <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-primary h-9 w-9" onClick={handleAttachmentClick}>
+                  <Paperclip className="h-5 w-5" />
+                </Button>
+                {(newMessage.trim() === '' && !selectedImageFile) ? (
+                  <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-primary h-9 w-9" onClick={handleMicClick}>
+                    <Mic className="h-5 w-5" />
+                  </Button>
+                ) : (
+                  <Button type="submit" variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground h-9 w-9">
+                    <Send className="h-5 w-5" />
+                  </Button>
+                )}
+              </div>
+            </div>
           </form>
         </footer>
       </div>
     </div>
   );
 }
-
