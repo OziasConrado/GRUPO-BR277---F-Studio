@@ -1676,3 +1676,5 @@ I0612 00:10:02.376417   72335 dev.go:95] Listening on address (HTTP + gRPC): 127
  {"metadata":{"emulator":{"name":"dataconnect"},"message":"I0612 00:10:02.477032   72335 engine.go:170] [/emulator/s 0761] ExecuteGraphqlRead IntrospectionQuery: succeeded. \n"}}
 [info] [Firebase Plugin] Stopping Data Connect toolkit
 [warn] ⚠  Data Connect Emulator has exited upon receiving signal: SIGINT 
+[info] [Firebase Plugin] Stopping Data Connect toolkit
+[warn] ⚠  Data Connect Emulator has exited upon receiving signal: SIGINT 
