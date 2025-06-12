@@ -3,10 +3,10 @@
 
 import type { StaticImageData } from 'next/image';
 import Image from 'next/image';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { X, Instagram, MapPin } from 'lucide-react'; // Added MapPin
+import { Instagram, MapPin } from 'lucide-react'; // Added MapPin, X removido pois DialogContent já tem
 
 export interface UserProfileData {
   id: string;
@@ -35,11 +35,7 @@ export default function UserProfileModal({ isOpen, onClose, user }: UserProfileM
       >
         <DialogHeader className="shrink-0 p-3 flex flex-row justify-between items-center border-b bg-card">
           <DialogTitle className="text-lg font-semibold font-headline text-foreground">Perfil</DialogTitle>
-           <DialogClose asChild>
-            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-muted-foreground hover:text-foreground">
-              <X className="h-5 w-5" />
-            </Button>
-          </DialogClose>
+          {/* O botão de fechar (X) duplicado foi removido daqui. O DialogContent já fornece um. */}
         </DialogHeader>
 
         <div className="flex-grow overflow-y-auto p-4 sm:p-6 space-y-6">
