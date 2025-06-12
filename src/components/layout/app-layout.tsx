@@ -13,6 +13,7 @@ import ChatWindow from '@/components/chat/ChatWindow';
 import { useNotification } from '@/contexts/NotificationContext';
 import { useChat } from '@/contexts/ChatContext'; 
 import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
+import { cn } from '@/lib/utils';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -142,11 +143,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     data-ai-hint="user profile"
                   />
                   <AvatarFallback>
-                    {currentUser?.displayName
-                      ? currentUser.displayName.charAt(0).toUpperCase()
-                      : currentUser?.email
-                        ? currentUser.email.charAt(0).toUpperCase()
-                        : <User className="h-5 w-5" />}
+                    <User className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
                   </AvatarFallback>
                 </Avatar>
                 <span className="sr-only">Meu Perfil</span>
