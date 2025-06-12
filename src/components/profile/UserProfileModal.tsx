@@ -57,7 +57,7 @@ export default function UserProfileModal({ isOpen, onClose, user }: UserProfileM
 
           {user.bio && (
             <div className="bg-card p-4 rounded-xl shadow-md">
-              <h2 className="text-sm font-semibold text-primary mb-1 uppercase tracking-wider">Sobre</h2>
+              <h2 className="text-sm font-semibold text-primary mb-1 uppercase tracking-wider">Biografia</h2>
               <p className="text-base text-foreground/90 whitespace-pre-wrap">{user.bio}</p>
             </div>
           )}
@@ -84,3 +84,4 @@ export default function UserProfileModal({ isOpen, onClose, user }: UserProfileM
     </Dialog>
   );
 }
+
