@@ -14,7 +14,8 @@ import {
   type User as FirebaseUser,
   type AuthError,
 } from 'firebase/auth';
-import { app } from '@/lib/firebase/client'; // Your Firebase app instance
+import { app, firestore } from '@/lib/firebase/client'; // Import Firebase app and firestore
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'; // Firestore functions
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -39,14 +40,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
+    if (!auth) {
+      console.error("AuthContext: Firebase Auth não está inicializado. Verifique a configuração do Firebase.");
+      setLoading(false);
+      // Exibir um toast para o usuário sobre o problema de configuração
+      toast({
+        title: "Erro de Configuração",
+        description: "Não foi possível inicializar o sistema de autenticação. Por favor, contate o suporte.",
+        variant: "destructive",
+        duration: Infinity, // Manter o toast visível
+      });
+      return;
+    }
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setLoading(false);
     });
     return () => unsubscribe();
-  }, [auth]);
+  }, [auth, toast]);
 
-  const handleAuthError = (error: AuthError) => {
+
+  const handleAuthError = (error: AuthError, customTitle?: string) => {
     console.error("Firebase Auth Error:", error);
     let message = "Ocorreu um erro. Tente novamente.";
     switch (error.code) {
@@ -72,23 +86,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             message = 'Múltiplas tentativas de login. Por favor, tente novamente.';
             break;
         default:
-            message = `Erro: ${error.message}`; // Fallback para mensagem de erro genérica do Firebase
+            message = `Erro: ${error.message}`; 
             break;
     }
     toast({
-      title: 'Erro de Autenticação',
+      title: customTitle || 'Erro de Autenticação',
       description: message,
       variant: 'destructive',
     });
   };
 
   const signInWithGoogle = useCallback(async () => {
+    if (!auth || !firestore) {
+      toast({ title: "Erro de Inicialização", description: "Serviço de autenticação ou banco de dados não disponível.", variant: "destructive" });
+      return;
+    }
     setIsAuthenticating(true);
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
-      toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a)!' });
-      router.push('/'); // Redirect to home or dashboard
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      if (user) {
+        const userDocRef = doc(firestore, "Usuarios", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (!userDocSnap.exists()) {
+          try {
+            await setDoc(userDocRef, {
+              uid: user.uid,
+              email: user.email,
+              displayName: user.displayName || user.email?.split('@')[0] || 'Usuário Google',
+              photoURL: user.photoURL || null,
+              createdAt: serverTimestamp(),
+              bio: '',
+              instagramLink: '',
+            });
+            toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a)! Seu perfil foi criado.' });
+          } catch (profileError) {
+             handleAuthError(profileError as AuthError, 'Erro ao Criar Perfil');
+             // Opcional: não redirecionar ou tentar reverter o login do Auth
+             // Por agora, apenas logamos o erro e o usuário prossegue autenticado.
+          }
+        } else {
+          toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a) de volta!' });
+          // Poderíamos adicionar lógica para atualizar 'lastLogin' aqui
+          // await updateDoc(userDocRef, { lastLogin: serverTimestamp() });
+        }
+        router.push('/');
+      }
     } catch (error) {
       handleAuthError(error as AuthError);
     } finally {
@@ -98,11 +143,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUpWithEmail = useCallback(
     async (email: string, password: string) => {
+      if (!auth || !firestore) {
+        toast({ title: "Erro de Inicialização", description: "Serviço de autenticação ou banco de dados não disponível.", variant: "destructive" });
+        return;
+      }
       setIsAuthenticating(true);
       try {
-        await createUserWithEmailAndPassword(auth, email, password);
-        toast({ title: 'Cadastro bem-sucedido!', description: 'Sua conta foi criada.' });
-        router.push('/');
+        const newUserCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = newUserCredential.user;
+        if (user) {
+          const userDocRef = doc(firestore, "Usuarios", user.uid);
+          try {
+            await setDoc(userDocRef, {
+              uid: user.uid,
+              email: user.email,
+              displayName: user.email?.split('@')[0] || 'Usuário',
+              photoURL: user.photoURL || null,
+              createdAt: serverTimestamp(),
+              bio: '',
+              instagramLink: '',
+            });
+            toast({ title: 'Cadastro bem-sucedido!', description: 'Sua conta e perfil foram criados.' });
+            router.push('/');
+          } catch (profileError) {
+            handleAuthError(profileError as AuthError, 'Erro ao Criar Perfil');
+            // Opcional: não redirecionar ou tentar reverter a criação do usuário no Auth.
+            // Por agora, o usuário está autenticado mas o perfil pode ter falhado.
+          }
+        }
       } catch (error) {
         handleAuthError(error as AuthError);
       } finally {
@@ -114,9 +182,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithEmail = useCallback(
     async (email: string, password: string) => {
+      if (!auth || !firestore) {
+        toast({ title: "Erro de Inicialização", description: "Serviço de autenticação ou banco de dados não disponível.", variant: "destructive" });
+        return;
+      }
       setIsAuthenticating(true);
       try {
         await signInWithEmailAndPassword(auth, email, password);
+        // Aqui, poderíamos verificar e criar o perfil se não existir, ou atualizar 'lastLogin'
+        // const user = auth.currentUser;
+        // if (user) {
+        //   const userDocRef = doc(firestore, "Usuarios", user.uid);
+        //   const userDocSnap = await getDoc(userDocRef);
+        //   if (!userDocSnap.exists()) { /* ... criar perfil ... */ }
+        //   else { /* ... atualizar lastLogin ... */ }
+        // }
         toast({ title: 'Login bem-sucedido!', description: 'Bem-vindo(a) de volta!' });
         router.push('/');
       } catch (error) {
@@ -129,11 +209,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signOutUser = useCallback(async () => {
-    setIsAuthenticating(true);
+    if (!auth) {
+       toast({ title: "Erro de Inicialização", description: "Serviço de autenticação não disponível.", variant: "destructive" });
+      return;
+    }
+    setIsAuthenticating(true); // Pode não ser necessário para signOut, mas mantém consistência
     try {
       await signOut(auth);
       toast({ title: 'Logout realizado', description: 'Você saiu da sua conta.' });
-      router.push('/login'); // Redirect to login page after sign out
+      router.push('/login'); 
     } catch (error) {
       handleAuthError(error as AuthError);
     } finally {
@@ -151,6 +235,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticating,
   };
 
+  // Renderiza children somente se o auth estiver carregado e não houver erro de inicialização do Firebase.
+  // A verificação `if (!auth)` no useEffect já trata o caso de erro fatal na inicialização do Firebase.
   return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
 }
 
