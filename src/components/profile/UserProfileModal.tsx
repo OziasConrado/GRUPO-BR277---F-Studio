@@ -34,7 +34,7 @@ export default function UserProfileModal({ isOpen, onClose, user }: UserProfileM
         onEscapeKeyDown={onClose}
       >
         <DialogHeader className="shrink-0 p-3 flex flex-row justify-between items-center border-b bg-card">
-          <DialogTitle className="text-lg font-semibold font-headline text-foreground">{user.name}'s Profile</DialogTitle>
+          <DialogTitle className="text-lg font-semibold font-headline text-foreground">Perfil</DialogTitle>
            <DialogClose asChild>
             <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-muted-foreground hover:text-foreground">
               <X className="h-5 w-5" />
