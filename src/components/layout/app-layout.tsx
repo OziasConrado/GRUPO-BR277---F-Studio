@@ -82,7 +82,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const AppHeader = () => (
     <header className="sticky top-0 z-50 w-full bg-primary text-primary-foreground shadow-lg">
       <div className="px-3 sm:px-4 flex h-16 sm:h-20 items-center justify-between max-w-screen-xl mx-auto">
-        <div className="flex items-center gap-0 sm:gap-0.5"> {/* Reduced gap here */}
+        <div className="flex items-center gap-0 sm:gap-0"> {/* Reduced gap here */}
             <Tooltip>
             <TooltipTrigger asChild>
                 <Button
@@ -119,7 +119,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </div>
 
 
-        <div className="flex items-center gap-0 sm:gap-0.5">  {/* Reduced gap here */}
+        <div className="flex items-center gap-0 sm:gap-0">  {/* Reduced gap here */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -226,7 +226,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     return (
       <div className="flex flex-col min-h-screen bg-background">
         <div className="sticky top-0 z-50 w-full bg-primary h-16 sm:h-20"></div>
-        <main className="flex-grow container mx-auto px-4 py-8 pb-20 sm:pb-8"></main>
+        <main className="flex-grow container mx-auto px-2 py-8 pb-20 sm:pb-8"></main>
         <div className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background h-[65px] sm:hidden"></div>
       </div>
     );
@@ -236,7 +236,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     <TooltipProvider>
       <div className="flex flex-col min-h-screen">
         <AppHeader />
-        <main className="flex-grow container mx-auto px-4 py-8 pb-20 sm:pb-8">
+        <main className="flex-grow container mx-auto px-2 py-8 pb-20 sm:pb-8">
           {children}
         </main>
         <Navigation />
