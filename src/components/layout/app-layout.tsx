@@ -82,7 +82,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const AppHeader = () => (
     <header className="sticky top-0 z-50 w-full bg-primary text-primary-foreground shadow-lg">
       <div className="px-3 sm:px-4 flex h-16 sm:h-20 items-center justify-between max-w-screen-xl mx-auto">
-        <div className="flex items-center gap-0.5 sm:gap-1">
+        <div className="flex items-center gap-0 sm:gap-0.5"> {/* Reduced gap here */}
             <Tooltip>
             <TooltipTrigger asChild>
                 <Button
@@ -119,7 +119,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </div>
 
 
-        <div className="flex items-center gap-0 sm:gap-1">
+        <div className="flex items-center gap-0 sm:gap-0.5">  {/* Reduced gap here */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
