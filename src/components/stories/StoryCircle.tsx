@@ -23,7 +23,6 @@ export default function StoryCircle({ adminName, avatarUrl, dataAIAvatarHint, ha
       className={cn(
         'group flex-shrink-0 rounded-lg transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
         'transform-gpu transition-transform group-hover:scale-[1.03]'
-        // Removed ring classes here
       )}
       aria-label={`Ver story de ${adminName}`}
     >
@@ -45,11 +44,8 @@ export default function StoryCircle({ adminName, avatarUrl, dataAIAvatarHint, ha
           <p className="text-xs text-white font-semibold truncate drop-shadow-sm">{adminName}</p>
         </div>
 
-        {storyType === 'video' && (
-          <div className="absolute top-1.5 right-1.5 bg-black/40 p-0.5 rounded-full backdrop-blur-sm">
-            <PlayCircle className="w-4 h-4 text-white/90" />
-          </div>
-        )}
+        {/* PlayCircle icon removed for storyType === 'video' */}
+        
         {storyType === 'image' && hasNewStory && (
            <div className="absolute top-1.5 right-1.5 bg-black/40 p-0.5 rounded-full backdrop-blur-sm">
               <ImageIcon className="w-4 h-4 text-white/90" />
