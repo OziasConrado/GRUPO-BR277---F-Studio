@@ -62,7 +62,7 @@ const MoreFeaturesSheet: React.FC<MoreFeaturesSheetProps> = ({ children }) => {
           <SheetTitle className="text-center font-headline text-lg">Mais Funcionalidades</SheetTitle>
         </SheetHeader>
 
-        <div className="grid grid-cols-4 gap-0.5 p-2 flex-grow overflow-y-auto">
+        <div className="grid grid-cols-4 gap-0 p-1.5 flex-grow overflow-y-auto">
           {iconGridFeatures.map((feature) => (
             <SheetClose asChild key={feature.label}>
               <Link
