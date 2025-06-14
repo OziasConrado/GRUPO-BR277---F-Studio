@@ -4,8 +4,7 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
-  SheetClose, // Ensure SheetClose is imported
+  SheetClose,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -15,10 +14,8 @@ import {
   Camera,
   AlertCircle,
   FileText,
-  // Map, // Not used in the final grid
   ListChecks,
   Headset,
-  // Grid, // Original icon, replaced by Wrench
   Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -37,11 +34,11 @@ const iconGridFeatures: Feature[] = [
   { icon: Wrench, label: "Ferramentas", href: "/ferramentas"},
   { icon: ListChecks, label: "Checklist", href: "/ferramentas/checklist" },
   { icon: Headset, label: "Contato SAU", href: "/sau" },
-  { icon: FileText, label: "Notícias", href: "/noticias" }, // Kept Notícias for an even 8 items
+  { icon: FileText, label: "Notícias", href: "/noticias" },
 ];
 
 interface MoreFeaturesSheetProps {
-  children: React.ReactNode; // This 'children' is the trigger
+  children: React.ReactNode;
 }
 
 const AdPlaceholder = () => (
@@ -64,7 +61,7 @@ const MoreFeaturesSheet: React.FC<MoreFeaturesSheetProps> = ({ children }) => {
           <SheetTitle className="text-center font-headline text-lg">Mais Funcionalidades</SheetTitle>
         </SheetHeader>
 
-        <div className="grid grid-cols-4 gap-1 p-3 flex-grow overflow-y-auto">
+        <div className="grid grid-cols-4 gap-0.5 p-2 flex-grow overflow-y-auto">
           {iconGridFeatures.map((feature) => (
             <SheetClose asChild key={feature.label}>
               <Link
