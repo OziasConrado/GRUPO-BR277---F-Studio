@@ -5,6 +5,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetClose,
+  SheetTrigger, // Added SheetTrigger
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";

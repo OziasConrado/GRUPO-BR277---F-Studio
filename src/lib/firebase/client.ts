@@ -5,16 +5,20 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAnalytics, isSupported } from 'firebase/analytics';
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAXkHzsjAzoSbU0v2nJdfYnAemCP6-FrwY", // Consider using environment variables here
+  authDomain: "grupo-br-277.firebaseapp.com",
+  projectId: "grupo-br-277",
+  storageBucket: "grupo-br-277.firebasestorage.app",
+  messagingSenderId: "616095109370",
+  appId: "1:616095109370:web:484250c8b78950dad1f943",
+  measurementId: "G-ELT449B7FS"
+};
 
-const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-const authDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
-const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-const messagingSenderId = process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID;
-const appId = process.env.NEXT_PUBLIC_FIREBASE_APP_ID;
-const measurementId = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID;
 
-if (!apiKey) {
+// This check assumes 'apiKey' is a variable holding the API key, likely from environment variables.
+if (!firebaseConfig.apiKey) { // Use firebaseConfig.apiKey to access the key
   console.error(
     "FATAL ERROR: Firebase API Key (NEXT_PUBLIC_FIREBASE_API_KEY) is missing or undefined. " +
     "Please ensure it is correctly set in your .env file for local development (Firebase Studio Preview) " +
@@ -23,20 +27,11 @@ if (!apiKey) {
   );
 }
 
-const firebaseConfig: FirebaseOptions = {
-  apiKey: apiKey, // Use the apiKey variable that was checked
-  authDomain: authDomain,
-  projectId: projectId,
-  storageBucket: storageBucket,
-  messagingSenderId: messagingSenderId,
-  appId: appId,
-  measurementId: measurementId
-};
 
 // Initialize Firebase
 let appInstance; // Renamed to avoid conflict with exported 'app'
 // Only attempt to initialize if the API key is present, as it's critical.
-if (apiKey) {
+if (firebaseConfig.apiKey) { // Use firebaseConfig.apiKey
   if (!getApps().length) {
     appInstance = initializeApp(firebaseConfig);
   } else {
