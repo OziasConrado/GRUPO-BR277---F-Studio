@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useRef, type ChangeEvent } from 'react';
@@ -8,16 +7,16 @@ import {
   Store,
   Landmark,
   Headset,
-  ShieldAlert,
+  ShieldAlert, // Changed from AlertTriangle
   Newspaper,
   MapIcon,
-  Video, // Note: Changed from VideoIcon to Video
+  Video,
   ListChecks,
   Image as ImageIcon,
   XCircle,
   Edit,
   PlayCircle,
-  AlertTriangle, // Added for Alertas button
+  // AlertTriangle, // Removed
 } from 'lucide-react';
 
 import PostCard, { type PostCardProps, type PostReactions } from '@/components/feed/post-card';
@@ -443,11 +442,12 @@ export default function FeedPage() {
                     className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1.5"
                     onClick={() => {
                       handleRemoveImage();
+                      setSelectedPostBackground(backgroundOptions[0]); // Reset to default background
                       textareaRef.current?.focus();
                       toast({ title: "Alerta", description: "Escreva seu alerta de texto." });
                     }}
                   >
-                    <AlertTriangle className="h-4 w-4" />
+                    <ShieldAlert className="h-4 w-4" /> {/* Icon Changed */}
                     Alertas
                   </Button>
                   <Button
