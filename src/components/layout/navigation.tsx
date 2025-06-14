@@ -3,16 +3,16 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Newspaper, Store, Video, ShieldAlert, PlusCircle } from 'lucide-react'; // Home icon replaced with Newspaper
+import { Newspaper, Store, Video, Wrench, PlusCircle } from 'lucide-react'; // ShieldAlert replaced with Wrench
 import { cn } from '@/lib/utils';
 import { useChat } from '@/contexts/ChatContext';
 import MoreFeaturesSheet from '@/components/MoreFeaturesSheet';
 
 const navItems = [
-  { href: '/', label: 'Feed277', icon: Newspaper }, // Changed from Home to Newspaper, label to Feed277
+  { href: '/', label: 'Feed277', icon: Newspaper },
   { href: '/guia-comercial', label: 'Comercial', icon: Store },
   { href: '/streaming', label: 'AO VIVO', icon: Video },
-  { href: '/alertas', label: 'Alertas', icon: ShieldAlert },
+  { href: '/ferramentas', label: 'Ferramentas', icon: Wrench }, // Changed from Alertas to Ferramentas, ShieldAlert to Wrench
   { href: '/mais', label: 'Mais', icon: PlusCircle },
 ];
 
