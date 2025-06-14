@@ -28,7 +28,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-
 // Mocks and Constants
 const defaultReactions: PostReactions = {
   thumbsUp: 0,
@@ -195,17 +194,6 @@ const backgroundOptions = [
   { name: 'Verde', bg: '#009c3b', text: '#FFFFFF' },
   { name: 'Amarelo', bg: '#ffdf00', text: '#002776' },
   { name: 'Gradiente', gradient: 'linear-gradient(to right, #002776, #009c3b, #ffdf00)', text: '#FFFFFF' },
-];
-
-const iconGridFeatures = [
-  { title: 'Guia Comercial', Icon: Store, href: '/guia-comercial' },
-  { title: 'Turismo', Icon: Landmark, href: '/turismo' },
-  { title: 'Streaming', Icon: Video, href: '/streaming' },
-  { title: 'Alertas', Icon: ShieldAlert, href: '/alertas' },
-  { title: 'Notícias', Icon: Newspaper, href: '#' }, // TODO: Criar página de notícias
-  { title: 'Mapa', Icon: MapIcon, href: '/ferramentas/mapa' },
-  { title: 'Checklist', Icon: ListChecks, href: '/ferramentas/checklist' },
-  { title: 'Contato SAU', Icon: Headset, href: '/sau' },
 ];
 
 export default function FeedPage() {
@@ -388,18 +376,6 @@ export default function FeedPage() {
         </Button>
       </div>
 
-      {/* Grid de Ícones de Funcionalidades */}
-      <div className="grid grid-cols-4 gap-4">
-        {iconGridFeatures.map((feature) => (
-          <Link href={feature.href} key={feature.title} className="flex flex-col items-center justify-center p-2">
-            <div className="p-3 bg-card rounded-full shadow-md mb-2 hover:bg-primary/10">
-              <feature.Icon className="h-6 w-6 text-primary" />
-            </div>
-            <span className="text-center text-xs font-medium text-foreground">{feature.title}</span>
-          </Link>
-        ))}
-      </div>
-      
       {/* AdMob Banner Placeholder */}
       <div className="my-4 p-4 rounded-xl bg-muted/30 border border-dashed h-20 flex items-center justify-center">
         <p className="text-muted-foreground text-sm">Espaço para Banner AdMob (Ex: 320x50)</p>
