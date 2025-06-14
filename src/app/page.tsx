@@ -5,7 +5,7 @@ import { useEffect, useState, useRef, type ChangeEvent } from 'react';
 import Link from 'next/link';
 import {
   Star,
-  // Phone, // Removido pois usaremos SVG inline
+  // Phone, // Ícone de telefone SVG inline agora é usado
   Store,
   Landmark,
   Headset,
@@ -17,6 +17,7 @@ import {
   Image as ImageIcon,
   XCircle,
   Edit,
+  PlayCircle, // Adicionado para Histórias de Usuário
 } from 'lucide-react';
 
 import PostCard, { type PostCardProps, type PostReactions } from '@/components/feed/post-card';
@@ -28,6 +29,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+
 // Mocks and Constants
 const defaultReactions: PostReactions = {
   thumbsUp: 0,
@@ -48,56 +50,58 @@ const MOCK_POST_USER_NAMES = [
   'Ozias Conrado',
 ];
 
-const mockAdminStories: StoryCircleProps[] = [
+// Novos dados mock para Histórias de Usuários (vídeos)
+const mockUserVideoStories: StoryCircleProps[] = [
   {
-    id: 'story-admin-1',
-    adminName: 'Admin Oficial',
-    avatarUrl: 'https://placehold.co/180x320.png?text=AO',
-    dataAIAvatarHint: 'app logo admin',
-    hasNewStory: true,
-    storyType: 'image',
-  },
-  {
-    id: 'story-admin-2',
-    adminName: 'Alerta Rota',
-    avatarUrl: 'https://placehold.co/180x320.png?text=AR',
-    dataAIAvatarHint: 'alert icon',
+    id: 'user-story-1',
+    adminName: 'Vídeo de @CarlosC', // adminName será usado como userName para o StoryCircle
+    avatarUrl: 'https://placehold.co/180x320.png?text=VC', // Thumbnail do vídeo
+    dataAIAvatarHint: 'truck highway sunset', // Descrição para o thumbnail
     hasNewStory: true,
     storyType: 'video',
   },
   {
-    id: 'story-admin-3',
-    adminName: 'Manutenção',
-    avatarUrl: 'https://placehold.co/180x320.png?text=MS',
-    dataAIAvatarHint: 'maintenance tools',
-    hasNewStory: false,
-    storyType: 'image',
-  },
-  {
-    id: 'story-admin-4',
-    adminName: 'Novidades App',
-    avatarUrl: 'https://placehold.co/180x320.png?text=NV',
-    dataAIAvatarHint: 'megaphone icon',
+    id: 'user-story-2',
+    adminName: 'Paisagem da @AnaV',
+    avatarUrl: 'https://placehold.co/180x320.png?text=PV',
+    dataAIAvatarHint: 'mountain road aerial',
     hasNewStory: true,
     storyType: 'video',
   },
   {
-    id: 'story-admin-5',
-    adminName: 'Dicas Seg',
-    avatarUrl: 'https://placehold.co/180x320.png?text=DS',
-    dataAIAvatarHint: 'shield icon',
+    id: 'user-story-3',
+    adminName: 'Dica do @PedroE',
+    avatarUrl: 'https://placehold.co/180x320.png?text=DP',
+    dataAIAvatarHint: 'driver giving tips',
     hasNewStory: false,
-    storyType: 'image',
+    storyType: 'video',
   },
   {
-    id: 'story-admin-6',
-    adminName: 'Promoções',
-    avatarUrl: 'https://placehold.co/180x320.png?text=PR',
-    dataAIAvatarHint: 'discount tag',
+    id: 'user-story-4',
+    adminName: 'Alerta da @MariLog',
+    avatarUrl: 'https://placehold.co/180x320.png?text=AM',
+    dataAIAvatarHint: 'road traffic alert',
     hasNewStory: true,
-    storyType: 'image',
+    storyType: 'video',
+  },
+  {
+    id: 'user-story-5',
+    adminName: 'Manobra do @JoaoS',
+    avatarUrl: 'https://placehold.co/180x320.png?text=MJ',
+    dataAIAvatarHint: 'truck maneuvering',
+    hasNewStory: false,
+    storyType: 'video',
+  },
+  {
+    id: 'user-story-6',
+    adminName: 'Fim de Tarde com @Ozias',
+    avatarUrl: 'https://placehold.co/180x320.png?text=FT',
+    dataAIAvatarHint: 'sunset over fields',
+    hasNewStory: true,
+    storyType: 'video',
   },
 ];
+
 
 const initialMockPosts: PostCardProps[] = [
   {
@@ -200,7 +204,7 @@ export default function FeedPage() {
   // State
   const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
   const [selectedStory, setSelectedStory] = useState<StoryCircleProps | null>(null);
-  const [isCreatingPost, setIsCreatingPost] = useState(false);
+  const [isCreatingPost, setIsCreatingPost] = useState(false); // Removido, o card de criar post está sempre visível.
   const [newPostText, setNewPostText] = useState('');
   const [posts, setPosts] = useState<PostCardProps[]>(initialMockPosts);
   const [selectedImageForUpload, setSelectedImageForUpload] = useState<File | null>(null);
@@ -236,23 +240,12 @@ export default function FeedPage() {
     setIsStoryModalOpen(true);
   };
 
-  const handleToggleCreatePost = () => {
-    setIsCreatingPost(!isCreatingPost);
-    if (isCreatingPost) {
-      setNewPostText('');
-      setSelectedImageForUpload(null);
-      setImagePreviewUrl(null);
-      setSelectedPostBackground(backgroundOptions[0]);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
+  // handleToggleCreatePost removido, pois o card agora está sempre visível.
 
   const handleImageInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
         toast({
           variant: 'destructive',
           title: 'Imagem muito grande',
@@ -266,7 +259,7 @@ export default function FeedPage() {
         setImagePreviewUrl(reader.result as string);
       };
       reader.readAsDataURL(file);
-      setSelectedPostBackground(backgroundOptions[0]);
+      setSelectedPostBackground(backgroundOptions[0]); // Reset background if image is added
     }
   };
 
@@ -274,7 +267,7 @@ export default function FeedPage() {
     setSelectedImageForUpload(null);
     setImagePreviewUrl(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = ''; // Reset file input
     }
   };
 
@@ -304,9 +297,10 @@ export default function FeedPage() {
     };
 
     if (selectedImageForUpload && imagePreviewUrl) {
-      newPost.uploadedImageUrl = imagePreviewUrl;
+      newPost.uploadedImageUrl = imagePreviewUrl; // Use o preview como imagem do post
       newPost.dataAIUploadedImageHint = 'user uploaded content';
     } else if (newPostText.length <= 150 && selectedPostBackground?.name !== 'Padrão') {
+      // Aplicar estilo de fundo colorido apenas se NÃO houver imagem
       newPost.cardStyle = {
         backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
         backgroundImage: selectedPostBackground.gradient,
@@ -314,6 +308,7 @@ export default function FeedPage() {
         name: selectedPostBackground.name,
       };
     }
+
 
     setPosts((prevPosts) => [newPost, ...prevPosts]);
     setNewPostText('');
@@ -323,30 +318,16 @@ export default function FeedPage() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-    setIsCreatingPost(false);
+    // setIsCreatingPost(false); // Não necessário mais
   };
 
   // Derived State
   const showColorPalette = !selectedImageForUpload && newPostText.length <= 150 && newPostText.length > 0;
 
+
   return (
     <div className="w-full space-y-6">
-      {/* Seção Destaque */}
-      <div className="mb-3">
-        <div className="px-1">
-          <h2 className="text-xl font-bold font-headline flex items-center mb-3 text-foreground">
-            <Star className="h-5 w-5 mr-2 text-primary" />
-            Destaque
-          </h2>
-        </div>
-        <div className="flex overflow-x-auto space-x-2 pb-3 -mx-4 px-4 no-scrollbar">
-          {mockAdminStories.map((story) => (
-            <StoryCircle key={story.id} {...story} onClick={() => handleStoryClick(story)} />
-          ))}
-        </div>
-      </div>
-
-      {/* Botão de Emergência */}
+      {/* Botão de Emergência, SAU e Turismo - Mantidos no topo */}
       <EmergencyButtonModalTrigger
         variant="destructive"
         size="default"
@@ -360,7 +341,6 @@ export default function FeedPage() {
         EMERGÊNCIA
       </EmergencyButtonModalTrigger>
 
-      {/* Botões SAU e Turismo */}
       <div className="grid grid-cols-2 gap-3">
         <Button asChild variant="outline" className="py-3 text-base rounded-lg hover:bg-primary/10">
           <Link href="/sau">
@@ -381,14 +361,8 @@ export default function FeedPage() {
         <p className="text-muted-foreground text-sm">Espaço para Banner AdMob (Ex: 320x50)</p>
       </div>
 
-      {/* Título Feed */}
-      <h2 className="text-2xl font-bold pt-2 font-headline text-left">
-        <Star className="h-5 w-5 mr-2 text-primary inline-block" />
-        Feed277
-      </h2>
-
-      {/* Seção de Criação de Post - MOVIDA PARA CÁ */}
-      <Card className="p-4 shadow-sm">
+      {/* Seção de Criação de Post */}
+      <Card className="p-4 shadow-sm rounded-xl">
         <CardHeader className="p-0 pb-3">
           <CardTitle className="text-lg font-semibold flex items-center">
             <Edit className="h-5 w-5 mr-2 text-primary" />
@@ -398,7 +372,7 @@ export default function FeedPage() {
         <CardContent className="p-0">
           <Textarea
             placeholder="No que você está pensando, viajante?"
-            className="mb-3 h-24 resize-none"
+            className="mb-3 h-24 resize-none rounded-lg"
             value={newPostText}
             onChange={(e) => setNewPostText(e.target.value)}
             style={
@@ -414,11 +388,11 @@ export default function FeedPage() {
 
           {imagePreviewUrl && (
             <div className="relative mb-3">
-              <img src={imagePreviewUrl} alt="Prévia da imagem" className="max-w-full h-auto rounded-md" />
+              <img src={imagePreviewUrl} alt="Prévia da imagem" className="max-w-full h-auto rounded-md border" />
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute top-2 right-2 rounded-full bg-black/50 text-white hover:bg-black/70"
+                className="absolute top-2 right-2 rounded-full bg-black/50 text-white hover:bg-black/70 h-7 w-7"
                 onClick={handleRemoveImage}
               >
                 <XCircle className="h-5 w-5" />
@@ -427,13 +401,13 @@ export default function FeedPage() {
           )}
 
           {showColorPalette && (
-            <div className="flex space-x-2 mb-3 overflow-x-auto no-scrollbar">
+            <div className="flex space-x-2 mb-3 overflow-x-auto no-scrollbar pb-1">
               {backgroundOptions.map((option) => (
                 <div
                   key={option.name}
                   className={cn(
-                    'w-8 h-8 rounded-full cursor-pointer border-2 border-transparent flex-shrink-0',
-                    selectedPostBackground.name === option.name && 'border-primary',
+                    'w-8 h-8 rounded-full cursor-pointer border-2 border-transparent flex-shrink-0 shadow-inner',
+                    selectedPostBackground.name === option.name && 'ring-2 ring-primary ring-offset-1',
                   )}
                   style={{
                     backgroundColor: option.gradient ? undefined : option.bg,
@@ -457,18 +431,40 @@ export default function FeedPage() {
             <Button
               variant="ghost"
               onClick={() => fileInputRef.current?.click()}
-              className="flex items-center text-primary hover:text-primary/90"
-              disabled={!!selectedImageForUpload}
+              className="flex items-center text-primary hover:text-primary/90 rounded-full"
+              disabled={!!selectedImageForUpload} // Desabilita se já tem imagem
             >
               <ImageIcon className="h-5 w-5 mr-2" />
               Foto/Vídeo
             </Button>
-            <Button onClick={handlePublishPost} className="bg-primary hover:bg-primary/90 text-white">
+            <Button onClick={handlePublishPost} className="bg-primary hover:bg-primary/90 text-white rounded-full px-6">
               Publicar
             </Button>
           </div>
         </CardContent>
       </Card>
+      
+      {/* Seção Histórias da Comunidade (Vídeos de Usuários) */}
+      <div className="mb-3 mt-8"> {/* Adicionado mt-8 para separar da criação de post */}
+        <div className="px-1">
+          <h2 className="text-xl font-bold font-headline flex items-center mb-3 text-foreground">
+            <PlayCircle className="h-5 w-5 mr-2 text-primary" /> {/* Ícone alterado */}
+            Histórias da Comunidade
+          </h2>
+        </div>
+        <div className="flex overflow-x-auto space-x-2 pb-3 -mx-4 px-4 no-scrollbar">
+          {mockUserVideoStories.map((story) => (
+            <StoryCircle key={story.id} {...story} onClick={() => handleStoryClick(story)} />
+          ))}
+        </div>
+      </div>
+
+
+      {/* Título Feed */}
+      <h2 className="text-2xl font-bold pt-2 font-headline text-left">
+        <Star className="h-5 w-5 mr-2 text-primary inline-block" />
+        Feed277
+      </h2>
 
       {/* Feed de Posts */}
       <div className="space-y-4">
