@@ -5,7 +5,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-  SheetClose, // Import SheetClose
+  SheetClose, // Ensure SheetClose is imported
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -56,37 +56,37 @@ const MoreFeaturesSheet: React.FC<MoreFeaturesSheetProps> = ({ children }) => {
   return (
     <Sheet>
       <SheetTrigger asChild>{children}</SheetTrigger>
-      <SheetContent 
-        side="bottom" 
-        className="h-[60vh] rounded-t-2xl p-0 flex flex-col" // Remove default padding, add flex-col
+      <SheetContent
+        side="bottom"
+        className="h-[60vh] rounded-t-2xl p-0 flex flex-col"
       >
-        <SheetHeader className="p-4 border-b"> {/* Standard padding for header */}
+        <SheetHeader className="p-4 border-b">
           <SheetTitle className="text-center font-headline text-lg">Mais Funcionalidades</SheetTitle>
         </SheetHeader>
-        
-        <div className="grid grid-cols-4 gap-1 p-3 flex-grow overflow-y-auto"> {/* Reduced gap, allow scroll if needed */}
+
+        <div className="grid grid-cols-4 gap-1 p-3 flex-grow overflow-y-auto">
           {iconGridFeatures.map((feature) => (
             <SheetClose asChild key={feature.label}>
-              <Link href={feature.href} legacyBehavior>
-                <a className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-background rounded-lg">
-                  <div // Changed Button to div for more style control
-                    role="button"
-                    tabIndex={0}
-                    className={cn(
-                      "flex flex-col items-center justify-center h-[70px] w-full p-1 rounded-lg transition-colors duration-150",
-                      "hover:bg-primary/5 dark:hover:bg-primary/10", // Subtle hover
-                      "focus-visible:bg-primary/10 dark:focus-visible:bg-primary/15 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50" // Subtle focus
-                    )}
-                  >
-                    <feature.icon className="h-6 w-6 mb-1 text-primary" /> {/* Adjusted icon size */}
-                    <span className="text-[10px] text-center text-muted-foreground leading-tight">{feature.label}</span>
-                  </div>
-                </a>
+              <Link
+                href={feature.href}
+                className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-background rounded-lg"
+              >
+                <div
+                  role="button"
+                  className={cn(
+                    "flex flex-col items-center justify-center h-[70px] w-full p-1 rounded-lg transition-colors duration-150",
+                    "hover:bg-primary/5 dark:hover:bg-primary/10",
+                    "focus-visible:bg-primary/10 dark:focus-visible:bg-primary/15 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+                  )}
+                >
+                  <feature.icon className="h-6 w-6 mb-1 text-primary" />
+                  <span className="text-[10px] text-center text-muted-foreground leading-tight">{feature.label}</span>
+                </div>
               </Link>
             </SheetClose>
           ))}
         </div>
-        
+
         <AdPlaceholder />
       </SheetContent>
     </Sheet>
