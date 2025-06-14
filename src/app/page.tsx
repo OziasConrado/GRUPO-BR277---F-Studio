@@ -4,7 +4,7 @@
 import { useEffect, useState, useRef, type ChangeEvent } from 'react';
 import Link from 'next/link';
 import {
-  Star,
+  List, // Changed from Star
   // Phone, // Ícone de telefone SVG inline agora é usado
   Store,
   Landmark,
@@ -17,7 +17,7 @@ import {
   Image as ImageIcon,
   XCircle,
   Edit,
-  PlayCircle, // Adicionado para Histórias de Usuário
+  PlayCircle,
 } from 'lucide-react';
 
 import PostCard, { type PostCardProps, type PostReactions } from '@/components/feed/post-card';
@@ -449,7 +449,7 @@ export default function FeedPage() {
         <div className="px-1">
           <h2 className="text-xl font-bold font-headline flex items-center mb-3 text-foreground">
             <PlayCircle className="h-5 w-5 mr-2 text-primary" /> {/* Ícone alterado */}
-            Histórias da Comunidade
+            Reels
           </h2>
         </div>
         <div className="flex overflow-x-auto space-x-2 pb-3 -mx-4 px-4 no-scrollbar">
@@ -462,8 +462,8 @@ export default function FeedPage() {
 
       {/* Título Feed */}
       <h2 className="text-2xl font-bold pt-2 font-headline text-left">
-        <Star className="h-5 w-5 mr-2 text-primary inline-block" />
-        Feed277
+        <List className="h-5 w-5 mr-2 text-primary inline-block" /> {/* Ícone alterado para List */}
+        Time Line
       </h2>
 
       {/* Feed de Posts */}
