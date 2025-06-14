@@ -4,20 +4,20 @@
 import { useEffect, useState, useRef, type ChangeEvent } from 'react';
 import Link from 'next/link';
 import {
-  List, // Changed from Star
-  // Phone, // Ícone de telefone SVG inline agora é usado
+  List,
   Store,
   Landmark,
   Headset,
   ShieldAlert,
   Newspaper,
   MapIcon,
-  Video,
+  Video, // Note: Changed from VideoIcon to Video
   ListChecks,
   Image as ImageIcon,
   XCircle,
   Edit,
   PlayCircle,
+  AlertTriangle, // Added for Alertas button
 } from 'lucide-react';
 
 import PostCard, { type PostCardProps, type PostReactions } from '@/components/feed/post-card';
@@ -204,7 +204,6 @@ export default function FeedPage() {
   // State
   const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
   const [selectedStory, setSelectedStory] = useState<StoryCircleProps | null>(null);
-  const [isCreatingPost, setIsCreatingPost] = useState(false); // Removido, o card de criar post está sempre visível.
   const [newPostText, setNewPostText] = useState('');
   const [posts, setPosts] = useState<PostCardProps[]>(initialMockPosts);
   const [selectedImageForUpload, setSelectedImageForUpload] = useState<File | null>(null);
@@ -214,6 +213,7 @@ export default function FeedPage() {
   // Hooks
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null); // Ref for textarea
 
   // Effects
   useEffect(() => {
@@ -240,26 +240,36 @@ export default function FeedPage() {
     setIsStoryModalOpen(true);
   };
 
-  // handleToggleCreatePost removido, pois o card agora está sempre visível.
-
   const handleImageInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) { // 5MB limit
         toast({
           variant: 'destructive',
-          title: 'Imagem muito grande',
-          description: 'Por favor, selecione uma imagem menor que 5MB.',
+          title: 'Arquivo muito grande',
+          description: `Por favor, selecione um arquivo menor que 5MB. O tipo de arquivo selecionado foi: ${file.type}`,
         });
+        if (fileInputRef.current) fileInputRef.current.value = ''; // Clear the file input
         return;
       }
+       // Basic type check (image or video)
+      if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+        toast({
+          variant: 'destructive',
+          title: 'Tipo de arquivo inválido',
+          description: 'Por favor, selecione uma imagem ou vídeo.',
+        });
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        return;
+      }
+
       setSelectedImageForUpload(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreviewUrl(reader.result as string);
       };
       reader.readAsDataURL(file);
-      setSelectedPostBackground(backgroundOptions[0]); // Reset background if image is added
+      setSelectedPostBackground(backgroundOptions[0]); // Reset background if image/video is added
     }
   };
 
@@ -276,7 +286,7 @@ export default function FeedPage() {
       toast({
         variant: 'destructive',
         title: 'Publicação vazia',
-        description: 'Escreva algo ou adicione uma imagem para publicar.',
+        description: 'Escreva algo ou adicione uma imagem/vídeo para publicar.',
       });
       return;
     }
@@ -297,10 +307,9 @@ export default function FeedPage() {
     };
 
     if (selectedImageForUpload && imagePreviewUrl) {
-      newPost.uploadedImageUrl = imagePreviewUrl; // Use o preview como imagem do post
-      newPost.dataAIUploadedImageHint = 'user uploaded content';
+      newPost.uploadedImageUrl = imagePreviewUrl;
+      newPost.dataAIUploadedImageHint = selectedImageForUpload.type.startsWith('video/') ? 'user uploaded video' : 'user uploaded image';
     } else if (newPostText.length <= 150 && selectedPostBackground?.name !== 'Padrão') {
-      // Aplicar estilo de fundo colorido apenas se NÃO houver imagem
       newPost.cardStyle = {
         backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
         backgroundImage: selectedPostBackground.gradient,
@@ -308,7 +317,6 @@ export default function FeedPage() {
         name: selectedPostBackground.name,
       };
     }
-
 
     setPosts((prevPosts) => [newPost, ...prevPosts]);
     setNewPostText('');
@@ -318,11 +326,11 @@ export default function FeedPage() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-    // setIsCreatingPost(false); // Não necessário mais
   };
 
   // Derived State
-  const showColorPalette = !selectedImageForUpload && newPostText.length <= 150 && newPostText.length > 0;
+  const canPublish = newPostText.trim() !== '' || selectedImageForUpload !== null;
+  const showColorPalette = !imagePreviewUrl && newPostText.length <= 150 && newPostText.length > 0;
 
 
   return (
@@ -371,12 +379,13 @@ export default function FeedPage() {
         </CardHeader>
         <CardContent className="p-0">
           <Textarea
+            ref={textareaRef} // Added ref
             placeholder="No que você está pensando, viajante?"
             className="mb-3 h-24 resize-none rounded-lg"
             value={newPostText}
             onChange={(e) => setNewPostText(e.target.value)}
             style={
-              !selectedImageForUpload && selectedPostBackground?.name !== 'Padrão'
+              !imagePreviewUrl && selectedPostBackground?.name !== 'Padrão'
                 ? {
                     backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
                     backgroundImage: selectedPostBackground.gradient,
@@ -388,7 +397,11 @@ export default function FeedPage() {
 
           {imagePreviewUrl && (
             <div className="relative mb-3">
-              <img src={imagePreviewUrl} alt="Prévia da imagem" className="max-w-full h-auto rounded-md border" />
+              {selectedImageForUpload?.type.startsWith('video/') ? (
+                <video src={imagePreviewUrl} controls className="max-w-full h-auto rounded-md border" data-ai-hint="user uploaded video preview" />
+              ) : (
+                <img src={imagePreviewUrl} alt="Prévia da imagem" className="max-w-full h-auto rounded-md border" data-ai-hint="user uploaded image preview"/>
+              )}
               <Button
                 variant="ghost"
                 size="icon"
@@ -400,7 +413,7 @@ export default function FeedPage() {
             </div>
           )}
 
-          {showColorPalette && (
+          {showColorPalette && !imagePreviewUrl && (
             <div className="flex space-x-2 mb-3 overflow-x-auto no-scrollbar pb-1">
               {backgroundOptions.map((option) => (
                 <div
@@ -421,23 +434,71 @@ export default function FeedPage() {
           )}
 
           <div className="flex items-center justify-between mt-4">
+            <div className="flex items-center gap-2">
+              {!imagePreviewUrl && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1.5"
+                    onClick={() => {
+                      handleRemoveImage();
+                      textareaRef.current?.focus();
+                      toast({ title: "Alerta", description: "Escreva seu alerta de texto." });
+                    }}
+                  >
+                    <AlertTriangle className="h-4 w-4" />
+                    Alertas
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1.5"
+                    onClick={() => {
+                      if (fileInputRef.current) {
+                        fileInputRef.current.accept = "video/*";
+                        fileInputRef.current.click();
+                      }
+                    }}
+                  >
+                    <Video className="h-4 w-4" />
+                    Vídeo
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1.5"
+                    onClick={() => {
+                      if (fileInputRef.current) {
+                        fileInputRef.current.accept = "image/*";
+                        fileInputRef.current.click();
+                      }
+                    }}
+                  >
+                    <ImageIcon className="h-4 w-4" />
+                    Foto
+                  </Button>
+                </>
+              )}
+              {imagePreviewUrl && (
+                 <div className="flex-1">
+                    {/* Placeholder or message when image is being previewed */}
+                 </div>
+              )}
+            </div>
+            
             <input
               type="file"
               ref={fileInputRef}
-              accept="image/*"
               className="hidden"
               onChange={handleImageInputChange}
+              // accept attribute is now set dynamically by the button clicks
             />
             <Button
-              variant="ghost"
-              onClick={() => fileInputRef.current?.click()}
-              className="flex items-center text-primary hover:text-primary/90 rounded-full"
-              disabled={!!selectedImageForUpload} // Desabilita se já tem imagem
+              onClick={handlePublishPost}
+              className="bg-primary hover:bg-primary/90 text-white rounded-full px-6"
+              disabled={!canPublish}
             >
-              <ImageIcon className="h-5 w-5 mr-2" />
-              Foto/Vídeo
-            </Button>
-            <Button onClick={handlePublishPost} className="bg-primary hover:bg-primary/90 text-white rounded-full px-6">
               Publicar
             </Button>
           </div>
@@ -445,10 +506,10 @@ export default function FeedPage() {
       </Card>
       
       {/* Seção Histórias da Comunidade (Vídeos de Usuários) */}
-      <div className="mb-3 mt-8"> {/* Adicionado mt-8 para separar da criação de post */}
+      <div className="mb-3 mt-8">
         <div className="px-1">
           <h2 className="text-xl font-bold font-headline flex items-center mb-3 text-foreground">
-            <PlayCircle className="h-5 w-5 mr-2 text-primary" /> {/* Ícone alterado */}
+            <PlayCircle className="h-5 w-5 mr-2 text-primary" />
             Reels
           </h2>
         </div>
@@ -462,7 +523,7 @@ export default function FeedPage() {
 
       {/* Título Feed */}
       <h2 className="text-xl font-bold pt-2 font-headline text-left">
-        <List className="h-5 w-5 mr-2 text-primary inline-block" /> {/* Ícone alterado para List */}
+        <List className="h-5 w-5 mr-2 text-primary inline-block" />
         Time Line
       </h2>
 
