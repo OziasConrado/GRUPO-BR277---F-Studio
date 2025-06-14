@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef, type ChangeEvent } from 'react';
@@ -7,7 +8,7 @@ import {
   Store,
   Landmark,
   Headset,
-  ShieldAlert, // Changed from AlertTriangle
+  ShieldAlert, 
   Newspaper,
   MapIcon,
   Video,
@@ -308,7 +309,7 @@ export default function FeedPage() {
     if (selectedImageForUpload && imagePreviewUrl) {
       newPost.uploadedImageUrl = imagePreviewUrl;
       newPost.dataAIUploadedImageHint = selectedImageForUpload.type.startsWith('video/') ? 'user uploaded video' : 'user uploaded image';
-    } else if (newPostText.length <= 150 && selectedPostBackground?.name !== 'Padrão') {
+    } else if (newPostText.length <= 150 && selectedPostBackground?.name !== 'Padrão') { // Apply background only if no image and text is short
       newPost.cardStyle = {
         backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
         backgroundImage: selectedPostBackground.gradient,
@@ -316,6 +317,7 @@ export default function FeedPage() {
         name: selectedPostBackground.name,
       };
     }
+
 
     setPosts((prevPosts) => [newPost, ...prevPosts]);
     setNewPostText('');
@@ -329,7 +331,7 @@ export default function FeedPage() {
 
   // Derived State
   const canPublish = newPostText.trim() !== '' || selectedImageForUpload !== null;
-  const showColorPalette = !imagePreviewUrl && newPostText.length <= 150 && newPostText.length > 0;
+  const showColorPalette = !imagePreviewUrl && newPostText.length <= 150 && newPostText.length > 0 && selectedPostBackground.name !== 'Alertas';
 
 
   return (
@@ -363,11 +365,6 @@ export default function FeedPage() {
         </Button>
       </div>
 
-      {/* AdMob Banner Placeholder */}
-      <div className="my-4 p-4 rounded-xl bg-muted/30 border border-dashed h-20 flex items-center justify-center">
-        <p className="text-muted-foreground text-sm">Espaço para Banner AdMob (Ex: 320x50)</p>
-      </div>
-
       {/* Seção de Criação de Post */}
       <Card className="p-4 shadow-sm rounded-xl">
         <CardHeader className="p-0 pb-3">
@@ -384,7 +381,7 @@ export default function FeedPage() {
             value={newPostText}
             onChange={(e) => setNewPostText(e.target.value)}
             style={
-              !imagePreviewUrl && selectedPostBackground?.name !== 'Padrão'
+              !imagePreviewUrl && selectedPostBackground?.name !== 'Padrão' && selectedPostBackground.name !== 'Alertas' // Do not apply background for 'Alertas'
                 ? {
                     backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
                     backgroundImage: selectedPostBackground.gradient,
@@ -412,37 +409,41 @@ export default function FeedPage() {
             </div>
           )}
 
-          {showColorPalette && !imagePreviewUrl && (
+          {showColorPalette && (
             <div className="flex space-x-2 mb-3 overflow-x-auto no-scrollbar pb-1">
-              {backgroundOptions.map((option) => (
-                <div
-                  key={option.name}
-                  className={cn(
-                    'w-8 h-8 rounded-full cursor-pointer border-2 border-transparent flex-shrink-0 shadow-inner',
-                    selectedPostBackground.name === option.name && 'ring-2 ring-primary ring-offset-1',
-                  )}
-                  style={{
-                    backgroundColor: option.gradient ? undefined : option.bg,
-                    backgroundImage: option.gradient,
-                  }}
-                  onClick={() => setSelectedPostBackground(option)}
-                  title={option.name}
-                />
-              ))}
+              {backgroundOptions.map((option) => {
+                if (option.name === 'Alertas') return null; // Skip 'Alertas' if we add it
+                return (
+                  <div
+                    key={option.name}
+                    className={cn(
+                      'w-8 h-8 rounded-full cursor-pointer border-2 border-transparent flex-shrink-0 shadow-inner',
+                      selectedPostBackground.name === option.name && 'ring-2 ring-primary ring-offset-1',
+                    )}
+                    style={{
+                      backgroundColor: option.gradient ? undefined : option.bg,
+                      backgroundImage: option.gradient,
+                    }}
+                    onClick={() => setSelectedPostBackground(option)}
+                    title={option.name}
+                  />
+                );
+              })}
             </div>
           )}
 
+
           <div className="flex items-center justify-between mt-4">
             <div className="flex items-center gap-2">
-              {!imagePreviewUrl && (
+            {!imagePreviewUrl && (
                 <>
                   <Button
                     variant="outline"
                     size="sm"
                     className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1.5"
                     onClick={() => {
-                      handleRemoveImage();
-                      setSelectedPostBackground(backgroundOptions[0]); // Reset to default background
+                      handleRemoveImage(); // Clear any selected image/video
+                      setSelectedPostBackground(backgroundOptions.find(opt => opt.name === 'Padrão') || backgroundOptions[0]); // Reset to default background
                       textareaRef.current?.focus();
                       toast({ title: "Alerta", description: "Escreva seu alerta de texto." });
                     }}
