@@ -461,7 +461,7 @@ export default function FeedPage() {
 
 
       {/* Título Feed */}
-      <h2 className="text-2xl font-bold pt-2 font-headline text-left">
+      <h2 className="text-xl font-bold pt-2 font-headline text-left">
         <List className="h-5 w-5 mr-2 text-primary inline-block" /> {/* Ícone alterado para List */}
         Time Line
       </h2>

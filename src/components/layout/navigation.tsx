@@ -3,13 +3,13 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Store, Video, ShieldAlert, PlusCircle } from 'lucide-react';
+import { Newspaper, Store, Video, ShieldAlert, PlusCircle } from 'lucide-react'; // Home icon replaced with Newspaper
 import { cn } from '@/lib/utils';
 import { useChat } from '@/contexts/ChatContext';
-import MoreFeaturesSheet from '@/components/MoreFeaturesSheet'; // Correct import
+import MoreFeaturesSheet from '@/components/MoreFeaturesSheet';
 
 const navItems = [
-  { href: '/', label: 'Início', icon: Home },
+  { href: '/', label: 'Feed277', icon: Newspaper }, // Changed from Home to Newspaper, label to Feed277
   { href: '/guia-comercial', label: 'Comercial', icon: Store },
   { href: '/streaming', label: 'AO VIVO', icon: Video },
   { href: '/alertas', label: 'Alertas', icon: ShieldAlert },
