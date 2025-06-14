@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ChatWindow from '@/components/chat/ChatWindow';
+import ChatFloatingButton from '@/components/chat/ChatFloatingButton'; // Importado
 import { useNotification } from '@/contexts/NotificationContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,7 +35,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const router = useRouter();
   const { toast } = useToast();
   const { notificationCount, clearNotifications } = useNotification();
-  const { isChatOpen, openChat, closeChat, setIsChatOpen } = useChat();
+  const { isChatOpen, closeChat } = useChat(); // openChat e setIsChatOpen removidos daqui, serão usados pelo FAB
   const { currentUser } = useAuth();
 
   useEffect(() => {
@@ -81,8 +82,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   const AppHeader = () => (
     <header className="sticky top-0 z-50 w-full bg-primary text-primary-foreground shadow-lg">
-      <div className="px-3 sm:px-4 flex h-16 sm:h-20 items-center justify-between max-w-screen-xl mx-auto">
-        <div className="flex items-center gap-0 sm:gap-0"> {/* Reduced gap here */}
+      <div className="px-2 sm:px-4 flex h-16 sm:h-20 items-center justify-between max-w-screen-xl mx-auto">
+        <div className="flex items-center gap-0 sm:gap-0">
             <Tooltip>
             <TooltipTrigger asChild>
                 <Button
@@ -119,7 +120,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </div>
 
 
-        <div className="flex items-center gap-0 sm:gap-0">  {/* Reduced gap here */}
+        <div className="flex items-center gap-0 sm:gap-0">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -163,11 +164,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10 p-0 h-10 w-10 sm:h-12 sm:w-12">
                 <Avatar className="h-8 w-8 sm:h-9 sm:w-9">
-                  <AvatarImage
-                    src={currentUser?.photoURL || undefined}
-                    alt={currentUser?.displayName || 'User Avatar'}
-                    data-ai-hint="user profile"
-                  />
+                 {currentUser?.photoURL ? (
+                    <AvatarImage
+                        src={currentUser.photoURL}
+                        alt={currentUser.displayName || 'User Avatar'}
+                        data-ai-hint="user profile"
+                    />
+                  ) : null}
                   <AvatarFallback>
                     <User className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
                   </AvatarFallback>
@@ -240,6 +243,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           {children}
         </main>
         <Navigation />
+        <ChatFloatingButton /> {/* Botão Flutuante adicionado */}
         {isChatOpen && <ChatWindow onClose={closeChat} />}
       </div>
     </TooltipProvider>
