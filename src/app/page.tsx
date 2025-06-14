@@ -17,7 +17,12 @@ import {
   XCircle,
   Edit,
   PlayCircle,
-  // AlertTriangle, // Removed
+  AlertTriangle, // Added for new Alertas button
+  Construction, // For mock data
+  TrafficConeIcon, // For mock data
+  CloudFog, // For mock data
+  Flame as FlameIcon, // For mock data
+  ArrowRightCircle // For "Ver Mais Alertas" card
 } from 'lucide-react';
 
 import PostCard, { type PostCardProps, type PostReactions } from '@/components/feed/post-card';
@@ -29,6 +34,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import HomeAlertCard from '@/components/alerts/home-alert-card'; // Import new component
 
 // Mocks and Constants
 const defaultReactions: PostReactions = {
@@ -50,13 +56,13 @@ const MOCK_POST_USER_NAMES = [
   'Ozias Conrado',
 ];
 
-// Novos dados mock para Histórias de Usuários (vídeos)
+// Mock data for User Video Stories
 const mockUserVideoStories: StoryCircleProps[] = [
   {
     id: 'user-story-1',
-    adminName: 'Vídeo de @CarlosC', // adminName será usado como userName para o StoryCircle
-    avatarUrl: 'https://placehold.co/180x320.png?text=VC', // Thumbnail do vídeo
-    dataAIAvatarHint: 'truck highway sunset', // Descrição para o thumbnail
+    adminName: 'Vídeo de @CarlosC',
+    avatarUrl: 'https://placehold.co/180x320.png?text=VC',
+    dataAIAvatarHint: 'truck highway sunset',
     hasNewStory: true,
     storyType: 'video',
   },
@@ -200,6 +206,16 @@ const backgroundOptions = [
   { name: 'Gradiente', gradient: 'linear-gradient(to right, #002776, #009c3b, #ffdf00)', text: '#FFFFFF' },
 ];
 
+// Mock data for Home Alerts
+const mockAlertsFeed: Array<{ id: string; type: string; description: string; location: string; }> = [
+  { id: 'alert-1', type: 'Acidente', description: 'Colisão grave na BR-277, Km 35. Trânsito totalmente parado sentido litoral. Use desvios.', location: 'BR-277, Km 35 (Litoral)'},
+  { id: 'alert-2', type: 'Obras', description: 'Pista interditada para obras de recapeamento entre os Kms 110-115. Siga pela marginal.', location: 'BR-116, Km 112'},
+  { id: 'alert-3', type: 'Congestionamento', description: 'Fluxo intenso de veículos na região central. Evite o centro se possível.', location: 'Centro de Curitiba'},
+  { id: 'alert-4', type: 'Neblina', description: 'Visibilidade reduzida na serra. Acenda os faróis e dirija com cautela redobrada.', location: 'Serra do Mar - BR-277'},
+  { id: 'alert-5', type: 'Queimada', description: 'Fumaça densa sobre a pista devido a queimada próxima. Risco de baixa visibilidade.', location: 'PR-407, Km 5'},
+];
+
+
 export default function FeedPage() {
   // State
   const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
@@ -213,7 +229,7 @@ export default function FeedPage() {
   // Hooks
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null); // Ref for textarea
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Effects
   useEffect(() => {
@@ -249,10 +265,9 @@ export default function FeedPage() {
           title: 'Arquivo muito grande',
           description: `Por favor, selecione um arquivo menor que 5MB. O tipo de arquivo selecionado foi: ${file.type}`,
         });
-        if (fileInputRef.current) fileInputRef.current.value = ''; // Clear the file input
+        if (fileInputRef.current) fileInputRef.current.value = '';
         return;
       }
-       // Basic type check (image or video)
       if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
         toast({
           variant: 'destructive',
@@ -269,7 +284,7 @@ export default function FeedPage() {
         setImagePreviewUrl(reader.result as string);
       };
       reader.readAsDataURL(file);
-      setSelectedPostBackground(backgroundOptions[0]); // Reset background if image/video is added
+      setSelectedPostBackground(backgroundOptions[0]);
     }
   };
 
@@ -277,7 +292,7 @@ export default function FeedPage() {
     setSelectedImageForUpload(null);
     setImagePreviewUrl(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = ''; // Reset file input
+      fileInputRef.current.value = '';
     }
   };
 
@@ -309,7 +324,7 @@ export default function FeedPage() {
     if (selectedImageForUpload && imagePreviewUrl) {
       newPost.uploadedImageUrl = imagePreviewUrl;
       newPost.dataAIUploadedImageHint = selectedImageForUpload.type.startsWith('video/') ? 'user uploaded video' : 'user uploaded image';
-    } else if (newPostText.length <= 150 && selectedPostBackground?.name !== 'Padrão') { // Apply background only if no image and text is short
+    } else if (newPostText.length <= 150 && selectedPostBackground?.name !== 'Padrão' && selectedPostBackground.name !== 'Alertas') {
       newPost.cardStyle = {
         backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
         backgroundImage: selectedPostBackground.gradient,
@@ -317,7 +332,6 @@ export default function FeedPage() {
         name: selectedPostBackground.name,
       };
     }
-
 
     setPosts((prevPosts) => [newPost, ...prevPosts]);
     setNewPostText('');
@@ -333,10 +347,8 @@ export default function FeedPage() {
   const canPublish = newPostText.trim() !== '' || selectedImageForUpload !== null;
   const showColorPalette = !imagePreviewUrl && newPostText.length <= 150 && newPostText.length > 0 && selectedPostBackground.name !== 'Alertas';
 
-
   return (
     <div className="w-full space-y-6">
-      {/* Botão de Emergência, SAU e Turismo - Mantidos no topo */}
       <EmergencyButtonModalTrigger
         variant="destructive"
         size="default"
@@ -365,7 +377,6 @@ export default function FeedPage() {
         </Button>
       </div>
 
-      {/* Seção de Criação de Post */}
       <Card className="p-4 shadow-sm rounded-xl">
         <CardHeader className="p-0 pb-3">
           <CardTitle className="text-lg font-semibold flex items-center">
@@ -375,13 +386,13 @@ export default function FeedPage() {
         </CardHeader>
         <CardContent className="p-0">
           <Textarea
-            ref={textareaRef} // Added ref
+            ref={textareaRef}
             placeholder="No que você está pensando, viajante?"
             className="mb-3 h-24 resize-none rounded-lg"
             value={newPostText}
             onChange={(e) => setNewPostText(e.target.value)}
             style={
-              !imagePreviewUrl && selectedPostBackground?.name !== 'Padrão' && selectedPostBackground.name !== 'Alertas' // Do not apply background for 'Alertas'
+              !imagePreviewUrl && selectedPostBackground?.name !== 'Padrão' && selectedPostBackground.name !== 'Alertas'
                 ? {
                     backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
                     backgroundImage: selectedPostBackground.gradient,
@@ -412,7 +423,7 @@ export default function FeedPage() {
           {showColorPalette && (
             <div className="flex space-x-2 mb-3 overflow-x-auto no-scrollbar pb-1">
               {backgroundOptions.map((option) => {
-                if (option.name === 'Alertas') return null; // Skip 'Alertas' if we add it
+                if (option.name === 'Alertas') return null;
                 return (
                   <div
                     key={option.name}
@@ -432,29 +443,28 @@ export default function FeedPage() {
             </div>
           )}
 
-
           <div className="flex items-center justify-between mt-4">
             <div className="flex items-center gap-2">
-            {!imagePreviewUrl && (
+              {!imagePreviewUrl && (
                 <>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1.5"
+                    className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1"
                     onClick={() => {
-                      handleRemoveImage(); // Clear any selected image/video
-                      setSelectedPostBackground(backgroundOptions.find(opt => opt.name === 'Padrão') || backgroundOptions[0]); // Reset to default background
+                      handleRemoveImage();
+                      setSelectedPostBackground(backgroundOptions.find(opt => opt.name === 'Padrão') || backgroundOptions[0]);
                       textareaRef.current?.focus();
-                      toast({ title: "Alerta", description: "Escreva seu alerta de texto." });
+                      toast({ title: "Alerta de Texto", description: "Escreva seu alerta. Planos de fundo coloridos não se aplicam a este tipo de post." });
                     }}
                   >
-                    <ShieldAlert className="h-4 w-4" /> {/* Icon Changed */}
+                    <ShieldAlert className="h-4 w-4" />
                     Alertas
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1.5"
+                    className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1"
                     onClick={() => {
                       if (fileInputRef.current) {
                         fileInputRef.current.accept = "video/*";
@@ -468,7 +478,7 @@ export default function FeedPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1.5"
+                    className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1"
                     onClick={() => {
                       if (fileInputRef.current) {
                         fileInputRef.current.accept = "image/*";
@@ -483,7 +493,6 @@ export default function FeedPage() {
               )}
               {imagePreviewUrl && (
                  <div className="flex-1">
-                    {/* Placeholder or message when image is being previewed */}
                  </div>
               )}
             </div>
@@ -493,7 +502,6 @@ export default function FeedPage() {
               ref={fileInputRef}
               className="hidden"
               onChange={handleImageInputChange}
-              // accept attribute is now set dynamically by the button clicks
             />
             <Button
               onClick={handlePublishPost}
@@ -505,9 +513,36 @@ export default function FeedPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Seção de Alertas Recentes */}
+      {mockAlertsFeed.length > 0 && (
+        <div className="pt-4 pb-2"> {/* Adjusted vertical spacing */}
+          <div className="flex overflow-x-auto space-x-3 pb-2 -mx-1 px-1 no-scrollbar">
+            {mockAlertsFeed.slice(0, 3).map((alertData) => (
+              <HomeAlertCard key={alertData.id} alert={alertData} />
+            ))}
+            {mockAlertsFeed.length > 3 && (
+              <div className="w-[260px] flex-shrink-0 h-full flex items-stretch">
+                <Button asChild variant="outline" className="w-full h-full rounded-xl flex flex-col items-center justify-center text-center p-3 shadow-lg hover:bg-card/95 dark:hover:bg-muted/30 transition-colors duration-150">
+                  <Link href="/alertas" className="flex flex-col items-center justify-center h-full">
+                    <ArrowRightCircle className="h-10 w-10 mb-2 text-primary" />
+                    <span className="text-sm font-semibold">Ver Próximos<br/>Alertas</span>
+                  </Link>
+                </Button>
+              </div>
+            )}
+          </div>
+          <div className="mt-3 px-1"> 
+            <Button asChild variant="outline" className="w-full rounded-lg">
+              <Link href="/alertas">
+                Consultar Mural de Alertas ({mockAlertsFeed.length})
+              </Link>
+            </Button>
+          </div>
+        </div>
+      )}
       
-      {/* Seção Histórias da Comunidade (Vídeos de Usuários) */}
-      <div className="mb-3 mt-8">
+      <div className="mb-3 mt-4"> {/* Adjusted spacing */}
         <div className="px-1">
           <h2 className="text-xl font-bold font-headline flex items-center mb-3 text-foreground">
             <PlayCircle className="h-5 w-5 mr-2 text-primary" />
@@ -521,21 +556,17 @@ export default function FeedPage() {
         </div>
       </div>
 
-
-      {/* Título Feed */}
       <h2 className="text-xl font-bold pt-2 font-headline text-left">
         <List className="h-5 w-5 mr-2 text-primary inline-block" />
         Time Line
       </h2>
 
-      {/* Feed de Posts */}
       <div className="space-y-4">
         {posts.map((post) => (
           <PostCard key={post.id} {...post} />
         ))}
       </div>
 
-      {/* Modal de Visualização de Stories */}
       {selectedStory && (
         <StoryViewerModal
           isOpen={isStoryModalOpen}
