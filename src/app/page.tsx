@@ -401,10 +401,11 @@ export default function FeedPage() {
             const newVideoStory: StoryCircleProps = {
                 id: `user-story-${Date.now()}`,
                 adminName: newPostText.trim() ? `Vídeo de @Você: ${newPostText.trim()}` : 'Seu Novo Vídeo',
-                avatarUrl: imagePreviewUrl,
-                dataAIAvatarHint: 'user uploaded video story',
+                avatarUrl: 'https://placehold.co/180x320.png', // Placeholder for video thumbnail
+                dataAIAvatarHint: newPostText.trim() || 'user uploaded video',
                 hasNewStory: true,
                 storyType: 'video',
+                videoContentUrl: imagePreviewUrl, // Store the actual video data URI here
             };
             setUserVideoStories(prevStories => [newVideoStory, ...prevStories]);
             toast({ title: "Vídeo Publicado!", description: "Seu Reel foi adicionado." });
@@ -590,11 +591,9 @@ export default function FeedPage() {
                     size="sm"
                     className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1"
                     onClick={() => {
-                        setCurrentPostType('text');
-                        handleRemoveImage();
-                        if (textareaRef.current) textareaRef.current.focus();
+                        handleOpenAlertTypeModal();
                     }}
-                    title="Postar Texto"
+                    title="Postar Alerta"
                   >
                     <Edit3 className="h-4 w-4" /> 
                     Alertas

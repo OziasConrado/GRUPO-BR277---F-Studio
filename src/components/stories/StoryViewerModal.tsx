@@ -16,12 +16,13 @@ interface StoryViewerModalProps {
 export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewerModalProps) {
   if (!isOpen || !story) return null;
 
-  // Placeholder para a área de publicidade inferior (AdMob)
   const AdMobSpace = () => (
     <div className="shrink-0 h-[100px] bg-secondary/20 flex items-center justify-center text-sm text-secondary-foreground">
       Banner AdMob (320x50 ou similar)
     </div>
   );
+
+  const actualContentUrl = story.storyType === 'video' && story.videoContentUrl ? story.videoContentUrl : story.avatarUrl;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -43,24 +44,29 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
           </DialogClose>
         </DialogHeader>
         
-        {/* Espaço do Patrocinador Removido daqui */}
-
         <div className="flex-grow flex items-center justify-center p-1 sm:p-2 overflow-hidden">
-          {/* Conteúdo do Story (Imagem) */}
           <div className="relative w-full h-full max-w-md max-h-full mx-auto">
-            <Image
-              src={story.avatarUrl} // Usar a URL do story real aqui
-              alt={`Story de ${story.adminName}`}
-              layout="fill"
-              objectFit="contain"
-              data-ai-hint={story.dataAIAvatarHint || "story content"}
-            />
+            {story.storyType === 'video' && story.videoContentUrl ? (
+              <video
+                src={story.videoContentUrl}
+                controls
+                autoPlay
+                className="w-full h-full object-contain"
+                data-ai-hint={story.dataAIAvatarHint || "user uploaded video"}
+              />
+            ) : (
+              <Image
+                src={story.avatarUrl} 
+                alt={`Story de ${story.adminName}`}
+                layout="fill"
+                objectFit="contain"
+                data-ai-hint={story.dataAIAvatarHint || "story content"}
+              />
+            )}
           </div>
         </div>
 
-         {/* Banner AdMob (simulado) */}
         <AdMobSpace />
-
       </DialogContent>
     </Dialog>
   );
