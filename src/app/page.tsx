@@ -8,22 +8,21 @@ import {
   Store,
   Landmark,
   Headset,
-  ShieldAlert, 
   Newspaper,
-  MapIcon,
   Video,
   ListChecks,
   Image as ImageIcon,
   XCircle,
-  Edit, 
-  Edit3, 
+  Edit,
+  Edit3,
   PlayCircle,
   AlertTriangle,
-  Construction, 
-  TrafficConeIcon, 
-  CloudFog, 
-  Flame as FlameIcon, 
-  ArrowRightCircle 
+  ShieldAlert, // Adicionado para o botão Alertas
+  Construction,
+  TrafficConeIcon,
+  CloudFog,
+  Flame as FlameIcon,
+  ArrowRightCircle
 } from 'lucide-react';
 
 import PostCard, { type PostCardProps, type PostReactions } from '@/components/feed/post-card';
@@ -35,7 +34,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import HomeAlertCard, { type HomeAlertCardData } from '@/components/alerts/home-alert-card'; 
+import HomeAlertCard, { type HomeAlertCardData } from '@/components/alerts/home-alert-card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+
 
 // Mocks and Constants
 const defaultReactions: PostReactions = {
@@ -213,10 +216,10 @@ const generateTimestamp = () => {
 };
 
 const mockAlertsFeed: HomeAlertCardData[] = [
-  { 
-    id: 'alert-1', 
-    type: 'Acidente', 
-    description: 'Colisão grave na BR-277, Km 35 (sentido litoral). Trânsito totalmente parado. Use desvios pela PR-407.', 
+  {
+    id: 'alert-1',
+    type: 'Acidente',
+    description: 'Colisão grave na BR-277, Km 35 (sentido litoral). Trânsito totalmente parado. Use desvios pela PR-407.',
     timestamp: generateTimestamp(),
     userNameReportedBy: 'Carlos Caminhoneiro',
     userAvatarUrl: 'https://placehold.co/40x40.png?text=CC',
@@ -224,20 +227,20 @@ const mockAlertsFeed: HomeAlertCardData[] = [
     bio: 'Na estrada há 20 anos, sempre alerta!',
     instagramUsername: 'carlos_alerta_rodovias'
   },
-  { 
-    id: 'alert-2', 
-    type: 'Obras', 
-    description: 'Pista interditada para obras de recapeamento na BR-116, entre os Kms 110-115 (região de Campina Grande). Siga pela marginal com atenção.', 
+  {
+    id: 'alert-2',
+    type: 'Obras',
+    description: 'Pista interditada para obras de recapeamento na BR-116, entre os Kms 110-115 (região de Campina Grande). Siga pela marginal com atenção.',
     timestamp: generateTimestamp(),
     userNameReportedBy: 'Ana Viajante',
     userAvatarUrl: 'https://placehold.co/40x40.png?text=AV',
     dataAIAvatarHint: 'woman traveler pointing',
     bio: 'Explorando o Brasil e compartilhando o que vejo.',
   },
-  { 
-    id: 'alert-3', 
-    type: 'Congestionamento', 
-    description: 'Fluxo intenso de veículos na região central de Curitiba, especialmente Av. Sete de Setembro. Evite o centro se possível.', 
+  {
+    id: 'alert-3',
+    type: 'Congestionamento',
+    description: 'Fluxo intenso de veículos na região central de Curitiba, especialmente Av. Sete de Setembro. Evite o centro se possível.',
     timestamp: generateTimestamp(),
     userNameReportedBy: 'Mariana Logística',
     userAvatarUrl: 'https://placehold.co/40x40.png?text=ML',
@@ -245,20 +248,20 @@ const mockAlertsFeed: HomeAlertCardData[] = [
     bio: 'Planejamento é tudo! Informação é chave.',
     instagramUsername: 'marilog_transporte'
   },
-  { 
-    id: 'alert-4', 
-    type: 'Neblina', 
-    description: 'Visibilidade reduzida na Serra do Mar (BR-277). Acenda os faróis e dirija com cautela redobrada. Trecho muito perigoso.', 
+  {
+    id: 'alert-4',
+    type: 'Neblina',
+    description: 'Visibilidade reduzida na Serra do Mar (BR-277). Acenda os faróis e dirija com cautela redobrada. Trecho muito perigoso.',
     timestamp: generateTimestamp(),
     userNameReportedBy: 'Pedro Estradeiro',
     userAvatarUrl: 'https://placehold.co/40x40.png?text=PE',
     dataAIAvatarHint: 'experienced driver focused',
     bio: 'Sempre de olho na segurança.',
   },
-  { 
-    id: 'alert-5', 
-    type: 'Queimada', 
-    description: 'Fumaça densa sobre a pista na PR-407, Km 5, próximo a Paranaguá. Risco de baixa visibilidade e problemas respiratórios.', 
+  {
+    id: 'alert-5',
+    type: 'Queimada',
+    description: 'Fumaça densa sobre a pista na PR-407, Km 5, próximo a Paranaguá. Risco de baixa visibilidade e problemas respiratórios.',
     timestamp: generateTimestamp(),
     userNameReportedBy: 'Segurança Rodoviária',
     userAvatarUrl: 'https://placehold.co/40x40.png?text=SR',
@@ -267,6 +270,8 @@ const mockAlertsFeed: HomeAlertCardData[] = [
     instagramUsername: 'rodoviaria_segura'
   },
 ];
+
+const alertTypesForSelection = ["Acidente", "Obras na Pista", "Congestionamento", "Neblina/Cond. Climática", "Animal na Pista", "Queimada/Fumaça", "Outro"];
 
 
 export default function FeedPage() {
@@ -279,6 +284,8 @@ export default function FeedPage() {
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [selectedPostBackground, setSelectedPostBackground] = useState(backgroundOptions[0]);
   const [currentPostType, setCurrentPostType] = useState<'text' | 'video' | 'image' | 'alert'>('text');
+  const [isAlertTypeModalOpen, setIsAlertTypeModalOpen] = useState(false);
+  const [selectedAlertType, setSelectedAlertType] = useState<string | undefined>(undefined);
 
 
   // Hooks
@@ -363,6 +370,14 @@ export default function FeedPage() {
       return;
     }
 
+    let postTextToPublish = newPostText;
+    if (currentPostType === 'alert' && selectedAlertType && selectedAlertType !== 'Outro') {
+        postTextToPublish = `ALERTA: ${selectedAlertType}\n\n${newPostText}`;
+    } else if (currentPostType === 'alert' && selectedAlertType === 'Outro') {
+        postTextToPublish = `ALERTA: Outro\n\n${newPostText}`;
+    }
+
+
     const newPost: PostCardProps = {
       id: `post-${Date.now()}`,
       userName: 'Você',
@@ -370,7 +385,7 @@ export default function FeedPage() {
       dataAIAvatarHint: 'current user',
       userLocation: 'Sua Localização',
       timestamp: 'Agora mesmo',
-      text: newPostText,
+      text: postTextToPublish,
       reactions: { ...defaultReactions },
       commentsData: [],
       allKnownUserNames: MOCK_POST_USER_NAMES,
@@ -381,7 +396,7 @@ export default function FeedPage() {
     if (selectedImageForUpload && imagePreviewUrl) {
       newPost.uploadedImageUrl = imagePreviewUrl;
       newPost.dataAIUploadedImageHint = selectedImageForUpload.type.startsWith('video/') ? 'user uploaded video' : 'user uploaded image';
-    } else if (currentPostType === 'text' && newPostText.length <= 150 && selectedPostBackground?.name !== 'Padrão') { 
+    } else if (currentPostType === 'text' && newPostText.length <= 150 && selectedPostBackground?.name !== 'Padrão') {
       newPost.cardStyle = {
         backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
         backgroundImage: selectedPostBackground.gradient,
@@ -397,10 +412,29 @@ export default function FeedPage() {
     setImagePreviewUrl(null);
     setSelectedPostBackground(backgroundOptions[0]);
     setCurrentPostType('text'); // Reset to default post type
+    setSelectedAlertType(undefined); // Reset selected alert type
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
+
+  const handleOpenAlertTypeModal = () => {
+    handleRemoveImage(); // Garante que não haja mídia ao criar alerta
+    setSelectedPostBackground(backgroundOptions[0]); // Reseta fundo
+    setIsAlertTypeModalOpen(true);
+  };
+
+  const handleConfirmAlertType = () => {
+    if (!selectedAlertType) {
+        toast({ variant: "destructive", title: "Nenhum tipo selecionado", description: "Por favor, selecione um tipo de alerta." });
+        return;
+    }
+    setCurrentPostType('alert');
+    setIsAlertTypeModalOpen(false);
+    textareaRef.current?.focus();
+    toast({ title: `Modo Alerta: ${selectedAlertType}`, description: "Descreva seu alerta de texto." });
+  };
+
 
   // Derived State
   const canPublish = newPostText.trim() !== '' || selectedImageForUpload !== null;
@@ -448,9 +482,9 @@ export default function FeedPage() {
           <Textarea
             ref={textareaRef}
             placeholder={
-              currentPostType === 'alert' ? "Descreva o alerta (máx. 500 caracteres)..." : 
-              currentPostType === 'video' ? "Adicione uma legenda para seu vídeo..." : 
-              currentPostType === 'image' ? "Adicione uma legenda para sua foto..." : 
+              currentPostType === 'alert' ? `ALERTA: ${selectedAlertType || 'Geral'} - Descreva o alerta (máx. 500 caracteres)...` :
+              currentPostType === 'video' ? "Adicione uma legenda para seu vídeo..." :
+              currentPostType === 'image' ? "Adicione uma legenda para sua foto..." :
               "No que você está pensando, viajante?"
             }
             className="mb-3 h-24 resize-none rounded-lg"
@@ -486,7 +520,7 @@ export default function FeedPage() {
             </div>
           )}
 
-          {showColorPalette && (
+          {showColorPalette && currentPostType !== 'alert' && (
             <div className="flex space-x-2 mb-3 overflow-x-auto no-scrollbar pb-1">
               {backgroundOptions.map((option) => (
                 <div
@@ -514,15 +548,9 @@ export default function FeedPage() {
                     variant="outline"
                     size="sm"
                     className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1"
-                    onClick={() => {
-                      setCurrentPostType('alert');
-                      handleRemoveImage(); 
-                      setSelectedPostBackground(backgroundOptions[0]); // Reset to default background
-                      textareaRef.current?.focus();
-                      toast({ title: "Criar Alerta", description: "Escreva seu alerta de texto." });
-                    }}
+                    onClick={handleOpenAlertTypeModal}
                   >
-                    <Edit3 className="h-4 w-4" /> 
+                    <Edit3 className="h-4 w-4" />
                     Alertas
                   </Button>
                   <Button
@@ -562,7 +590,7 @@ export default function FeedPage() {
                  </div>
               )}
             </div>
-            
+
             <input
               type="file"
               ref={fileInputRef}
@@ -602,7 +630,7 @@ export default function FeedPage() {
           </div>
         </div>
       )}
-      
+
       <div className="mb-3 mt-4">
         <div className="px-1">
           <h2 className="text-xl font-bold font-headline flex items-center mb-3 text-foreground">
@@ -635,6 +663,37 @@ export default function FeedPage() {
           story={selectedStory}
         />
       )}
+
+      {/* Modal para Seleção de Tipo de Alerta */}
+      <Dialog open={isAlertTypeModalOpen} onOpenChange={setIsAlertTypeModalOpen}>
+        <DialogContent className="sm:max-w-md rounded-xl">
+          <DialogHeader>
+            <DialogTitle className="font-headline text-xl">Selecione o Tipo de Alerta</DialogTitle>
+            <DialogDescription>
+              Escolha a categoria que melhor descreve seu alerta.
+            </DialogDescription>
+          </DialogHeader>
+          <RadioGroup value={selectedAlertType} onValueChange={setSelectedAlertType} className="my-4 space-y-2">
+            {alertTypesForSelection.map((type) => (
+              <div key={type} className="flex items-center space-x-2">
+                <RadioGroupItem value={type} id={`alert-type-${type}`} />
+                <Label htmlFor={`alert-type-${type}`} className="font-normal">{type}</Label>
+              </div>
+            ))}
+          </RadioGroup>
+          <DialogFooter className="sm:justify-end gap-2 sm:gap-0">
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Cancelar
+              </Button>
+            </DialogClose>
+            <Button type="button" onClick={handleConfirmAlertType}>
+              Continuar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
