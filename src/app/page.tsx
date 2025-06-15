@@ -16,7 +16,7 @@ import {
   Image as ImageIcon,
   XCircle,
   Edit, 
-  Edit3, // Importado Edit3 para o botão de Alertas
+  Edit3, 
   PlayCircle,
   AlertTriangle,
   Construction, 
@@ -539,19 +539,13 @@ export default function FeedPage() {
                 <Button asChild variant="outline" className="w-full h-full rounded-xl flex flex-col items-center justify-center text-center p-3 shadow-lg hover:bg-card/95 dark:hover:bg-muted/30 transition-colors duration-150">
                   <Link href="/alertas" className="flex flex-col items-center justify-center h-full">
                     <ArrowRightCircle className="h-10 w-10 mb-2 text-primary" />
-                    <span className="text-sm font-semibold">Ver Próximos<br/>Alertas</span>
+                    <span className="text-sm font-semibold">Mais Alertas</span>
                   </Link>
                 </Button>
               </div>
             )}
           </div>
-          <div className="mt-3 px-1"> 
-            <Button asChild variant="outline" className="w-full rounded-lg">
-              <Link href="/alertas">
-                Consultar Mural de Alertas ({mockAlertsFeed.length})
-              </Link>
-            </Button>
-          </div>
+          {/* Botão "Consultar Mural de Alertas" foi removido daqui */}
         </div>
       )}
       
@@ -590,3 +584,4 @@ export default function FeedPage() {
     </div>
   );
 }
+
