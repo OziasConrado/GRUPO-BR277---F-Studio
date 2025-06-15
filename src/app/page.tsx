@@ -15,7 +15,8 @@ import {
   ListChecks,
   Image as ImageIcon,
   XCircle,
-  Edit, // Changed from ShieldAlert for the text post button
+  Edit, 
+  Edit3, // Importado Edit3 para o botão de Alertas
   PlayCircle,
   AlertTriangle,
   Construction, 
@@ -225,6 +226,8 @@ export default function FeedPage() {
   const [selectedImageForUpload, setSelectedImageForUpload] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [selectedPostBackground, setSelectedPostBackground] = useState(backgroundOptions[0]);
+  const [currentPostType, setCurrentPostType] = useState<'text' | 'video' | 'image' | 'alert'>('text');
+
 
   // Hooks
   const { toast } = useToast();
@@ -268,15 +271,17 @@ export default function FeedPage() {
         if (fileInputRef.current) fileInputRef.current.value = '';
         return;
       }
-      if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
-        toast({
-          variant: 'destructive',
-          title: 'Tipo de arquivo inválido',
-          description: 'Por favor, selecione uma imagem ou vídeo.',
-        });
-        if (fileInputRef.current) fileInputRef.current.value = '';
-        return;
+      if (currentPostType === 'video' && !file.type.startsWith('video/')) {
+         toast({ variant: 'destructive', title: 'Tipo de arquivo inválido', description: 'Por favor, selecione um vídeo.' });
+         if (fileInputRef.current) fileInputRef.current.value = '';
+         return;
       }
+      if (currentPostType === 'image' && !file.type.startsWith('image/')) {
+         toast({ variant: 'destructive', title: 'Tipo de arquivo inválido', description: 'Por favor, selecione uma imagem.' });
+         if (fileInputRef.current) fileInputRef.current.value = '';
+         return;
+      }
+
 
       setSelectedImageForUpload(file);
       const reader = new FileReader();
@@ -324,7 +329,7 @@ export default function FeedPage() {
     if (selectedImageForUpload && imagePreviewUrl) {
       newPost.uploadedImageUrl = imagePreviewUrl;
       newPost.dataAIUploadedImageHint = selectedImageForUpload.type.startsWith('video/') ? 'user uploaded video' : 'user uploaded image';
-    } else if (newPostText.length <= 150 && selectedPostBackground?.name !== 'Padrão' && selectedPostBackground.name !== 'Alertas') { // 'Alertas' type should not use colored backgrounds
+    } else if (currentPostType === 'text' && newPostText.length <= 150 && selectedPostBackground?.name !== 'Padrão') { 
       newPost.cardStyle = {
         backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
         backgroundImage: selectedPostBackground.gradient,
@@ -332,12 +337,14 @@ export default function FeedPage() {
         name: selectedPostBackground.name,
       };
     }
+    // Alert posts (currentPostType === 'alert') will have default card style
 
     setPosts((prevPosts) => [newPost, ...prevPosts]);
     setNewPostText('');
     setSelectedImageForUpload(null);
     setImagePreviewUrl(null);
     setSelectedPostBackground(backgroundOptions[0]);
+    setCurrentPostType('text'); // Reset to default post type
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -345,7 +352,8 @@ export default function FeedPage() {
 
   // Derived State
   const canPublish = newPostText.trim() !== '' || selectedImageForUpload !== null;
-  const showColorPalette = !imagePreviewUrl && newPostText.length <= 150 && newPostText.length > 0 && selectedPostBackground.name !== 'Alertas';
+  const showColorPalette = !imagePreviewUrl && currentPostType === 'text' && newPostText.length <= 150 && newPostText.length > 0;
+
 
   return (
     <div className="w-full space-y-6">
@@ -387,12 +395,17 @@ export default function FeedPage() {
         <CardContent className="p-0">
           <Textarea
             ref={textareaRef}
-            placeholder="No que você está pensando, viajante?"
+            placeholder={
+              currentPostType === 'alert' ? "Descreva o alerta..." : 
+              currentPostType === 'video' ? "Adicione uma legenda para seu vídeo..." : 
+              currentPostType === 'image' ? "Adicione uma legenda para sua foto..." : 
+              "No que você está pensando, viajante?"
+            }
             className="mb-3 h-24 resize-none rounded-lg"
             value={newPostText}
             onChange={(e) => setNewPostText(e.target.value)}
             style={
-              !imagePreviewUrl && selectedPostBackground?.name !== 'Padrão' && selectedPostBackground.name !== 'Alertas'
+              !imagePreviewUrl && currentPostType === 'text' && selectedPostBackground?.name !== 'Padrão'
                 ? {
                     backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
                     backgroundImage: selectedPostBackground.gradient,
@@ -422,24 +435,21 @@ export default function FeedPage() {
 
           {showColorPalette && (
             <div className="flex space-x-2 mb-3 overflow-x-auto no-scrollbar pb-1">
-              {backgroundOptions.map((option) => {
-                if (option.name === 'Alertas') return null; // Explicitly skip 'Alertas' for color palette
-                return (
-                  <div
-                    key={option.name}
-                    className={cn(
-                      'w-8 h-8 rounded-full cursor-pointer border-2 border-transparent flex-shrink-0 shadow-inner',
-                      selectedPostBackground.name === option.name && 'ring-2 ring-primary ring-offset-1',
-                    )}
-                    style={{
-                      backgroundColor: option.gradient ? undefined : option.bg,
-                      backgroundImage: option.gradient,
-                    }}
-                    onClick={() => setSelectedPostBackground(option)}
-                    title={option.name}
-                  />
-                );
-              })}
+              {backgroundOptions.map((option) => (
+                <div
+                  key={option.name}
+                  className={cn(
+                    'w-8 h-8 rounded-full cursor-pointer border-2 border-transparent flex-shrink-0 shadow-inner',
+                    selectedPostBackground.name === option.name && 'ring-2 ring-primary ring-offset-1',
+                  )}
+                  style={{
+                    backgroundColor: option.gradient ? undefined : option.bg,
+                    backgroundImage: option.gradient,
+                  }}
+                  onClick={() => setSelectedPostBackground(option)}
+                  title={option.name}
+                />
+              ))}
             </div>
           )}
 
@@ -452,13 +462,14 @@ export default function FeedPage() {
                     size="sm"
                     className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1"
                     onClick={() => {
-                      handleRemoveImage(); // Clear any selected media
-                      setSelectedPostBackground(backgroundOptions.find(opt => opt.name === 'Padrão') || backgroundOptions[0]); // Reset to default background
+                      setCurrentPostType('alert');
+                      handleRemoveImage(); 
+                      setSelectedPostBackground(backgroundOptions[0]); // Reset to default background
                       textareaRef.current?.focus();
                       toast({ title: "Criar Alerta", description: "Escreva seu alerta de texto." });
                     }}
                   >
-                    <Edit className="h-4 w-4" />
+                    <Edit3 className="h-4 w-4" /> {/* Ícone de lápis */}
                     Alertas
                   </Button>
                   <Button
@@ -466,6 +477,7 @@ export default function FeedPage() {
                     size="sm"
                     className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1"
                     onClick={() => {
+                      setCurrentPostType('video');
                       if (fileInputRef.current) {
                         fileInputRef.current.accept = "video/*";
                         fileInputRef.current.click();
@@ -480,6 +492,7 @@ export default function FeedPage() {
                     size="sm"
                     className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1"
                     onClick={() => {
+                      setCurrentPostType('image');
                       if (fileInputRef.current) {
                         fileInputRef.current.accept = "image/*";
                         fileInputRef.current.click();
