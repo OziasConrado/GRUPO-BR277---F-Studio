@@ -181,7 +181,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
               <Button 
                 variant="ghost" 
                 onClick={() => handleStoryReactionClick('thumbsUp')} 
-                className="text-white hover:text-white/90 p-1.5 h-auto w-auto flex flex-col items-center"
+                className="text-white hover:bg-white/10 hover:text-white/90 p-1.5 h-auto w-auto flex flex-col items-center"
                 aria-label="Curtir"
               >
                 <ThumbsUp size={26} className={cn(currentUserStoryReaction === 'thumbsUp' ? 'fill-white' : 'fill-transparent')} />
@@ -190,7 +190,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
               <Button 
                 variant="ghost" 
                 onClick={() => handleStoryReactionClick('thumbsDown')} 
-                className="text-white hover:text-white/90 p-1.5 h-auto w-auto flex flex-col items-center"
+                className="text-white hover:bg-white/10 hover:text-white/90 p-1.5 h-auto w-auto flex flex-col items-center"
                 aria-label="Não curtir"
               >
                 <ThumbsDown size={26} className={cn(currentUserStoryReaction === 'thumbsDown' ? 'fill-white' : 'fill-transparent')} />
@@ -199,7 +199,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
               <Button 
                 variant="ghost" 
                 onClick={handleCommentClick} 
-                className="text-white hover:text-white/90 p-1.5 h-auto w-auto flex flex-col items-center"
+                className="text-white hover:bg-white/10 hover:text-white/90 p-1.5 h-auto w-auto flex flex-col items-center"
                 aria-label="Comentários"
               >
                 <MessageSquare size={26} />
@@ -208,7 +208,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
               <Button 
                 variant="ghost" 
                 onClick={handleShareClick} 
-                className="text-white hover:text-white/90 p-1.5 h-auto w-auto flex flex-col items-center"
+                className="text-white hover:bg-white/10 hover:text-white/90 p-1.5 h-auto w-auto flex flex-col items-center"
                 aria-label="Compartilhar"
               >
                 <Share2 size={26} />
@@ -218,7 +218,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
                 <DropdownMenuTrigger asChild>
                   <Button 
                     variant="ghost" 
-                    className="text-white hover:text-white/90 p-1.5 h-auto w-auto flex flex-col items-center"
+                    className="text-white hover:bg-white/10 hover:text-white/90 p-1.5 h-auto w-auto flex flex-col items-center"
                     aria-label="Mais opções"
                   >
                     <MoreVertical size={26} />
