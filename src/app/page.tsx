@@ -287,6 +287,7 @@ export default function FeedPage() {
   const [currentPostType, setCurrentPostType] = useState<'text' | 'video' | 'image' | 'alert'>('text');
   const [isAlertTypeModalOpen, setIsAlertTypeModalOpen] = useState(false);
   const [selectedAlertType, setSelectedAlertType] = useState<string | undefined>(undefined);
+  const [userVideoStories, setUserVideoStories] = useState<StoryCircleProps[]>(mockUserVideoStories);
 
 
   // Hooks
@@ -326,7 +327,7 @@ export default function FeedPage() {
         toast({
           variant: 'destructive',
           title: 'Arquivo muito grande',
-          description: `Por favor, selecione um arquivo menor que 5MB. O tipo de arquivo selecionado foi: ${file.type}`,
+          description: `O tamanho máximo é 5MB. Considere cortar o ${file.type.startsWith('video/') ? 'vídeo' : 'arquivo'} ou usar um formato mais compacto. Tipo: ${file.type}`,
         });
         if (fileInputRef.current) fileInputRef.current.value = '';
         return;
@@ -370,74 +371,96 @@ export default function FeedPage() {
       });
       return;
     }
-
-    if (currentPostType === 'alert' && (!selectedAlertType || !newPostText.trim())) {
+  
+    if (currentPostType === 'alert') {
+      if (!selectedAlertType || !newPostText.trim()) {
         toast({
             variant: 'destructive',
             title: 'Alerta incompleto',
             description: 'Selecione um tipo e descreva o alerta.',
         });
         return;
-    }
-
-    if (currentPostType === 'alert') {
-        const newAlert: HomeAlertCardData = {
-            id: `user-alert-${Date.now()}`,
-            type: selectedAlertType || 'Alerta Geral',
-            description: newPostText.trim(),
-            timestamp: new Date().toISOString(),
-            userNameReportedBy: 'Você',
-            userAvatarUrl: 'https://placehold.co/40x40.png',
-            dataAIAvatarHint: 'current user avatar',
-            bio: 'Usuário do Rota Segura', 
-            // instagramUsername: 'seu_insta_aqui' // Opcional
-        };
-        setDisplayedAlertsFeed(prevAlerts => [newAlert, ...prevAlerts]);
-
-    } else { // Handle regular posts (text, image, video)
-        const newPost: PostCardProps = {
-          id: `post-${Date.now()}`,
-          userName: 'Você',
+      }
+      const newAlert: HomeAlertCardData = {
+          id: `user-alert-${Date.now()}`,
+          type: selectedAlertType || 'Alerta Geral',
+          description: newPostText.trim(),
+          timestamp: new Date().toISOString(),
+          userNameReportedBy: 'Você',
           userAvatarUrl: 'https://placehold.co/40x40.png',
-          dataAIAvatarHint: 'current user',
-          userLocation: 'Sua Localização',
-          timestamp: 'Agora mesmo',
-          text: newPostText,
-          reactions: { ...defaultReactions },
-          commentsData: [],
-          allKnownUserNames: MOCK_POST_USER_NAMES,
-          bio: 'Este é o seu perfil.',
-          instagramUsername: 'seu_insta',
-        };
+          dataAIAvatarHint: 'current user avatar',
+          bio: 'Usuário do Rota Segura', 
+      };
+      setDisplayedAlertsFeed(prevAlerts => [newAlert, ...prevAlerts]);
+      toast({ title: "Alerta Publicado!", description: "Seu alerta foi adicionado ao mural." });
+      // Reset fields specific to alert
+      setSelectedAlertType(undefined);
 
+    } else if (currentPostType === 'video') {
         if (selectedImageForUpload && imagePreviewUrl) {
-          newPost.uploadedImageUrl = imagePreviewUrl;
-          newPost.dataAIUploadedImageHint = selectedImageForUpload.type.startsWith('video/') ? 'user uploaded video' : 'user uploaded image';
-        } else if (currentPostType === 'text' && newPostText.length <= 150 && selectedPostBackground?.name !== 'Padrão') {
-          newPost.cardStyle = {
-            backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
-            backgroundImage: selectedPostBackground.gradient,
-            color: selectedPostBackground.text,
-            name: selectedPostBackground.name,
-          };
+            const newVideoStory: StoryCircleProps = {
+                id: `user-story-${Date.now()}`,
+                adminName: newPostText.trim() ? `Vídeo de @Você: ${newPostText.trim()}` : 'Seu Novo Vídeo',
+                avatarUrl: imagePreviewUrl,
+                dataAIAvatarHint: 'user uploaded video story',
+                hasNewStory: true,
+                storyType: 'video',
+            };
+            setUserVideoStories(prevStories => [newVideoStory, ...prevStories]);
+            toast({ title: "Vídeo Publicado!", description: "Seu Reel foi adicionado." });
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Nenhum vídeo selecionado',
+                description: 'Por favor, selecione um arquivo de vídeo para publicar como Reel.',
+            });
+            return; // Don't proceed to common reset if video wasn't selected
         }
-        setPosts((prevPosts) => [newPost, ...prevPosts]);
+    } else { 
+      // Handle regular posts (text, image) for Time Line
+      const newPost: PostCardProps = {
+        id: `post-${Date.now()}`,
+        userName: 'Você',
+        userAvatarUrl: 'https://placehold.co/40x40.png',
+        dataAIAvatarHint: 'current user',
+        userLocation: 'Sua Localização',
+        timestamp: 'Agora mesmo',
+        text: newPostText,
+        reactions: { ...defaultReactions },
+        commentsData: [],
+        allKnownUserNames: MOCK_POST_USER_NAMES,
+        bio: 'Este é o seu perfil.',
+        instagramUsername: 'seu_insta',
+      };
+  
+      if (selectedImageForUpload && imagePreviewUrl && currentPostType === 'image') {
+        newPost.uploadedImageUrl = imagePreviewUrl;
+        newPost.dataAIUploadedImageHint = 'user uploaded image';
+      } else if (currentPostType === 'text' && newPostText.length <= 150 && selectedPostBackground?.name !== 'Padrão') {
+        newPost.cardStyle = {
+          backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
+          backgroundImage: selectedPostBackground.gradient,
+          color: selectedPostBackground.text,
+          name: selectedPostBackground.name,
+        };
+      }
+      setPosts((prevPosts) => [newPost, ...prevPosts]);
+      toast({ title: "Publicado!", description: "Sua postagem está na Time Line." });
     }
-
+  
     // Reset common fields
     setNewPostText('');
     setSelectedImageForUpload(null);
     setImagePreviewUrl(null);
     setSelectedPostBackground(backgroundOptions[0]);
     setCurrentPostType('text'); // Reset to default post type
-    setSelectedAlertType(undefined); // Reset selected alert type
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
   const handleOpenAlertTypeModal = () => {
-    setCurrentPostType('alert'); // Set type to alert before opening modal
+    setCurrentPostType('alert'); 
     handleRemoveImage(); 
     setSelectedPostBackground(backgroundOptions[0]); 
     setIsAlertTypeModalOpen(true);
@@ -448,7 +471,6 @@ export default function FeedPage() {
         toast({ variant: "destructive", title: "Nenhum tipo selecionado", description: "Por favor, selecione um tipo de alerta." });
         return;
     }
-    // currentPostType is already 'alert' from handleOpenAlertTypeModal
     setIsAlertTypeModalOpen(false);
     textareaRef.current?.focus();
     toast({ title: `Modo Alerta: ${selectedAlertType}`, description: "Descreva seu alerta." });
@@ -561,13 +583,18 @@ export default function FeedPage() {
 
           <div className="flex items-center justify-between mt-4">
             <div className="flex items-center gap-2">
-              {!imagePreviewUrl && (
+            {!imagePreviewUrl && (
                 <>
                   <Button
                     variant="outline"
                     size="sm"
                     className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1"
-                    onClick={handleOpenAlertTypeModal}
+                    onClick={() => {
+                        setCurrentPostType('text');
+                        handleRemoveImage();
+                        if (textareaRef.current) textareaRef.current.focus();
+                    }}
+                    title="Postar Texto"
                   >
                     <Edit3 className="h-4 w-4" /> 
                     Alertas
@@ -578,11 +605,14 @@ export default function FeedPage() {
                     className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1"
                     onClick={() => {
                       setCurrentPostType('video');
+                      handleRemoveImage(); 
+                      setSelectedPostBackground(backgroundOptions[0]); 
                       if (fileInputRef.current) {
                         fileInputRef.current.accept = "video/*";
                         fileInputRef.current.click();
                       }
                     }}
+                    title="Postar Vídeo"
                   >
                     <Video className="h-4 w-4" />
                     Vídeo
@@ -593,11 +623,14 @@ export default function FeedPage() {
                     className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1"
                     onClick={() => {
                       setCurrentPostType('image');
+                      handleRemoveImage();
+                      setSelectedPostBackground(backgroundOptions[0]);
                       if (fileInputRef.current) {
                         fileInputRef.current.accept = "image/*";
                         fileInputRef.current.click();
                       }
                     }}
+                    title="Postar Foto"
                   >
                     <ImageIcon className="h-4 w-4" />
                     Foto
@@ -636,7 +669,7 @@ export default function FeedPage() {
             </h2>
         </div>
         <div className="flex overflow-x-auto space-x-2 pb-3 -mx-4 px-4 no-scrollbar">
-            {mockUserVideoStories.map((story) => (
+            {userVideoStories.map((story) => (
             <StoryCircle key={story.id} {...story} onClick={() => handleStoryClick(story)} />
             ))}
         </div>
