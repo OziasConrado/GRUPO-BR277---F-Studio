@@ -1,6 +1,6 @@
 
 import ToolCard, { type ToolCardProps } from '@/components/tools/tool-card';
-import { Calculator, MapPinned, ListChecks, ScanLine, Fuel, Wrench, Droplets, Truck, ClipboardList, ClipboardSignature, ClipboardCopy, Send, QrCode, UserSquare, HeartPulse, Scale, ActivitySquare, Bed, Flame } from 'lucide-react';
+import { Calculator, ListChecks, ScanLine, Fuel, Droplets, Truck, ClipboardList, ClipboardSignature, ClipboardCopy, Send, QrCode, UserSquare, HeartPulse, Scale, ActivitySquare, Bed, Flame, Clock } from 'lucide-react';
 
 const tools: ToolCardProps[] = [
   {
@@ -17,7 +17,7 @@ const tools: ToolCardProps[] = [
   },
   {
     title: 'Calculadora de Frete',
-    Icon: Calculator, // Mantido, mas a ferramenta foi melhorada
+    Icon: Calculator, 
     href: '/ferramentas/calculadora-frete',
     description: 'Estime os custos do seu frete com precisão.',
   },
@@ -34,7 +34,7 @@ const tools: ToolCardProps[] = [
     description: 'Não esqueça nada importante para sua jornada.',
   },
   {
-    title: 'Custo de Viagem (Diesel + Arla)', // Novo
+    title: 'Custo de Viagem (Diesel + Arla)', 
     Icon: ClipboardList, 
     href: '/ferramentas/custo-viagem',
     description: 'Calcule diesel, Arla32 e custo total.',
@@ -45,7 +45,7 @@ const tools: ToolCardProps[] = [
     href: '/ferramentas/declaracao-transporte',
     description: 'Gere uma declaração de transporte rapidamente.',
   },
-   {
+  {
     title: 'Gerador de Currículo',
     Icon: UserSquare, 
     href: '/ferramentas/gerador-curriculo',
@@ -68,6 +68,12 @@ const tools: ToolCardProps[] = [
     Icon: QrCode,
     href: '/ferramentas/gerador-qr-code',
     description: 'Transforme links ou textos em QR Codes.',
+  },
+  {
+    title: 'Gestão do Tempo',
+    Icon: Clock,
+    href: '/ferramentas/gestao-tempo',
+    description: 'Gerencie suas tarefas com a Matriz de Eisenhower.',
   },
   {
     title: 'Monitorar Pressão Arterial',
