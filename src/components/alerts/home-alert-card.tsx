@@ -86,20 +86,22 @@ export default function HomeAlertCard({ alert }: HomeAlertCardProps) {
         <CardFooter className="p-3 pt-1.5 border-t border-border/50 flex justify-between items-center text-xs text-muted-foreground">
           <button
             onClick={handleReporterClick}
-            className="flex items-center cursor-pointer hover:underline focus:outline-none group"
+            className="flex items-center cursor-pointer hover:underline focus:outline-none group min-w-0" // Added min-w-0 for flex truncation
             aria-label={`Ver perfil de ${alert.userNameReportedBy}`}
           >
-            <Avatar className="h-5 w-5 mr-1.5 border border-primary/20 group-hover:border-primary/40 transition-all">
+            <Avatar className="h-5 w-5 mr-1.5 border border-primary/20 group-hover:border-primary/40 transition-all flex-shrink-0">
               {alert.userAvatarUrl ? <AvatarImage src={alert.userAvatarUrl as string} alt={alert.userNameReportedBy} data-ai-hint={alert.dataAIAvatarHint} /> : null}
               <AvatarFallback className="text-[10px]">
                 {alert.userNameReportedBy ? alert.userNameReportedBy.substring(0,1).toUpperCase() : <UserCircle className="h-3 w-3"/>}
               </AvatarFallback>
             </Avatar>
-            <span className="group-hover:text-primary transition-colors">{alert.userNameReportedBy}</span>
+            <span className="group-hover:text-primary transition-colors truncate"> {/* Added truncate here */}
+              {alert.userNameReportedBy}
+            </span>
           </button>
-          <div className="flex items-center">
+          <div className="flex items-center flex-shrink-0 ml-2"> {/* Added ml-2 for spacing */}
             <Clock className="h-3 w-3 mr-1" />
-            <span>{timeAgo}</span>
+            <span className="whitespace-nowrap">{timeAgo}</span> {/* Added whitespace-nowrap */}
           </div>
         </CardFooter>
       </Card>
