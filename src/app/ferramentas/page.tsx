@@ -70,12 +70,6 @@ const tools: ToolCardProps[] = [
     description: 'Transforme links ou textos em QR Codes.',
   },
   {
-    title: 'Mapa Interativo',
-    Icon: MapPinned,
-    href: '/ferramentas/mapa',
-    description: 'Navegue e encontre pontos de interesse.',
-  },
-  {
     title: 'Monitorar Pressão Arterial',
     Icon: ActivitySquare,
     href: '/ferramentas/monitoramento-pressao',
