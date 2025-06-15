@@ -15,14 +15,14 @@ import {
   ListChecks,
   Image as ImageIcon,
   XCircle,
-  Edit,
+  Edit, // Changed from ShieldAlert for the text post button
   PlayCircle,
-  AlertTriangle, // Added for new Alertas button
-  Construction, // For mock data
-  TrafficConeIcon, // For mock data
-  CloudFog, // For mock data
-  Flame as FlameIcon, // For mock data
-  ArrowRightCircle // For "Ver Mais Alertas" card
+  AlertTriangle,
+  Construction, 
+  TrafficConeIcon, 
+  CloudFog, 
+  Flame as FlameIcon, 
+  ArrowRightCircle 
 } from 'lucide-react';
 
 import PostCard, { type PostCardProps, type PostReactions } from '@/components/feed/post-card';
@@ -34,7 +34,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import HomeAlertCard from '@/components/alerts/home-alert-card'; // Import new component
+import HomeAlertCard from '@/components/alerts/home-alert-card'; 
 
 // Mocks and Constants
 const defaultReactions: PostReactions = {
@@ -284,7 +284,7 @@ export default function FeedPage() {
         setImagePreviewUrl(reader.result as string);
       };
       reader.readAsDataURL(file);
-      setSelectedPostBackground(backgroundOptions[0]);
+      setSelectedPostBackground(backgroundOptions[0]); // Reset background if image is selected
     }
   };
 
@@ -324,7 +324,7 @@ export default function FeedPage() {
     if (selectedImageForUpload && imagePreviewUrl) {
       newPost.uploadedImageUrl = imagePreviewUrl;
       newPost.dataAIUploadedImageHint = selectedImageForUpload.type.startsWith('video/') ? 'user uploaded video' : 'user uploaded image';
-    } else if (newPostText.length <= 150 && selectedPostBackground?.name !== 'Padrão' && selectedPostBackground.name !== 'Alertas') {
+    } else if (newPostText.length <= 150 && selectedPostBackground?.name !== 'Padrão' && selectedPostBackground.name !== 'Alertas') { // 'Alertas' type should not use colored backgrounds
       newPost.cardStyle = {
         backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
         backgroundImage: selectedPostBackground.gradient,
@@ -423,7 +423,7 @@ export default function FeedPage() {
           {showColorPalette && (
             <div className="flex space-x-2 mb-3 overflow-x-auto no-scrollbar pb-1">
               {backgroundOptions.map((option) => {
-                if (option.name === 'Alertas') return null;
+                if (option.name === 'Alertas') return null; // Explicitly skip 'Alertas' for color palette
                 return (
                   <div
                     key={option.name}
@@ -452,13 +452,13 @@ export default function FeedPage() {
                     size="sm"
                     className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1"
                     onClick={() => {
-                      handleRemoveImage();
-                      setSelectedPostBackground(backgroundOptions.find(opt => opt.name === 'Padrão') || backgroundOptions[0]);
+                      handleRemoveImage(); // Clear any selected media
+                      setSelectedPostBackground(backgroundOptions.find(opt => opt.name === 'Padrão') || backgroundOptions[0]); // Reset to default background
                       textareaRef.current?.focus();
-                      toast({ title: "Alerta de Texto", description: "Escreva seu alerta. Planos de fundo coloridos não se aplicam a este tipo de post." });
+                      toast({ title: "Criar Alerta", description: "Escreva seu alerta de texto." });
                     }}
                   >
-                    <ShieldAlert className="h-4 w-4" />
+                    <Edit className="h-4 w-4" />
                     Alertas
                   </Button>
                   <Button
@@ -516,7 +516,7 @@ export default function FeedPage() {
 
       {/* Seção de Alertas Recentes */}
       {mockAlertsFeed.length > 0 && (
-        <div className="pt-4 pb-2"> {/* Adjusted vertical spacing */}
+        <div className="pt-4 pb-2">
           <div className="flex overflow-x-auto space-x-3 pb-2 -mx-1 px-1 no-scrollbar">
             {mockAlertsFeed.slice(0, 3).map((alertData) => (
               <HomeAlertCard key={alertData.id} alert={alertData} />
@@ -542,7 +542,7 @@ export default function FeedPage() {
         </div>
       )}
       
-      <div className="mb-3 mt-4"> {/* Adjusted spacing */}
+      <div className="mb-3 mt-4">
         <div className="px-1">
           <h2 className="text-xl font-bold font-headline flex items-center mb-3 text-foreground">
             <PlayCircle className="h-5 w-5 mr-2 text-primary" />
