@@ -35,7 +35,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import HomeAlertCard from '@/components/alerts/home-alert-card'; 
+import HomeAlertCard, { type HomeAlertCardData } from '@/components/alerts/home-alert-card'; 
 
 // Mocks and Constants
 const defaultReactions: PostReactions = {
@@ -207,13 +207,65 @@ const backgroundOptions = [
   { name: 'Gradiente', gradient: 'linear-gradient(to right, #002776, #009c3b, #ffdf00)', text: '#FFFFFF' },
 ];
 
-// Mock data for Home Alerts
-const mockAlertsFeed: Array<{ id: string; type: string; description: string; location: string; }> = [
-  { id: 'alert-1', type: 'Acidente', description: 'Colisão grave na BR-277, Km 35. Trânsito totalmente parado sentido litoral. Use desvios.', location: 'BR-277, Km 35 (Litoral)'},
-  { id: 'alert-2', type: 'Obras', description: 'Pista interditada para obras de recapeamento entre os Kms 110-115. Siga pela marginal.', location: 'BR-116, Km 112'},
-  { id: 'alert-3', type: 'Congestionamento', description: 'Fluxo intenso de veículos na região central. Evite o centro se possível.', location: 'Centro de Curitiba'},
-  { id: 'alert-4', type: 'Neblina', description: 'Visibilidade reduzida na serra. Acenda os faróis e dirija com cautela redobrada.', location: 'Serra do Mar - BR-277'},
-  { id: 'alert-5', type: 'Queimada', description: 'Fumaça densa sobre a pista devido a queimada próxima. Risco de baixa visibilidade.', location: 'PR-407, Km 5'},
+const generateTimestamp = () => {
+  const hoursAgo = Math.floor(Math.random() * 5) + 1; // 1 to 5 hours ago
+  return new Date(Date.now() - hoursAgo * 60 * 60 * 1000).toISOString();
+};
+
+const mockAlertsFeed: HomeAlertCardData[] = [
+  { 
+    id: 'alert-1', 
+    type: 'Acidente', 
+    description: 'Colisão grave na BR-277, Km 35 (sentido litoral). Trânsito totalmente parado. Use desvios pela PR-407.', 
+    timestamp: generateTimestamp(),
+    userNameReportedBy: 'Carlos Caminhoneiro',
+    userAvatarUrl: 'https://placehold.co/40x40.png?text=CC',
+    dataAIAvatarHint: 'truck driver concerned',
+    bio: 'Na estrada há 20 anos, sempre alerta!',
+    instagramUsername: 'carlos_alerta_rodovias'
+  },
+  { 
+    id: 'alert-2', 
+    type: 'Obras', 
+    description: 'Pista interditada para obras de recapeamento na BR-116, entre os Kms 110-115 (região de Campina Grande). Siga pela marginal com atenção.', 
+    timestamp: generateTimestamp(),
+    userNameReportedBy: 'Ana Viajante',
+    userAvatarUrl: 'https://placehold.co/40x40.png?text=AV',
+    dataAIAvatarHint: 'woman traveler pointing',
+    bio: 'Explorando o Brasil e compartilhando o que vejo.',
+  },
+  { 
+    id: 'alert-3', 
+    type: 'Congestionamento', 
+    description: 'Fluxo intenso de veículos na região central de Curitiba, especialmente Av. Sete de Setembro. Evite o centro se possível.', 
+    timestamp: generateTimestamp(),
+    userNameReportedBy: 'Mariana Logística',
+    userAvatarUrl: 'https://placehold.co/40x40.png?text=ML',
+    dataAIAvatarHint: 'logistics manager serious',
+    bio: 'Planejamento é tudo! Informação é chave.',
+    instagramUsername: 'marilog_transporte'
+  },
+  { 
+    id: 'alert-4', 
+    type: 'Neblina', 
+    description: 'Visibilidade reduzida na Serra do Mar (BR-277). Acenda os faróis e dirija com cautela redobrada. Trecho muito perigoso.', 
+    timestamp: generateTimestamp(),
+    userNameReportedBy: 'Pedro Estradeiro',
+    userAvatarUrl: 'https://placehold.co/40x40.png?text=PE',
+    dataAIAvatarHint: 'experienced driver focused',
+    bio: 'Sempre de olho na segurança.',
+  },
+  { 
+    id: 'alert-5', 
+    type: 'Queimada', 
+    description: 'Fumaça densa sobre a pista na PR-407, Km 5, próximo a Paranaguá. Risco de baixa visibilidade e problemas respiratórios.', 
+    timestamp: generateTimestamp(),
+    userNameReportedBy: 'Segurança Rodoviária',
+    userAvatarUrl: 'https://placehold.co/40x40.png?text=SR',
+    dataAIAvatarHint: 'official safety account',
+    bio: 'Trabalhando pela sua segurança nas estradas.',
+    instagramUsername: 'rodoviaria_segura'
+  },
 ];
 
 
@@ -396,7 +448,7 @@ export default function FeedPage() {
           <Textarea
             ref={textareaRef}
             placeholder={
-              currentPostType === 'alert' ? "Descreva o alerta..." : 
+              currentPostType === 'alert' ? "Descreva o alerta (máx. 500 caracteres)..." : 
               currentPostType === 'video' ? "Adicione uma legenda para seu vídeo..." : 
               currentPostType === 'image' ? "Adicione uma legenda para sua foto..." : 
               "No que você está pensando, viajante?"
@@ -413,6 +465,7 @@ export default function FeedPage() {
                   }
                 : {}
             }
+            maxLength={currentPostType === 'alert' ? 500 : undefined}
           />
 
           {imagePreviewUrl && (
@@ -469,7 +522,7 @@ export default function FeedPage() {
                       toast({ title: "Criar Alerta", description: "Escreva seu alerta de texto." });
                     }}
                   >
-                    <Edit3 className="h-4 w-4" /> {/* Ícone de lápis */}
+                    <Edit3 className="h-4 w-4" /> 
                     Alertas
                   </Button>
                   <Button
@@ -532,7 +585,9 @@ export default function FeedPage() {
         <div className="pt-4 pb-2">
           <div className="flex overflow-x-auto space-x-3 pb-2 -mx-1 px-1 no-scrollbar">
             {mockAlertsFeed.slice(0, 3).map((alertData) => (
-              <HomeAlertCard key={alertData.id} alert={alertData} />
+              <Link href="/alertas" key={alertData.id} className="block">
+                <HomeAlertCard alert={alertData} />
+              </Link>
             ))}
             {mockAlertsFeed.length > 3 && (
               <div className="w-[260px] flex-shrink-0 h-full flex items-stretch">
@@ -545,7 +600,6 @@ export default function FeedPage() {
               </div>
             )}
           </div>
-          {/* Botão "Consultar Mural de Alertas" foi removido daqui */}
         </div>
       )}
       
@@ -584,4 +638,3 @@ export default function FeedPage() {
     </div>
   );
 }
-
