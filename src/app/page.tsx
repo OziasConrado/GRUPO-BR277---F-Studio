@@ -17,7 +17,7 @@ import {
   Edit3,
   PlayCircle,
   AlertTriangle,
-  ShieldAlert, // Adicionado para o botão Alertas
+  ShieldAlert, 
   Construction,
   TrafficConeIcon,
   CloudFog,
@@ -65,7 +65,7 @@ const mockUserVideoStories: StoryCircleProps[] = [
   {
     id: 'user-story-1',
     adminName: 'Vídeo de @CarlosC',
-    avatarUrl: 'https://placehold.co/180x320.png?text=VC',
+    avatarUrl: 'https://placehold.co/180x320.png',
     dataAIAvatarHint: 'truck highway sunset',
     hasNewStory: true,
     storyType: 'video',
@@ -73,7 +73,7 @@ const mockUserVideoStories: StoryCircleProps[] = [
   {
     id: 'user-story-2',
     adminName: 'Paisagem da @AnaV',
-    avatarUrl: 'https://placehold.co/180x320.png?text=PV',
+    avatarUrl: 'https://placehold.co/180x320.png',
     dataAIAvatarHint: 'mountain road aerial',
     hasNewStory: true,
     storyType: 'video',
@@ -81,7 +81,7 @@ const mockUserVideoStories: StoryCircleProps[] = [
   {
     id: 'user-story-3',
     adminName: 'Dica do @PedroE',
-    avatarUrl: 'https://placehold.co/180x320.png?text=DP',
+    avatarUrl: 'https://placehold.co/180x320.png',
     dataAIAvatarHint: 'driver giving tips',
     hasNewStory: false,
     storyType: 'video',
@@ -89,7 +89,7 @@ const mockUserVideoStories: StoryCircleProps[] = [
   {
     id: 'user-story-4',
     adminName: 'Alerta da @MariLog',
-    avatarUrl: 'https://placehold.co/180x320.png?text=AM',
+    avatarUrl: 'https://placehold.co/180x320.png',
     dataAIAvatarHint: 'road traffic alert',
     hasNewStory: true,
     storyType: 'video',
@@ -97,7 +97,7 @@ const mockUserVideoStories: StoryCircleProps[] = [
   {
     id: 'user-story-5',
     adminName: 'Manobra do @JoaoS',
-    avatarUrl: 'https://placehold.co/180x320.png?text=MJ',
+    avatarUrl: 'https://placehold.co/180x320.png',
     dataAIAvatarHint: 'truck maneuvering',
     hasNewStory: false,
     storyType: 'video',
@@ -105,7 +105,7 @@ const mockUserVideoStories: StoryCircleProps[] = [
   {
     id: 'user-story-6',
     adminName: 'Fim de Tarde com @Ozias',
-    avatarUrl: 'https://placehold.co/180x320.png?text=FT',
+    avatarUrl: 'https://placehold.co/180x320.png',
     dataAIAvatarHint: 'sunset over fields',
     hasNewStory: true,
     storyType: 'video',
@@ -117,7 +117,7 @@ const initialMockPosts: PostCardProps[] = [
   {
     id: '1',
     userName: 'Carlos Caminhoneiro',
-    userAvatarUrl: 'https://placehold.co/40x40.png?text=CC',
+    userAvatarUrl: 'https://placehold.co/40x40.png',
     dataAIAvatarHint: 'truck driver',
     userLocation: 'Curitiba, PR',
     timestamp: '2 horas atrás',
@@ -129,7 +129,7 @@ const initialMockPosts: PostCardProps[] = [
       {
         id: 'c1-1',
         userName: 'Mariana Logística',
-        userAvatarUrl: 'https://placehold.co/40x40.png?text=ML',
+        userAvatarUrl: 'https://placehold.co/40x40.png',
         dataAIAvatarHint: 'logistics woman',
         timestamp: '1 hora atrás',
         text: 'Que ótimo, @Carlos Caminhoneiro! Boas viagens!',
@@ -138,7 +138,7 @@ const initialMockPosts: PostCardProps[] = [
           {
             id: 'r1-1-1',
             userName: 'Carlos Caminhoneiro',
-            userAvatarUrl: 'https://placehold.co/40x40.png?text=CC',
+            userAvatarUrl: 'https://placehold.co/40x40.png',
             dataAIAvatarHint: 'truck driver',
             timestamp: '30 minutos atrás',
             text: 'Obrigado, @Mariana Logística!',
@@ -149,7 +149,7 @@ const initialMockPosts: PostCardProps[] = [
       {
         id: 'c1-2',
         userName: 'Pedro Estradeiro',
-        userAvatarUrl: 'https://placehold.co/40x40.png?text=PE',
+        userAvatarUrl: 'https://placehold.co/40x40.png',
         dataAIAvatarHint: 'male traveler',
         timestamp: '45 minutos atrás',
         text: 'Também passei por lá, realmente um dia bom pra rodar.',
@@ -163,7 +163,7 @@ const initialMockPosts: PostCardProps[] = [
   {
     id: '2',
     userName: 'Ana Viajante',
-    userAvatarUrl: 'https://placehold.co/40x40.png?text=AV',
+    userAvatarUrl: 'https://placehold.co/40x40.png',
     dataAIAvatarHint: 'woman traveler',
     userLocation: 'São Paulo, SP',
     timestamp: '5 horas atrás',
@@ -175,7 +175,7 @@ const initialMockPosts: PostCardProps[] = [
       {
         id: 'c2-1',
         userName: 'Segurança Rodoviária',
-        userAvatarUrl: 'https://placehold.co/40x40.png?text=SR',
+        userAvatarUrl: 'https://placehold.co/40x40.png',
         dataAIAvatarHint: 'safety logo',
         timestamp: '4 horas atrás',
         text: 'Obrigado pelo alerta, @Ana Viajante! Informação crucial. Equipe já notificada.',
@@ -189,7 +189,7 @@ const initialMockPosts: PostCardProps[] = [
   {
     id: '3',
     userName: 'Rota Segura Admin',
-    userAvatarUrl: 'https://placehold.co/40x40.png?text=RS',
+    userAvatarUrl: 'https://placehold.co/40x40.png',
     dataAIAvatarHint: 'app logo',
     userLocation: 'Brasil',
     timestamp: '1 dia atrás',
@@ -215,14 +215,14 @@ const generateTimestamp = () => {
   return new Date(Date.now() - hoursAgo * 60 * 60 * 1000).toISOString();
 };
 
-const mockAlertsFeed: HomeAlertCardData[] = [
+const initialMockAlertsFeed: HomeAlertCardData[] = [
   {
     id: 'alert-1',
     type: 'Acidente',
     description: 'Colisão grave na BR-277, Km 35 (sentido litoral). Trânsito totalmente parado. Use desvios pela PR-407.',
     timestamp: generateTimestamp(),
     userNameReportedBy: 'Carlos Caminhoneiro',
-    userAvatarUrl: 'https://placehold.co/40x40.png?text=CC',
+    userAvatarUrl: 'https://placehold.co/40x40.png',
     dataAIAvatarHint: 'truck driver concerned',
     bio: 'Na estrada há 20 anos, sempre alerta!',
     instagramUsername: 'carlos_alerta_rodovias'
@@ -233,7 +233,7 @@ const mockAlertsFeed: HomeAlertCardData[] = [
     description: 'Pista interditada para obras de recapeamento na BR-116, entre os Kms 110-115 (região de Campina Grande). Siga pela marginal com atenção.',
     timestamp: generateTimestamp(),
     userNameReportedBy: 'Ana Viajante',
-    userAvatarUrl: 'https://placehold.co/40x40.png?text=AV',
+    userAvatarUrl: 'https://placehold.co/40x40.png',
     dataAIAvatarHint: 'woman traveler pointing',
     bio: 'Explorando o Brasil e compartilhando o que vejo.',
   },
@@ -243,7 +243,7 @@ const mockAlertsFeed: HomeAlertCardData[] = [
     description: 'Fluxo intenso de veículos na região central de Curitiba, especialmente Av. Sete de Setembro. Evite o centro se possível.',
     timestamp: generateTimestamp(),
     userNameReportedBy: 'Mariana Logística',
-    userAvatarUrl: 'https://placehold.co/40x40.png?text=ML',
+    userAvatarUrl: 'https://placehold.co/40x40.png',
     dataAIAvatarHint: 'logistics manager serious',
     bio: 'Planejamento é tudo! Informação é chave.',
     instagramUsername: 'marilog_transporte'
@@ -254,7 +254,7 @@ const mockAlertsFeed: HomeAlertCardData[] = [
     description: 'Visibilidade reduzida na Serra do Mar (BR-277). Acenda os faróis e dirija com cautela redobrada. Trecho muito perigoso.',
     timestamp: generateTimestamp(),
     userNameReportedBy: 'Pedro Estradeiro',
-    userAvatarUrl: 'https://placehold.co/40x40.png?text=PE',
+    userAvatarUrl: 'https://placehold.co/40x40.png',
     dataAIAvatarHint: 'experienced driver focused',
     bio: 'Sempre de olho na segurança.',
   },
@@ -264,7 +264,7 @@ const mockAlertsFeed: HomeAlertCardData[] = [
     description: 'Fumaça densa sobre a pista na PR-407, Km 5, próximo a Paranaguá. Risco de baixa visibilidade e problemas respiratórios.',
     timestamp: generateTimestamp(),
     userNameReportedBy: 'Segurança Rodoviária',
-    userAvatarUrl: 'https://placehold.co/40x40.png?text=SR',
+    userAvatarUrl: 'https://placehold.co/40x40.png',
     dataAIAvatarHint: 'official safety account',
     bio: 'Trabalhando pela sua segurança nas estradas.',
     instagramUsername: 'rodoviaria_segura'
@@ -280,6 +280,7 @@ export default function FeedPage() {
   const [selectedStory, setSelectedStory] = useState<StoryCircleProps | null>(null);
   const [newPostText, setNewPostText] = useState('');
   const [posts, setPosts] = useState<PostCardProps[]>(initialMockPosts);
+  const [displayedAlertsFeed, setDisplayedAlertsFeed] = useState<HomeAlertCardData[]>(initialMockAlertsFeed);
   const [selectedImageForUpload, setSelectedImageForUpload] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [selectedPostBackground, setSelectedPostBackground] = useState(backgroundOptions[0]);
@@ -361,7 +362,7 @@ export default function FeedPage() {
   };
 
   const handlePublishPost = () => {
-    if (newPostText.trim() === '' && !selectedImageForUpload) {
+    if (newPostText.trim() === '' && !selectedImageForUpload && currentPostType !== 'alert') {
       toast({
         variant: 'destructive',
         title: 'Publicação vazia',
@@ -370,43 +371,60 @@ export default function FeedPage() {
       return;
     }
 
-    let postTextToPublish = newPostText;
-    if (currentPostType === 'alert' && selectedAlertType && selectedAlertType !== 'Outro') {
-        postTextToPublish = `ALERTA: ${selectedAlertType}\n\n${newPostText}`;
-    } else if (currentPostType === 'alert' && selectedAlertType === 'Outro') {
-        postTextToPublish = `ALERTA: Outro\n\n${newPostText}`;
+    if (currentPostType === 'alert' && (!selectedAlertType || !newPostText.trim())) {
+        toast({
+            variant: 'destructive',
+            title: 'Alerta incompleto',
+            description: 'Selecione um tipo e descreva o alerta.',
+        });
+        return;
     }
 
+    if (currentPostType === 'alert') {
+        const newAlert: HomeAlertCardData = {
+            id: `user-alert-${Date.now()}`,
+            type: selectedAlertType || 'Alerta Geral',
+            description: newPostText.trim(),
+            timestamp: new Date().toISOString(),
+            userNameReportedBy: 'Você',
+            userAvatarUrl: 'https://placehold.co/40x40.png',
+            dataAIAvatarHint: 'current user avatar',
+            bio: 'Usuário do Rota Segura', 
+            // instagramUsername: 'seu_insta_aqui' // Opcional
+        };
+        setDisplayedAlertsFeed(prevAlerts => [newAlert, ...prevAlerts]);
 
-    const newPost: PostCardProps = {
-      id: `post-${Date.now()}`,
-      userName: 'Você',
-      userAvatarUrl: 'https://placehold.co/40x40.png?text=EU',
-      dataAIAvatarHint: 'current user',
-      userLocation: 'Sua Localização',
-      timestamp: 'Agora mesmo',
-      text: postTextToPublish,
-      reactions: { ...defaultReactions },
-      commentsData: [],
-      allKnownUserNames: MOCK_POST_USER_NAMES,
-      bio: 'Este é o seu perfil.',
-      instagramUsername: 'seu_insta',
-    };
+    } else { // Handle regular posts (text, image, video)
+        const newPost: PostCardProps = {
+          id: `post-${Date.now()}`,
+          userName: 'Você',
+          userAvatarUrl: 'https://placehold.co/40x40.png',
+          dataAIAvatarHint: 'current user',
+          userLocation: 'Sua Localização',
+          timestamp: 'Agora mesmo',
+          text: newPostText,
+          reactions: { ...defaultReactions },
+          commentsData: [],
+          allKnownUserNames: MOCK_POST_USER_NAMES,
+          bio: 'Este é o seu perfil.',
+          instagramUsername: 'seu_insta',
+        };
 
-    if (selectedImageForUpload && imagePreviewUrl) {
-      newPost.uploadedImageUrl = imagePreviewUrl;
-      newPost.dataAIUploadedImageHint = selectedImageForUpload.type.startsWith('video/') ? 'user uploaded video' : 'user uploaded image';
-    } else if (currentPostType === 'text' && newPostText.length <= 150 && selectedPostBackground?.name !== 'Padrão') {
-      newPost.cardStyle = {
-        backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
-        backgroundImage: selectedPostBackground.gradient,
-        color: selectedPostBackground.text,
-        name: selectedPostBackground.name,
-      };
+        if (selectedImageForUpload && imagePreviewUrl) {
+          newPost.uploadedImageUrl = imagePreviewUrl;
+          newPost.dataAIUploadedImageHint = selectedImageForUpload.type.startsWith('video/') ? 'user uploaded video' : 'user uploaded image';
+        } else if (currentPostType === 'text' && newPostText.length <= 150 && selectedPostBackground?.name !== 'Padrão') {
+          newPost.cardStyle = {
+            backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
+            backgroundImage: selectedPostBackground.gradient,
+            color: selectedPostBackground.text,
+            name: selectedPostBackground.name,
+          };
+        }
+        setPosts((prevPosts) => [newPost, ...prevPosts]);
     }
-    // Alert posts (currentPostType === 'alert') will have default card style
 
-    setPosts((prevPosts) => [newPost, ...prevPosts]);
+    // Reset common fields
     setNewPostText('');
     setSelectedImageForUpload(null);
     setImagePreviewUrl(null);
@@ -419,8 +437,9 @@ export default function FeedPage() {
   };
 
   const handleOpenAlertTypeModal = () => {
-    handleRemoveImage(); // Garante que não haja mídia ao criar alerta
-    setSelectedPostBackground(backgroundOptions[0]); // Reseta fundo
+    setCurrentPostType('alert'); // Set type to alert before opening modal
+    handleRemoveImage(); 
+    setSelectedPostBackground(backgroundOptions[0]); 
     setIsAlertTypeModalOpen(true);
   };
 
@@ -429,15 +448,15 @@ export default function FeedPage() {
         toast({ variant: "destructive", title: "Nenhum tipo selecionado", description: "Por favor, selecione um tipo de alerta." });
         return;
     }
-    setCurrentPostType('alert');
+    // currentPostType is already 'alert' from handleOpenAlertTypeModal
     setIsAlertTypeModalOpen(false);
     textareaRef.current?.focus();
-    toast({ title: `Modo Alerta: ${selectedAlertType}`, description: "Descreva seu alerta de texto." });
+    toast({ title: `Modo Alerta: ${selectedAlertType}`, description: "Descreva seu alerta." });
   };
 
 
   // Derived State
-  const canPublish = newPostText.trim() !== '' || selectedImageForUpload !== null;
+  const canPublish = (currentPostType === 'alert' && selectedAlertType && newPostText.trim() !== '') || (currentPostType !== 'alert' && (newPostText.trim() !== '' || selectedImageForUpload !== null));
   const showColorPalette = !imagePreviewUrl && currentPostType === 'text' && newPostText.length <= 150 && newPostText.length > 0;
 
 
@@ -550,7 +569,7 @@ export default function FeedPage() {
                     className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1"
                     onClick={handleOpenAlertTypeModal}
                   >
-                    <Edit3 className="h-4 w-4" />
+                    <Edit3 className="h-4 w-4" /> 
                     Alertas
                   </Button>
                   <Button
@@ -608,16 +627,31 @@ export default function FeedPage() {
         </CardContent>
       </Card>
 
+      {/* Seção de Reels (antigas Destaque/Admin Stories) */}
+      <div className="mb-3 mt-4">
+        <div className="px-1">
+            <h2 className="text-xl font-bold font-headline flex items-center mb-3 text-foreground">
+            <PlayCircle className="h-5 w-5 mr-2 text-primary" />
+            Reels
+            </h2>
+        </div>
+        <div className="flex overflow-x-auto space-x-2 pb-3 -mx-4 px-4 no-scrollbar">
+            {mockUserVideoStories.map((story) => (
+            <StoryCircle key={story.id} {...story} onClick={() => handleStoryClick(story)} />
+            ))}
+        </div>
+      </div>
+
       {/* Seção de Alertas Recentes */}
-      {mockAlertsFeed.length > 0 && (
+      {displayedAlertsFeed.length > 0 && (
         <div className="pt-4 pb-2">
           <div className="flex overflow-x-auto space-x-3 pb-2 -mx-1 px-1 no-scrollbar">
-            {mockAlertsFeed.slice(0, 3).map((alertData) => (
+            {displayedAlertsFeed.slice(0, 3).map((alertData) => (
               <Link href="/alertas" key={alertData.id} className="block">
                 <HomeAlertCard alert={alertData} />
               </Link>
             ))}
-            {mockAlertsFeed.length > 3 && (
+            {displayedAlertsFeed.length > 3 && (
               <div className="w-[260px] flex-shrink-0 h-full flex items-stretch">
                 <Button asChild variant="outline" className="w-full h-full rounded-xl flex flex-col items-center justify-center text-center p-3 shadow-lg hover:bg-card/95 dark:hover:bg-muted/30 transition-colors duration-150">
                   <Link href="/alertas" className="flex flex-col items-center justify-center h-full">
@@ -630,20 +664,6 @@ export default function FeedPage() {
           </div>
         </div>
       )}
-
-      <div className="mb-3 mt-4">
-        <div className="px-1">
-          <h2 className="text-xl font-bold font-headline flex items-center mb-3 text-foreground">
-            <PlayCircle className="h-5 w-5 mr-2 text-primary" />
-            Reels
-          </h2>
-        </div>
-        <div className="flex overflow-x-auto space-x-2 pb-3 -mx-4 px-4 no-scrollbar">
-          {mockUserVideoStories.map((story) => (
-            <StoryCircle key={story.id} {...story} onClick={() => handleStoryClick(story)} />
-          ))}
-        </div>
-      </div>
 
       <h2 className="text-xl font-bold pt-2 font-headline text-left">
         <List className="h-5 w-5 mr-2 text-primary inline-block" />
