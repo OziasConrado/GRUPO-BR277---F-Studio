@@ -45,12 +45,6 @@ const tools: ToolCardProps[] = [
     href: '/ferramentas/declaracao-transporte',
     description: 'Gere uma declaração de transporte rapidamente.',
   },
-  {
-    title: 'Diagnóstico Básico',
-    Icon: Wrench,
-    href: '/ferramentas/diagnostico',
-    description: 'Verifique problemas comuns do veículo.',
-  },
    {
     title: 'Gerador de Currículo',
     Icon: UserSquare, 
