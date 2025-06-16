@@ -1,149 +1,114 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Map } from "lucide-react"; // Map icon added
+import { PlusCircle, Map, Loader2 } from "lucide-react";
 import type { TouristPointData } from '@/types/turismo';
 import TouristPointCard from '@/components/turismo/tourist-point-card';
 import type { BusinessData } from '@/types/guia-comercial';
 import BusinessCard from '@/components/guia-comercial/business-card';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent } from '@/components/ui/card'; // Import Card for new buttons
-import React from 'react'; // Import React for React.Fragment
+import { Card, CardContent } from '@/components/ui/card';
+import React from 'react';
+import { firestore } from '@/lib/firebase/client';
+import { collection, getDocs, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // Added Alert imports
+import { cn } from '@/lib/utils'; // Added cn import
 
-// Mock data for Paraná tourist points
-const mockParanaTouristPoints: TouristPointData[] = [
-  {
-    id: 'parana-tp-1',
-    name: 'Cataratas do Iguaçu',
-    locationName: 'Foz do Iguaçu, PR',
-    description: 'Um dos maiores conjuntos de quedas d\'água do mundo, Patrimônio Natural da Humanidade.',
-    imageUrl: 'https://placehold.co/600x400.png',
-    dataAIImageHint: 'iguazu falls',
-    category: 'Natureza',
-  },
-  {
-    id: 'parana-tp-2',
-    name: 'Jardim Botânico de Curitiba',
-    locationName: 'Curitiba, PR',
-    description: 'Principal cartão postal de Curitiba, com sua famosa estufa de vidro e jardins franceses.',
-    imageUrl: 'https://placehold.co/600x400.png',
-    dataAIImageHint: 'botanical garden curitiba',
-    category: 'Lazer',
-  },
-  {
-    id: 'parana-tp-3',
-    name: 'Ilha do Mel',
-    locationName: 'Paranaguá, PR',
-    description: 'Paraíso ecológico com praias preservadas, trilhas e o Farol das Conchas.',
-    imageUrl: 'https://placehold.co/600x400.png',
-    dataAIImageHint: 'ilha do mel beach',
-    category: 'Natureza',
-  },
-  {
-    id: 'parana-tp-4',
-    name: 'Parque Estadual de Vila Velha',
-    locationName: 'Ponta Grossa, PR',
-    description: 'Formações rochosas areníticas esculpidas pela natureza, como a Taça e o Camelo.',
-    imageUrl: 'https://placehold.co/600x400.png',
-    dataAIImageHint: 'vila velha park ponta grossa',
-    category: 'Natureza',
-  },
-  {
-    id: 'parana-tp-5',
-    name: 'Cânion Guartelá',
-    locationName: 'Tibagi, PR',
-    description: 'O sexto maior cânion do mundo em extensão, com paisagens deslumbrantes e trilhas.',
-    imageUrl: 'https://placehold.co/600x400.png',
-    dataAIImageHint: 'guartela canyon',
-    category: 'Aventura',
-  },
-  {
-    id: 'parana-tp-6',
-    name: 'Opera de Arame',
-    locationName: 'Curitiba, PR',
-    description: 'Teatro construído em estrutura tubular e teto transparente, integrado à natureza.',
-    imageUrl: 'https://placehold.co/600x400.png',
-    dataAIImageHint: 'opera de arame curitiba',
-    category: 'Cultural',
-  },
-];
-
-const mockBusinessesForAccommodation: BusinessData[] = [
-  {
-    id: 'comercio-1-hotel',
-    name: 'Hotel Descanso do Viajante (Premium)',
-    category: 'Hotel/Pousada',
-    address: 'Rua das Palmeiras, 789, Piraquara - PR',
-    whatsapp: '5541977776666',
-    description: 'Quartos confortáveis com café da manhã incluso. Preços acessíveis para caminhoneiros e viajantes.',
-    imageUrl: 'https://placehold.co/600x400.png',
-    dataAIImageHint: 'motel facade',
-    operatingHours: 'Recepção 24 horas',
-    isPremium: true,
-    latitude: -25.4442,
-    longitude: -49.0628,
-    instagramUsername: 'hoteldescanso',
-    averageRating: 4.2,
-    reviewCount: 88,
-  },
-   {
-    id: 'comercio-X-hotel',
-    name: 'Pousada Aconchego da Serra',
-    category: 'Hotel/Pousada',
-    address: 'Estrada da Graciosa, Km 10, Morretes - PR',
-    phone: '4134620000',
-    description: 'Chalés rústicos em meio à Mata Atlântica, com piscina e restaurante regional.',
-    imageUrl: 'https://placehold.co/600x400.png',
-    dataAIImageHint: 'cozy inn mountain',
-    operatingHours: 'Check-in: 14:00, Check-out: 12:00',
-    isPremium: false,
-    latitude: -25.3880,
-    longitude: -48.8460,
-  },
-  {
-    id: 'comercio-Y-resort',
-    name: 'Resort Águas Claras',
-    category: 'Hotel/Pousada', // Assuming Resort fits here for simplicity
-    address: 'Rodovia das Cataratas, Km 20, Foz do Iguaçu - PR',
-    phone: '4521027000',
-    description: 'Luxuoso resort com piscinas, spa, e vista para a natureza exuberante.',
-    imageUrl: 'https://placehold.co/600x400.png',
-    dataAIImageHint: 'luxury resort pool',
-    operatingHours: '24 horas',
-    isPremium: true,
-    latitude: -25.6710,
-    longitude: -54.4772,
-  },
-   {
-    id: 'comercio-Z-camping',
-    name: 'Camping Paraíso Verde',
-    category: 'Hotel/Pousada', // Assuming Camping fits here
-    address: 'Estrada Colônia Cristina, s/n, Guaratuba - PR',
-    whatsapp: '5541988776655',
-    description: 'Área de camping com infraestrutura completa, banheiros, churrasqueiras e contato com a natureza.',
-    imageUrl: 'https://placehold.co/600x400.png',
-    dataAIImageHint: 'campsite nature',
-    operatingHours: 'Diariamente: 08:00 - 20:00',
-    isPremium: false,
-    latitude: -25.8700,
-    longitude: -48.6000,
-  },
-];
-
-const AdPlaceholder = () => (
-  <div className="my-4 p-4 rounded-xl bg-muted/30 border border-dashed h-24 flex items-center justify-center col-span-1 md:col-span-2 lg:col-span-3">
+const AdPlaceholder = ({ className }: { className?: string }) => ( // Modified AdPlaceholder
+  <div className={cn("my-4 p-4 rounded-xl bg-muted/30 border border-dashed h-24 flex items-center justify-center col-span-1 md:col-span-2 lg:col-span-3", className)}>
     <p className="text-muted-foreground text-sm">Espaço para Banner AdMob (Ex: 320x50 ou Responsivo)</p>
   </div>
 );
 
 export default function TurismoPage() {
   const { toast } = useToast();
-  const [paranaPoints] = useState<TouristPointData[]>(mockParanaTouristPoints);
-  const accommodations = mockBusinessesForAccommodation.filter(
-    business => business.category === 'Hotel/Pousada'
-  );
+  const [paranaPoints, setParanaPoints] = useState<TouristPointData[]>([]);
+  const [loadingTouristPoints, setLoadingTouristPoints] = useState(true);
+  const [accommodations, setAccommodations] = useState<BusinessData[]>([]);
+  const [loadingAccommodations, setLoadingAccommodations] = useState(true);
+
+  useEffect(() => {
+    const fetchTouristPoints = async () => {
+      if (!firestore) {
+        toast({ variant: "destructive", title: "Erro de Conexão", description: "Não foi possível conectar ao banco de dados." });
+        setLoadingTouristPoints(false);
+        return;
+      }
+      setLoadingTouristPoints(true);
+      try {
+        const pointsCollection = collection(firestore, 'tourist_points');
+        const q = query(pointsCollection, orderBy('name', 'asc'));
+        const querySnapshot = await getDocs(q);
+        const fetchedPoints: TouristPointData[] = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            name: data.name,
+            locationName: data.locationName,
+            description: data.description,
+            imageUrl: data.imageUrl,
+            dataAIImageHint: data.dataAIImageHint,
+            category: data.category,
+            // averageRating: data.averageRating,
+            // reviewCount: data.reviewCount,
+          } as TouristPointData;
+        });
+        setParanaPoints(fetchedPoints);
+      } catch (error) {
+        console.error("Error fetching tourist points: ", error);
+        toast({ variant: "destructive", title: "Erro ao Carregar Pontos Turísticos", description: "Não foi possível buscar os pontos turísticos." });
+      } finally {
+        setLoadingTouristPoints(false);
+      }
+    };
+
+    const fetchAccommodations = async () => {
+      if (!firestore) {
+        // Toast already shown by fetchTouristPoints if firestore is null
+        setLoadingAccommodations(false);
+        return;
+      }
+      setLoadingAccommodations(true);
+      try {
+        const businessesCollection = collection(firestore, 'businesses');
+        const q = query(businessesCollection, where('category', '==', 'Hotel/Pousada'), orderBy('name', 'asc'));
+        const querySnapshot = await getDocs(q);
+        const fetchedAccommodations: BusinessData[] = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            name: data.name,
+            category: data.category,
+            address: data.address,
+            phone: data.phone,
+            whatsapp: data.whatsapp,
+            description: data.description,
+            imageUrl: data.imageUrl,
+            dataAIImageHint: data.dataAIImageHint,
+            operatingHours: data.operatingHours,
+            isPremium: data.isPremium,
+            latitude: data.latitude,
+            longitude: data.longitude,
+            instagramUsername: data.instagramUsername,
+            averageRating: data.averageRating,
+            reviewCount: data.reviewCount,
+          } as BusinessData;
+        });
+        setAccommodations(fetchedAccommodations);
+      } catch (error) {
+        console.error("Error fetching accommodations: ", error);
+        toast({ variant: "destructive", title: "Erro ao Carregar Hospedagens", description: "Não foi possível buscar as sugestões de hospedagem." });
+      } finally {
+        setLoadingAccommodations(false);
+      }
+    };
+
+    fetchTouristPoints();
+    fetchAccommodations();
+  }, [toast]);
+
 
   const handleIndicatePoint = () => {
     toast({
@@ -157,8 +122,6 @@ export default function TurismoPage() {
       title: "Viaje Paraná",
       description: "Mais informações sobre como viajar pelo Paraná em breve!",
     });
-    // Potencialmente abrir um link externo ou uma seção específica no futuro
-    // window.open('https://www.viajeparana.com/', '_blank');
   };
 
   return (
@@ -195,7 +158,13 @@ export default function TurismoPage() {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-semibold font-headline">Descubra o Paraná</h2>
         </div>
-        {paranaPoints.length > 0 ? (
+        {loadingTouristPoints ? (
+          <Alert>
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <AlertTitle className="font-headline">Carregando Pontos Turísticos...</AlertTitle>
+            <AlertDescription>Buscando maravilhas do Paraná para você.</AlertDescription>
+          </Alert>
+        ) : paranaPoints.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {paranaPoints.map((point, index) => (
               <React.Fragment key={`${point.id}-fragment`}>
@@ -205,7 +174,7 @@ export default function TurismoPage() {
             ))}
           </div>
         ) : (
-          <p className="text-muted-foreground">Nenhum ponto turístico do Paraná cadastrado no momento.</p>
+          <p className="text-muted-foreground text-center py-4">Nenhum ponto turístico do Paraná cadastrado no momento.</p>
         )}
       </section>
 
@@ -213,7 +182,13 @@ export default function TurismoPage() {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-semibold font-headline">Sugestões de Hospedagem</h2>
         </div>
-        {accommodations.length > 0 ? (
+        {loadingAccommodations ? (
+           <Alert>
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <AlertTitle className="font-headline">Carregando Hospedagens...</AlertTitle>
+            <AlertDescription>Encontrando os melhores lugares para sua estadia.</AlertDescription>
+          </Alert>
+        ) : accommodations.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {accommodations.map((business, index) => (
               <React.Fragment key={`${business.id}-fragment`}>
@@ -223,7 +198,7 @@ export default function TurismoPage() {
             ))}
           </div>
         ) : (
-          <p className="text-muted-foreground">Nenhuma sugestão de hospedagem encontrada.</p>
+          <p className="text-muted-foreground text-center py-4">Nenhuma sugestão de hospedagem encontrada.</p>
         )}
       </section>
       
@@ -242,5 +217,3 @@ export default function TurismoPage() {
     </div>
   );
 }
-
-    

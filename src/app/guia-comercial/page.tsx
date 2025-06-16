@@ -10,93 +10,10 @@ import RegisterBusinessModal from '@/components/guia-comercial/register-business
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { firestore } from '@/lib/firebase/client';
+import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { useAuth } from '@/contexts/AuthContext';
 
-const mockBusinesses: BusinessData[] = [
-  {
-    id: 'comercio-1',
-    name: 'Restaurante Sabor da Estrada (Premium)',
-    category: 'Restaurante',
-    address: 'Rodovia BR-116, Km 300, Campina Grande do Sul - PR',
-    phone: '4133334444',
-    whatsapp: '5541999998888',
-    description: 'Comida caseira de alta qualidade, buffet livre e pratos a la carte. Amplo estacionamento para caminhões. Wi-Fi e banheiros limpos.',
-    imageUrl: 'https://placehold.co/600x400.png',
-    dataAIImageHint: 'restaurant roadside',
-    servicesOffered: ['Buffet Livre', 'A La Carte', 'Estacionamento Amplo', 'Wi-Fi Grátis', 'Banheiros Limpos'],
-    operatingHours: 'Seg-Dom: 06:00 - 23:00',
-    isPremium: true,
-    latitude: -25.3200, // Approximate coordinates for Campina Grande do Sul
-    longitude: -49.0500,
-    instagramUsername: 'sabordaestrada',
-    averageRating: 4.7,
-    reviewCount: 152,
-  },
-  {
-    id: 'comercio-2',
-    name: 'Borracharia Confiança',
-    category: 'Borracharia',
-    address: 'Av. das Torres, 123, São José dos Pinhais - PR',
-    phone: '4130305050',
-    description: 'Serviços de borracharia 24 horas. Venda de pneus novos e usados. Atendimento rápido e eficiente para todos os tipos de veículos.',
-    imageUrl: 'https://placehold.co/600x400.png',
-    dataAIImageHint: 'tire shop',
-    servicesOffered: ['Troca de Pneus', 'Conserto de Furos', 'Balanceamento', 'Venda de Pneus'],
-    operatingHours: '24 horas',
-    isPremium: false,
-    latitude: -25.5313, // Approximate coordinates for São José dos Pinhais
-    longitude: -49.1959,
-  },
-  {
-    id: 'comercio-3',
-    name: 'Hotel Descanso do Viajante (Premium)',
-    category: 'Hotel/Pousada',
-    address: 'Rua das Palmeiras, 789, Piraquara - PR',
-    whatsapp: '5541977776666',
-    description: 'Quartos confortáveis com café da manhã incluso. Preços acessíveis para caminhoneiros e viajantes. Ambiente seguro e tranquilo.',
-    imageUrl: 'https://placehold.co/600x400.png',
-    dataAIImageHint: 'motel facade',
-    operatingHours: 'Recepção 24 horas',
-    isPremium: true,
-    latitude: -25.4442, // Approximate coordinates for Piraquara
-    longitude: -49.0628,
-    instagramUsername: 'hoteldescanso',
-    averageRating: 4.2,
-    reviewCount: 88,
-  },
-  {
-    id: 'comercio-4',
-    name: 'Posto Petro Rota',
-    category: 'Posto de Combustível',
-    address: 'BR-376, Km 620, Tijucas do Sul - PR',
-    phone: '4136221122',
-    description: 'Combustíveis de qualidade, loja de conveniência completa e banheiros sempre limpos. Pátio amplo para manobras.',
-    imageUrl: 'https://placehold.co/600x400.png',
-    dataAIImageHint: 'gas station night',
-    servicesOffered: ['Gasolina Comum/Aditivada', 'Diesel S10/S500', 'Etanol', 'Loja Conveniência', 'Troca de Óleo'],
-    operatingHours: '24 horas',
-    isPremium: false,
-    latitude: -25.9278, // Approximate coordinates for Tijucas do Sul
-    longitude: -49.1914,
-  },
-  {
-    id: 'comercio-5',
-    name: 'Mecânica Diesel Master (Premium)',
-    category: 'Oficina Mecânica',
-    address: 'Rodovia do Xisto, Km 15, Araucária - PR',
-    whatsapp: '5541988887777',
-    description: 'Especializada em motores diesel de grande porte. Equipe qualificada e equipamentos modernos para diagnóstico e reparo.',
-    imageUrl: 'https://placehold.co/600x400.png',
-    dataAIImageHint: 'truck repair shop',
-    servicesOffered: ['Revisão Motor Diesel', 'Troca de Filtros', 'Sistema de Injeção', 'Freios', 'Suspensão'],
-    operatingHours: 'Seg-Sáb: 07:30 - 19:00',
-    isPremium: true,
-    latitude: -25.5925, // Approximate coordinates for Araucária
-    longitude: -49.3989,
-    instagramUsername: 'dieselmasteroficial',
-    averageRating: 4.9,
-    reviewCount: 213,
-  },
-];
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371; // Radius of the Earth in km
@@ -112,12 +29,63 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 
 
 export default function GuiaComercialPage() {
-  const [businesses, setBusinesses] = useState<BusinessData[]>(mockBusinesses);
+  const [businesses, setBusinesses] = useState<BusinessData[]>([]);
+  const [loadingBusinesses, setLoadingBusinesses] = useState(true);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const { currentUser } = useAuth();
+
+
+  useEffect(() => {
+    const fetchBusinesses = async () => {
+      if (!firestore) {
+        toast({ variant: "destructive", title: "Erro de Conexão", description: "Não foi possível conectar ao banco de dados." });
+        setLoadingBusinesses(false);
+        return;
+      }
+      setLoadingBusinesses(true);
+      try {
+        const businessesCollection = collection(firestore, 'businesses');
+        // Ordenar por nome ou por um campo de timestamp se existir, por exemplo 'createdAt'
+        const q = query(businessesCollection, orderBy('name', 'asc'));
+        const querySnapshot = await getDocs(q);
+        const fetchedBusinesses: BusinessData[] = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            name: data.name,
+            category: data.category,
+            address: data.address,
+            phone: data.phone,
+            whatsapp: data.whatsapp,
+            description: data.description,
+            imageUrl: data.imageUrl,
+            dataAIImageHint: data.dataAIImageHint,
+            servicesOffered: data.servicesOffered,
+            operatingHours: data.operatingHours,
+            isPremium: data.isPremium,
+            latitude: data.latitude,
+            longitude: data.longitude,
+            instagramUsername: data.instagramUsername,
+            averageRating: data.averageRating, // Assuming these might be stored
+            reviewCount: data.reviewCount,     // Assuming these might be stored
+            // createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : undefined
+          } as BusinessData;
+        });
+        setBusinesses(fetchedBusinesses);
+      } catch (error) {
+        console.error("Error fetching businesses: ", error);
+        toast({ variant: "destructive", title: "Erro ao Carregar Comércios", description: "Não foi possível buscar os comércios." });
+      } finally {
+        setLoadingBusinesses(false);
+      }
+    };
+
+    fetchBusinesses();
+  }, [toast]);
 
 
   useEffect(() => {
@@ -138,11 +106,11 @@ export default function GuiaComercialPage() {
         (error) => {
           console.error("Error getting location:", error);
           setLocationStatus('error');
-          toast({
-            variant: 'default',
-            title: "Localização Desativada",
-            description: "Não foi possível obter sua localização. Mostrando comércios em ordem padrão.",
-          });
+          // toast({ // This toast can be a bit noisy if user denies permission
+          //   variant: 'default',
+          //   title: "Localização Desativada",
+          //   description: "Não foi possível obter sua localização. Mostrando comércios em ordem padrão.",
+          // });
         }
       );
     } else {
@@ -171,32 +139,50 @@ export default function GuiaComercialPage() {
             distance: calculateDistance(userLocation.latitude, userLocation.longitude, business.latitude, business.longitude),
           };
         }
-        return { ...business, distance: Infinity }; // Businesses without lat/lng go to the end
+        return { ...business, distance: Infinity };
       });
       businessesWithDistance.sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
       return businessesWithDistance;
     }
-    // Default sort (e.g., by name or original mock order) if no location or error
     return filtered.sort((a,b) => a.name.localeCompare(b.name));
   }, [businesses, searchTerm, userLocation, locationStatus]);
 
 
-  const handleRegisterBusiness = (newBusinessData: Omit<BusinessData, 'id' | 'imageUrl' | 'dataAIImageHint'> & { imagePreviewUrl: string }) => {
+  const handleRegisterBusiness = async (newBusinessData: Omit<BusinessData, 'id' | 'imageUrl' | 'dataAIImageHint'> & { imagePreviewUrl: string }) => {
+     if (!currentUser || !firestore) {
+      toast({ variant: "destructive", title: "Erro", description: "Você precisa estar logado para cadastrar um comércio ou serviço indisponível." });
+      return;
+    }
     const { imagePreviewUrl, ...restOfData } = newBusinessData;
-    const newBusiness: BusinessData = {
+    const businessToSave = {
       ...restOfData,
-      id: `comercio-${Date.now()}`,
-      imageUrl: imagePreviewUrl, // Using the Data URL from preview
+      imageUrl: imagePreviewUrl, // For now, use preview URL. Later, this will be Firebase Storage URL.
       dataAIImageHint: "user uploaded business photo",
-      // For new businesses, lat/long might not be immediately available or require separate input
-      // averageRating and reviewCount would typically start at 0 or be undefined
+      averageRating: 0,
+      reviewCount: 0,
+      userId: currentUser.uid, // Store who registered it
+      createdAt: serverTimestamp(),
+      // latitude and longitude would ideally be captured from a map input or geocoding service
     };
-    setBusinesses(prev => [newBusiness, ...prev].sort((a,b) => a.name.localeCompare(b.name))); // Add and re-sort
-    toast({
-      title: "Comércio Cadastrado!",
-      description: `${newBusiness.name} foi adicionado ao guia.`,
-    });
-    setIsRegisterModalOpen(false);
+
+    try {
+      const docRef = await addDoc(collection(firestore, 'businesses'), businessToSave);
+      const newBusinessWithId: BusinessData = {
+        ...businessToSave,
+        id: docRef.id,
+        // @ts-ignore
+        createdAt: new Date().toISOString() // Approximate for local state
+      };
+      setBusinesses(prev => [newBusinessWithId, ...prev].sort((a,b) => a.name.localeCompare(b.name)));
+      toast({
+        title: "Comércio Cadastrado!",
+        description: `${newBusinessData.name} foi adicionado ao guia.`,
+      });
+      setIsRegisterModalOpen(false);
+    } catch (error) {
+        console.error("Error adding business: ", error);
+        toast({ variant: "destructive", title: "Erro ao Cadastrar", description: "Não foi possível salvar o comércio." });
+    }
   };
 
 
@@ -234,17 +220,18 @@ export default function GuiaComercialPage() {
         )}
       </div>
 
-      {locationStatus === 'loading' && (
+      {(locationStatus === 'loading' || loadingBusinesses) && (
         <Alert>
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
-          <AlertTitle className="font-headline">Obtendo sua localização...</AlertTitle>
+          <AlertTitle className="font-headline">Carregando Comércios...</AlertTitle>
           <AlertDescription>
-            Por favor, aguarde para listarmos os comércios mais próximos.
+            Buscando os melhores estabelecimentos para você.
+            {locationStatus === 'loading' && " Tentando obter sua localização..."}
           </AlertDescription>
         </Alert>
       )}
 
-      {locationStatus === 'error' && (
+      {locationStatus === 'error' && !loadingBusinesses && (
          <Alert variant="destructive">
             <AlertTriangle className="h-5 w-5" />
             <AlertTitle className="font-headline">Localização Indisponível</AlertTitle>
@@ -265,15 +252,15 @@ export default function GuiaComercialPage() {
         </AlertDescription>
       </Alert>
 
-      {processedBusinesses.length > 0 ? (
+      {!loadingBusinesses && processedBusinesses.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {processedBusinesses.map(business => (
             <BusinessCard key={business.id} business={business} />
           ))}
         </div>
-      ) : (
+      ) : !loadingBusinesses && (
         <p className="text-center text-muted-foreground py-8">
-          {searchTerm ? "Nenhum comércio encontrado para sua busca." : (locationStatus === 'loading' ? "Carregando comércios..." : "Nenhum comércio cadastrado ainda.")}
+          {searchTerm ? "Nenhum comércio encontrado para sua busca." : "Nenhum comércio cadastrado ainda. Seja o primeiro a adicionar!"}
         </p>
       )}
 
