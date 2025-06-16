@@ -1,6 +1,6 @@
 
 import ToolCard, { type ToolCardProps } from '@/components/tools/tool-card';
-import { Calculator, ListChecks, ScanLine, Fuel, Droplets, Truck, ClipboardList, ClipboardSignature, ClipboardCopy, Send, QrCode, UserSquare, HeartPulse, Scale, ActivitySquare, Bed, Flame, Clock } from 'lucide-react';
+import { Calculator, ListChecks, ScanLine, Fuel, Droplets, Truck, ClipboardList, ClipboardSignature, ClipboardCopy, Send, QrCode, UserSquare, HeartPulse, Scale, ActivitySquare, Bed, Flame, Clock, Lightbulb } from 'lucide-react';
 
 const tools: ToolCardProps[] = [
   {
@@ -62,6 +62,12 @@ const tools: ToolCardProps[] = [
     Icon: Send,
     href: '/ferramentas/gerador-link-whatsapp',
     description: 'Crie links diretos para conversas no WhatsApp.',
+  },
+   {
+    title: 'Gerador de Post Promocional (IA)',
+    Icon: Lightbulb, // Ou Megaphone, Speaker
+    href: '/ferramentas/gerador-post-promocional',
+    description: 'Crie posts chamativos para redes sociais com IA.',
   },
   {
     title: 'Gerador de QR Code',
