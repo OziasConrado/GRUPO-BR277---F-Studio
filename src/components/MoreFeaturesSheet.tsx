@@ -5,19 +5,15 @@ import {
   SheetHeader,
   SheetTitle,
   SheetClose,
-  SheetTrigger, // Added SheetTrigger
+  SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import {
+  Newspaper,
+  ShoppingCart,
   Store,
-  Building,
-  Camera,
-  AlertCircle,
-  FileText,
-  ListChecks,
-  Headset,
-  Wrench,
+  Link as LinkIcon, // Renomeado para evitar conflito com next/link
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,17 +21,15 @@ interface Feature {
   icon: React.ElementType;
   label: string;
   href: string;
+  isExternal?: boolean;
 }
 
+// Atualizando a lista de funcionalidades conforme solicitado
 const iconGridFeatures: Feature[] = [
-  { icon: Store, label: "Guia Comercial", href: "/guia-comercial" },
-  { icon: Building, label: "Turismo", href: "/turismo" },
-  { icon: Camera, label: "Streaming", href: "/streaming" },
-  { icon: AlertCircle, label: "Alertas", href: "/alertas" },
-  { icon: Wrench, label: "Ferramentas", href: "/ferramentas"},
-  { icon: ListChecks, label: "Checklist", href: "/ferramentas/checklist" },
-  { icon: Headset, label: "Contato SAU", href: "/sau" },
-  { icon: FileText, label: "Notícias", href: "/noticias" },
+  { icon: LinkIcon, label: "Bio Link", href: "/bio-link" }, // Usar um placeholder ou link real se disponível
+  { icon: Newspaper, label: "Notícias", href: "https://nossodia.com.br/", isExternal: true },
+  { icon: ShoppingCart, label: "CargoShop (Em Breve)", href: "/cargo-shop" }, // Placeholder
+  { icon: Store, label: "Marketplace (Em Breve)", href: "/marketplace" }, // Placeholder
 ];
 
 interface MoreFeaturesSheetProps {
@@ -67,6 +61,9 @@ const MoreFeaturesSheet: React.FC<MoreFeaturesSheetProps> = ({ children }) => {
             <SheetClose asChild key={feature.label}>
               <Link
                 href={feature.href}
+                passHref={!feature.isExternal} // passHref é necessário para links Next internos
+                target={feature.isExternal ? "_blank" : undefined}
+                rel={feature.isExternal ? "noopener noreferrer" : undefined}
                 className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-background rounded-lg"
               >
                 <div
