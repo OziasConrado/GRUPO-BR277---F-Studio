@@ -5,8 +5,32 @@ import { useState, useMemo } from 'react';
 import ToolCard, { type ToolCardProps } from '@/components/tools/tool-card';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, Mail, ThumbsUp, ThumbsDown, Lightbulb as IdeaIcon } from "lucide-react"; // Added icons
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'; // Added Card components
+import { 
+  Search, 
+  Filter, 
+  Mail, 
+  ThumbsUp, 
+  ThumbsDown, 
+  Lightbulb as IdeaIcon, // Alias for feedback section
+  Droplets, // For Álcool ou Gasolina?
+  Flame, // For Calculadora de Calorias
+  Calculator, // For Calculadora de Frete
+  Scale, // For Calculadora de IMC
+  ListChecks, // For Checklist de Viagem
+  ClipboardList, // For Custo de Viagem (Diesel + Arla)
+  ClipboardSignature, // For Declaração de Transporte
+  UserSquare, // For Gerador de Currículo
+  ClipboardCopy, // For Gerador de Link Pix
+  Send, // For Gerador de Link WhatsApp
+  Lightbulb, // For Gerador de Post Promocional (IA) - direct use
+  QrCode, // For Gerador de QR Code
+  Clock, // For Gestão do Tempo
+  ActivitySquare, // For Monitorar Pressão Arterial
+  HeartPulse, // For Monitoramento de Glicemia
+  Bed, // For Qualidade do Sono
+  ScanLine // For Scanner de Documentos
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 // Extend ToolCardProps to include category for local use
@@ -52,7 +76,7 @@ const tools: CategorizedTool[] = [
   },
   {
     title: 'Custo de Viagem (Diesel + Arla)',
-    Icon: ClipboardList,
+    Icon: ClipboardList, // Consider changing to Fuel if consistent with custo-viagem page
     href: '/ferramentas/custo-viagem',
     description: 'Calcule diesel, Arla32 e custo total.',
     category: 'Trânsito e Veículos',
@@ -87,7 +111,7 @@ const tools: CategorizedTool[] = [
   },
    {
     title: 'Gerador de Post Promocional (IA)',
-    Icon: Lightbulb,
+    Icon: Lightbulb, // Using direct Lightbulb here
     href: '/ferramentas/gerador-post-promocional',
     description: 'Crie posts chamativos para redes sociais com IA.',
     category: 'Empreendedorismo',
@@ -265,4 +289,3 @@ export default function FerramentasPage() {
     </div>
   );
 }
-
