@@ -1,3 +1,4 @@
+
 # Settings to manage and configure a Firebase App Hosting backend.
 # https://firebase.google.com/docs/app-hosting/configure
 
@@ -13,3 +14,5 @@ environmentVariables:
   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "616095109370"
   NEXT_PUBLIC_FIREBASE_APP_ID: "1:616095109370:web:484250c8b78950dad1f943"
   NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: "G-ELT449B7FS"
+  NEXT_PUBLIC_PROVIDED_API_KEY: "AIzaSyAmT1a0LbMcmHHtvEnTNpLfmjYEfBz0UrQ"
+
