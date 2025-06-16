@@ -2,9 +2,9 @@
 'use client';
 
 import { useState, useRef, useEffect, type ChangeEvent, type FormEvent } from 'react';
-import React from 'react'; 
+import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea"; 
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { X, Send, Paperclip, Mic } from "lucide-react";
 import ChatMessageItem, { type ChatMessageData } from "./ChatMessageItem";
@@ -13,6 +13,17 @@ import { useToast } from '@/hooks/use-toast';
 import { useNotification } from '@/contexts/NotificationContext';
 import Image from 'next/image'; // For image preview
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
+import { firestore } from '@/lib/firebase/client'; // Import firestore
+import {
+  collection,
+  addDoc,
+  query,
+  orderBy,
+  onSnapshot,
+  serverTimestamp,
+  Timestamp // Import Timestamp
+} from 'firebase/firestore';
 
 const MOCK_CHAT_USER_NAMES = [
     'João Silva', 'Você', 'Ana Souza', 'Carlos Santos', 'Ozias Conrado'
@@ -22,7 +33,7 @@ const renderTextWithMentionsForChat = (text: string, knownUsers: string[]): Reac
   if (!text) return [text];
   const escapedUserNames = knownUsers.map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   const mentionRegex = new RegExp(`(@(?:${escapedUserNames.join('|')}))(?=\\s|\\p{P}|$)`, 'gu');
-  
+
   const parts = text.split(mentionRegex);
   const elements: React.ReactNode[] = [];
 
@@ -32,7 +43,7 @@ const renderTextWithMentionsForChat = (text: string, knownUsers: string[]): Reac
       if (knownUsers.includes(mentionedName)) {
         elements.push(<strong key={`${index}-${part}`} className="text-accent font-semibold cursor-pointer hover:underline">{part}</strong>);
       } else {
-        elements.push(part); 
+        elements.push(part);
       }
     } else {
       elements.push(part);
@@ -41,70 +52,12 @@ const renderTextWithMentionsForChat = (text: string, knownUsers: string[]): Reac
   return elements;
 };
 
-const initialMessagesRaw: Omit<ChatMessageData, 'textElements'>[] = [
-  {
-    id: '1',
-    senderName: 'João Silva',
-    avatarUrl: 'https://placehold.co/40x40.png?text=JS',
-    dataAIAvatarHint: 'man portrait',
-    text: 'Olá pessoal! Alguma novidade na BR-277 hoje? Alguém viu o @Ozias Conrado por aí?',
-    timestamp: '10:30 AM',
-    isCurrentUser: false,
-  },
-  {
-    id: '2',
-    senderName: 'Você',
-    avatarUrl: 'https://placehold.co/40x40.png?text=EU',
-    dataAIAvatarHint: 'current user',
-    text: 'Acabei de passar pelo km 150, tudo tranquilo por enquanto. @João Silva, sem sinal dele.',
-    timestamp: '10:32 AM',
-    isCurrentUser: true,
-  },
-  {
-    id: '3',
-    senderName: 'Ana Souza',
-    avatarUrl: 'https://placehold.co/40x40.png?text=AS',
-    dataAIAvatarHint: 'woman portrait',
-    text: 'Atenção! Neblina forte perto da serra. Cuidado redobrado!',
-    timestamp: '10:35 AM',
-    isCurrentUser: false,
-  },
-   {
-    id: '4',
-    senderName: 'Você',
-    avatarUrl: 'https://placehold.co/40x40.png?text=EU',
-    dataAIAvatarHint: 'current user',
-    imageUrl: 'https://placehold.co/400x300.png', // Placeholder for an uploaded image
-    dataAIImageHint: 'road fog',
-    text: "Confirmo a neblina. Essa foto é de agora:",
-    timestamp: '10:38 AM',
-    isCurrentUser: true,
-  },
-  {
-    id: '5',
-    senderName: 'Carlos Santos',
-    avatarUrl: 'https://placehold.co/40x40.png?text=CS',
-    dataAIAvatarHint: 'truck driver',
-    file: { name: 'Alerta_importante.mp3', type: 'audio'},
-    text: "Gravei um áudio sobre um desvio:",
-    timestamp: '10:40 AM',
-    isCurrentUser: false,
-  }
-];
-
-const processMessagesWithMentions = (messages: Omit<ChatMessageData, 'textElements'>[]): ChatMessageData[] => {
-    return messages.map(msg => ({
-        ...msg,
-        textElements: msg.text ? renderTextWithMentionsForChat(msg.text, MOCK_CHAT_USER_NAMES) : undefined,
-    }));
-};
-
 interface ChatWindowProps {
   onClose: () => void;
 }
 
 export default function ChatWindow({ onClose }: ChatWindowProps) {
-  const [messages, setMessages] = useState<ChatMessageData[]>(() => processMessagesWithMentions(initialMessagesRaw));
+  const [messages, setMessages] = useState<ChatMessageData[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
@@ -114,6 +67,48 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
   const { incrementNotificationCount } = useNotification();
+  const { currentUser } = useAuth(); // Get current user
+
+  useEffect(() => {
+    if (!firestore) {
+        toast({ title: "Erro de Conexão", description: "Chat não pôde conectar ao servidor.", variant: "destructive" });
+        return;
+    }
+    const messagesCollection = collection(firestore, 'chatMessages');
+    const q = query(messagesCollection, orderBy('timestamp', 'asc')); // Fetch in ascending order
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const fetchedMessages: ChatMessageData[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const messageTimestamp = data.timestamp instanceof Timestamp
+          ? data.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : 'Agora'; // Fallback for newly sent messages before server timestamp is set
+
+        fetchedMessages.push({
+          id: doc.id,
+          senderName: data.senderName,
+          avatarUrl: data.avatarUrl,
+          dataAIAvatarHint: data.dataAIAvatarHint,
+          text: data.text,
+          imageUrl: data.imageUrl, // Will be undefined for now
+          dataAIImageHint: data.dataAIImageHint,
+          audioUrl: data.audioUrl,
+          file: data.file,
+          timestamp: messageTimestamp,
+          isCurrentUser: currentUser ? data.userId === currentUser.uid : false,
+          textElements: data.text ? renderTextWithMentionsForChat(data.text, MOCK_CHAT_USER_NAMES) : undefined,
+        });
+      });
+      setMessages(fetchedMessages);
+    }, (error) => {
+      console.error("Error fetching chat messages: ", error);
+      toast({ title: "Erro no Chat", description: "Não foi possível carregar as mensagens.", variant: "destructive" });
+    });
+
+    return () => unsubscribe();
+  }, [currentUser, toast]);
+
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -134,26 +129,38 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     });
   };
 
-  const handleSendMessage = (e?: FormEvent) => {
+  const handleSendMessage = async (e?: FormEvent) => {
     if (e) e.preventDefault();
+    if (!currentUser) {
+      toast({ title: "Não Autenticado", description: "Você precisa estar logado para enviar mensagens.", variant: "destructive" });
+      return;
+    }
+    if (!firestore) {
+        toast({ title: "Erro de Conexão", description: "Não é possível enviar mensagem.", variant: "destructive" });
+        return;
+    }
+
     if (newMessage.trim() === '' && !selectedImageFile) return;
 
     if(newMessage.trim()) checkForMentionsAndNotifyChat(newMessage);
 
-    const newMsgData: ChatMessageData = {
-      id: Date.now().toString(),
-      senderName: 'Você',
-      avatarUrl: 'https://placehold.co/40x40.png?text=EU',
-      dataAIAvatarHint: 'current user',
+    const messageData: Omit<ChatMessageData, 'id' | 'timestamp' | 'isCurrentUser' | 'textElements' | 'imageUrl' | 'file'> & { userId: string; timestamp: any } = {
+      userId: currentUser.uid,
+      senderName: currentUser.displayName || 'Usuário Anônimo',
+      avatarUrl: currentUser.photoURL || `https://placehold.co/40x40.png?text=${currentUser.displayName ? currentUser.displayName.substring(0,1).toUpperCase() : 'U'}`,
+      dataAIAvatarHint: 'user avatar',
       text: newMessage.trim() || undefined,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      isCurrentUser: true,
-      textElements: newMessage.trim() ? renderTextWithMentionsForChat(newMessage.trim(), MOCK_CHAT_USER_NAMES) : undefined,
-      ...(selectedImageFile && imagePreviewUrl && { imageUrl: imagePreviewUrl, dataAIImageHint: 'uploaded image' }),
-      file: selectedImageFile ? { name: selectedImageFile.name, type: 'image' as const } : undefined,
+      timestamp: serverTimestamp(),
+      // Image/file upload to Firestore will be handled in a future step
     };
-    setMessages(prevMessages => [...prevMessages, newMsgData]);
-    
+
+    try {
+      await addDoc(collection(firestore, 'chatMessages'), messageData);
+    } catch (error) {
+      console.error("Error sending message: ", error);
+      toast({ title: "Erro ao Enviar", description: "Não foi possível enviar sua mensagem.", variant: "destructive" });
+    }
+
     setNewMessage('');
     setSelectedImageFile(null);
     setImagePreviewUrl(null);
@@ -177,7 +184,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
-    
+
     const MAX_SIZE_MB = 5;
     if (file.size > MAX_SIZE_MB * 1024 * 1024) {
         toast({
@@ -195,7 +202,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
       setImagePreviewUrl(reader.result as string);
     };
     reader.readAsDataURL(file);
-    
+
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -210,7 +217,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   const handleAttachmentClick = () => {
     fileInputRef.current?.click();
   };
-  
+
   const handleMicClick = () => {
     toast({
       title: "Gravação de Áudio",
@@ -274,25 +281,26 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
                 placeholder="Digite uma mensagem..."
                 value={newMessage}
                 onChange={handleTextareaInput}
-                className="rounded-lg bg-background/70 min-h-[44px] max-h-[120px] resize-none text-base p-2.5 pr-20" 
+                className="rounded-lg bg-background/70 min-h-[44px] max-h-[120px] resize-none text-base p-2.5 pr-20"
                 rows={1}
                 onKeyPress={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
+                  if (e.key === 'Enter' && !e.shiftKey && !currentUser?.isAnonymous) { // Prevent Enter for anonymous for now
                     handleSendMessage(e);
                   }
                 }}
+                disabled={currentUser?.isAnonymous} // Example: disable for anonymous
               />
               <div className="absolute right-1 bottom-1 flex items-center">
                 <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/png, image/jpeg, image/webp" className="hidden" />
-                <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-primary h-9 w-9" onClick={handleAttachmentClick}>
+                <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-primary h-9 w-9" onClick={handleAttachmentClick} disabled={currentUser?.isAnonymous}>
                   <Paperclip className="h-5 w-5" />
                 </Button>
                 {(newMessage.trim() === '' && !selectedImageFile) ? (
-                  <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-primary h-9 w-9" onClick={handleMicClick}>
+                  <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-primary h-9 w-9" onClick={handleMicClick} disabled={currentUser?.isAnonymous}>
                     <Mic className="h-5 w-5" />
                   </Button>
                 ) : (
-                  <Button type="submit" variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground h-9 w-9">
+                  <Button type="submit" variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground h-9 w-9" disabled={currentUser?.isAnonymous}>
                     <Send className="h-5 w-5" />
                   </Button>
                 )}
