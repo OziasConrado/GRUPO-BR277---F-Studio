@@ -23,7 +23,7 @@ import {
   CloudFog,
   Flame as FlameIcon,
   ArrowRightCircle,
-  Loader2 // Added Loader2
+  Loader2
 } from 'lucide-react';
 
 import PostCard, { type PostCardProps, type PostReactions } from '@/components/feed/post-card';
@@ -39,9 +39,9 @@ import HomeAlertCard, { type HomeAlertCardData } from '@/components/alerts/home-
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { useAuth } from '@/contexts/AuthContext'; // Added useAuth
-import { firestore } from '@/lib/firebase/client'; // Added firestore
-import { collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp, Timestamp } from 'firebase/firestore'; // Added Firestore functions
+import { useAuth } from '@/contexts/AuthContext';
+import { firestore } from '@/lib/firebase/client';
+import { collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp, Timestamp } from 'firebase/firestore';
 
 
 // Mocks and Constants
@@ -150,7 +150,7 @@ export default function FeedPage() {
 
   // Hooks
   const { toast } = useToast();
-  const { currentUser } = useAuth(); // Get current user
+  const { currentUser } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -176,11 +176,13 @@ export default function FeedPage() {
           userLocation: data.userLocation || 'Local Desconhecido',
           timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
           text: data.text || '',
-          imageUrl: data.imageUrl, // Will be undefined for now if not saved
+          imageUrl: data.imageUrl,
           dataAIImageHint: data.dataAIImageHint,
+          uploadedImageUrl: data.uploadedImageUrl, // Ensure this is fetched if used
+          dataAIUploadedImageHint: data.dataAIUploadedImageHint, // Ensure this is fetched
           reactions: data.reactions || { ...defaultReactions },
-          commentsData: data.commentsData || [], // Comments also need Firestore integration later
-          allKnownUserNames: MOCK_POST_USER_NAMES, // Keep mock for mentions for now
+          commentsData: data.commentsData || [],
+          allKnownUserNames: MOCK_POST_USER_NAMES,
           bio: data.bio || 'Usuário da comunidade Rota Segura.',
           instagramUsername: data.instagramUsername,
           cardStyle: data.cardStyle,
@@ -332,18 +334,17 @@ export default function FeedPage() {
             dataAIAvatarHint: 'user avatar',
             userId: currentUser.uid,
             timestamp: serverTimestamp(),
-            bio: "Usuário do Rota Segura", // Add default bio or fetch from user profile
+            bio: "Usuário do Rota Segura",
         };
         await addDoc(collection(firestore, 'alerts'), alertData);
         toast({ title: "Alerta Publicado!", description: "Seu alerta foi adicionado ao mural." });
-        fetchAlerts(); // Re-fetch alerts
+        fetchAlerts(); 
         setSelectedAlertType(undefined);
       } catch (error) {
         console.error("Error publishing alert: ", error);
         toast({ variant: 'destructive', title: 'Erro ao Publicar Alerta', description: 'Não foi possível salvar o alerta.' });
       }
     } else if (currentPostType === 'video') {
-        // Video story logic (still mock-based for now)
         if (selectedImageForUpload && imagePreviewUrl) {
             const newVideoStory: StoryCircleProps = {
                 id: `user-story-${Date.now()}`,
@@ -361,25 +362,26 @@ export default function FeedPage() {
             return;
         }
     } else { 
-      // Handle regular text posts (image upload deferred)
       const postDataToSave: any = {
         userId: currentUser.uid,
         userName: currentUser.displayName || 'Usuário Anônimo',
         userAvatarUrl: currentUser.photoURL || 'https://placehold.co/40x40.png',
         dataAIAvatarHint: 'user avatar',
-        userLocation: 'Sua Localização', // TODO: Get actual location or from profile
+        userLocation: 'Sua Localização', 
         timestamp: serverTimestamp(),
         text: newPostText,
         reactions: { ...defaultReactions },
-        commentsData: [], // Comments will be a subcollection or separate
-        bio: 'Este é o seu perfil.', // TODO: Get from user profile
-        instagramUsername: '', // TODO: Get from user profile
+        commentsData: [],
+        bio: 'Este é o seu perfil.',
+        instagramUsername: '',
       };
 
       if (selectedImageForUpload && imagePreviewUrl && currentPostType === 'image') {
-        // postDataToSave.uploadedImageUrl = imagePreviewUrl; // Deferring actual image upload logic
-        // postDataToSave.dataAIUploadedImageHint = 'user uploaded image';
-        toast({ title: "Upload de Imagem Pendente", description: "A funcionalidade de upload de imagem será implementada em breve. Apenas o texto será salvo por enquanto." });
+        // For now, image upload to storage is deferred.
+        // We will save the text, and later implement image upload that updates this post or creates a new one with the image.
+        postDataToSave.uploadedImageUrl = imagePreviewUrl; // This would be the Storage URL in a real scenario
+        postDataToSave.dataAIUploadedImageHint = 'user uploaded image'; // Placeholder hint
+        toast({ title: "Post com Imagem (Texto Salvo)", description: "O texto foi salvo. O upload de imagens será implementado em breve." });
       } else if (currentPostType === 'text' && newPostText.length <= 150 && selectedPostBackground?.name !== 'Padrão') {
         postDataToSave.cardStyle = {
           backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
@@ -391,19 +393,18 @@ export default function FeedPage() {
       try {
         await addDoc(collection(firestore, 'posts'), postDataToSave);
         toast({ title: "Publicado!", description: "Sua postagem está na Time Line." });
-        fetchPosts(); // Re-fetch posts
+        fetchPosts();
       } catch (error) {
         console.error("Error publishing post: ", error);
         toast({ variant: 'destructive', title: 'Erro ao Publicar', description: 'Não foi possível salvar sua postagem.' });
       }
     }
   
-    // Reset common fields
     setNewPostText('');
     setSelectedImageForUpload(null);
     setImagePreviewUrl(null);
     setSelectedPostBackground(backgroundOptions[0]);
-    setCurrentPostType('text'); // Reset to default post type
+    setCurrentPostType('text');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -649,7 +650,7 @@ export default function FeedPage() {
           </div>
         </div>
       ) : (
-        <p className="text-muted-foreground text-center py-4">Nenhum alerta recente.</p>
+        <p className="text-muted-foreground text-center py-4">Nenhum alerta recente. Seja o primeiro a reportar algo!</p>
       )}
 
       <h2 className="text-xl font-bold pt-2 font-headline text-left">
@@ -713,4 +714,3 @@ export default function FeedPage() {
     </div>
   );
 }
-
