@@ -17,7 +17,7 @@ import { Alert, AlertTitle, AlertDescription as ShadcnAlertDescription } from "@
 import { gerarPostsPromocionais, type GerarPostsPromocionaisInput, type GerarPostsPromocionaisOutput } from '@/ai/flows/gerar-post-promocional-flow';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, Controller } from 'react-hook-form';
-import { GerarPostsPromocionaisInputSchema } from '@/ai/flows/gerar-post-promocional-flow';
+import { GerarPostsPromocionaisInputSchema, ToneEnum as ToneEnumSchema } from '@/ai/schemas/gerar-post-promocional-schemas'; // Updated import
 
 const AdPlaceholder = ({ className }: { className?: string }) => (
   <div className={cn("my-6 p-4 rounded-xl bg-muted/30 border border-dashed h-24 flex items-center justify-center", className)}>
@@ -25,7 +25,7 @@ const AdPlaceholder = ({ className }: { className?: string }) => (
   </div>
 );
 
-const tonsMensagem = ["Entusiasmado", "Informativo", "Urgente", "Divertido", "Profissional"] as const;
+const tonsMensagem = ToneEnumSchema.options; // Use options from imported schema
 const plataformas = ["Geral", "Instagram", "Facebook", "LinkedIn", "Twitter/X"] as const;
 
 export default function GeradorPostPromocionalPage() {
@@ -228,4 +228,3 @@ export default function GeradorPostPromocionalPage() {
     </div>
   );
 }
-    
