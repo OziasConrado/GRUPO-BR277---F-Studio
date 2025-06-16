@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useRef, type ChangeEvent } from 'react';
+import { useEffect, useState, useRef, type ChangeEvent, useCallback } from 'react';
 import Link from 'next/link';
 import {
   List,
@@ -22,7 +22,8 @@ import {
   TrafficConeIcon,
   CloudFog,
   Flame as FlameIcon,
-  ArrowRightCircle
+  ArrowRightCircle,
+  Loader2 // Added Loader2
 } from 'lucide-react';
 
 import PostCard, { type PostCardProps, type PostReactions } from '@/components/feed/post-card';
@@ -38,6 +39,9 @@ import HomeAlertCard, { type HomeAlertCardData } from '@/components/alerts/home-
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { useAuth } from '@/contexts/AuthContext'; // Added useAuth
+import { firestore } from '@/lib/firebase/client'; // Added firestore
+import { collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp, Timestamp } from 'firebase/firestore'; // Added Firestore functions
 
 
 // Mocks and Constants
@@ -60,7 +64,7 @@ const MOCK_POST_USER_NAMES = [
   'Ozias Conrado',
 ];
 
-// Mock data for User Video Stories
+// Mock data for User Video Stories - Stays as mock for now
 const mockUserVideoStories: StoryCircleProps[] = [
   {
     id: 'user-story-1',
@@ -113,162 +117,12 @@ const mockUserVideoStories: StoryCircleProps[] = [
 ];
 
 
-const initialMockPosts: PostCardProps[] = [
-  {
-    id: '1',
-    userName: 'Carlos Caminhoneiro',
-    userAvatarUrl: 'https://placehold.co/40x40.png',
-    dataAIAvatarHint: 'truck driver',
-    userLocation: 'Curitiba, PR',
-    timestamp: '2 horas atrás',
-    text: 'Estrada tranquila hoje na BR-116! Sol brilhando e sem trânsito. Bom dia a todos! @Ana Viajante, como está por aí? Aproveitando para testar o novo sistema de posts aqui no app. A interface está bem fluida e fácil de usar. Espero que todos tenham uma ótima viagem e que o dia seja produtivo para quem está na lida. @Ozias Conrado, tudo certo? Cuidado nas curvas e mantenham a atenção! Mais um pouco de texto para testar a funcionalidade de ver mais e ver menos, garantindo que tenhamos mais de 130 caracteres para que o botão apareça corretamente.',
-    imageUrl: 'https://placehold.co/600x400.png',
-    dataAIImageHint: 'highway sunny day',
-    reactions: { ...defaultReactions, thumbsUp: 152, thumbsDown: 5 },
-    commentsData: [
-      {
-        id: 'c1-1',
-        userName: 'Mariana Logística',
-        userAvatarUrl: 'https://placehold.co/40x40.png',
-        dataAIAvatarHint: 'logistics woman',
-        timestamp: '1 hora atrás',
-        text: 'Que ótimo, @Carlos Caminhoneiro! Boas viagens!',
-        reactions: { thumbsUp: 10, thumbsDown: 1, userReaction: null },
-        replies: [
-          {
-            id: 'r1-1-1',
-            userName: 'Carlos Caminhoneiro',
-            userAvatarUrl: 'https://placehold.co/40x40.png',
-            dataAIAvatarHint: 'truck driver',
-            timestamp: '30 minutos atrás',
-            text: 'Obrigado, @Mariana Logística!',
-            reactions: { thumbsUp: 2, thumbsDown: 0, userReaction: null },
-          },
-        ],
-      },
-      {
-        id: 'c1-2',
-        userName: 'Pedro Estradeiro',
-        userAvatarUrl: 'https://placehold.co/40x40.png',
-        dataAIAvatarHint: 'male traveler',
-        timestamp: '45 minutos atrás',
-        text: 'Também passei por lá, realmente um dia bom pra rodar.',
-        reactions: { thumbsUp: 5, thumbsDown: 0, userReaction: null },
-      },
-    ],
-    bio: 'Caminhoneiro experiente, rodando pelas estradas do Brasil há mais de 20 anos. Compartilhando dicas e paisagens.',
-    instagramUsername: 'carlos_trucker',
-    allKnownUserNames: MOCK_POST_USER_NAMES,
-  },
-  {
-    id: '2',
-    userName: 'Ana Viajante',
-    userAvatarUrl: 'https://placehold.co/40x40.png',
-    dataAIAvatarHint: 'woman traveler',
-    userLocation: 'São Paulo, SP',
-    timestamp: '5 horas atrás',
-    text: 'Alerta de neblina densa na Serra do Mar. Redobrem a atenção, pessoal! A visibilidade está bastante comprometida e a pista pode estar escorregadia. Recomendo acender os faróis de neblina e reduzir a velocidade consideravelmente. @Segurança Rodoviária, por favor, verifiquem a área.',
-    imageUrl: 'https://placehold.co/600x400.png',
-    dataAIImageHint: 'foggy mountain road',
-    reactions: { ...defaultReactions, thumbsUp: 98, thumbsDown: 2 },
-    commentsData: [
-      {
-        id: 'c2-1',
-        userName: 'Segurança Rodoviária',
-        userAvatarUrl: 'https://placehold.co/40x40.png',
-        dataAIAvatarHint: 'safety logo',
-        timestamp: '4 horas atrás',
-        text: 'Obrigado pelo alerta, @Ana Viajante! Informação crucial. Equipe já notificada.',
-        reactions: { thumbsUp: 15, thumbsDown: 0, userReaction: null },
-      },
-    ],
-    bio: 'Aventureira e fotógrafa amadora. Adoro explorar novos lugares e compartilhar minhas experiências de viagem.',
-    instagramUsername: 'ana_explora',
-    allKnownUserNames: MOCK_POST_USER_NAMES,
-  },
-  {
-    id: '3',
-    userName: 'Rota Segura Admin',
-    userAvatarUrl: 'https://placehold.co/40x40.png',
-    dataAIAvatarHint: 'app logo',
-    userLocation: 'Brasil',
-    timestamp: '1 dia atrás',
-    text: 'Nova funcionalidade no app: Checklist de Viagem aprimorado! Confira na seção de Ferramentas. Agora com mais itens e a possibilidade de salvar seus checklists para viagens futuras. Feedback é sempre bem-vindo!',
-    reactions: { ...defaultReactions, thumbsUp: 210, thumbsDown: 3 },
-    commentsData: [],
-    bio: 'Perfil oficial do app Rota Segura. Novidades, dicas e suporte para você, caminhoneiro e viajante!',
-    instagramUsername: 'rotasegura_app',
-    allKnownUserNames: MOCK_POST_USER_NAMES,
-  },
-];
-
 const backgroundOptions = [
   { name: 'Padrão', bg: 'hsl(var(--card))', text: 'hsl(var(--card-foreground))' },
   { name: 'Azul', bg: '#002776', text: '#FFFFFF' },
   { name: 'Verde', bg: '#009c3b', text: '#FFFFFF' },
   { name: 'Amarelo', bg: '#ffdf00', text: '#002776' },
   { name: 'Gradiente', gradient: 'linear-gradient(to right, #002776, #009c3b, #ffdf00)', text: '#FFFFFF' },
-];
-
-const generateTimestamp = () => {
-  const hoursAgo = Math.floor(Math.random() * 5) + 1; // 1 to 5 hours ago
-  return new Date(Date.now() - hoursAgo * 60 * 60 * 1000).toISOString();
-};
-
-const initialMockAlertsFeed: HomeAlertCardData[] = [
-  {
-    id: 'alert-1',
-    type: 'Acidente',
-    description: 'Colisão grave na BR-277, Km 35 (sentido litoral). Trânsito totalmente parado. Use desvios pela PR-407.',
-    timestamp: generateTimestamp(),
-    userNameReportedBy: 'Carlos Caminhoneiro',
-    userAvatarUrl: 'https://placehold.co/40x40.png',
-    dataAIAvatarHint: 'truck driver concerned',
-    bio: 'Na estrada há 20 anos, sempre alerta!',
-    instagramUsername: 'carlos_alerta_rodovias'
-  },
-  {
-    id: 'alert-2',
-    type: 'Obras',
-    description: 'Pista interditada para obras de recapeamento na BR-116, entre os Kms 110-115 (região de Campina Grande). Siga pela marginal com atenção.',
-    timestamp: generateTimestamp(),
-    userNameReportedBy: 'Ana Viajante',
-    userAvatarUrl: 'https://placehold.co/40x40.png',
-    dataAIAvatarHint: 'woman traveler pointing',
-    bio: 'Explorando o Brasil e compartilhando o que vejo.',
-  },
-  {
-    id: 'alert-3',
-    type: 'Congestionamento',
-    description: 'Fluxo intenso de veículos na região central de Curitiba, especialmente Av. Sete de Setembro. Evite o centro se possível.',
-    timestamp: generateTimestamp(),
-    userNameReportedBy: 'Mariana Logística',
-    userAvatarUrl: 'https://placehold.co/40x40.png',
-    dataAIAvatarHint: 'logistics manager serious',
-    bio: 'Planejamento é tudo! Informação é chave.',
-    instagramUsername: 'marilog_transporte'
-  },
-  {
-    id: 'alert-4',
-    type: 'Neblina',
-    description: 'Visibilidade reduzida na Serra do Mar (BR-277). Acenda os faróis e dirija com cautela redobrada. Trecho muito perigoso.',
-    timestamp: generateTimestamp(),
-    userNameReportedBy: 'Pedro Estradeiro',
-    userAvatarUrl: 'https://placehold.co/40x40.png',
-    dataAIAvatarHint: 'experienced driver focused',
-    bio: 'Sempre de olho na segurança.',
-  },
-  {
-    id: 'alert-5',
-    type: 'Queimada',
-    description: 'Fumaça densa sobre a pista na PR-407, Km 5, próximo a Paranaguá. Risco de baixa visibilidade e problemas respiratórios.',
-    timestamp: generateTimestamp(),
-    userNameReportedBy: 'Segurança Rodoviária',
-    userAvatarUrl: 'https://placehold.co/40x40.png',
-    dataAIAvatarHint: 'official safety account',
-    bio: 'Trabalhando pela sua segurança nas estradas.',
-    instagramUsername: 'rodoviaria_segura'
-  },
 ];
 
 const alertTypesForSelection = ["Acidente", "Obras na Pista", "Congestionamento", "Neblina/Cond. Climática", "Animal na Pista", "Queimada/Fumaça", "Outro"];
@@ -279,8 +133,12 @@ export default function FeedPage() {
   const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
   const [selectedStory, setSelectedStory] = useState<StoryCircleProps | null>(null);
   const [newPostText, setNewPostText] = useState('');
-  const [posts, setPosts] = useState<PostCardProps[]>(initialMockPosts);
-  const [displayedAlertsFeed, setDisplayedAlertsFeed] = useState<HomeAlertCardData[]>(initialMockAlertsFeed);
+  
+  const [posts, setPosts] = useState<PostCardProps[]>([]);
+  const [displayedAlertsFeed, setDisplayedAlertsFeed] = useState<HomeAlertCardData[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(true);
+  const [loadingAlerts, setLoadingAlerts] = useState(true);
+
   const [selectedImageForUpload, setSelectedImageForUpload] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [selectedPostBackground, setSelectedPostBackground] = useState(backgroundOptions[0]);
@@ -292,10 +150,93 @@ export default function FeedPage() {
 
   // Hooks
   const { toast } = useToast();
+  const { currentUser } = useAuth(); // Get current user
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Fetch Posts
+  const fetchPosts = useCallback(async () => {
+    if (!firestore) {
+        console.error("Firestore not initialized");
+        setLoadingPosts(false);
+        return;
+    }
+    setLoadingPosts(true);
+    try {
+      const postsCollection = collection(firestore, 'posts');
+      const q = query(postsCollection, orderBy('timestamp', 'desc'), limit(10));
+      const querySnapshot = await getDocs(q);
+      const fetchedPosts: PostCardProps[] = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          userName: data.userName || 'Usuário Anônimo',
+          userAvatarUrl: data.userAvatarUrl || 'https://placehold.co/40x40.png',
+          dataAIAvatarHint: data.dataAIAvatarHint || 'user avatar',
+          userLocation: data.userLocation || 'Local Desconhecido',
+          timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
+          text: data.text || '',
+          imageUrl: data.imageUrl, // Will be undefined for now if not saved
+          dataAIImageHint: data.dataAIImageHint,
+          reactions: data.reactions || { ...defaultReactions },
+          commentsData: data.commentsData || [], // Comments also need Firestore integration later
+          allKnownUserNames: MOCK_POST_USER_NAMES, // Keep mock for mentions for now
+          bio: data.bio || 'Usuário da comunidade Rota Segura.',
+          instagramUsername: data.instagramUsername,
+          cardStyle: data.cardStyle,
+        } as PostCardProps;
+      });
+      setPosts(fetchedPosts);
+    } catch (error) {
+      console.error("Error fetching posts: ", error);
+      toast({ variant: "destructive", title: "Erro ao Carregar Posts", description: "Não foi possível buscar os posts do servidor." });
+    } finally {
+      setLoadingPosts(false);
+    }
+  }, [toast]);
+
+  // Fetch Alerts
+  const fetchAlerts = useCallback(async () => {
+    if (!firestore) {
+        console.error("Firestore not initialized");
+        setLoadingAlerts(false);
+        return;
+    }
+    setLoadingAlerts(true);
+    try {
+      const alertsCollection = collection(firestore, 'alerts');
+      const q = query(alertsCollection, orderBy('timestamp', 'desc'), limit(5));
+      const querySnapshot = await getDocs(q);
+      const fetchedAlerts: HomeAlertCardData[] = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          type: data.type || 'Alerta',
+          description: data.description || '',
+          timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
+          userNameReportedBy: data.userNameReportedBy || 'Usuário Anônimo',
+          userAvatarUrl: data.userAvatarUrl || 'https://placehold.co/40x40.png',
+          dataAIAvatarHint: data.dataAIAvatarHint || 'user avatar',
+          bio: data.bio || 'Usuário da comunidade Rota Segura.',
+          instagramUsername: data.instagramUsername,
+        } as HomeAlertCardData;
+      });
+      setDisplayedAlertsFeed(fetchedAlerts);
+    } catch (error) {
+      console.error("Error fetching alerts: ", error);
+      toast({ variant: "destructive", title: "Erro ao Carregar Alertas", description: "Não foi possível buscar os alertas do servidor." });
+    } finally {
+      setLoadingAlerts(false);
+    }
+  }, [toast]);
+
+
   // Effects
+  useEffect(() => {
+    fetchPosts();
+    fetchAlerts();
+  }, [fetchPosts, fetchAlerts]);
+
   useEffect(() => {
     const style = document.createElement('style');
     const css = [
@@ -362,91 +303,99 @@ export default function FeedPage() {
     }
   };
 
-  const handlePublishPost = () => {
+  const handlePublishPost = async () => {
+    if (!currentUser) {
+      toast({ variant: 'destructive', title: 'Usuário não autenticado', description: 'Faça login para publicar.' });
+      return;
+    }
+    if (!firestore) {
+        toast({ variant: 'destructive', title: 'Erro de Conexão', description: 'Não foi possível conectar ao servidor.' });
+        return;
+    }
+
     if (newPostText.trim() === '' && !selectedImageForUpload && currentPostType !== 'alert') {
-      toast({
-        variant: 'destructive',
-        title: 'Publicação vazia',
-        description: 'Escreva algo ou adicione uma imagem/vídeo para publicar.',
-      });
+      toast({ variant: 'destructive', title: 'Publicação vazia', description: 'Escreva algo ou adicione uma imagem/vídeo para publicar.'});
       return;
     }
   
     if (currentPostType === 'alert') {
       if (!selectedAlertType || !newPostText.trim()) {
-        toast({
-            variant: 'destructive',
-            title: 'Alerta incompleto',
-            description: 'Selecione um tipo e descreva o alerta.',
-        });
+        toast({ variant: 'destructive', title: 'Alerta incompleto', description: 'Selecione um tipo e descreva o alerta.'});
         return;
       }
-      const newAlert: HomeAlertCardData = {
-          id: `user-alert-${Date.now()}`,
-          type: selectedAlertType || 'Alerta Geral',
-          description: newPostText.trim(),
-          timestamp: new Date().toISOString(),
-          userNameReportedBy: 'Você',
-          userAvatarUrl: 'https://placehold.co/40x40.png',
-          dataAIAvatarHint: 'current user avatar',
-          bio: 'Usuário do Rota Segura', 
-      };
-      setDisplayedAlertsFeed(prevAlerts => [newAlert, ...prevAlerts]);
-      toast({ title: "Alerta Publicado!", description: "Seu alerta foi adicionado ao mural." });
-      // Reset fields specific to alert
-      setSelectedAlertType(undefined);
-
+      try {
+        const alertData: Omit<HomeAlertCardData, 'id' | 'timestamp'> & { userId: string, timestamp: any } = {
+            type: selectedAlertType || 'Alerta Geral',
+            description: newPostText.trim(),
+            userNameReportedBy: currentUser.displayName || 'Usuário Anônimo',
+            userAvatarUrl: currentUser.photoURL || 'https://placehold.co/40x40.png',
+            dataAIAvatarHint: 'user avatar',
+            userId: currentUser.uid,
+            timestamp: serverTimestamp(),
+            bio: "Usuário do Rota Segura", // Add default bio or fetch from user profile
+        };
+        await addDoc(collection(firestore, 'alerts'), alertData);
+        toast({ title: "Alerta Publicado!", description: "Seu alerta foi adicionado ao mural." });
+        fetchAlerts(); // Re-fetch alerts
+        setSelectedAlertType(undefined);
+      } catch (error) {
+        console.error("Error publishing alert: ", error);
+        toast({ variant: 'destructive', title: 'Erro ao Publicar Alerta', description: 'Não foi possível salvar o alerta.' });
+      }
     } else if (currentPostType === 'video') {
+        // Video story logic (still mock-based for now)
         if (selectedImageForUpload && imagePreviewUrl) {
             const newVideoStory: StoryCircleProps = {
                 id: `user-story-${Date.now()}`,
                 adminName: newPostText.trim() ? `Vídeo de @Você: ${newPostText.trim()}` : 'Seu Novo Vídeo',
-                avatarUrl: 'https://placehold.co/180x320.png', // Placeholder for video thumbnail
+                avatarUrl: 'https://placehold.co/180x320.png', 
                 dataAIAvatarHint: newPostText.trim() || 'user uploaded video',
                 hasNewStory: true,
                 storyType: 'video',
-                videoContentUrl: imagePreviewUrl, // Store the actual video data URI here
+                videoContentUrl: imagePreviewUrl, 
             };
             setUserVideoStories(prevStories => [newVideoStory, ...prevStories]);
             toast({ title: "Vídeo Publicado!", description: "Seu Reel foi adicionado." });
         } else {
-            toast({
-                variant: 'destructive',
-                title: 'Nenhum vídeo selecionado',
-                description: 'Por favor, selecione um arquivo de vídeo para publicar como Reel.',
-            });
-            return; // Don't proceed to common reset if video wasn't selected
+            toast({ variant: 'destructive', title: 'Nenhum vídeo selecionado', description: 'Por favor, selecione um arquivo de vídeo para publicar como Reel.'});
+            return;
         }
     } else { 
-      // Handle regular posts (text, image) for Time Line
-      const newPost: PostCardProps = {
-        id: `post-${Date.now()}`,
-        userName: 'Você',
-        userAvatarUrl: 'https://placehold.co/40x40.png',
-        dataAIAvatarHint: 'current user',
-        userLocation: 'Sua Localização',
-        timestamp: 'Agora mesmo',
+      // Handle regular text posts (image upload deferred)
+      const postDataToSave: any = {
+        userId: currentUser.uid,
+        userName: currentUser.displayName || 'Usuário Anônimo',
+        userAvatarUrl: currentUser.photoURL || 'https://placehold.co/40x40.png',
+        dataAIAvatarHint: 'user avatar',
+        userLocation: 'Sua Localização', // TODO: Get actual location or from profile
+        timestamp: serverTimestamp(),
         text: newPostText,
         reactions: { ...defaultReactions },
-        commentsData: [],
-        allKnownUserNames: MOCK_POST_USER_NAMES,
-        bio: 'Este é o seu perfil.',
-        instagramUsername: 'seu_insta',
+        commentsData: [], // Comments will be a subcollection or separate
+        bio: 'Este é o seu perfil.', // TODO: Get from user profile
+        instagramUsername: '', // TODO: Get from user profile
       };
-  
+
       if (selectedImageForUpload && imagePreviewUrl && currentPostType === 'image') {
-        newPost.uploadedImageUrl = imagePreviewUrl;
-        newPost.dataAIUploadedImageHint = 'user uploaded image';
+        // postDataToSave.uploadedImageUrl = imagePreviewUrl; // Deferring actual image upload logic
+        // postDataToSave.dataAIUploadedImageHint = 'user uploaded image';
+        toast({ title: "Upload de Imagem Pendente", description: "A funcionalidade de upload de imagem será implementada em breve. Apenas o texto será salvo por enquanto." });
       } else if (currentPostType === 'text' && newPostText.length <= 150 && selectedPostBackground?.name !== 'Padrão') {
-        newPost.cardStyle = {
+        postDataToSave.cardStyle = {
           backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
           backgroundImage: selectedPostBackground.gradient,
           color: selectedPostBackground.text,
           name: selectedPostBackground.name,
         };
       }
-      setPosts((prevPosts) => [newPost, ...prevPosts]);
-      toast({ title: "Publicado!", description: "Sua postagem está na Time Line." });
+      try {
+        await addDoc(collection(firestore, 'posts'), postDataToSave);
+        toast({ title: "Publicado!", description: "Sua postagem está na Time Line." });
+        fetchPosts(); // Re-fetch posts
+      } catch (error) {
+        console.error("Error publishing post: ", error);
+        toast({ variant: 'destructive', title: 'Erro ao Publicar', description: 'Não foi possível salvar sua postagem.' });
+      }
     }
   
     // Reset common fields
@@ -651,7 +600,7 @@ export default function FeedPage() {
             <Button
               onClick={handlePublishPost}
               className="bg-primary hover:bg-primary/90 text-white rounded-full px-6"
-              disabled={!canPublish}
+              disabled={!canPublish || !currentUser}
             >
               Publicar
             </Button>
@@ -675,7 +624,11 @@ export default function FeedPage() {
       </div>
 
       {/* Seção de Alertas Recentes */}
-      {displayedAlertsFeed.length > 0 && (
+      {loadingAlerts ? (
+        <div className="flex justify-center items-center h-24">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : displayedAlertsFeed.length > 0 ? (
         <div className="pt-4 pb-2">
           <div className="flex overflow-x-auto space-x-3 pb-2 -mx-1 px-1 no-scrollbar">
             {displayedAlertsFeed.slice(0, 3).map((alertData) => (
@@ -695,6 +648,8 @@ export default function FeedPage() {
             )}
           </div>
         </div>
+      ) : (
+        <p className="text-muted-foreground text-center py-4">Nenhum alerta recente.</p>
       )}
 
       <h2 className="text-xl font-bold pt-2 font-headline text-left">
@@ -702,11 +657,20 @@ export default function FeedPage() {
         Time Line
       </h2>
 
-      <div className="space-y-4">
-        {posts.map((post) => (
-          <PostCard key={post.id} {...post} />
-        ))}
-      </div>
+      {loadingPosts ? (
+        <div className="flex justify-center items-center h-40">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        </div>
+      ) : posts.length > 0 ? (
+        <div className="space-y-4">
+          {posts.map((post) => (
+            <PostCard key={post.id} {...post} />
+          ))}
+        </div>
+      ) : (
+        <p className="text-muted-foreground text-center py-8">Nenhuma postagem na Time Line ainda. Seja o primeiro a publicar!</p>
+      )}
+
 
       {selectedStory && (
         <StoryViewerModal
@@ -749,3 +713,4 @@ export default function FeedPage() {
     </div>
   );
 }
+
