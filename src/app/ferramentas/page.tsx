@@ -186,15 +186,15 @@ export default function FerramentasPage() {
 
   const handleFeedbackClick = (isPositive: boolean) => {
     const subject = isPositive
-      ? "Feedback Positivo: Galeria de Ferramentas Rota Segura"
-      : "Feedback Construtivo: Galeria de Ferramentas Rota Segura";
+      ? "Feedback Positivo: Galeria de Ferramentas GRUPO BR277"
+      : "Feedback Construtivo: Galeria de Ferramentas GRUPO BR277";
     const body = encodeURIComponent("Olá,\n\n[Descreva sua experiência ou sugestão aqui]\n\nObrigado!");
     window.location.href = `mailto:oziasconrado@opaatec.com.br?subject=${encodeURIComponent(subject)}&body=${body}`;
   };
 
   const handleSendIdeaClick = () => {
-    const subject = "Sugestão de Melhoria/Nova Ferramenta: Rota Segura";
-    const body = encodeURIComponent("Olá,\n\Tenho uma ideia para o Rota Segura:\n\n[Descreva sua ideia aqui]\n\nObrigado!");
+    const subject = "Sugestão de Melhoria/Nova Ferramenta: GRUPO BR277";
+    const body = encodeURIComponent("Olá,\n\Tenho uma ideia para o GRUPO BR277:\n\n[Descreva sua ideia aqui]\n\nObrigado!");
     window.location.href = `mailto:oziasconrado@opaatec.com.br?subject=${encodeURIComponent(subject)}&body=${body}`;
   };
 
@@ -264,7 +264,7 @@ export default function FerramentasPage() {
       <Card className="rounded-xl shadow-sm mt-10">
         <CardHeader className="pb-3 text-center sm:text-left">
           <CardTitle className="font-headline text-lg">Sua Opinião é Importante!</CardTitle>
-          <CardDescription>Ajude-nos a melhorar o Rota Segura.</CardDescription>
+          <CardDescription>Ajude nosso time de desenvolvimento.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="text-center sm:text-left">
