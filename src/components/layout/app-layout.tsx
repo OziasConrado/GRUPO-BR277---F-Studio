@@ -3,10 +3,11 @@
 
 import type { ReactNode, Dispatch, SetStateAction } from 'react';
 import { useState, useEffect, createContext, useContext } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation'; // Added usePathname
+import Link from 'next/link'; // Added Link
 import Navigation from './navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { RefreshCcw, Moon, Sun, ArrowLeft, Bell, User, MoreVertical, LifeBuoy, FileText, Shield, Bug } from 'lucide-react';
+import { RefreshCcw, Moon, Sun, ArrowLeft, Bell, User, MoreVertical, LifeBuoy, FileText, Shield, Bug, Edit3, LogOut } from 'lucide-react'; // Added Edit3, LogOut
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -18,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ChatWindow from '@/components/chat/ChatWindow';
-import ChatFloatingButton from '@/components/chat/ChatFloatingButton'; // Importado
+import ChatFloatingButton from '@/components/chat/ChatFloatingButton'; 
 import { useNotification } from '@/contexts/NotificationContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -33,10 +34,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
+  const pathname = usePathname(); // Get current path
   const { toast } = useToast();
   const { notificationCount, clearNotifications } = useNotification();
-  const { isChatOpen, closeChat } = useChat(); // openChat e setIsChatOpen removidos daqui, serão usados pelo FAB
-  const { currentUser } = useAuth();
+  const { isChatOpen, closeChat } = useChat(); 
+  const { currentUser, signOutUser, isAuthenticating } = useAuth(); // Added signOutUser and isAuthenticating
 
   useEffect(() => {
     setIsMounted(true);
@@ -68,7 +70,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
         title: "Notificações",
         description: notificationCount > 0 ? `Você tem ${notificationCount} nova(s) notificação(ões).` : "Nenhuma nova notificação.",
     });
-    // clearNotifications(); // Opcional: limpar ao abrir
   };
 
   const handleMenuAction = (action: string) => {
@@ -76,11 +77,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
         title: "Menu Ação",
         description: `${action} clicado. Funcionalidade em breve!`,
     });
-    // Implementar navegação ou modal para cada ação
   };
 
+  const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/forgot-password';
 
-  const AppHeader = () => (
+  const AppHeader = () => {
+    if (isAuthPage) return null; // Don't render header on auth pages
+
+    return (
     <header className="sticky top-0 z-50 w-full bg-primary text-primary-foreground shadow-lg">
       <div className="px-2 sm:px-4 flex h-16 sm:h-20 items-center justify-between max-w-screen-xl mx-auto">
         <div className="flex items-center gap-0 sm:gap-0">
@@ -160,28 +164,49 @@ export default function AppLayout({ children }: AppLayoutProps) {
             </TooltipContent>
           </Tooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10 p-0 h-10 w-10 sm:h-12 sm:w-12">
-                <Avatar className="h-8 w-8 sm:h-9 sm:w-9">
-                 {currentUser?.photoURL ? (
-                    <AvatarImage
-                        src={currentUser.photoURL}
-                        alt={currentUser.displayName || 'User Avatar'}
-                        data-ai-hint="user profile"
-                    />
-                  ) : null}
-                  <AvatarFallback>
-                    <User className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
-                  </AvatarFallback>
-                </Avatar>
-                <span className="sr-only">Meu Perfil</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              <p>Meu Perfil</p>
-            </TooltipContent>
-          </Tooltip>
+          {currentUser && (
+            <DropdownMenu>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                   <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10 p-0 h-10 w-10 sm:h-12 sm:w-12">
+                        <Avatar className="h-8 w-8 sm:h-9 sm:w-9">
+                        {currentUser?.photoURL ? (
+                            <AvatarImage
+                                src={currentUser.photoURL}
+                                alt={currentUser.displayName || 'User Avatar'}
+                                data-ai-hint="user profile"
+                            />
+                          ) : null}
+                          <AvatarFallback>
+                            {currentUser.displayName ? currentUser.displayName.substring(0,1).toUpperCase() : <User className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="sr-only">Meu Perfil</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>Meu Perfil</p>
+                </TooltipContent>
+              </Tooltip>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>{currentUser.displayName || currentUser.email}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <Link href="/profile/edit" passHref>
+                  <DropdownMenuItem>
+                    <Edit3 className="mr-2 h-4 w-4" />
+                    <span>Editar Perfil</span>
+                  </DropdownMenuItem>
+                </Link>
+                <DropdownMenuItem onClick={signOutUser} disabled={isAuthenticating}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sair</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
 
           <DropdownMenu>
             <Tooltip>
@@ -223,14 +248,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </div>
       </div>
     </header>
-  );
+  )};
 
   if (!isMounted) {
     return (
       <div className="flex flex-col min-h-screen bg-background">
-        <div className="sticky top-0 z-50 w-full bg-primary h-16 sm:h-20"></div>
-        <main className="flex-grow container mx-auto px-2 py-8 pb-20 sm:pb-8"></main>
-        <div className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background h-[65px] sm:hidden"></div>
+        {!isAuthPage && <div className="sticky top-0 z-50 w-full bg-primary h-16 sm:h-20"></div>}
+        <main className={cn("flex-grow container mx-auto px-2 py-8", !isAuthPage && "pb-20 sm:pb-8")}></main>
+        {!isAuthPage && <div className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background h-[65px] sm:hidden"></div>}
       </div>
     );
   }
@@ -239,12 +264,19 @@ export default function AppLayout({ children }: AppLayoutProps) {
     <TooltipProvider>
       <div className="flex flex-col min-h-screen">
         <AppHeader />
-        <main className="flex-grow container mx-auto px-2 py-8 pb-20 sm:pb-8">
+        <main className={cn(
+            "flex-grow container mx-auto px-2 py-8",
+            !isAuthPage && "pb-20 sm:pb-8" // Only add bottom padding if not an auth page
+        )}>
           {children}
         </main>
-        <Navigation />
-        <ChatFloatingButton /> {/* Botão Flutuante adicionado */}
-        {isChatOpen && <ChatWindow onClose={closeChat} />}
+        {!isAuthPage && (
+            <>
+                <Navigation />
+                <ChatFloatingButton />
+                {isChatOpen && <ChatWindow onClose={closeChat} />}
+            </>
+        )}
       </div>
     </TooltipProvider>
   );
