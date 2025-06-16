@@ -14,22 +14,46 @@ export interface ChatMessageData {
   avatarUrl?: string | StaticImageData;
   dataAIAvatarHint?: string;
   text?: string;
-  imageUrl?: string | StaticImageData; // Agora pode ser uma dataURI do preview ou uma URL final
+  imageUrl?: string | StaticImageData; 
   dataAIImageHint?: string;
   audioUrl?: string; 
-  file?: { name: string, type: 'image' | 'audio' | 'other' }; // 'file' pode ser usado para metadados do arquivo enviado
+  file?: { name: string, type: 'image' | 'audio' | 'other' }; 
   timestamp: string;
   isCurrentUser: boolean;
   textElements?: React.ReactNode[]; 
 }
+
+const SoundWaveIcon = ({ className, width = "72", height = "22" }: { className?: string, width?: string, height?: string }) => (
+  <svg width={width} height={height} viewBox="0 0 72 22" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <rect x="1" y="9" width="3" height="4" rx="1.5" fill="currentColor"/>
+    <rect x="5" y="6" width="3" height="10" rx="1.5" fill="currentColor"/>
+    <rect x="9" y="3" width="3" height="16" rx="1.5" fill="currentColor"/>
+    <rect x="13" y="7" width="3" height="8" rx="1.5" fill="currentColor"/>
+    <rect x="17" y="5" width="3" height="12" rx="1.5" fill="currentColor"/>
+    <rect x="21" y="9" width="3" height="4" rx="1.5" fill="currentColor"/>
+    <rect x="25" y="4" width="3" height="14" rx="1.5" fill="currentColor"/>
+    <rect x="29" y="8" width="3" height="6" rx="1.5" fill="currentColor"/>
+    <rect x="33" y="6" width="3" height="10" rx="1.5" fill="currentColor"/>
+    <rect x="37" y="3" width="3" height="16" rx="1.5" fill="currentColor"/>
+    <rect x="41" y="9" width="3" height="4" rx="1.5" fill="currentColor"/>
+    <rect x="45" y="5" width="3" height="12" rx="1.5" fill="currentColor"/>
+    <rect x="49" y="7" width="3" height="8" rx="1.5" fill="currentColor"/>
+    <rect x="53" y="4" width="3" height="14" rx="1.5" fill="currentColor"/>
+    <rect x="57" y="9" width="3" height="4" rx="1.5" fill="currentColor"/>
+    <rect x="61" y="6" width="3" height="10" rx="1.5" fill="currentColor"/>
+    <rect x="65" y="3" width="3" height="16" rx="1.5" fill="currentColor"/>
+    <rect x="69" y="7" width="3" height="8" rx="1.5" fill="currentColor"/>
+  </svg>
+);
+
 
 export default function ChatMessageItem({ message }: { message: ChatMessageData }) {
   const { senderName, avatarUrl, dataAIAvatarHint, text, imageUrl, dataAIImageHint, file, timestamp, isCurrentUser, textElements } = message;
 
   const getFileIcon = () => {
     if (!file) return null;
-    if (file.type === 'image' && !imageUrl) return <Paperclip className="h-5 w-5 mr-2 text-primary" />; // Mostra clipe se for só metadado de imagem sem preview direto
-    if (file.type === 'audio') return <Mic className="h-5 w-5 mr-2 text-primary" />;
+    if (file.type === 'image' && !imageUrl) return <Paperclip className="h-5 w-5 mr-2 text-primary" />;
+    if (file.type === 'audio') return <Mic className="h-5 w-5 mr-2 text-primary" />; // Should not be hit if audio shows waves
     return <FileText className="h-5 w-5 mr-2 text-muted-foreground" />;
   };
 
@@ -52,12 +76,12 @@ export default function ChatMessageItem({ message }: { message: ChatMessageData 
         {imageUrl && (
           <div className="mb-1.5 max-w-xs sm:max-w-sm rounded-lg overflow-hidden border">
              <Image
-                src={imageUrl} // Pode ser dataURI ou URL
+                src={imageUrl} 
                 alt={dataAIImageHint || "Imagem enviada"}
-                width={400} // Base width for aspect ratio, will scale down
-                height={300} // Base height for aspect ratio
+                width={400} 
+                height={300} 
                 layout="responsive"
-                objectFit="contain" // 'contain' para ver a imagem inteira, 'cover' para preencher
+                objectFit="contain" 
                 data-ai-hint={dataAIImageHint || "chat image"}
               />
           </div>
@@ -70,12 +94,22 @@ export default function ChatMessageItem({ message }: { message: ChatMessageData 
         )}
 
         {file && file.type === 'audio' && (
-            <div className="mt-2 flex items-center p-2 bg-muted/50 rounded-lg">
-                <PlayCircle className="h-6 w-6 mr-2 text-primary"/>
-                <span className="text-sm">{file.name || "Áudio"}</span>
+            <div className={cn(
+                "mt-2 flex items-center p-2.5 rounded-lg cursor-pointer group",
+                isCurrentUser 
+                    ? "bg-primary-foreground/10 hover:bg-primary-foreground/20" 
+                    : "bg-muted/40 hover:bg-muted/60"
+            )}>
+                <PlayCircle className={cn(
+                    "h-7 w-7 mr-2.5 flex-shrink-0", // Adjusted margin slightly
+                    isCurrentUser ? "text-primary-foreground/80 group-hover:text-primary-foreground" : "text-primary group-hover:text-primary/80"
+                )} />
+                <SoundWaveIcon className={cn(
+                    isCurrentUser ? "text-primary-foreground/60 group-hover:text-primary-foreground/80" : "text-muted-foreground group-hover:text-foreground/80"
+                )} />
             </div>
         )}
-         {file && file.type !== 'audio' && !imageUrl && ( // Só mostra se não houver preview de imagem
+         {file && file.type !== 'audio' && !imageUrl && ( 
             <div className="mt-2 flex items-center p-2 bg-muted/50 rounded-lg">
                 {getFileIcon()}
                 <span className="text-sm">{file.name || "Arquivo"}</span>
@@ -94,3 +128,4 @@ export default function ChatMessageItem({ message }: { message: ChatMessageData 
     </div>
   );
 }
+
