@@ -68,7 +68,7 @@ export default function ChatMessageItem({ message }: { message: ChatMessageData 
       <div
         className={cn(
           "max-w-[70%] p-3 rounded-xl shadow",
-          isCurrentUser ? "bg-primary text-primary-foreground rounded-br-none" : "bg-card text-card-foreground rounded-bl-none border"
+          isCurrentUser ? "bg-accent text-accent-foreground rounded-br-none" : "bg-card text-card-foreground rounded-bl-none border"
         )}
       >
         {!isCurrentUser && <p className="text-xs font-semibold mb-1 text-primary">{senderName}</p>}
@@ -97,15 +97,15 @@ export default function ChatMessageItem({ message }: { message: ChatMessageData 
             <div className={cn(
                 "mt-2 flex items-center p-2.5 rounded-lg cursor-pointer group",
                 isCurrentUser 
-                    ? "bg-primary-foreground/10 hover:bg-primary-foreground/20" 
+                    ? "bg-accent-foreground/10 hover:bg-accent-foreground/20" 
                     : "bg-muted/40 hover:bg-muted/60"
             )}>
                 <PlayCircle className={cn(
-                    "h-7 w-7 mr-2.5 flex-shrink-0", // Adjusted margin slightly
-                    isCurrentUser ? "text-primary-foreground/80 group-hover:text-primary-foreground" : "text-primary group-hover:text-primary/80"
+                    "h-7 w-7 mr-2.5 flex-shrink-0", 
+                    isCurrentUser ? "text-accent-foreground/80 group-hover:text-accent-foreground" : "text-primary group-hover:text-primary/80"
                 )} />
                 <SoundWaveIcon className={cn(
-                    isCurrentUser ? "text-primary-foreground/60 group-hover:text-primary-foreground/80" : "text-muted-foreground group-hover:text-foreground/80"
+                    isCurrentUser ? "text-accent-foreground/60 group-hover:text-accent-foreground/80" : "text-muted-foreground group-hover:text-foreground/80"
                 )} />
             </div>
         )}
@@ -115,7 +115,7 @@ export default function ChatMessageItem({ message }: { message: ChatMessageData 
                 <span className="text-sm">{file.name || "Arquivo"}</span>
             </div>
         )}
-        <p className={cn("text-xs mt-1.5", isCurrentUser ? "text-primary-foreground/70 text-right" : "text-muted-foreground text-left")}>
+        <p className={cn("text-xs mt-1.5", isCurrentUser ? "text-accent-foreground/70 text-right" : "text-muted-foreground text-left")}>
           {timestamp}
         </p>
       </div>
