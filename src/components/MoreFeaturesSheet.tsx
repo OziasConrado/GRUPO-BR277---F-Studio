@@ -26,10 +26,10 @@ interface Feature {
 
 // Atualizando a lista de funcionalidades conforme solicitado
 const iconGridFeatures: Feature[] = [
-  { icon: LinkIcon, label: "Bio Link", href: "/bio-link" }, // Usar um placeholder ou link real se disponível
+  { icon: LinkIcon, label: "Bio Link", href: "https://grupobr277.com.br/bio-link/", isExternal: true },
   { icon: Newspaper, label: "Notícias", href: "https://nossodia.com.br/", isExternal: true },
-  { icon: ShoppingCart, label: "CargoShop (Em Breve)", href: "/cargo-shop" }, // Placeholder
-  { icon: Store, label: "Marketplace (Em Breve)", href: "/marketplace" }, // Placeholder
+  { icon: ShoppingCart, label: "CargoShop (Em Breve)", href: "/cargo-shop" },
+  { icon: Store, label: "Marketplace (Em Breve)", href: "/marketplace" },
 ];
 
 interface MoreFeaturesSheetProps {
