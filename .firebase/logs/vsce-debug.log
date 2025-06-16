@@ -1927,3 +1927,5 @@ I0615 21:57:48.758838    6333 load.go:115] Finished reloading
  {"metadata":{"emulator":{"name":"dataconnect"},"message":"I0615 21:57:48.852726    6333 engine.go:170] [/emulator/s fd96] ExecuteGraphqlRead IntrospectionQuery: succeeded. \n"}}
 [info] [Firebase Plugin] Stopping Data Connect toolkit
 [warn] ⚠  Data Connect Emulator has exited upon receiving signal: SIGINT 
+[info] [Firebase Plugin] Stopping Data Connect toolkit
+[warn] ⚠  Data Connect Emulator has exited upon receiving signal: SIGINT 
