@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -36,7 +35,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && currentUser) {
-      router.push('/'); // Redirect if already logged in
+      router.push('/'); 
     }
   }, [currentUser, loading, router]);
 
@@ -106,7 +105,7 @@ export default function LoginPage() {
               Cadastre-se
             </Link>
           </p>
-          <Link href="#" className="mt-2 text-muted-foreground hover:underline">
+          <Link href="/forgot-password" className="mt-2 text-muted-foreground hover:underline">
             Esqueceu a senha?
           </Link>
         </CardFooter>

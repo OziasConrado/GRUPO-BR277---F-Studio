@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ReactNode, Dispatch, SetStateAction } from 'react';
@@ -11,20 +10,31 @@ import {
   signInWithPopup,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  sendPasswordResetEmail as firebaseSendPasswordResetEmail, // Renamed to avoid conflict
+  updateProfile as firebaseUpdateProfile, // Renamed
   type User as FirebaseUser,
   type AuthError,
 } from 'firebase/auth';
-import { app, firestore } from '@/lib/firebase/client'; // Import Firebase app and firestore
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'; // Firestore functions
+import { app, firestore, storage } from '@/lib/firebase/client'; 
+import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'; 
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
+interface UpdateUserProfileData {
+  displayName?: string;
+  newPhotoFile?: File;
+  // bio?: string; // Future: Add bio and instagramLink updates
+  // instagramLink?: string;
+}
 interface AuthContextType {
   currentUser: FirebaseUser | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
+  sendPasswordResetEmail: (email: string) => Promise<void>; // Added
+  updateUserProfile: (data: UpdateUserProfileData) => Promise<void>; // Added
   signOutUser: () => Promise<void>;
   isAuthenticating: boolean;
 }
@@ -43,12 +53,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!auth) {
       console.error("AuthContext: Firebase Auth não está inicializado. Verifique a configuração do Firebase.");
       setLoading(false);
-      // Exibir um toast para o usuário sobre o problema de configuração
       toast({
         title: "Erro de Configuração",
         description: "Não foi possível inicializar o sistema de autenticação. Por favor, contate o suporte.",
         variant: "destructive",
-        duration: Infinity, // Manter o toast visível
+        duration: Infinity, 
       });
       return;
     }
@@ -61,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   const handleAuthError = (error: AuthError, customTitle?: string) => {
-    console.error("Firebase Auth Error:", error);
+    console.error("Firebase Auth Error:", error.code, error.message);
     let message = "Ocorreu um erro. Tente novamente.";
     switch (error.code) {
         case 'auth/wrong-password':
@@ -84,6 +93,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             break;
         case 'auth/cancelled-popup-request':
             message = 'Múltiplas tentativas de login. Por favor, tente novamente.';
+            break;
+        case 'auth/requires-recent-login':
+            message = 'Esta operação é sensível e requer autenticação recente. Faça login novamente antes de tentar novamente.';
+            break;
+        case 'auth/too-many-requests':
+            message = 'Muitas tentativas. Por favor, tente novamente mais tarde.';
+            break;
+         case 'auth/network-request-failed':
+            message = 'Erro de rede. Verifique sua conexão com a internet e tente novamente.';
             break;
         default:
             message = `Erro: ${error.message}`; 
@@ -124,13 +142,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a)! Seu perfil foi criado.' });
           } catch (profileError) {
              handleAuthError(profileError as AuthError, 'Erro ao Criar Perfil');
-             // Opcional: não redirecionar ou tentar reverter o login do Auth
-             // Por agora, apenas logamos o erro e o usuário prossegue autenticado.
           }
         } else {
           toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a) de volta!' });
-          // Poderíamos adicionar lógica para atualizar 'lastLogin' aqui
-          // await updateDoc(userDocRef, { lastLogin: serverTimestamp() });
         }
         router.push('/');
       }
@@ -167,8 +181,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             router.push('/');
           } catch (profileError) {
             handleAuthError(profileError as AuthError, 'Erro ao Criar Perfil');
-            // Opcional: não redirecionar ou tentar reverter a criação do usuário no Auth.
-            // Por agora, o usuário está autenticado mas o perfil pode ter falhado.
           }
         }
       } catch (error) {
@@ -189,14 +201,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAuthenticating(true);
       try {
         await signInWithEmailAndPassword(auth, email, password);
-        // Aqui, poderíamos verificar e criar o perfil se não existir, ou atualizar 'lastLogin'
-        // const user = auth.currentUser;
-        // if (user) {
-        //   const userDocRef = doc(firestore, "Usuarios", user.uid);
-        //   const userDocSnap = await getDoc(userDocRef);
-        //   if (!userDocSnap.exists()) { /* ... criar perfil ... */ }
-        //   else { /* ... atualizar lastLogin ... */ }
-        // }
         toast({ title: 'Login bem-sucedido!', description: 'Bem-vindo(a) de volta!' });
         router.push('/');
       } catch (error) {
@@ -208,12 +212,85 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [auth, router, toast]
   );
 
+  const sendPasswordResetEmail = useCallback(
+    async (email: string) => {
+      if (!auth) {
+        toast({ title: "Erro de Inicialização", description: "Serviço de autenticação não disponível.", variant: "destructive" });
+        return;
+      }
+      setIsAuthenticating(true);
+      try {
+        await firebaseSendPasswordResetEmail(auth, email);
+        toast({
+          title: 'Link de Redefinição Enviado',
+          description: 'Verifique seu e-mail para as instruções de redefinição de senha.',
+        });
+      } catch (error) {
+        handleAuthError(error as AuthError, 'Erro ao Enviar E-mail');
+        throw error; // Re-throw para que a página possa saber que falhou
+      } finally {
+        setIsAuthenticating(false);
+      }
+    },
+    [auth, toast]
+  );
+
+  const updateUserProfile = useCallback(
+    async (data: UpdateUserProfileData) => {
+      if (!auth?.currentUser || !firestore || !storage) {
+        toast({ title: "Erro", description: "Usuário não autenticado ou serviço indisponível.", variant: "destructive" });
+        return;
+      }
+      setIsAuthenticating(true);
+      const user = auth.currentUser;
+      const userDocRef = doc(firestore, "Usuarios", user.uid);
+      
+      const authProfileUpdates: { displayName?: string; photoURL?: string } = {};
+      const firestoreProfileUpdates: any = {};
+
+      if (data.displayName) {
+        authProfileUpdates.displayName = data.displayName;
+        firestoreProfileUpdates.displayName = data.displayName;
+      }
+
+      if (data.newPhotoFile) {
+        try {
+          const photoRef = ref(storage, `profile_pictures/${user.uid}/${data.newPhotoFile.name}`);
+          await uploadBytes(photoRef, data.newPhotoFile);
+          const photoURL = await getDownloadURL(photoRef);
+          authProfileUpdates.photoURL = photoURL;
+          firestoreProfileUpdates.photoURL = photoURL;
+        } catch (uploadError) {
+          handleAuthError(uploadError as AuthError, 'Erro no Upload da Foto');
+          setIsAuthenticating(false);
+          return;
+        }
+      }
+
+      try {
+        if (Object.keys(authProfileUpdates).length > 0) {
+          await firebaseUpdateProfile(user, authProfileUpdates);
+        }
+        if (Object.keys(firestoreProfileUpdates).length > 0) {
+          await updateDoc(userDocRef, firestoreProfileUpdates);
+        }
+        setCurrentUser(auth.currentUser); // Atualiza o estado local do currentUser
+        toast({ title: 'Perfil Atualizado!', description: 'Suas informações foram salvas com sucesso.' });
+      } catch (error) {
+        handleAuthError(error as AuthError, 'Erro ao Atualizar Perfil');
+      } finally {
+        setIsAuthenticating(false);
+      }
+    },
+    [auth, toast]
+  );
+
   const signOutUser = useCallback(async () => {
     if (!auth) {
        toast({ title: "Erro de Inicialização", description: "Serviço de autenticação não disponível.", variant: "destructive" });
       return;
     }
-    setIsAuthenticating(true); // Pode não ser necessário para signOut, mas mantém consistência
+    setIsAuthenticating(true); 
     try {
       await signOut(auth);
       toast({ title: 'Logout realizado', description: 'Você saiu da sua conta.' });
@@ -231,12 +308,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signInWithGoogle,
     signUpWithEmail,
     signInWithEmail,
+    sendPasswordResetEmail,
+    updateUserProfile,
     signOutUser,
     isAuthenticating,
   };
 
-  // Renderiza children somente se o auth estiver carregado e não houver erro de inicialização do Firebase.
-  // A verificação `if (!auth)` no useEffect já trata o caso de erro fatal na inicialização do Firebase.
   return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
 }
 
