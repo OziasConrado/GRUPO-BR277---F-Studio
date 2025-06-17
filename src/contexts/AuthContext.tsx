@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode, Dispatch, SetStateAction } from 'react';
@@ -104,7 +105,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             message = 'Erro de rede. Verifique sua conexão com a internet e tente novamente.';
             break;
         default:
-            message = `Erro: ${error.message}`; 
+            // More generic message for unhandled codes
+            message = `Ocorreu um problema (${error.code}). Por favor, tente novamente ou contate o suporte se o problema persistir.`;
             break;
     }
     toast({
