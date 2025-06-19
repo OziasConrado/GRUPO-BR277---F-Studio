@@ -1,45 +1,74 @@
+
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+# Firebase
+.firebase
+firebase-debug.log
+firestore-debug.log
+dataconnect-debug.log
+dataconnect.trace.json
+dataconnect/.dataconnect
+database-debug.log
+storage-debug.log
+*.rules.debug # For Storage Rules, etc.
 
-# testing
-/coverage
+# Firebase emulators
+*.log
+*.emu
+.firebase/emulators/
+firebase-export-*
+firebase-crashlytics-collection-enabled.json
 
-# next.js
-/.next/
-/out/
+# Next.js
+.next/
+out/
+build/
 
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
+# Node
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+# IDEs and editors
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.sublime-workspace
 
-# vercel
-.vercel
+# System files
+.DS_Store
+Thumbs.db
+.AppleDouble
+.LSOverride
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# Environment variables
+.env
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-.genkit/*
-.env*
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+pids
+*.pid
+*.seed
+*.pid.lock
 
-# firebase
-firebase-debug.log
-firestore-debug.log
+# Other
+.cache
+coverage
+# Firebase Studio specific logs (if any others appear)
+vsce-debug.log
