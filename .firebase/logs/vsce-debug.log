@@ -2166,3 +2166,5 @@ I0617 15:18:30.874449     929 dev.go:95] Listening on address (HTTP + gRPC): 127
 [debug] [2025-06-17T15:19:31.009Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=1000
 [debug] [2025-06-17T15:19:31.756Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 200
 [debug] [2025-06-17T15:19:31.757Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
+[info] [Firebase Plugin] Stopping Data Connect toolkit
+[warn] ⚠  Data Connect Emulator has exited upon receiving signal: SIGINT 

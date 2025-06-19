@@ -2,6 +2,9 @@
 # Settings to manage and configure a Firebase App Hosting backend.
 # https://firebase.google.com/docs/app-hosting/configure
 
+backendId: default
+location: us-west1
+
 runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
@@ -10,8 +13,7 @@ environmentVariables:
   NEXT_PUBLIC_FIREBASE_API_KEY: "AIzaSyBkj9LYAUrrdXXb-M80C-q9FMQxGWMWA1A"
   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: "grupo-br277.firebaseapp.com"
   NEXT_PUBLIC_FIREBASE_PROJECT_ID: "grupo-br277"
-  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: "grupo-br277.firebasestorage.app"
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: "grupo-br277.firebasestorage.app" # Corrigido para .app se for um novo projeto storage, ou .firebasestorage.app
   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "491779757123"
   NEXT_PUBLIC_FIREBASE_APP_ID: "1:491779757123:web:48eae01a02fa2b3617b0f6"
   NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: "G-L7QXVV5X54"
-  NEXT_PUBLIC_PROVIDED_API_KEY: "AIzaSyAmT1a0LbMcmHHtvEnTNpLfmjYEfBz0UrQ" # This seems to be a separate key, keeping it as is.
