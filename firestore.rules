@@ -4,146 +4,67 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Coleção de Usuários:
-    // - Qualquer usuário autenticado pode ler perfis (considerando que são públicos).
-    // - Apenas o proprietário do perfil pode criar ou atualizar seu próprio perfil.
-    // - Ninguém pode deletar perfis (a menos que você adicione uma regra específica para isso, como um admin).
+    // Helper function to check if a user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if the user is the owner of the document
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Users can read and update their own profile. They can create a profile document.
     match /Usuarios/{userId} {
-      allow read: if request.auth != null;
-      allow create, update: if request.auth != null && request.auth.uid == userId &&
-                              // Validação na criação/atualização
-                              request.resource.data.uid == userId &&
-                              request.resource.data.email is string &&
-                              request.resource.data.displayName is string && request.resource.data.displayName.size() >= 2 && request.resource.data.displayName.size() <= 50 &&
-                              (request.resource.data.photoURL == null || request.resource.data.photoURL is string) &&
-                              (request.resource.data.bio == null || request.resource.data.bio is string) &&
-                              (request.resource.data.instagramLink == null || request.resource.data.instagramLink is string) &&
-                              // Garante que createdAt só seja definido na criação e seja um timestamp do servidor
-                              (request.method == 'create' ? request.resource.data.createdAt == request.time : resource.data.createdAt == request.resource.data.createdAt);
-      // Exemplo: allow delete: if request.auth != null && request.auth.uid == userId; (se você quiser permitir que usuários excluam suas contas)
+      allow read, update: if isAuthenticated() && isOwner(userId);
+      allow create: if isAuthenticated();
     }
 
-    // Coleção de Posts:
-    // - Qualquer usuário autenticado pode ler posts.
-    // - Qualquer usuário autenticado pode criar posts.
-    // - Apenas o autor do post pode atualizar ou deletar seus posts.
+    // Posts can be read by anyone, created by authenticated users, and only modified by their owner.
     match /posts/{postId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null &&
-                       // Validação na criação
-                       request.resource.data.userId == request.auth.uid &&
-                       request.resource.data.userName is string &&
-                       request.resource.data.userAvatarUrl is string &&
-                       (request.resource.data.userLocation == null || request.resource.data.userLocation is string) &&
-                       request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 1000 &&
-                       request.resource.data.timestamp == request.time &&
-                       (request.resource.data.imageUrl == null || request.resource.data.imageUrl is string) &&
-                       (request.resource.data.uploadedImageUrl == null || request.resource.data.uploadedImageUrl is string) &&
-                       // Validar reações e comentários (estrutura inicial)
-                       request.resource.data.reactions.thumbsUp == 0 &&
-                       request.resource.data.reactions.thumbsDown == 0 &&
-                       request.resource.data.commentsData is list && request.resource.data.commentsData.size() == 0;
-      allow update: if request.auth != null && request.auth.uid == resource.data.userId &&
-                       // Campos que podem ser atualizados e sua validação
-                       (request.resource.data.text == null || (request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 1000)) &&
-                       (request.resource.data.imageUrl == null || request.resource.data.imageUrl is string) &&
-                       (request.resource.data.uploadedImageUrl == null || request.resource.data.uploadedImageUrl is string) &&
-                       // Garante que campos imutáveis não sejam alterados
-                       request.resource.data.userId == resource.data.userId &&
-                       request.resource.data.userName == resource.data.userName &&
-                       request.resource.data.timestamp == resource.data.timestamp;
-      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
     }
-
-    // Coleção de Alertas:
-    // - Qualquer usuário autenticado pode ler alertas.
-    // - Qualquer usuário autenticado pode criar alertas.
-    // - Regras de update/delete podem ser mais restritas (ex: apenas admins ou após certo tempo).
+    
+    // Alerts can be read by anyone, created by authenticated users, and only modified by their owner.
     match /alerts/{alertId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null &&
-                       // Validação na criação
-                       request.resource.data.userId == request.auth.uid &&
-                       request.resource.data.type is string && request.resource.data.type.size() > 0 &&
-                       request.resource.data.description is string && request.resource.data.description.size() > 0 && request.resource.data.description.size() <= 500 &&
-                       request.resource.data.timestamp == request.time &&
-                       request.resource.data.userNameReportedBy is string &&
-                       (request.resource.data.userAvatarUrl == null || request.resource.data.userAvatarUrl is string);
-      // Exemplo: allow update, delete: if request.auth != null && get(/databases/$(database)/documents/Usuarios/$(request.auth.uid)).data.isAdmin == true;
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
     }
-
-    // Coleção de Comércios (Guia Comercial):
-    // - Qualquer usuário autenticado pode ler.
-    // - Qualquer usuário autenticado pode criar (cadastrar) um novo comércio.
-    // - Apenas o usuário que cadastrou ou um admin podem atualizar/deletar.
-    match /businesses/{businessId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null &&
-                       // Validação na criação
-                       request.resource.data.userId == request.auth.uid &&
-                       request.resource.data.name is string && request.resource.data.name.size() >= 3 && request.resource.data.name.size() <= 100 &&
-                       request.resource.data.category is string && // Adicionar validação de enum se necessário
-                       request.resource.data.address is string && request.resource.data.address.size() >= 10 && request.resource.data.address.size() <= 200 &&
-                       request.resource.data.description is string && request.resource.data.description.size() >= 20 && request.resource.data.description.size() <= 500 &&
-                       request.resource.data.imageUrl is string && // Será a URL de preview inicialmente
-                       request.resource.data.createdAt == request.time &&
-                       (request.resource.data.phone == null || (request.resource.data.phone is string && request.resource.data.phone.size() >= 10 && request.resource.data.phone.size() <= 15)) &&
-                       (request.resource.data.whatsapp == null || (request.resource.data.whatsapp is string && request.resource.data.whatsapp.size() >= 10 && request.resource.data.whatsapp.size() <= 15)) &&
-                       (request.resource.data.operatingHours == null || request.resource.data.operatingHours is string) &&
-                       request.resource.data.isPremium is bool;
-      allow update: if request.auth != null && request.auth.uid == resource.data.userId; // Simplificado, adicione validação de campos atualizáveis
-      // allow delete: if request.auth != null && request.auth.uid == resource.data.userId; // Ou regra de admin
-    }
-
-    // Coleção de SAUs (Pontos de Atendimento ao Usuário):
-    // - Leitura pública ou para autenticados.
-    // - Criação/Atualização/Deleção tipicamente por administradores.
-    match /sau_locations/{sauId} {
-      allow read: if request.auth != null; // ou true
-      // allow write: if request.auth != null && get(/databases/$(database)/documents/Usuarios/$(request.auth.uid)).data.isAdmin == true;
-    }
-
-    // Coleção de Avaliações de SAUs:
-    // - Leitura pública ou para autenticados.
-    // - Usuários autenticados podem criar avaliações.
-    // - Apenas o autor da avaliação pode editar/deletar.
-    match /sau_reviews/{reviewId} {
-      allow read: if request.auth != null; // ou true
-      allow create: if request.auth != null &&
-                       // Validação na criação
-                       request.resource.data.userId == request.auth.uid &&
-                       request.resource.data.sauId is string &&
-                       request.resource.data.author is string &&
-                       request.resource.data.rating is number && request.resource.data.rating >= 1 && request.resource.data.rating <= 5 &&
-                       request.resource.data.comment is string && request.resource.data.comment.size() >= 10 && request.resource.data.comment.size() <= 500 &&
-                       request.resource.data.timestamp == request.time;
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-    }
-
-    // Coleção de Pontos Turísticos:
-    // - Leitura pública ou para autenticados.
-    // - Criação/Atualização/Deleção tipicamente por administradores ou usuários com permissão.
-    match /tourist_points/{pointId} {
-      allow read: if request.auth != null; // ou true
-      // allow write: if request.auth != null && get(/databases/$(database)/documents/Usuarios/$(request.auth.uid)).data.isAdmin == true; // Exemplo de admin
-    }
-
-    // Coleção de Mensagens do Chat:
-    // - Usuários autenticados podem ler todas as mensagens.
-    // - Usuários autenticados podem criar novas mensagens, e o userId deve corresponder ao seu UID.
-    // - (Opcional) Adicionar regras para update/delete se necessário (ex: apenas o autor, ou ninguém).
+    
+    // Chat messages can be read and created by any authenticated user.
+    // Only the owner can update or delete their own messages.
     match /chatMessages/{messageId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null &&
-                       // Validação na criação da mensagem
-                       request.resource.data.userId == request.auth.uid &&
-                       request.resource.data.senderName is string &&
-                       (request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 1000 || request.resource.data.text == null) && // Texto pode ser opcional se tiver imagem
-                       request.resource.data.timestamp == request.time &&
-                       (request.resource.data.imageUrl == null || request.resource.data.imageUrl is string) && // Se houver imageUrl
-                       (request.resource.data.audioUrl == null || request.resource.data.audioUrl is string); // Se houver audioUrl
-      // allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId; // Se permitir edição/deleção
+      allow read, create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
     }
-
+    
+    // Business listings can be read by anyone, created by authenticated users, and only modified by their owner.
+    match /businesses/{businessId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+    
+    // SAU locations and Tourist points are public read. Write is restricted.
+    // Assumed to be managed by admins from the Firebase Console for now.
+    match /sau_locations/{locationId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    
+    match /tourist_points/{pointId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    
+    // SAU reviews can be read by anyone, created by authenticated users, and only modified by their owner.
+    match /sau_reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
+    }
   }
 }

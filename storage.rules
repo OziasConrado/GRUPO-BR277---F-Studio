@@ -1,0 +1,20 @@
+
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Allow public read for all files by default.
+    // You might want to restrict this further based on your app's needs.
+    match /{allPaths=**} {
+      allow read: if true;
+    }
+
+    // Users can only write to their own profile picture folder.
+    // The uploaded file size can also be validated here if needed.
+    // e.g., request.resource.size < 5 * 1024 * 1024
+    match /profile_pictures/{userId}/{fileName} {
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
