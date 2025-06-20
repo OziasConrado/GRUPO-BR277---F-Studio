@@ -1,7 +1,7 @@
 # Settings to manage and configure a Firebase App Hosting backend.
 # https://firebase.google.com/docs/app-hosting/configure
 
-backendId: grupobr277-backend
+backendId: grupobr277-v2
 location: us-central1
 
 runConfig:
