@@ -3,11 +3,11 @@
 
 import type { ReactNode, Dispatch, SetStateAction } from 'react';
 import { useState, useEffect, createContext, useContext } from 'react';
-import { useRouter, usePathname } from 'next/navigation'; // Added usePathname
-import Link from 'next/link'; // Added Link
+import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 import Navigation from './navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { RefreshCcw, Moon, Sun, ArrowLeft, Bell, User, MoreVertical, LifeBuoy, FileText, Shield, Bug, Edit3, LogOut } from 'lucide-react'; // Added Edit3, LogOut
+import { RefreshCcw, Moon, Sun, ArrowLeft, Bell, User, MoreVertical, LifeBuoy, FileText, Shield, Bug, Edit3, LogOut, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ChatWindow from '@/components/chat/ChatWindow';
-import ChatFloatingButton from '@/components/chat/ChatFloatingButton'; 
+import ChatFloatingButton from '@/components/chat/ChatFloatingButton';
 import { useNotification } from '@/contexts/NotificationContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,11 +34,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
-  const pathname = usePathname(); // Get current path
+  const pathname = usePathname();
   const { toast } = useToast();
-  const { notificationCount, clearNotifications } = useNotification();
-  const { isChatOpen, closeChat } = useChat(); 
-  const { currentUser, signOutUser, isAuthenticating } = useAuth(); // Added signOutUser and isAuthenticating
+  const { notificationCount } = useNotification();
+  const { isChatOpen, closeChat } = useChat();
+  const { currentUser, loading, signOutUser, isAuthenticating } = useAuth();
 
   useEffect(() => {
     setIsMounted(true);
@@ -80,9 +80,16 @@ export default function AppLayout({ children }: AppLayoutProps) {
   };
 
   const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/forgot-password';
+  
+  // Auth protection logic
+  useEffect(() => {
+    if (!loading && !currentUser && !isAuthPage) {
+      router.push('/login');
+    }
+  }, [currentUser, loading, isAuthPage, router, pathname]);
 
   const AppHeader = () => {
-    if (isAuthPage) return null; // Don't render header on auth pages
+    if (isAuthPage || !currentUser) return null; // Don't render header on auth pages or if not logged in
 
     return (
     <header className="sticky top-0 z-50 w-full bg-primary text-primary-foreground shadow-lg">
@@ -250,12 +257,22 @@ export default function AppLayout({ children }: AppLayoutProps) {
     </header>
   )};
 
-  if (!isMounted) {
+  // Show a global loader while auth state is being determined
+  if (loading || !isMounted) {
     return (
-      <div className="flex flex-col min-h-screen bg-background">
-        {!isAuthPage && <div className="sticky top-0 z-50 w-full bg-primary h-16 sm:h-20"></div>}
-        <main className={cn("flex-grow container mx-auto px-2 py-8", !isAuthPage && "pb-20 sm:pb-8")}></main>
-        {!isAuthPage && <div className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background h-[65px] sm:hidden"></div>}
+      <div className="flex justify-center items-center min-h-screen bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // If we are not loading, and there's no user, and we are on a protected page,
+  // this will return a blank screen while the useEffect above redirects.
+  // This prevents flashing the protected content.
+  if (!currentUser && !isAuthPage) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
@@ -270,7 +287,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
         )}>
           {children}
         </main>
-        {!isAuthPage && (
+        {/* Show navigation only if logged in AND not on an auth page */}
+        {currentUser && !isAuthPage && (
             <>
                 <Navigation />
                 <ChatFloatingButton />
