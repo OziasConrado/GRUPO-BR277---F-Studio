@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,9 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
-import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
-import { Loader2, LogIn } from 'lucide-react';
+import { LogIn } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Por favor, insira um e-mail válido.' }),
@@ -22,8 +22,28 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const { signInWithEmail, currentUser, loading, isAuthenticating } = useAuth();
   const router = useRouter();
+
+  // ==================================================================
+  // FORÇAR REDIRECIONAMENTO PARA DESENVOLVIMENTO
+  // Esta lógica nos tira da tela de login para que possamos trabalhar
+  // nas outras partes do aplicativo. Removeremos isso depois.
+  // ==================================================================
+  useEffect(() => {
+    router.push('/');
+  }, [router]);
+  
+  // Exibir um loader enquanto o redirecionamento acontece
+  return (
+    <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]">
+      <Loader2 className="h-12 w-12 animate-spin text-primary" />
+    </div>
+  );
+
+  // O CÓDIGO ANTIGO DE LOGIN ESTÁ ABAIXO, MAS NÃO SERÁ EXECUTADO
+  // POR CAUSA DO `return` ACIMA.
+
+  const { signInWithEmail, currentUser, loading, isAuthenticating } = useAuth();
 
   const {
     register,
