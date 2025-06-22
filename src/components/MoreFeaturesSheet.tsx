@@ -1,4 +1,6 @@
 
+'use client';
+
 import {
   Sheet,
   SheetContent,
@@ -56,7 +58,7 @@ const MoreFeaturesSheet: React.FC<MoreFeaturesSheetProps> = ({ children }) => {
       <SheetTrigger asChild>{children}</SheetTrigger>
       <SheetContent
         side="bottom"
-        className="h-[60vh] rounded-t-2xl p-0 flex flex-col"
+        className="h-auto max-h-[60vh] rounded-t-2xl p-0 flex flex-col"
       >
         <SheetHeader className="p-4 border-b">
           <SheetTitle className="text-center font-headline text-lg">Mais Funcionalidades</SheetTitle>
