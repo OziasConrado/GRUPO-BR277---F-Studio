@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ChatWindow from '@/components/chat/ChatWindow';
-import ChatFloatingButton from '@/components/chat/ChatFloatingButton';
 import { useNotification } from '@/contexts/NotificationContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -82,11 +81,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/forgot-password';
   
   // Auth protection logic - TEMPORARILY DISABLED TO UNBLOCK DEVELOPMENT
-  // useEffect(() => {
-  //   if (!loading && !currentUser && !isAuthPage) {
-  //     router.push('/login');
-  //   }
-  // }, [currentUser, loading, isAuthPage, router, pathname]);
+  useEffect(() => {
+    if (!loading && !currentUser && !isAuthPage) {
+      // router.push('/login');
+    }
+  }, [currentUser, loading, isAuthPage, router, pathname]);
 
   const AppHeader = () => {
     if (isAuthPage) return null; // Don't render header on auth pages
@@ -232,7 +231,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10 h-10 w-10 sm:h-12 sm:w-12">
                             <MoreVertical className="h-5 w-5 sm:h-6 sm:w-6" />
-                            <span className="sr-only">Mais Opções</span>
+                            <span className="sr-only">Opções</span>
                         </Button>
                     </DropdownMenuTrigger>
                 </TooltipTrigger>
@@ -291,7 +290,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
         {!isAuthPage && (
             <>
                 <Navigation />
-                <ChatFloatingButton />
                 {isChatOpen && <ChatWindow onClose={closeChat} />}
             </>
         )}
