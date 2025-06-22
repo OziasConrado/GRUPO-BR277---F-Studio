@@ -1,5 +1,7 @@
+
 'use client';
 
+import { useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -18,6 +20,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useChat } from "@/contexts/ChatContext";
+import CopilotModal from "@/components/copilot/CopilotModal"; // Import the new modal
 
 interface Feature {
   icon: React.ElementType;
@@ -41,10 +44,11 @@ const AdPlaceholder = () => (
 
 const MoreFeaturesSheet: React.FC<MoreFeaturesSheetProps> = ({ children }) => {
   const { openChat } = useChat();
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
 
   const mainFeatures: Feature[] = [
     { icon: Video, label: "AO VIVO", href: "/streaming" },
-    { icon: Sparkles, label: "Copiloto (IA)", href: "/ferramentas/gerador-post-promocional" },
+    { icon: Sparkles, label: "Copiloto (IA)", onClick: () => setIsCopilotOpen(true) },
     { icon: MessageCircle, label: "Chat277", onClick: openChat },
   ];
 
@@ -108,34 +112,37 @@ const MoreFeaturesSheet: React.FC<MoreFeaturesSheetProps> = ({ children }) => {
 
 
   return (
-    <Sheet>
-      <SheetTrigger asChild>{children}</SheetTrigger>
-      <SheetContent
-        side="bottom"
-        className="h-auto max-h-[70vh] rounded-t-2xl p-0 flex flex-col"
-      >
-        <SheetHeader className="p-4 border-b">
-          <SheetTitle className="text-center font-headline text-lg">Mais Funcionalidades</SheetTitle>
-        </SheetHeader>
-        
-        <div className="flex-grow overflow-y-auto p-2 space-y-4">
-            {/* Main Features */}
-            <div className="grid grid-cols-3 gap-2">
-                {mainFeatures.map(feature => renderFeature(feature, true))}
-            </div>
+    <>
+      <Sheet>
+        <SheetTrigger asChild>{children}</SheetTrigger>
+        <SheetContent
+          side="bottom"
+          className="h-auto max-h-[70vh] rounded-t-2xl p-0 flex flex-col"
+        >
+          <SheetHeader className="p-4 border-b">
+            <SheetTitle className="text-center font-headline text-lg">Mais Funcionalidades</SheetTitle>
+          </SheetHeader>
+          
+          <div className="flex-grow overflow-y-auto p-2 space-y-4">
+              {/* Main Features */}
+              <div className="grid grid-cols-3 gap-2">
+                  {mainFeatures.map(feature => renderFeature(feature, true))}
+              </div>
 
-            {/* Separator */}
-            <div className="w-full h-px bg-border my-2"></div>
+              {/* Separator */}
+              <div className="w-full h-px bg-border my-2"></div>
 
-            {/* Secondary Features */}
-            <div className="grid grid-cols-4 gap-1.5">
-                {secondaryFeatures.map(feature => renderFeature(feature, false))}
-            </div>
-        </div>
+              {/* Secondary Features */}
+              <div className="grid grid-cols-4 gap-1.5">
+                  {secondaryFeatures.map(feature => renderFeature(feature, false))}
+              </div>
+          </div>
 
-        <AdPlaceholder />
-      </SheetContent>
-    </Sheet>
+          <AdPlaceholder />
+        </SheetContent>
+      </Sheet>
+      <CopilotModal isOpen={isCopilotOpen} onClose={() => setIsCopilotOpen(false)} />
+    </>
   );
 };
 
