@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -59,19 +58,22 @@ const MoreFeaturesSheet: React.FC<MoreFeaturesSheetProps> = ({ children }) => {
       <div
         role="button"
         className={cn(
-          "flex flex-col items-center justify-center w-full p-1 rounded-lg transition-colors duration-150",
+          "group flex flex-col items-center justify-center w-full p-1 rounded-lg transition-colors duration-150",
           "hover:bg-primary/5 dark:hover:bg-primary/10",
           "focus-visible:bg-primary/10 dark:focus-visible:bg-primary/15 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50",
-          isMain ? "h-[80px]" : "h-[70px]" // Main features are taller
+          isMain ? "h-auto py-3" : "h-[70px]"
         )}
       >
-        <feature.icon className={cn(
-            "mb-1 text-primary",
-            isMain ? "h-8 w-8" : "h-6 w-6" // Main features have larger icons
-        )} />
+        {isMain ? (
+          <div className="p-4 mb-2 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
+            <feature.icon className="h-8 w-8 text-primary" />
+          </div>
+        ) : (
+          <feature.icon className="h-6 w-6 mb-1 text-primary" />
+        )}
         <span className={cn(
             "text-center text-muted-foreground leading-tight",
-            isMain ? "text-xs font-semibold" : "text-[10px]" // Main features have larger text
+            isMain ? "text-sm font-semibold" : "text-[10px]"
         )}>
           {feature.label}
         </span>
