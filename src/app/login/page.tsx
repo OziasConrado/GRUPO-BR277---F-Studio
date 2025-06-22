@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -13,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { LogIn } from 'lucide-react';
+import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Por favor, insira um e-mail válido.' }),
@@ -23,26 +25,6 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
-
-  // ==================================================================
-  // FORÇAR REDIRECIONAMENTO PARA DESENVOLVIMENTO
-  // Esta lógica nos tira da tela de login para que possamos trabalhar
-  // nas outras partes do aplicativo. Removeremos isso depois.
-  // ==================================================================
-  useEffect(() => {
-    router.push('/');
-  }, [router]);
-  
-  // Exibir um loader enquanto o redirecionamento acontece
-  return (
-    <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]">
-      <Loader2 className="h-12 w-12 animate-spin text-primary" />
-    </div>
-  );
-
-  // O CÓDIGO ANTIGO DE LOGIN ESTÁ ABAIXO, MAS NÃO SERÁ EXECUTADO
-  // POR CAUSA DO `return` ACIMA.
-
   const { signInWithEmail, currentUser, loading, isAuthenticating } = useAuth();
 
   const {
@@ -103,20 +85,31 @@ export default function LoginPage() {
               />
               {errors.password && <p className="text-sm text-destructive mt-1">{errors.password.message}</p>}
             </div>
-            <Button type="submit" className="w-full rounded-full py-3 text-base" disabled={isAuthenticating}>
+             <div className="relative flex items-center justify-center my-4">
+                <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t"></span>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                    Ou continue com
+                    </span>
+                </div>
+            </div>
+            <GoogleSignInButton actionText="Entrar com Google"/>
+            <Button type="submit" className="w-full rounded-full py-3 text-base mt-4" disabled={isAuthenticating}>
               {isAuthenticating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Entrar
+              Entrar com E-mail
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="flex flex-col items-center justify-center text-sm">
+        <CardFooter className="flex flex-col items-center justify-center text-sm space-y-2">
           <p>
             Não tem uma conta?{' '}
             <Link href="/register" className="font-semibold text-primary hover:underline">
               Cadastre-se
             </Link>
           </p>
-          <Link href="/forgot-password" className="mt-2 text-muted-foreground hover:underline">
+          <Link href="/forgot-password" className="text-muted-foreground hover:underline">
             Esqueceu a senha?
           </Link>
         </CardFooter>

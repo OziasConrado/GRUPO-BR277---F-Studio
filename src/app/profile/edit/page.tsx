@@ -4,19 +4,22 @@
 import { useState, useEffect, type ChangeEvent, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, UserCircle, Edit, ArrowLeft, UploadCloud, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { doc, getDoc } from 'firebase/firestore';
+import { firestore } from '@/lib/firebase/client';
 
 const MAX_FILE_SIZE_MB = 2;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
@@ -27,6 +30,12 @@ const profileSchema = z.object({
     .refine(file => file === undefined || file.size <= MAX_FILE_SIZE_BYTES, `Foto deve ter no máximo ${MAX_FILE_SIZE_MB}MB.`)
     .refine(file => file === undefined || ["image/jpeg", "image/png", "image/webp"].includes(file.type), "Formato de foto inválido (JPG, PNG, WebP).")
     .optional(),
+  bio: z.string().max(160, 'A biografia não pode ter mais de 160 caracteres.').optional(),
+  instagramUsername: z.string().max(30, 'Usuário do Instagram muito longo.').optional().refine(val => !val || !val.startsWith('@'), {
+    message: "Não inclua o '@' no nome de usuário."
+  }).refine(val => !val || /^[\w](?!.*?\.{2})[\w.]{1,28}[\w]$/.test(val), {
+    message: "Nome de usuário do Instagram inválido."
+  }),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -48,8 +57,10 @@ export default function EditProfilePage() {
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      displayName: currentUser?.displayName || '',
+      displayName: '',
       newPhotoFile: undefined,
+      bio: '',
+      instagramUsername: '',
     },
   });
 
@@ -57,12 +68,26 @@ export default function EditProfilePage() {
     if (!loading && !currentUser) {
       router.push('/login');
     }
-    if (currentUser) {
-      reset({ // Reset form with current user data when currentUser changes
-        displayName: currentUser.displayName || '',
-        newPhotoFile: undefined, // Don't pre-fill file input
-      });
-      setImagePreview(currentUser.photoURL || null);
+    if (currentUser && firestore) {
+        const fetchProfile = async () => {
+            const docRef = doc(firestore, 'Usuarios', currentUser.uid);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                reset({
+                    displayName: data.displayName || currentUser.displayName || '',
+                    bio: data.bio || '',
+                    instagramUsername: data.instagramUsername || '',
+                    newPhotoFile: undefined,
+                });
+                setImagePreview(data.photoURL || currentUser.photoURL || null);
+            } else {
+                 // Fallback if firestore doc doesn't exist for some reason
+                 reset({ displayName: currentUser.displayName || '' });
+                 setImagePreview(currentUser.photoURL || null);
+            }
+        };
+        fetchProfile();
     }
   }, [currentUser, loading, router, reset]);
 
@@ -71,17 +96,12 @@ export default function EditProfilePage() {
     if (file) {
       if (file.size > MAX_FILE_SIZE_BYTES) {
         toast({ variant: "destructive", title: "Erro na Imagem", description: `Tamanho máximo da foto: ${MAX_FILE_SIZE_MB}MB.`});
-        if(fileInputRef.current) fileInputRef.current.value = ""; // Clear the invalid file
-        setValue("newPhotoFile", undefined); // Unset form value
-        // Keep old image preview if new one is invalid, or clear if no old one
-        setImagePreview(currentUser?.photoURL || null); 
+        if(fileInputRef.current) fileInputRef.current.value = "";
         return;
       }
       if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
         toast({ variant: "destructive", title: "Erro na Imagem", description: "Formato de foto inválido (JPG, PNG, WebP)."});
         if(fileInputRef.current) fileInputRef.current.value = "";
-        setValue("newPhotoFile", undefined);
-        setImagePreview(currentUser?.photoURL || null);
         return;
       }
       setValue("newPhotoFile", file, { shouldValidate: true, shouldDirty: true });
@@ -90,10 +110,6 @@ export default function EditProfilePage() {
         setImagePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
-    } else {
-      // If no file is selected (e.g., user cancels file dialog), revert to current user's photo
-      setValue("newPhotoFile", undefined, { shouldDirty: true });
-      setImagePreview(currentUser?.photoURL || null);
     }
   };
 
@@ -108,25 +124,14 @@ export default function EditProfilePage() {
 
 
   const onSubmit = async (data: ProfileFormValues) => {
-    if (!currentUser) return;
-    
-    // Construct the update data, only include fields that have changed or are present
-    const updateData: { displayName?: string; newPhotoFile?: File } = {};
-    if (data.displayName !== currentUser.displayName) {
-      updateData.displayName = data.displayName;
-    }
-    if (data.newPhotoFile) {
-      updateData.newPhotoFile = data.newPhotoFile;
-    }
-
-    if (Object.keys(updateData).length === 0) {
+    if (!isDirty) {
       toast({ title: "Nenhuma Alteração", description: "Nenhuma informação foi alterada." });
       return;
     }
-
-    await updateUserProfile(updateData);
-    // Optionally reset dirty state if needed, or rely on data refresh from AuthContext
-    reset(data); // Resets form with new submitted data, marking it as not dirty
+    await updateUserProfile(data);
+    // After successful update, we reset the form's dirty state
+    // while keeping the newly submitted values as the new "clean" state.
+    reset(data, { keepValues: true, keepDirty: false, keepDefaultValues: false, keepErrors: false });
   };
 
   if (loading || !currentUser) {
@@ -155,17 +160,6 @@ export default function EditProfilePage() {
                     {currentUser.displayName ? currentUser.displayName.substring(0, 2).toUpperCase() : <UserCircle className="h-20 w-20 text-muted-foreground" />}
                   </AvatarFallback>
                 </Avatar>
-                {imagePreview && imagePreview !== currentUser.photoURL && ( // Show X only if preview is different and exists
-                    <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute -top-2 -right-2 h-7 w-7 z-10 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/80"
-                    onClick={removeImage}
-                    >
-                    <X className="h-4 w-4"/>
-                    </Button>
-                )}
               </div>
 
               <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="rounded-full">
@@ -192,6 +186,30 @@ export default function EditProfilePage() {
               />
               {errors.displayName && <p className="text-sm text-destructive mt-1">{errors.displayName.message}</p>}
             </div>
+            
+            <div>
+              <Label htmlFor="bio">Biografia</Label>
+              <Textarea
+                id="bio"
+                {...register('bio')}
+                className="mt-1 rounded-lg min-h-[80px]"
+                maxLength={160}
+                placeholder="Fale um pouco sobre você..."
+              />
+              {errors.bio && <p className="text-sm text-destructive mt-1">{errors.bio.message}</p>}
+            </div>
+
+            <div>
+              <Label htmlFor="instagramUsername">Usuário do Instagram (sem @)</Label>
+              <Input
+                id="instagramUsername"
+                {...register('instagramUsername')}
+                className="mt-1 rounded-lg"
+                 placeholder="seu_usuario"
+              />
+              {errors.instagramUsername && <p className="text-sm text-destructive mt-1">{errors.instagramUsername.message}</p>}
+            </div>
+
 
             <div>
               <Label htmlFor="email">E-mail (não editável)</Label>
@@ -222,4 +240,3 @@ export default function EditProfilePage() {
     </div>
   );
 }
-

@@ -26,8 +26,8 @@ import { useToast } from '@/hooks/use-toast';
 interface UpdateUserProfileData {
   displayName?: string;
   newPhotoFile?: File;
-  // bio?: string; // Future: Add bio and instagramLink updates
-  // instagramLink?: string;
+  bio?: string;
+  instagramUsername?: string;
 }
 interface AuthContextType {
   currentUser: FirebaseUser | null;
@@ -74,7 +74,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!auth || !firestore) return;
 
-    // We only want to handle redirect results when not authenticating via other means
     if (isAuthenticating) return;
 
     getRedirectResult(auth)
@@ -93,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               photoURL: user.photoURL || null,
               createdAt: serverTimestamp(),
               bio: '',
-              instagramLink: '',
+              instagramUsername: '',
             });
             toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a)! Seu perfil foi criado.' });
           } else {
@@ -149,7 +148,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             message = 'O método de login por e-mail e senha não está ativado para este aplicativo. Por favor, contate o suporte.';
             break;
         default:
-            // More generic message for unhandled codes
             message = `Ocorreu um problema (${error.code}). Por favor, tente novamente ou contate o suporte se o problema persistir.`;
             break;
     }
@@ -167,10 +165,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setIsAuthenticating(true);
     const provider = new GoogleAuthProvider();
-    // This will navigate the user away. Errors are caught by getRedirectResult.
     await signInWithRedirect(auth, provider).catch(err => {
       handleAuthError(err, 'Erro ao Redirecionar para Google');
-      setIsAuthenticating(false); // Make sure to stop loading on immediate error
+      setIsAuthenticating(false);
     });
   }, [auth, toast]);
 
@@ -194,7 +191,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               photoURL: user.photoURL || null,
               createdAt: serverTimestamp(),
               bio: '',
-              instagramLink: '',
+              instagramUsername: '',
             });
             toast({ title: 'Cadastro bem-sucedido!', description: 'Sua conta e perfil foram criados.' });
             router.push('/');
@@ -246,7 +243,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
       } catch (error) {
         handleAuthError(error as AuthError, 'Erro ao Enviar E-mail');
-        throw error; // Re-throw para que a página possa saber que falhou
+        throw error;
       } finally {
         setIsAuthenticating(false);
       }
@@ -270,6 +267,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (data.displayName) {
         authProfileUpdates.displayName = data.displayName;
         firestoreProfileUpdates.displayName = data.displayName;
+      }
+      
+      if (data.bio !== undefined) {
+        firestoreProfileUpdates.bio = data.bio;
+      }
+
+      if (data.instagramUsername !== undefined) {
+        firestoreProfileUpdates.instagramUsername = data.instagramUsername.replace('@','');
       }
 
       if (data.newPhotoFile) {
