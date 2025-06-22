@@ -74,6 +74,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!auth || !firestore) return;
 
+    // We only want to handle redirect results when not authenticating via other means
+    if (isAuthenticating) return;
+
     getRedirectResult(auth)
       .then(async (result) => {
         if (result) {
@@ -104,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         handleAuthError(error, 'Erro no Login com Google');
         setIsAuthenticating(false);
       });
-  }, [auth, router, toast]);
+  }, [auth, router, toast, isAuthenticating]);
 
 
   const handleAuthError = (error: AuthError, customTitle?: string) => {
@@ -127,10 +130,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             message = 'O formato do e-mail é inválido.';
             break;
         case 'auth/popup-closed-by-user':
-            message = 'O pop-up de login foi fechado antes da conclusão.';
-            break;
         case 'auth/cancelled-popup-request':
-            message = 'Múltiplas tentativas de login. Por favor, tente novamente.';
+            message = 'A janela de login foi fechada. Por favor, tente novamente.';
             break;
         case 'auth/requires-recent-login':
             message = 'Esta operação é sensível e requer autenticação recente. Faça login novamente antes de tentar novamente.';
@@ -140,6 +141,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             break;
          case 'auth/network-request-failed':
             message = 'Erro de rede. Verifique sua conexão com a internet e tente novamente.';
+            break;
+        case 'auth/unauthorized-domain':
+            message = 'Este domínio não está autorizado para operações de login. Verifique a configuração do Firebase.';
+            break;
+        case 'auth/operation-not-allowed':
+            message = 'O método de login por e-mail e senha não está ativado para este aplicativo. Por favor, contate o suporte.';
             break;
         default:
             // More generic message for unhandled codes
@@ -161,7 +168,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthenticating(true);
     const provider = new GoogleAuthProvider();
     // This will navigate the user away. Errors are caught by getRedirectResult.
-    await signInWithRedirect(auth, provider);
+    await signInWithRedirect(auth, provider).catch(err => {
+      handleAuthError(err, 'Erro ao Redirecionar para Google');
+      setIsAuthenticating(false); // Make sure to stop loading on immediate error
+    });
   }, [auth, toast]);
 
   const signUpWithEmail = useCallback(
