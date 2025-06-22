@@ -2,24 +2,20 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { Newspaper, Store, Video, Wrench, PlusCircle } from 'lucide-react'; // ShieldAlert replaced with Wrench
+import { usePathname } from 'next/navigation';
+import { Newspaper, Store, Video, Wrench, Map } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useChat } from '@/contexts/ChatContext';
-import MoreFeaturesSheet from '@/components/MoreFeaturesSheet';
 
 const navItems = [
   { href: '/', label: 'Feed277', icon: Newspaper },
   { href: '/guia-comercial', label: 'Comercial', icon: Store },
   { href: '/streaming', label: 'AO VIVO', icon: Video },
-  { href: '/ferramentas', label: 'Ferramentas', icon: Wrench }, // Changed from Alertas to Ferramentas, ShieldAlert to Wrench
-  { href: '/mais', label: 'Mais', icon: PlusCircle },
+  { href: '/ferramentas', label: 'Ferramentas', icon: Wrench },
+  { href: '/turismo', label: 'Turismo', icon: Map },
 ];
 
 export default function Navigation() {
   const pathname = usePathname();
-  // const router = useRouter(); // router not used
-  // const { setIsChatOpen } = useChat(); // setIsChatOpen not used
 
   const handleNavItemClick = (e: React.MouseEvent, href: string) => {
     // Logic for special handling can be added here if needed in the future
@@ -79,21 +75,6 @@ export default function Navigation() {
                     </div>
                   </div>
                 </Link>
-              );
-            } else if (item.label === 'Mais') {
-              return (
-                <MoreFeaturesSheet key={item.href}>
-                  {/* This div acts as the trigger for MoreFeaturesSheet */}
-                  <div
-                    className={cn(commonItemContainerClasses, activeSpecificClasses, 'cursor-pointer')}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') (e.currentTarget as HTMLElement).click();}}
-                    // onClick is handled by SheetTrigger via asChild propagation from MoreFeaturesSheet
-                  >
-                    {itemContent}
-                  </div>
-                </MoreFeaturesSheet>
               );
             } else {
               // Regular navigation link
