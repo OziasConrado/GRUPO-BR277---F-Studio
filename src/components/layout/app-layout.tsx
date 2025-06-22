@@ -81,15 +81,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/forgot-password';
   
-  // Auth protection logic
-  useEffect(() => {
-    if (!loading && !currentUser && !isAuthPage) {
-      router.push('/login');
-    }
-  }, [currentUser, loading, isAuthPage, router, pathname]);
+  // Auth protection logic - TEMPORARILY DISABLED TO UNBLOCK DEVELOPMENT
+  // useEffect(() => {
+  //   if (!loading && !currentUser && !isAuthPage) {
+  //     router.push('/login');
+  //   }
+  // }, [currentUser, loading, isAuthPage, router, pathname]);
 
   const AppHeader = () => {
-    if (isAuthPage || !currentUser) return null; // Don't render header on auth pages or if not logged in
+    if (isAuthPage) return null; // Don't render header on auth pages
 
     return (
     <header className="sticky top-0 z-50 w-full bg-primary text-primary-foreground shadow-lg">
@@ -171,7 +171,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             </TooltipContent>
           </Tooltip>
 
-          {currentUser && (
+          {currentUser ? (
             <DropdownMenu>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -212,6 +212,17 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10 p-0 h-10 w-10 sm:h-12 sm:w-12" onClick={() => router.push('/login')}>
+                      <User className="h-5 w-5 sm:h-6 sm:w-6" />
+                  </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                  <p>Fazer Login</p>
+              </TooltipContent>
+          </Tooltip>
           )}
 
 
@@ -266,17 +277,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
     );
   }
 
-  // If we are not loading, and there's no user, and we are on a protected page,
-  // this will return a blank screen while the useEffect above redirects.
-  // This prevents flashing the protected content.
-  if (!currentUser && !isAuthPage) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   return (
     <TooltipProvider>
       <div className="flex flex-col min-h-screen">
@@ -287,8 +287,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
         )}>
           {children}
         </main>
-        {/* Show navigation only if logged in AND not on an auth page */}
-        {currentUser && !isAuthPage && (
+        {/* Show navigation only if not on an auth page */}
+        {!isAuthPage && (
             <>
                 <Navigation />
                 <ChatFloatingButton />
