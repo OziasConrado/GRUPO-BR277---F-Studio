@@ -3,7 +3,12 @@ import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  /* config options here */
+  experimental: {
+    // This is required to allow the Next.js dev server to accept requests from the preview server.
+    allowedDevOrigins: [
+      'https://*.cluster-etsqrqvqyvd4erxx7qq32imrjk.cloudworkstations.dev',
+    ],
+  },
   typescript: {
     ignoreBuildErrors: true,
   },
