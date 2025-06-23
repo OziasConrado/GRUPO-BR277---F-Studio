@@ -8,7 +8,7 @@ runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   maxInstances: 1
-  memoryMiB: 1024
+  memoryMiB: 2048
 environmentVariables:
   NEXT_PUBLIC_FIREBASE_API_KEY: "AIzaSyBkj9LYAUrrdXXb-M80C-q9FMQxGWMWA1A"
   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: "grupo-br277.firebaseapp.com"
