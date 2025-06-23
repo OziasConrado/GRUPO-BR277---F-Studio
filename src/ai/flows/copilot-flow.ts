@@ -192,7 +192,7 @@ const findNearbyPlaces = ai.defineTool(
         try {
             const locationCoords = await geocode(location);
             if (!locationCoords) {
-                return { places: [{ name: `Não foi possível encontrar a localização: ${location}` }] };
+                return { places: [{ name: `Não foi possível encontrar a localização: ${location}`, address: undefined, rating: undefined }] };
             }
 
             const response = await axios.get('https://maps.googleapis.com/maps/api/place/nearbysearch/json', {
@@ -235,9 +235,6 @@ const copilotPrompt = ai.definePrompt({
 - Mantenha as respostas concisas, mas completas.
 - AVISO: A previsão do tempo ainda está em fase de testes e usa dados de exemplo.`,
     tools: [getTrafficInfo, getWeatherInfo, findNearbyPlaces],
-    output: {
-        format: 'text'
-    }
 });
 
 
@@ -248,8 +245,34 @@ const copilotFlow = ai.defineFlow(
     outputSchema: CopilotOutputSchema,
   },
   async (input) => {
-    const llmResponse = await copilotPrompt({ query: input.query });
-    return { response: llmResponse.text };
+    let llmResponse = await copilotPrompt({ query: input.query });
+
+    for (let i = 0; i < 5; i++) { 
+      if (llmResponse.toolCalls) {
+        const toolResults = [];
+        for (const call of llmResponse.toolCalls) {
+          console.log('Attempting to call tool:', call.tool);
+          const tool = ai.lookupTool(call.tool);
+          if (!tool) {
+            console.error(`Tool not found: ${call.tool}`);
+            return { response: `Desculpe, ocorreu um erro interno (ferramenta ${call.tool} não encontrada).` };
+          }
+          
+          try {
+            const output = await tool(call.input);
+            toolResults.push({ tool: call.tool, output });
+          } catch(e: any) {
+            console.error(`Error executing tool ${call.tool}:`, e);
+            toolResults.push({ tool: call.tool, output: { error: `A ferramenta falhou com o erro: ${e.message}` } });
+          }
+        }
+        llmResponse = await copilotPrompt({ query: input.query }, { tools: toolResults });
+      } else {
+        return { response: llmResponse.text ?? "Não foi possível obter uma resposta do assistente. Tente novamente." };
+      }
+    }
+    
+    return { response: "O assistente não conseguiu chegar a uma resposta final. Tente reformular sua pergunta." };
   }
 );
 
