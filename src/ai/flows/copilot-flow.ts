@@ -24,7 +24,7 @@ export type { CopilotInput, CopilotOutput };
 
 // Helper para Geocodificação
 async function geocode(address: string): Promise<{ lat: number; lng: number } | null> {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
         console.error('Google Maps API Key not found.');
         return null;
@@ -63,7 +63,7 @@ const getTrafficInfo = ai.defineTool(
         })
     },
     async ({ origin, destination }) => {
-        const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+        const apiKey = process.env.GOOGLE_MAPS_API_KEY;
         if (!apiKey) {
              return {
                 travelTime: "desconhecido",
@@ -187,7 +187,7 @@ const findNearbyPlaces = ai.defineTool(
         })
     },
     async ({ query, location }) => {
-        const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+        const apiKey = process.env.GOOGLE_MAPS_API_KEY;
         if (!apiKey) return { places: [] };
 
         try {
