@@ -20,11 +20,36 @@ import axios from 'axios';
 
 export type { CopilotInput, CopilotOutput };
 
-// Ferramenta de Informações de Trânsito
+
+// Helper para Geocodificação
+async function geocode(address: string): Promise<{ lat: number; lng: number } | null> {
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+        console.error('Google Maps API Key not found.');
+        return null;
+    }
+
+    try {
+        const response = await axios.get('https://maps.googleapis.com/maps/api/geocode/json', {
+            params: { address, key: apiKey }
+        });
+        if (response.data.status === 'OK' && response.data.results.length > 0) {
+            return response.data.results[0].geometry.location;
+        }
+        console.warn(`Geocoding failed for ${address}:`, response.data.status);
+        return null;
+    } catch (error) {
+        console.error(`Geocoding request failed for ${address}:`, error);
+        return null;
+    }
+}
+
+
+// Ferramenta de Informações de Trânsito e Pedágio
 const getTrafficInfo = ai.defineTool(
     {
         name: 'getTrafficInfo',
-        description: 'Obtém informações de trânsito em tempo real, incluindo tempo de viagem, distância e um resumo das condições entre dois locais.',
+        description: 'Obtém informações de trânsito em tempo real, incluindo tempo de viagem, distância, um resumo das condições e custo de pedágio entre dois locais.',
         inputSchema: z.object({
             origin: z.string().describe('A cidade ou ponto de partida.'),
             destination: z.string().describe('A cidade ou ponto de destino.'),
@@ -33,43 +58,91 @@ const getTrafficInfo = ai.defineTool(
             travelTime: z.string().describe('O tempo estimado de viagem, por exemplo, "1 hora e 30 minutos".'),
             distance: z.string().describe('A distância total da rota, por exemplo, "150 km".'),
             summary: z.string().describe('Um resumo das condições da rota, incluindo acidentes, obras ou congestionamentos.'),
+            tollCost: z.number().describe('O custo total estimado dos pedágios. Retorna 0 se não houver pedágios.'),
         })
     },
     async ({ origin, destination }) => {
-        console.log(`Buscando tráfego (MOCK) de ${origin} para ${destination}`);
-        // !! IMPLEMENTAÇÃO MOCK !!
-        // Para usar a API real do Google Maps, você precisará de uma chave de API
-        // e substituir este bloco de código por uma chamada real usando axios.
-        // Adicione a chave no arquivo .env como NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-        if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
-            return {
+        const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+        if (!apiKey) {
+             return {
                 travelTime: "desconhecido",
                 distance: "desconhecida",
-                summary: "A API do Google Maps não está configurada. Por favor, adicione a chave no arquivo .env."
+                summary: "A API do Google Maps não está configurada.",
+                tollCost: 0
             };
         }
 
-        // Exemplo de dados mockados
-        if (origin.toLowerCase().includes('curitiba') && destination.toLowerCase().includes('matinhos')) {
+        try {
+            const [originCoords, destinationCoords] = await Promise.all([geocode(origin), geocode(destination)]);
+
+            if (!originCoords || !destinationCoords) {
+                return {
+                    travelTime: "desconhecido",
+                    distance: "desconhecida",
+                    summary: `Não foi possível encontrar as coordenadas para ${origin} ou ${destination}.`,
+                    tollCost: 0
+                };
+            }
+
+            const response = await axios.post('https://routes.googleapis.com/directions/v2:computeRoutes', {
+                origin: { location: { latLng: originCoords } },
+                destination: { location: { latLng: destinationCoords } },
+                travelMode: 'DRIVE',
+                computeAlternativeRoutes: false,
+                extraComputations: ["TOLLS", "TRAFFIC_ON_POLYLINE"],
+                languageCode: "pt-BR",
+            }, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Goog-Api-Key': apiKey,
+                    'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.travelAdvisory,routes.tollInfo'
+                }
+            });
+
+            if (response.data.routes && response.data.routes.length > 0) {
+                const route = response.data.routes[0];
+                const distanceKm = (route.distanceMeters / 1000).toFixed(1);
+                const distance = `${distanceKm} km`;
+                
+                const durationSeconds = parseInt(route.duration.slice(0, -1)); // remove 's'
+                const hours = Math.floor(durationSeconds / 3600);
+                const minutes = Math.floor((durationSeconds % 3600) / 60);
+                const travelTime = `${hours > 0 ? `${hours} hora${hours > 1 ? 's' : ''} e ` : ''}${minutes} minuto${minutes > 1 ? 's' : ''}`;
+
+                const summary = route.travelAdvisory?.trafficAdvisory?.trafficCondition 
+                    ? `Condição do trânsito: ${route.travelAdvisory.trafficAdvisory.trafficCondition}.`
+                    : "Sem informações de tráfego disponíveis.";
+
+                let tollCost = 0;
+                if (route.tollInfo && route.tollInfo.estimatedPrice) {
+                    tollCost = route.tollInfo.estimatedPrice.reduce((total: number, price: any) => {
+                        return total + (parseFloat(price.units) || 0) + (price.nanos / 1_000_000_000);
+                    }, 0);
+                }
+
+                return { travelTime, distance, summary, tollCost };
+            } else {
+                 return {
+                    travelTime: "desconhecido", distance: "desconhecida",
+                    summary: `Não foi possível encontrar uma rota entre ${origin} e ${destination}.`, tollCost: 0
+                };
+            }
+        } catch (error: any) {
+            console.error('Routes API error:', error.response?.data || error.message);
             return {
-                travelTime: "1 hora e 45 minutos",
-                distance: "110 km",
-                summary: "O trânsito na BR-277 está intenso, com um ponto de lentidão próximo a Morretes devido a obras na pista. Fora isso, sem acidentes reportados."
+                travelTime: "desconhecido", distance: "desconhecida",
+                summary: `Erro ao buscar informações de rota: ${error.response?.data?.error?.message || 'Erro de comunicação.'}`, tollCost: 0
             };
         }
-        return {
-            travelTime: "desconhecido",
-            distance: "desconhecida",
-            summary: `Não consegui obter informações de tráfego para a rota entre ${origin} e ${destination}. Por favor, tente com cidades mais conhecidas.`
-        };
     }
 );
 
-// Ferramenta de Previsão do Tempo
+
+// Ferramenta de Previsão do Tempo (MOCK)
 const getWeatherInfo = ai.defineTool(
     {
         name: 'getWeatherInfo',
-        description: 'Obtém a previsão do tempo atual para uma cidade específica.',
+        description: 'Obtém a previsão do tempo atual para uma cidade específica. (DADOS DE EXEMPLO)',
         inputSchema: z.object({
             location: z.string().describe('A cidade para a qual obter a previsão do tempo, por exemplo, "Curitiba, BR".'),
         }),
@@ -80,10 +153,7 @@ const getWeatherInfo = ai.defineTool(
         })
     },
     async ({ location }) => {
-        console.log(`Buscando clima (MOCK) para ${location}`);
         // !! IMPLEMENTAÇÃO MOCK !!
-        // Para usar uma API real (ex: OpenWeatherMap), você precisaria de uma chave
-        // e faria uma chamada aqui.
         if (location.toLowerCase().includes('curitiba')) {
             return {
                 temperature: "15°C",
@@ -92,9 +162,8 @@ const getWeatherInfo = ai.defineTool(
             };
         }
         return {
-            temperature: "Desconhecida",
-            condition: "Desconhecida",
-            summary: `Não foi possível obter a previsão do tempo para ${location}.`
+            temperature: "Desconhecida", condition: "Desconhecida",
+            summary: `(Exemplo) Não foi possível obter a previsão do tempo para ${location}.`
         };
     }
 );
@@ -111,64 +180,61 @@ const findNearbyPlaces = ai.defineTool(
         outputSchema: z.object({
             places: z.array(z.object({
                 name: z.string(),
-                address: z.string(),
+                address: z.string().optional(),
+                rating: z.number().optional(),
             })).describe('Uma lista de até 3 lugares encontrados.')
         })
     },
     async ({ query, location }) => {
-        console.log(`Buscando locais (MOCK) para "${query}" em ${location}`);
-        // !! IMPLEMENTAÇÃO MOCK com a API do Google Places !!
-        if (query.includes('restaurante') && location.toLowerCase().includes('curitiba')) {
-            return {
-                places: [
-                    { name: "Madaloosso", address: "Av. Manoel Ribas, 5875 - Santa Felicidade" },
-                    { name: "Churrascaria Batel Grill", address: "Av. do Batel, 18 - Batel" },
-                ]
-            };
+        const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+        if (!apiKey) return { places: [] };
+
+        try {
+            const locationCoords = await geocode(location);
+            if (!locationCoords) {
+                return { places: [{ name: `Não foi possível encontrar a localização: ${location}` }] };
+            }
+
+            const response = await axios.get('https://maps.googleapis.com/maps/api/place/nearbysearch/json', {
+                params: {
+                    location: `${locationCoords.lat},${locationCoords.lng}`,
+                    radius: 15000,
+                    keyword: query,
+                    key: apiKey,
+                    language: 'pt-BR'
+                }
+            });
+
+            if (response.data.status === 'OK') {
+                return {
+                    places: response.data.results.slice(0, 3).map((place: any) => ({
+                        name: place.name,
+                        address: place.vicinity,
+                        rating: place.rating
+                    }))
+                };
+            }
+            return { places: [] };
+
+        } catch (error: any) {
+            console.error('Places API error:', error.response?.data || error.message);
+            return { places: [] };
         }
-        return {
-            places: []
-        };
     }
 );
 
-// Ferramenta de Cálculo de Pedágios
-const calculateTolls = ai.defineTool(
-    {
-        name: 'calculateTolls',
-        description: 'Fornece uma estimativa do custo de pedágio e o número de praças para uma rota. AVISO: O valor é uma estimativa e pode variar.',
-        inputSchema: z.object({
-            origin: z.string().describe('A cidade de partida.'),
-            destination: z.string().describe('A cidade de destino.'),
-        }),
-        outputSchema: z.object({
-            totalCost: z.number().describe('O custo total estimado dos pedágios.'),
-            tollCount: z.number().describe('O número aproximado de praças de pedágio.'),
-        })
-    },
-    async ({ origin, destination }) => {
-        console.log(`Calculando pedágios (MOCK) de ${origin} para ${destination}`);
-        // !! IMPLEMENTAÇÃO MOCK !! APIs de pedágio são geralmente pagas e complexas.
-        if (origin.toLowerCase().includes('são paulo') && destination.toLowerCase().includes('curitiba')) {
-            return { totalCost: 78.90, tollCount: 6 };
-        }
-        if (origin.toLowerCase().includes('curitiba') && destination.toLowerCase().includes('florianópolis')) {
-            return { totalCost: 24.60, tollCount: 4 };
-        }
-        return { totalCost: 0, tollCount: 0 };
-    }
-);
 
 const copilotPrompt = ai.definePrompt({
     name: 'copilotPrompt',
     system: `Você é o Copiloto277, um assistente de IA amigável e expert para viajantes no aplicativo Rota Segura.
 - Sua principal função é fornecer informações claras e úteis sobre rotas, trânsito, clima, locais e pedágios.
 - Use as ferramentas disponíveis sempre que a pergunta do usuário solicitar.
-- Ao planejar uma rota, combine informações de múltiplas ferramentas. Por exemplo, para "Qual a condição da rota de São Paulo para Curitiba?", use 'getTrafficInfo' para o trânsito, 'calculateTolls' para os pedágios, e 'getWeatherInfo' para o clima em Curitiba.
+- Ao planejar uma rota, combine informações de múltiplas ferramentas. Por exemplo, para "Qual a condição da rota de São Paulo para Curitiba?", use 'getTrafficInfo' para o trânsito e pedágios, e 'getWeatherInfo' para o clima em Curitiba.
 - Se não conseguir encontrar informações com uma ferramenta, informe ao usuário de forma amigável.
 - Formate a resposta de forma conversacional, clara e organizada. Use listas se for apropriado.
-- Mantenha as respostas concisas, mas completas.`,
-    tools: [getTrafficInfo, getWeatherInfo, findNearbyPlaces, calculateTolls],
+- Mantenha as respostas concisas, mas completas.
+- AVISO: A previsão do tempo ainda está em fase de testes e usa dados de exemplo.`,
+    tools: [getTrafficInfo, getWeatherInfo, findNearbyPlaces],
     output: {
         format: 'text'
     }
@@ -182,7 +248,7 @@ const copilotFlow = ai.defineFlow(
     outputSchema: CopilotOutputSchema,
   },
   async (input) => {
-    const llmResponse = await copilotPrompt(input.query);
+    const llmResponse = await copilotPrompt({ query: input.query });
     return { response: llmResponse.text };
   }
 );
