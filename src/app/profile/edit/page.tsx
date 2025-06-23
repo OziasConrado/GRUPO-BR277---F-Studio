@@ -70,7 +70,7 @@ export default function EditProfilePage() {
     }
     if (currentUser && firestore) {
         const fetchProfile = async () => {
-            const docRef = doc(firestore, 'Usuarios', currentUser.uid);
+            const docRef = doc(firestore, "Usuarios", currentUser.uid);
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
                 const data = docSnap.data();

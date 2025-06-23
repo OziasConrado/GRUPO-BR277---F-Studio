@@ -84,4 +84,3 @@ export default function UserProfileModal({ isOpen, onClose, user }: UserProfileM
     </Dialog>
   );
 }
-

@@ -338,7 +338,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticating,
   };
 
-  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
