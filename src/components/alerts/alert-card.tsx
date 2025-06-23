@@ -31,21 +31,14 @@ const getAlertIcon = (type: AlertProps['type']) => {
     case 'Acidente':
       return <Car className="h-5 w-5 text-red-500" />;
     case 'Obras na Pista':
-    case 'Remoção de veículo acidentado': // Novo tipo usando mesmo ícone
       return <Construction className="h-5 w-5 text-yellow-500" />;
     case 'Congestionamento':
       return <TrafficCone className="h-5 w-5 text-orange-500" />;
-    case 'Condição Climática Adversa':
+    case 'Neblina/Cond. Climática':
       return <CloudFog className="h-5 w-5 text-blue-500" />;
     case 'Animal na Pista':
       return <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-dog text-yellow-600"><path d="M10 5H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4"/><path d="M18 10V7a2 2 0 0 0-2-2h-1"/><path d="M14 12a2 2 0 1 1 0-4h4v4a2 2 0 0 1-2 2h-2Z"/><path d="M12 18H7a2 2 0 0 1-2-2V9"/><path d="m18 18-3-10-1 2-1.5-1-1.5 1-1-2-3 10"/></svg>;
-    case 'Alagamento':
-      return <Waves className="h-5 w-5 text-sky-600" />;
-    case 'Neve/Gelo':
-      return <MountainSnow className="h-5 w-5 text-cyan-400" />;
-    case 'Vento Forte':
-      return <Wind className="h-5 w-5 text-gray-500" />;
-    case 'Queimada, fumaça densa sobre a pista': // Novo tipo
+    case 'Queimada/Fumaça':
       return <Flame className="h-5 w-5 text-orange-600" />;
     default:
       return <AlertTriangle className="h-5 w-5 text-primary" />;
@@ -79,7 +72,6 @@ export default function AlertCard({ alert }: AlertCardProps) {
                   {getAlertIcon(alert.type)}
                   <CardTitle className="text-lg font-headline">{alert.type}</CardTitle>
               </div>
-              {/* Badge de severidade removido */}
           </div>
           <CardDescription className="text-xs pt-1">{alert.location}</CardDescription>
         </CardHeader>

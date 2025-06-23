@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import React from 'react';
 import { firestore } from '@/lib/firebase/client';
-import { collection, getDocs, query, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, query, orderBy, Timestamp, onSnapshot } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 const AdPlaceholder = ({ className }: { className?: string }) => (
@@ -24,24 +24,25 @@ export default function AlertasPage() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchAlerts = useCallback(async () => {
+  useEffect(() => {
     if (!firestore) {
       toast({ variant: "destructive", title: "Erro de Conexão", description: "Não foi possível conectar ao banco de dados." });
       setLoading(false);
       return;
     }
     setLoading(true);
-    try {
-      const alertsCollection = collection(firestore, 'alerts');
-      const q = query(alertsCollection, orderBy('timestamp', 'desc'));
-      const querySnapshot = await getDocs(q);
+
+    const alertsCollection = collection(firestore, 'alerts');
+    const q = query(alertsCollection, orderBy('timestamp', 'desc'));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedAlerts = querySnapshot.docs.map(doc => {
         const data = doc.data();
         return {
           id: doc.id,
           type: data.type || 'Alerta',
           description: data.description || '',
-          location: data.location || 'Localização não especificada', // Adding fallback
+          location: data.location || 'Localização não especificada',
           timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
           userNameReportedBy: data.userNameReportedBy || 'Usuário Anônimo',
           userAvatarUrl: data.userAvatarUrl || 'https://placehold.co/40x40.png',
@@ -51,17 +52,15 @@ export default function AlertasPage() {
         } as AlertProps;
       });
       setAlerts(fetchedAlerts);
-    } catch (error) {
-      console.error("Error fetching alerts: ", error);
-      toast({ variant: "destructive", title: "Erro ao Carregar Alertas", description: "Não foi possível buscar os alertas." });
-    } finally {
       setLoading(false);
-    }
-  }, [toast]);
+    }, (error) => {
+      console.error("Error fetching alerts in real-time: ", error);
+      toast({ variant: "destructive", title: "Erro ao Carregar Alertas", description: "Não foi possível buscar os alertas." });
+      setLoading(false);
+    });
 
-  useEffect(() => {
-    fetchAlerts();
-  }, [fetchAlerts]);
+    return () => unsubscribe(); // Cleanup listener on component unmount
+  }, [toast]);
 
 
   return (

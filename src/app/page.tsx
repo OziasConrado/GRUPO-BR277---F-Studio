@@ -41,7 +41,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useAuth } from '@/contexts/AuthContext';
 import { firestore } from '@/lib/firebase/client';
-import { collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp, Timestamp, onSnapshot } from 'firebase/firestore';
 
 
 // Mocks and Constants
@@ -197,18 +197,19 @@ export default function FeedPage() {
     }
   }, [toast]);
 
-  // Fetch Alerts
-  const fetchAlerts = useCallback(async () => {
+  // Real-time Alerts Fetch
+  useEffect(() => {
     if (!firestore) {
-        console.error("Firestore not initialized");
-        setLoadingAlerts(false);
-        return;
+      console.error("Firestore not initialized for alerts");
+      setLoadingAlerts(false);
+      return;
     }
     setLoadingAlerts(true);
-    try {
-      const alertsCollection = collection(firestore, 'alerts');
-      const q = query(alertsCollection, orderBy('timestamp', 'desc'), limit(5));
-      const querySnapshot = await getDocs(q);
+
+    const alertsCollection = collection(firestore, 'alerts');
+    const q = query(alertsCollection, orderBy('timestamp', 'desc'), limit(5));
+    
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedAlerts: HomeAlertCardData[] = querySnapshot.docs.map(doc => {
         const data = doc.data();
         return {
@@ -224,20 +225,21 @@ export default function FeedPage() {
         } as HomeAlertCardData;
       });
       setDisplayedAlertsFeed(fetchedAlerts);
-    } catch (error) {
-      console.error("Error fetching alerts: ", error);
-      toast({ variant: "destructive", title: "Erro ao Carregar Alertas", description: "Não foi possível buscar os alertas do servidor." });
-    } finally {
       setLoadingAlerts(false);
-    }
+    }, (error) => {
+      console.error("Error fetching alerts in real-time: ", error);
+      toast({ variant: "destructive", title: "Erro ao Carregar Alertas", description: "Não foi possível buscar os alertas." });
+      setLoadingAlerts(false);
+    });
+
+    return () => unsubscribe(); // Cleanup listener on component unmount
   }, [toast]);
 
 
   // Effects
   useEffect(() => {
     fetchPosts();
-    fetchAlerts();
-  }, [fetchPosts, fetchAlerts]);
+  }, [fetchPosts]);
 
   useEffect(() => {
     const style = document.createElement('style');
@@ -327,7 +329,7 @@ export default function FeedPage() {
       }
       try {
         const alertData: Omit<HomeAlertCardData, 'id' | 'timestamp'> & { userId: string, timestamp: any } = {
-            type: selectedAlertType || 'Alerta Geral',
+            type: selectedAlertType,
             description: newPostText.trim(),
             userNameReportedBy: currentUser.displayName || 'Usuário Anônimo',
             userAvatarUrl: currentUser.photoURL || 'https://placehold.co/40x40.png',
@@ -338,7 +340,7 @@ export default function FeedPage() {
         };
         await addDoc(collection(firestore, 'alerts'), alertData);
         toast({ title: "Alerta Publicado!", description: "Seu alerta foi adicionado ao mural." });
-        fetchAlerts(); 
+        // No need to call fetchAlerts() anymore, onSnapshot will handle it.
         setSelectedAlertType(undefined);
       } catch (error) {
         console.error("Error publishing alert: ", error);
@@ -377,10 +379,8 @@ export default function FeedPage() {
       };
 
       if (selectedImageForUpload && imagePreviewUrl && currentPostType === 'image') {
-        // For now, image upload to storage is deferred.
-        // We will save the text, and later implement image upload that updates this post or creates a new one with the image.
-        postDataToSave.uploadedImageUrl = imagePreviewUrl; // This would be the Storage URL in a real scenario
-        postDataToSave.dataAIUploadedImageHint = 'user uploaded image'; // Placeholder hint
+        postDataToSave.uploadedImageUrl = imagePreviewUrl;
+        postDataToSave.dataAIUploadedImageHint = 'user uploaded image';
         toast({ title: "Post com Imagem (Texto Salvo)", description: "O texto foi salvo. O upload de imagens será implementado em breve." });
       } else if (currentPostType === 'text' && newPostText.length <= 150 && selectedPostBackground?.name !== 'Padrão') {
         postDataToSave.cardStyle = {
