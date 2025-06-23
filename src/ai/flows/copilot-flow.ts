@@ -17,6 +17,7 @@ import {
   type CopilotOutput,
 } from '@/ai/schemas/copilot-schemas';
 import axios from 'axios';
+import { type MessageData } from '@genkit-ai/ai/model';
 
 export type { CopilotInput, CopilotOutput };
 
@@ -224,20 +225,6 @@ const findNearbyPlaces = ai.defineTool(
 );
 
 
-const copilotPrompt = ai.definePrompt({
-    name: 'copilotPrompt',
-    system: `Você é o Copiloto277, um assistente de IA amigável e expert para viajantes no aplicativo Rota Segura.
-- Sua principal função é fornecer informações claras e úteis sobre rotas, trânsito, clima, locais e pedágios.
-- Use as ferramentas disponíveis sempre que a pergunta do usuário solicitar.
-- Ao planejar uma rota, combine informações de múltiplas ferramentas. Por exemplo, para "Qual a condição da rota de São Paulo para Curitiba?", use 'getTrafficInfo' para o trânsito e pedágios, e 'getWeatherInfo' para o clima em Curitiba.
-- Se não conseguir encontrar informações com uma ferramenta, informe ao usuário de forma amigável.
-- Formate a resposta de forma conversacional, clara e organizada. Use listas se for apropriado.
-- Mantenha as respostas concisas, mas completas.
-- AVISO: A previsão do tempo ainda está em fase de testes e usa dados de exemplo.`,
-    tools: [getTrafficInfo, getWeatherInfo, findNearbyPlaces],
-});
-
-
 const copilotFlow = ai.defineFlow(
   {
     name: 'copilotFlow',
@@ -245,34 +232,65 @@ const copilotFlow = ai.defineFlow(
     outputSchema: CopilotOutputSchema,
   },
   async (input) => {
-    let llmResponse = await copilotPrompt({ query: input.query });
+    // History needs to be managed for a tool-calling agent.
+    const history: MessageData[] = [{ role: 'user', content: [{ text: input.query }] }];
+    const tools = [getTrafficInfo, getWeatherInfo, findNearbyPlaces];
 
-    for (let i = 0; i < 5; i++) { 
-      if (llmResponse.toolCalls) {
+    for (let i = 0; i < 5; i++) {
+      // Use ai.generate directly for better control in a loop.
+      const llmResponse = await ai.generate({
+        model: 'googleai/gemini-2.0-flash',
+        prompt: history,
+        tools: tools,
+        system: `Você é o Copiloto277, um assistente de IA amigável e expert para viajantes no aplicativo Rota Segura.
+- Sua principal função é fornecer informações claras e úteis sobre rotas, trânsito, clima, locais e pedágios.
+- Use as ferramentas disponíveis sempre que a pergunta do usuário solicitar.
+- Ao planejar uma rota, combine informações de múltiplas ferramentas. Por exemplo, para "Qual a condição da rota de São Paulo para Curitiba?", use 'getTrafficInfo' para o trânsito e pedágios, e 'getWeatherInfo' para o clima em Curitiba.
+- Se não conseguir encontrar informações com uma ferramenta, informe ao usuário de forma amigável.
+- Formate a resposta de forma conversacional, clara e organizada. Use listas se for apropriado.
+- Mantenha as respostas concisas, mas completas.
+- AVISO: A previsão do tempo ainda está em fase de testes e usa dados de exemplo.`
+      });
+
+      // Add the model's response to history for context.
+      history.push(llmResponse.candidates[0]);
+
+      if (llmResponse.toolCalls && llmResponse.toolCalls.length > 0) {
         const toolResults = [];
         for (const call of llmResponse.toolCalls) {
           console.log('Attempting to call tool:', call.tool);
           const tool = ai.lookupTool(call.tool);
           if (!tool) {
             console.error(`Tool not found: ${call.tool}`);
-            return { response: `Desculpe, ocorreu um erro interno (ferramenta ${call.tool} não encontrada).` };
+            toolResults.push({ call, output: { error: `Tool ${call.tool} not found.` } });
+            continue;
           }
           
           try {
             const output = await tool(call.input);
-            toolResults.push({ tool: call.tool, output });
+            toolResults.push({ call, output });
           } catch(e: any) {
             console.error(`Error executing tool ${call.tool}:`, e);
-            toolResults.push({ tool: call.tool, output: { error: `A ferramenta falhou com o erro: ${e.message}` } });
+            toolResults.push({ call, output: { error: `A ferramenta falhou com o erro: ${e.message}` } });
           }
         }
-        llmResponse = await copilotPrompt({ query: input.query }, { tools: toolResults });
+        
+        // Add tool execution results to history.
+        history.push({
+          role: 'tool',
+          content: toolResults.map((result) => ({
+            toolResponse: { name: result.call.tool, response: result.output },
+          })),
+        });
+
+        // Continue the loop to let the model process the tool results.
       } else {
+        // No more tool calls, so we have a final answer.
         return { response: llmResponse.text ?? "Não foi possível obter uma resposta do assistente. Tente novamente." };
       }
     }
     
-    return { response: "O assistente não conseguiu chegar a uma resposta final. Tente reformular sua pergunta." };
+    return { response: "O assistente não conseguiu chegar a uma resposta final." };
   }
 );
 
