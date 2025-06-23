@@ -17,7 +17,7 @@ import {
   type CopilotOutput,
 } from '@/ai/schemas/copilot-schemas';
 import axios from 'axios';
-import { type MessageData } from '@genkit-ai/ai/model';
+import { type MessageData, type Part } from '@genkit-ai/ai/model';
 
 export type { CopilotInput, CopilotOutput };
 
@@ -232,7 +232,6 @@ const copilotFlow = ai.defineFlow(
     outputSchema: CopilotOutputSchema,
   },
   async (input) => {
-    const history: MessageData[] = [{ role: 'user', content: [{ text: input.query }] }];
     const tools = [getTrafficInfo, getWeatherInfo, findNearbyPlaces];
     const systemPrompt = `Você é o Copiloto277, um assistente de IA amigável e expert para viajantes no aplicativo Rota Segura.
 - Sua principal função é fornecer informações claras e úteis sobre rotas, trânsito, clima, locais e pedágios.
@@ -243,50 +242,57 @@ const copilotFlow = ai.defineFlow(
 - Mantenha as respostas concisas, mas completas.
 - AVISO: A previsão do tempo ainda está em fase de testes e usa dados de exemplo.`;
 
+    // The history of the conversation.
+    const messages: MessageData[] = [{ role: 'user', content: [{ text: input.query }] }];
+
     for (let i = 0; i < 5; i++) {
+      const lastMessage = messages[messages.length - 1];
+      const history = messages.slice(0, -1);
+
       const llmResponse = await ai.generate({
         model: 'googleai/gemini-2.0-flash',
-        prompt: history,
+        prompt: lastMessage.content,
+        history: history,
         tools: tools,
         system: systemPrompt,
       });
+
+      // Add the model's response to the list of messages.
+      messages.push(llmResponse.message);
 
       // If the model did NOT request a tool, we have the final answer.
       if (!llmResponse.toolCalls || llmResponse.toolCalls.length === 0) {
         return { response: llmResponse.text ?? "Não foi possível obter uma resposta do assistente. Tente novamente." };
       }
 
-      // The model requested a tool. Add the model's request to history.
-      history.push(llmResponse.message);
-
       // Execute the tool calls.
-      const toolResults = [];
-      for (const call of llmResponse.toolCalls) {
-        console.log('Attempting to call tool:', call.tool);
-        const tool = ai.lookupTool(call.tool);
-        if (!tool) {
-          console.error(`Tool not found: ${call.tool}`);
-          toolResults.push({ call, output: { error: `Tool ${call.tool} not found.` } });
-          continue;
-        }
+      const toolResults = await Promise.all(
+        llmResponse.toolCalls.map(async (call) => {
+          console.log('Attempting to call tool:', call.tool);
+          const tool = ai.lookupTool(call.tool);
+          if (!tool) {
+            console.error(`Tool not found: ${call.tool}`);
+            return { call, output: { error: `Tool ${call.tool} not found.` } };
+          }
 
-        try {
-          const output = await tool(call.input);
-          toolResults.push({ call, output });
-        } catch (e: any) {
-          console.error(`Error executing tool ${call.tool}:`, e);
-          toolResults.push({ call, output: { error: `A ferramenta falhou com o erro: ${e.message}` } });
-        }
-      }
-
-      // Add the tool execution results to history.
+          try {
+            const output = await tool(call.input);
+            return { call, output };
+          } catch (e: any) {
+            console.error(`Error executing tool ${call.tool}:`, e);
+            return { call, output: { error: `A ferramenta falhou com o erro: ${e.message}` } };
+          }
+        })
+      );
+      
+      // Add tool results as a new message to the history.
       const toolResponseMessage: MessageData = {
         role: 'tool',
         content: toolResults.map((result) => ({
           toolResponse: { name: result.call.tool, response: result.output },
         })),
       };
-      history.push(toolResponseMessage);
+      messages.push(toolResponseMessage);
       
       // Continue the loop to let the model process the tool results and generate the next response.
     }
