@@ -1,5 +1,7 @@
 {
   "projects": {
     "default": "grupo-br277"
-  }
+  },
+  "targets": {},
+  "etags": {}
 }
