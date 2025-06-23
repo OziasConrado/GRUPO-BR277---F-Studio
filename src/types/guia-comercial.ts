@@ -1,4 +1,5 @@
 
+
 export const businessCategories = [
   "Restaurante", "Borracharia", "Hotel/Pousada", "Posto de Combustível",
   "Oficina Mecânica", "Loja de Peças", "Conveniência", "Mercado", "Outros"

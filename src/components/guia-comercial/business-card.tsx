@@ -79,9 +79,9 @@ export default function BusinessCard({ business }: { business: BusinessData }) {
           objectFit="cover"
           data-ai-hint={business.dataAIImageHint}
         />
-        {!business.isPremium && (
-           <div className="absolute top-2 right-2 bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded-md font-semibold shadow-md">
-            ANÚNCIO
+        {business.isPremium && (
+           <div className="absolute top-2 right-2 bg-green-600 text-white text-xs px-2 py-1 rounded-md font-semibold shadow-md flex items-center gap-1">
+            <StarIcon className="h-3 w-3" /> PREMIUM
           </div>
         )}
          <Badge variant={business.isPremium ? "default" : "secondary"} className="absolute top-2 left-2 shadow-md bg-opacity-80 backdrop-blur-sm">
@@ -101,7 +101,7 @@ export default function BusinessCard({ business }: { business: BusinessData }) {
             )}
         </div>
 
-        {business.isPremium && business.averageRating !== undefined && business.reviewCount !== undefined && (
+        {business.averageRating !== undefined && business.reviewCount !== undefined && (
             <div className="flex items-center gap-2 mt-1.5">
                 <StarDisplay rating={business.averageRating} size={16} />
                 <span className="text-xs text-muted-foreground">
@@ -150,49 +150,27 @@ export default function BusinessCard({ business }: { business: BusinessData }) {
           </Button>
         )}
         
-        {business.isPremium && business.instagramUsername && (
+        {business.instagramUsername && (
             <Button variant="outline" size="sm" onClick={handleInstagramClick} className="w-full bg-pink-500/10 border-pink-500/50 text-pink-700 hover:bg-pink-500/20 hover:text-pink-800 dark:text-pink-400 dark:hover:text-pink-300">
                 <Instagram className="mr-1.5 h-4 w-4" /> Instagram
             </Button>
         )}
 
-        {business.isPremium && (
-             <Button variant="outline" size="sm" onClick={handleReviewClick} className="w-full">
-                <Edit3 className="mr-1.5 h-4 w-4" /> Avaliar
-            </Button>
-        )}
-
-        {(!business.phone && !business.whatsapp && (!business.isPremium || !business.instagramUsername)) && (
-            <Button variant="link" size="sm" className="col-span-2 text-muted-foreground cursor-default opacity-70" disabled>
-                Nenhum contato direto
-            </Button>
-        )}
         
-        {/* Logic to ensure the "Ver Detalhes" button spans correctly */}
+         <Button variant="outline" size="sm" onClick={handleReviewClick} className="w-full">
+            <Edit3 className="mr-1.5 h-4 w-4" /> Avaliar
+        </Button>
+        
         <Button 
             variant="default" 
             size="sm"
-            className={cn(
-                "w-full",
-                // Span 2 if it's the only button or if other buttons leave an even number of slots
-                (!business.phone && !business.whatsapp && (!business.isPremium || !business.instagramUsername)) ||
-                (business.phone && business.whatsapp && business.isPremium && business.instagramUsername) || // All 4 present
-                (business.phone && business.whatsapp && !business.isPremium) || // Only call & WA
-                (!business.phone && !business.whatsapp && business.isPremium && business.instagramUsername) // Only IG & Review
-                ? "col-span-2 mt-2" 
-                : "w-full" 
-            )}
-            onClick={() => toast({title: "Ver Detalhes", description: "Página de detalhes em breve!"})}
+            className="w-full col-span-2 mt-2"
+            onClick={handleNavigate}
         >
-            <ExternalLink className="mr-1.5 h-4 w-4" />
-            Ver Detalhes
+            <Navigation className="mr-1.5 h-4 w-4" />
+            Navegar até o Local
         </Button>
       </CardFooter>
-      {!business.isPremium && (
-        <div className="h-12 bg-muted/20 border-t flex items-center justify-center text-xs text-muted-foreground">
-            Espaço para Anúncio no Card (Ex: 300x25)
-        </div>
-      )}
     </Card>
   );
 }

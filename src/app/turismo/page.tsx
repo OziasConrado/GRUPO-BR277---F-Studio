@@ -13,10 +13,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import React from 'react';
 import { firestore } from '@/lib/firebase/client';
 import { collection, getDocs, query, where, orderBy, Timestamp } from 'firebase/firestore';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // Added Alert imports
-import { cn } from '@/lib/utils'; // Added cn import
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; 
+import { cn } from '@/lib/utils';
 
-const AdPlaceholder = ({ className }: { className?: string }) => ( // Modified AdPlaceholder
+const AdPlaceholder = ({ className }: { className?: string }) => ( 
   <div className={cn("my-4 p-4 rounded-xl bg-muted/30 border border-dashed h-24 flex items-center justify-center col-span-1 md:col-span-2 lg:col-span-3", className)}>
     <p className="text-muted-foreground text-sm">Espaço para Banner AdMob (Ex: 320x50 ou Responsivo)</p>
   </div>
@@ -193,7 +193,7 @@ export default function TurismoPage() {
             {accommodations.map((business, index) => (
               <React.Fragment key={`${business.id}-fragment`}>
                 <BusinessCard key={business.id} business={business} />
-                {(index + 1) % 3 === 0 && index < accommodations.length - 1 && <AdPlaceholder />}
+                {(index + 1) % 2 === 0 && index < accommodations.length - 1 && <AdPlaceholder className="md:col-span-2" />}
               </React.Fragment>
             ))}
           </div>
