@@ -26,7 +26,7 @@ import {
   Loader2
 } from 'lucide-react';
 
-import PostCard, { type PostCardProps, type PostReactions } from '@/components/feed/post-card';
+import PostCard, { type PostCardProps } from '@/components/feed/post-card';
 import StoryCircle, { type StoryCircleProps } from '@/components/stories/StoryCircle';
 import StoryViewerModal from '@/components/stories/StoryViewerModal';
 import EmergencyButtonModalTrigger from '@/components/common/emergency-button';
@@ -41,30 +41,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useAuth } from '@/contexts/AuthContext';
 import { firestore } from '@/lib/firebase/client';
-import { collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp, Timestamp, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp } from 'firebase/firestore';
 
 
-// Mocks and Constants
-const defaultReactions: PostReactions = {
-  thumbsUp: 0,
-  thumbsDown: 0,
-};
-
-const MOCK_POST_USER_NAMES = [
-  'Carlos Caminhoneiro',
-  'Ana Viajante',
-  'Rota Segura Admin',
-  'Mariana Logística',
-  'Pedro Estradeiro',
-  'Segurança Rodoviária',
-  'João Silva',
-  'Você',
-  'Ana Souza',
-  'Carlos Santos',
-  'Ozias Conrado',
-];
-
-// Mock data for User Video Stories - Stays as mock for now
+// Mocks and Constants - User Video stories will be integrated in Step 3
 const mockUserVideoStories: StoryCircleProps[] = [
   {
     id: 'user-story-1',
@@ -88,30 +68,6 @@ const mockUserVideoStories: StoryCircleProps[] = [
     avatarUrl: 'https://placehold.co/180x320.png',
     dataAIAvatarHint: 'driver giving tips',
     hasNewStory: false,
-    storyType: 'video',
-  },
-  {
-    id: 'user-story-4',
-    adminName: 'Alerta da @MariLog',
-    avatarUrl: 'https://placehold.co/180x320.png',
-    dataAIAvatarHint: 'road traffic alert',
-    hasNewStory: true,
-    storyType: 'video',
-  },
-  {
-    id: 'user-story-5',
-    adminName: 'Manobra do @JoaoS',
-    avatarUrl: 'https://placehold.co/180x320.png',
-    dataAIAvatarHint: 'truck maneuvering',
-    hasNewStory: false,
-    storyType: 'video',
-  },
-  {
-    id: 'user-story-6',
-    adminName: 'Fim de Tarde com @Ozias',
-    avatarUrl: 'https://placehold.co/180x320.png',
-    dataAIAvatarHint: 'sunset over fields',
-    hasNewStory: true,
     storyType: 'video',
   },
 ];
@@ -145,8 +101,6 @@ export default function FeedPage() {
   const [currentPostType, setCurrentPostType] = useState<'text' | 'video' | 'image' | 'alert'>('text');
   const [isAlertTypeModalOpen, setIsAlertTypeModalOpen] = useState(false);
   const [selectedAlertType, setSelectedAlertType] = useState<string | undefined>(undefined);
-  const [userVideoStories, setUserVideoStories] = useState<StoryCircleProps[]>(mockUserVideoStories);
-
 
   // Hooks
   const { toast } = useToast();
@@ -154,18 +108,19 @@ export default function FeedPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Fetch Posts
-  const fetchPosts = useCallback(async () => {
+  // Real-time Posts Fetch
+  useEffect(() => {
     if (!firestore) {
-        console.error("Firestore not initialized");
-        setLoadingPosts(false);
-        return;
+      console.error("Firestore not initialized for posts");
+      setLoadingPosts(false);
+      return;
     }
     setLoadingPosts(true);
-    try {
-      const postsCollection = collection(firestore, 'posts');
-      const q = query(postsCollection, orderBy('timestamp', 'desc'), limit(10));
-      const querySnapshot = await getDocs(q);
+
+    const postsCollection = collection(firestore, 'posts');
+    const q = query(postsCollection, orderBy('timestamp', 'desc'), limit(20));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedPosts: PostCardProps[] = querySnapshot.docs.map(doc => {
         const data = doc.data();
         return {
@@ -176,26 +131,28 @@ export default function FeedPage() {
           userLocation: data.userLocation || 'Local Desconhecido',
           timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
           text: data.text || '',
-          imageUrl: data.imageUrl,
+          imageUrl: data.imageUrl, // Will be used in Step 3
           dataAIImageHint: data.dataAIImageHint,
-          uploadedImageUrl: data.uploadedImageUrl, // Ensure this is fetched if used
-          dataAIUploadedImageHint: data.dataAIUploadedImageHint, // Ensure this is fetched
-          reactions: data.reactions || { ...defaultReactions },
-          commentsData: data.commentsData || [],
-          allKnownUserNames: MOCK_POST_USER_NAMES,
+          uploadedImageUrl: data.uploadedImageUrl, // Will be used in Step 3
+          dataAIUploadedImageHint: data.dataAIUploadedImageHint,
+          reactions: data.reactions || { thumbsUp: 0, thumbsDown: 0 },
+          commentsData: data.commentsData || [], // Will be integrated in Step 4
           bio: data.bio || 'Usuário da comunidade Rota Segura.',
           instagramUsername: data.instagramUsername,
           cardStyle: data.cardStyle,
         } as PostCardProps;
       });
       setPosts(fetchedPosts);
-    } catch (error) {
-      console.error("Error fetching posts: ", error);
-      toast({ variant: "destructive", title: "Erro ao Carregar Posts", description: "Não foi possível buscar os posts do servidor." });
-    } finally {
       setLoadingPosts(false);
-    }
+    }, (error) => {
+      console.error("Error fetching posts in real-time: ", error);
+      toast({ variant: "destructive", title: "Erro ao Carregar Posts", description: "Não foi possível buscar os posts." });
+      setLoadingPosts(false);
+    });
+
+    return () => unsubscribe();
   }, [toast]);
+
 
   // Real-time Alerts Fetch
   useEffect(() => {
@@ -232,32 +189,8 @@ export default function FeedPage() {
       setLoadingAlerts(false);
     });
 
-    return () => unsubscribe(); // Cleanup listener on component unmount
+    return () => unsubscribe();
   }, [toast]);
-
-
-  // Effects
-  useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts]);
-
-  useEffect(() => {
-    const style = document.createElement('style');
-    const css = [
-      '.no-scrollbar::-webkit-scrollbar {',
-      '  display: none;',
-      '}',
-      '.no-scrollbar {',
-      '  -ms-overflow-style: none;',
-      '  scrollbar-width: none;',
-      '}',
-    ].join('\n');
-    style.innerHTML = css;
-    document.head.appendChild(style);
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
 
   // Handlers
   const handleStoryClick = (story: StoryCircleProps) => {
@@ -272,16 +205,12 @@ export default function FeedPage() {
         toast({
           variant: 'destructive',
           title: 'Arquivo muito grande',
-          description: `O tamanho máximo é 5MB. Considere cortar o ${file.type.startsWith('video/') ? 'vídeo' : 'arquivo'} ou usar um formato mais compacto. Tipo: ${file.type}`,
+          description: `O tamanho máximo é 5MB.`,
         });
         if (fileInputRef.current) fileInputRef.current.value = '';
         return;
       }
-      if (currentPostType === 'video' && !file.type.startsWith('video/')) {
-         toast({ variant: 'destructive', title: 'Tipo de arquivo inválido', description: 'Por favor, selecione um vídeo.' });
-         if (fileInputRef.current) fileInputRef.current.value = '';
-         return;
-      }
+      // For now, we only handle image selection. Video will be in Step 3.
       if (currentPostType === 'image' && !file.type.startsWith('image/')) {
          toast({ variant: 'destructive', title: 'Tipo de arquivo inválido', description: 'Por favor, selecione uma imagem.' });
          if (fileInputRef.current) fileInputRef.current.value = '';
@@ -295,7 +224,7 @@ export default function FeedPage() {
         setImagePreviewUrl(reader.result as string);
       };
       reader.readAsDataURL(file);
-      setSelectedPostBackground(backgroundOptions[0]); // Reset background if image is selected
+      setSelectedPostBackground(backgroundOptions[0]);
     }
   };
 
@@ -318,7 +247,7 @@ export default function FeedPage() {
     }
 
     if (newPostText.trim() === '' && !selectedImageForUpload && currentPostType !== 'alert') {
-      toast({ variant: 'destructive', title: 'Publicação vazia', description: 'Escreva algo ou adicione uma imagem/vídeo para publicar.'});
+      toast({ variant: 'destructive', title: 'Publicação vazia', description: 'Escreva algo ou adicione uma imagem para publicar.'});
       return;
     }
   
@@ -332,57 +261,38 @@ export default function FeedPage() {
             type: selectedAlertType,
             description: newPostText.trim(),
             userNameReportedBy: currentUser.displayName || 'Usuário Anônimo',
-            userAvatarUrl: currentUser.photoURL || 'https://placehold.co/40x40.png',
+            userAvatarUrl: currentUser.photoURL || undefined,
             dataAIAvatarHint: 'user avatar',
             userId: currentUser.uid,
             timestamp: serverTimestamp(),
-            bio: "Usuário do Rota Segura",
+            bio: "Usuário do Rota Segura", // This could be fetched from user profile later
+            instagramUsername: '', // This too
         };
         await addDoc(collection(firestore, 'alerts'), alertData);
         toast({ title: "Alerta Publicado!", description: "Seu alerta foi adicionado ao mural." });
-        // No need to call fetchAlerts() anymore, onSnapshot will handle it.
         setSelectedAlertType(undefined);
       } catch (error) {
         console.error("Error publishing alert: ", error);
         toast({ variant: 'destructive', title: 'Erro ao Publicar Alerta', description: 'Não foi possível salvar o alerta.' });
       }
-    } else if (currentPostType === 'video') {
-        if (selectedImageForUpload && imagePreviewUrl) {
-            const newVideoStory: StoryCircleProps = {
-                id: `user-story-${Date.now()}`,
-                adminName: newPostText.trim() ? `Vídeo de @Você: ${newPostText.trim()}` : 'Seu Novo Vídeo',
-                avatarUrl: 'https://placehold.co/180x320.png', 
-                dataAIAvatarHint: newPostText.trim() || 'user uploaded video',
-                hasNewStory: true,
-                storyType: 'video',
-                videoContentUrl: imagePreviewUrl, 
-            };
-            setUserVideoStories(prevStories => [newVideoStory, ...prevStories]);
-            toast({ title: "Vídeo Publicado!", description: "Seu Reel foi adicionado." });
-        } else {
-            toast({ variant: 'destructive', title: 'Nenhum vídeo selecionado', description: 'Por favor, selecione um arquivo de vídeo para publicar como Reel.'});
-            return;
-        }
-    } else { 
+    } else { // Handle text and image posts
+      // Note: Image upload to Storage will happen in Step 3. For now, we only save text.
       const postDataToSave: any = {
         userId: currentUser.uid,
         userName: currentUser.displayName || 'Usuário Anônimo',
-        userAvatarUrl: currentUser.photoURL || 'https://placehold.co/40x40.png',
+        userAvatarUrl: currentUser.photoURL || undefined,
         dataAIAvatarHint: 'user avatar',
-        userLocation: 'Sua Localização', 
+        userLocation: 'Sua Localização', // TODO: Implement location fetching
         timestamp: serverTimestamp(),
         text: newPostText,
-        reactions: { ...defaultReactions },
+        reactions: { thumbsUp: 0, thumbsDown: 0 },
         commentsData: [],
-        bio: 'Este é o seu perfil.',
-        instagramUsername: '',
+        bio: 'Este é o seu perfil.', // TODO: Fetch from profile
+        instagramUsername: '', // TODO: Fetch from profile
       };
-
-      if (selectedImageForUpload && imagePreviewUrl && currentPostType === 'image') {
-        postDataToSave.uploadedImageUrl = imagePreviewUrl;
-        postDataToSave.dataAIUploadedImageHint = 'user uploaded image';
-        toast({ title: "Post com Imagem (Texto Salvo)", description: "O texto foi salvo. O upload de imagens será implementado em breve." });
-      } else if (currentPostType === 'text' && newPostText.length <= 150 && selectedPostBackground?.name !== 'Padrão') {
+      
+      // Add cardStyle for short, colored text posts
+      if (currentPostType === 'text' && !selectedImageForUpload && newPostText.length <= 150 && selectedPostBackground?.name !== 'Padrão') {
         postDataToSave.cardStyle = {
           backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
           backgroundImage: selectedPostBackground.gradient,
@@ -390,16 +300,24 @@ export default function FeedPage() {
           name: selectedPostBackground.name,
         };
       }
+
+      // In Step 3, we'll handle the 'uploadedImageUrl' field here after uploading the image to Storage.
+      // For now, we just acknowledge an image was selected but don't save it.
+      if (selectedImageForUpload) {
+        postDataToSave.dataAIUploadedImageHint = 'user uploaded image'; // Placeholder for future use
+      }
+
       try {
         await addDoc(collection(firestore, 'posts'), postDataToSave);
         toast({ title: "Publicado!", description: "Sua postagem está na Time Line." });
-        fetchPosts();
+        // No need to call fetchPosts(), onSnapshot will handle it.
       } catch (error) {
         console.error("Error publishing post: ", error);
         toast({ variant: 'destructive', title: 'Erro ao Publicar', description: 'Não foi possível salvar sua postagem.' });
       }
     }
   
+    // Reset form state
     setNewPostText('');
     setSelectedImageForUpload(null);
     setImagePreviewUrl(null);
@@ -540,32 +458,24 @@ export default function FeedPage() {
                     variant="outline"
                     size="sm"
                     className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1"
-                    onClick={() => {
-                        handleOpenAlertTypeModal();
-                    }}
+                    onClick={handleOpenAlertTypeModal}
                     title="Postar Alerta"
                   >
                     <Edit3 className="h-4 w-4" /> 
                     Alertas
                   </Button>
+                  {/* Video upload will be implemented in Step 3 */}
                   <Button
                     variant="outline"
                     size="sm"
                     className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1"
-                    onClick={() => {
-                      setCurrentPostType('video');
-                      handleRemoveImage(); 
-                      setSelectedPostBackground(backgroundOptions[0]); 
-                      if (fileInputRef.current) {
-                        fileInputRef.current.accept = "video/*";
-                        fileInputRef.current.click();
-                      }
-                    }}
+                    onClick={() => toast({ title: "Em Breve", description: "O upload de vídeos será implementado no próximo passo."})}
                     title="Postar Vídeo"
                   >
                     <Video className="h-4 w-4" />
                     Vídeo
                   </Button>
+                  {/* Image upload will be fully implemented in Step 3 */}
                   <Button
                     variant="outline"
                     size="sm"
@@ -609,7 +519,7 @@ export default function FeedPage() {
         </CardContent>
       </Card>
 
-      {/* Seção de Reels (antigas Destaque/Admin Stories) */}
+      {/* Seção de Reels (mantida como mock por enquanto) */}
       <div className="mb-3 mt-4">
         <div className="px-1">
             <h2 className="text-xl font-bold font-headline flex items-center mb-3 text-foreground">
@@ -618,13 +528,13 @@ export default function FeedPage() {
             </h2>
         </div>
         <div className="flex overflow-x-auto space-x-2 pb-3 -mx-4 px-4 no-scrollbar">
-            {userVideoStories.map((story) => (
+            {mockUserVideoStories.map((story) => (
             <StoryCircle key={story.id} {...story} onClick={() => handleStoryClick(story)} />
             ))}
         </div>
       </div>
 
-      {/* Seção de Alertas Recentes */}
+      {/* Seção de Alertas Recentes (Real-time) */}
       {loadingAlerts ? (
         <div className="flex justify-center items-center h-24">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
