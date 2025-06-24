@@ -41,7 +41,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useAuth } from '@/contexts/AuthContext';
 import { firestore } from '@/lib/firebase/client';
-import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp, where } from 'firebase/firestore';
 
 
 // Mocks and Constants - User Video stories will be integrated in Step 3
@@ -118,13 +118,14 @@ export default function FeedPage() {
     setLoadingPosts(true);
 
     const postsCollection = collection(firestore, 'posts');
-    const q = query(postsCollection, orderBy('timestamp', 'desc'), limit(20));
+    const q = query(postsCollection, where("deleted", "==", false), orderBy('timestamp', 'desc'), limit(20));
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedPosts: PostCardProps[] = querySnapshot.docs.map(doc => {
         const data = doc.data();
         return {
           id: doc.id,
+          userId: data.userId, // Pass userId
           userName: data.userName || 'Usuário Anônimo',
           userAvatarUrl: data.userAvatarUrl || 'https://placehold.co/40x40.png',
           dataAIAvatarHint: data.dataAIAvatarHint || 'user avatar',
@@ -139,13 +140,14 @@ export default function FeedPage() {
           bio: data.bio || 'Usuário da comunidade Rota Segura.',
           instagramUsername: data.instagramUsername,
           cardStyle: data.cardStyle,
+          edited: data.edited || false,
         } as PostCardProps;
       });
       setPosts(fetchedPosts);
       setLoadingPosts(false);
     }, (error) => {
       console.error("Error fetching posts in real-time: ", error);
-      toast({ variant: "destructive", title: "Erro ao Carregar Posts", description: "Não foi possível buscar os posts." });
+      toast({ variant: "destructive", title: "Erro ao Carregar Posts", description: "Não foi possível buscar os posts. Tente recarregar a página." });
       setLoadingPosts(false);
     });
 
@@ -287,6 +289,8 @@ export default function FeedPage() {
         reactions: { thumbsUp: 0, thumbsDown: 0 },
         bio: 'Este é o seu perfil.', // TODO: Fetch from profile
         instagramUsername: '', // TODO: Fetch from profile
+        edited: false,
+        deleted: false,
       };
       
       // Add cardStyle for short, colored text posts

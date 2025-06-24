@@ -50,6 +50,7 @@ import {
   increment,
   getDoc,
   Timestamp,
+  updateDoc,
 } from 'firebase/firestore';
 
 
@@ -72,6 +73,7 @@ export interface PostReactions {
 
 export interface PostCardProps {
   id: string;
+  userId: string;
   userName: string;
   userAvatarUrl?: string | StaticImageData;
   dataAIAvatarHint?: string;
@@ -91,6 +93,7 @@ export interface PostCardProps {
     backgroundImage?: string;
     name: string;
   };
+  edited?: boolean;
 }
 
 
@@ -149,6 +152,7 @@ const renderTextWithMentions = (text: string, knownUsers: string[]): React.React
 
 export default function PostCard({
   id: postId,
+  userId,
   userName,
   userAvatarUrl,
   dataAIAvatarHint,
@@ -163,6 +167,7 @@ export default function PostCard({
   bio,
   instagramUsername,
   cardStyle,
+  edited,
 }: PostCardProps) {
   const { currentUser } = useAuth();
   const { toast } = useToast();
@@ -184,12 +189,16 @@ export default function PostCard({
   const [selectedUserProfile, setSelectedUserProfile] = useState<UserProfileData | null>(null);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [selectedPostImage, setSelectedPostImage] = useState<string | StaticImageData | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedText, setEditedText] = useState(text);
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   
   // Refs
   const footerTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Derived state and constants
   const timestamp = useMemo(() => formatDistanceToNow(parseISO(initialTimestamp), { addSuffix: true, locale: ptBR }), [initialTimestamp]);
+  const isAuthor = currentUser?.uid === userId;
   const MAX_CHARS = 130;
   const needsTruncation = text.length > MAX_CHARS;
   const textToShow = isTextExpanded ? text : text.substring(0, MAX_CHARS);
@@ -304,6 +313,54 @@ export default function PostCard({
         toast({ variant: "destructive", title: "Erro ao Comentar", description: "Não foi possível salvar seu comentário." });
     }
   };
+  
+  const handleUpdatePost = async () => {
+    if (!isAuthor || !firestore) return;
+
+    const postRef = doc(firestore, "posts", postId);
+    try {
+      await updateDoc(postRef, {
+        text: editedText,
+        edited: true,
+        editedAt: serverTimestamp(),
+      });
+      toast({
+        title: "Post Atualizado",
+        description: "Sua publicação foi atualizada com sucesso.",
+      });
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Error updating post: ", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao Atualizar",
+        description: "Não foi possível salvar as alterações.",
+      });
+    }
+  };
+
+  const handleDeletePost = async () => {
+    if (!isAuthor || !firestore) return;
+    const postRef = doc(firestore, "posts", postId);
+    try {
+      await updateDoc(postRef, {
+        deleted: true,
+      });
+      toast({
+        title: "Post Excluído",
+        description: "Sua publicação foi removida do feed.",
+      });
+      // The component will be unmounted automatically by the parent's onSnapshot listener filter
+    } catch (error) {
+      console.error("Error deleting post: ", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao Excluir",
+        description: "Não foi possível excluir a publicação.",
+      });
+    }
+    setIsDeleteAlertOpen(false);
+  };
 
   const handleAvatarOrNameClick = () => {
     setSelectedUserProfile({
@@ -400,12 +457,28 @@ export default function PostCard({
               <PostCardTitleUI className={cn("text-base font-headline", headerTextColor)} style={cardStyle ? { color: cardStyle.color } : {}}>{userName}</PostCardTitleUI>
               {userLocation && <p className={cn("text-xs", mutedTextColor)} style={cardStyle ? { color: cardStyle.color, opacity: 0.8 } : {}}>{userLocation}</p>}
             </div>
-            <p className={cn("text-xs whitespace-nowrap pl-2", mutedTextColor)} style={cardStyle ? { color: cardStyle.color, opacity: 0.8 } : {}}>{timestamp}</p>
+            <div className="flex items-center gap-1">
+                {edited && <span className={cn("text-xs", mutedTextColor)} style={cardStyle ? { color: cardStyle.color, opacity: 0.8 } : {}}>(Editado)</span>}
+                <p className={cn("text-xs whitespace-nowrap pl-2", mutedTextColor)} style={cardStyle ? { color: cardStyle.color, opacity: 0.8 } : {}}>{timestamp}</p>
+            </div>
           </div>
         </CardHeader>
 
         <CardContent className={cn("p-4 pt-0", cardStyle && "flex flex-col items-center justify-center text-center min-h-[280px]")}>
-          {cardStyle ? (
+          {isEditing ? (
+             <div className="space-y-2">
+                <Textarea
+                  value={editedText}
+                  onChange={(e) => setEditedText(e.target.value)}
+                  className="min-h-[120px] bg-background text-foreground"
+                  autoFocus
+                />
+                <div className="flex justify-end gap-2">
+                  <Button variant="ghost" onClick={() => setIsEditing(false)}>Cancelar</Button>
+                  <Button onClick={handleUpdatePost}>Salvar</Button>
+                </div>
+              </div>
+          ) : cardStyle ? (
             text && <p className="text-2xl font-bold leading-tight" style={{ color: cardStyle.color }}>{renderTextWithMentions(text, MOCK_USER_NAMES_FOR_MENTIONS)}</p>
           ) : (
             <>
@@ -446,18 +519,22 @@ export default function PostCard({
                   </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                  <DropdownMenuItem>
-                      <Edit3 className="mr-2 h-4 w-4" />
-                      <span>Editar post</span>
-                  </DropdownMenuItem>
+                  {isAuthor && (
+                    <>
+                      <DropdownMenuItem onClick={() => { setIsEditing(true); setEditedText(text); }}>
+                          <Edit3 className="mr-2 h-4 w-4" />
+                          <span>Editar post</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => setIsDeleteAlertOpen(true)}>
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          <span>Excluir post</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   <DropdownMenuItem onClick={() => setIsReportModalOpen(true)}>
                       <Flag className="mr-2 h-4 w-4" />
                       <span>Sinalizar conteúdo</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      <span>Excluir post</span>
                   </DropdownMenuItem>
               </DropdownMenuContent>
           </DropdownMenu>
@@ -526,6 +603,23 @@ export default function PostCard({
               <AlertDialogAction onClick={handleReportSubmit}>Enviar Denúncia</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <RadixAlertDialogTitle>Confirmar Exclusão</RadixAlertDialogTitle>
+            <AlertDialogDescription>
+              Você tem certeza que deseja excluir esta publicação? Esta ação não pode ser desfeita e removerá o post do feed permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeletePost} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
       </AlertDialog>
 
       <UserProfileModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} user={selectedUserProfile} />
