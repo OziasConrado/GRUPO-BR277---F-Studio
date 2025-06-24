@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -32,11 +32,16 @@ export default function DeclaracaoTransportePage() {
   const [destino, setDestino] = useState('');
   const [descricaoCarga, setDescricaoCarga] = useState('');
   const [pesoCarga, setPesoCarga] = useState('');
-  const [dataTransporte, setDataTransporte] = useState<Date | undefined>(new Date());
+  const [dataTransporte, setDataTransporte] = useState<Date | undefined>(undefined);
   const [declaracaoGerada, setDeclaracaoGerada] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Evita erro de hidratação no servidor
+    setDataTransporte(new Date());
+  }, []);
 
   const handleGerarDeclaracao = () => {
     setErrorMessage(null);
@@ -236,5 +241,3 @@ Assinatura: __________________________
     </div>
   );
 }
-
-    

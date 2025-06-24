@@ -16,8 +16,7 @@ import {
   CopilotOutputSchema,
   type CopilotOutput,
 } from '@/ai/schemas/copilot-schemas';
-import axios from 'axios';
-import { type MessageData, type Part } from '@genkit-ai/ai/model';
+import { type MessageData } from '@genkit-ai/ai/model';
 
 export type { CopilotInput, CopilotOutput };
 
@@ -31,13 +30,14 @@ async function geocode(address: string): Promise<{ lat: number; lng: number } | 
     }
 
     try {
-        const response = await axios.get('https://maps.googleapis.com/maps/api/geocode/json', {
-            params: { address, key: apiKey }
-        });
-        if (response.data.status === 'OK' && response.data.results.length > 0) {
-            return response.data.results[0].geometry.location;
+        const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.status === 'OK' && data.results.length > 0) {
+            return data.results[0].geometry.location;
         }
-        console.warn(`Geocoding failed for ${address}:`, response.data.status);
+        console.warn(`Geocoding failed for ${address}:`, data.status);
         return null;
     } catch (error) {
         console.error(`Geocoding request failed for ${address}:`, error);
@@ -85,23 +85,35 @@ const getTrafficInfo = ai.defineTool(
                 };
             }
 
-            const response = await axios.post('https://routes.googleapis.com/directions/v2:computeRoutes', {
-                origin: { location: { latLng: originCoords } },
-                destination: { location: { latLng: destinationCoords } },
-                travelMode: 'DRIVE',
-                computeAlternativeRoutes: false,
-                extraComputations: ["TOLLS", "TRAFFIC_ON_POLYLINE"],
-                languageCode: "pt-BR",
-            }, {
+            const response = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Goog-Api-Key': apiKey,
                     'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.travelAdvisory,routes.tollInfo'
-                }
+                },
+                body: JSON.stringify({
+                    origin: { location: { latLng: originCoords } },
+                    destination: { location: { latLng: destinationCoords } },
+                    travelMode: 'DRIVE',
+                    computeAlternativeRoutes: false,
+                    extraComputations: ["TOLLS", "TRAFFIC_ON_POLYLINE"],
+                    languageCode: "pt-BR",
+                })
             });
+            
+            const data = await response.json();
+            
+            if (data.error) {
+                 console.error('Routes API error:', data.error);
+                 return {
+                    travelTime: "desconhecido", distance: "desconhecida",
+                    summary: `Erro ao buscar informações de rota: ${data.error.message || 'Erro de comunicação.'}`, tollCost: 0
+                };
+            }
 
-            if (response.data.routes && response.data.routes.length > 0) {
-                const route = response.data.routes[0];
+            if (data.routes && data.routes.length > 0) {
+                const route = data.routes[0];
                 const distanceKm = (route.distanceMeters / 1000).toFixed(1);
                 const distance = `${distanceKm} km`;
                 
@@ -129,10 +141,10 @@ const getTrafficInfo = ai.defineTool(
                 };
             }
         } catch (error: any) {
-            console.error('Routes API error:', error.response?.data || error.message);
+            console.error('Routes API error:', error);
             return {
                 travelTime: "desconhecido", distance: "desconhecida",
-                summary: `Erro ao buscar informações de rota: ${error.response?.data?.error?.message || 'Erro de comunicação.'}`, tollCost: 0
+                summary: `Erro ao buscar informações de rota: ${error.message || 'Erro de comunicação.'}`, tollCost: 0
             };
         }
     }
@@ -196,19 +208,21 @@ const findNearbyPlaces = ai.defineTool(
                 return { places: [{ name: `Não foi possível encontrar a localização: ${location}`, address: undefined, rating: undefined }] };
             }
 
-            const response = await axios.get('https://maps.googleapis.com/maps/api/place/nearbysearch/json', {
-                params: {
-                    location: `${locationCoords.lat},${locationCoords.lng}`,
-                    radius: 15000,
-                    keyword: query,
-                    key: apiKey,
-                    language: 'pt-BR'
-                }
+            const params = new URLSearchParams({
+                location: `${locationCoords.lat},${locationCoords.lng}`,
+                radius: '15000',
+                keyword: query,
+                key: apiKey,
+                language: 'pt-BR'
             });
+            const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?${params.toString()}`;
+            const response = await fetch(url);
+            const data = await response.json();
 
-            if (response.data.status === 'OK') {
+
+            if (data.status === 'OK') {
                 return {
-                    places: response.data.results.slice(0, 3).map((place: any) => ({
+                    places: data.results.slice(0, 3).map((place: any) => ({
                         name: place.name,
                         address: place.vicinity,
                         rating: place.rating
@@ -218,7 +232,7 @@ const findNearbyPlaces = ai.defineTool(
             return { places: [] };
 
         } catch (error: any) {
-            console.error('Places API error:', error.response?.data || error.message);
+            console.error('Places API error:', error);
             return { places: [] };
         }
     }

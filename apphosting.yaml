@@ -4,6 +4,9 @@
 backendId: grupobr277-v2
 location: us-central1
 
+buildConfig:
+  memoryMiB: 4096
+
 runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.

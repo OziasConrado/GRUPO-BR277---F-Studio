@@ -15,7 +15,7 @@ import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
 import { Alert, AlertTitle, AlertDescription as ShadcnAlertDescription } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator"; // Ensuring Separator is imported
+import { Separator } from "@/components/ui/separator";
 
 const AdPlaceholder = ({ className }: { className?: string }) => (
   <div className={cn("my-6 p-4 rounded-xl bg-muted/30 border border-dashed h-24 flex items-center justify-center", className)}>
@@ -240,5 +240,3 @@ export default function CalculadoraFretePage() {
     </div>
   );
 }
-
-    

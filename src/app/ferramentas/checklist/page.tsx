@@ -102,8 +102,13 @@ export default function ChecklistVeicularPage() {
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
   const [driverName, setDriverName] = useState('');
   const [vehicleInfo, setVehicleInfo] = useState('');
-  const [checklistDate, setChecklistDate] = useState<Date | undefined>(new Date());
+  const [checklistDate, setChecklistDate] = useState<Date | undefined>(undefined);
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Evita erro de hidratação no servidor
+    setChecklistDate(new Date());
+  }, []);
 
   useEffect(() => {
     const loadCheckedItems = () => {
