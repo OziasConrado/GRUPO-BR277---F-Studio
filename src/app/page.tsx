@@ -131,12 +131,11 @@ export default function FeedPage() {
           userLocation: data.userLocation || 'Local Desconhecido',
           timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
           text: data.text || '',
-          imageUrl: data.imageUrl, // Will be used in Step 3
+          imageUrl: data.imageUrl,
           dataAIImageHint: data.dataAIImageHint,
-          uploadedImageUrl: data.uploadedImageUrl, // Will be used in Step 3
+          uploadedImageUrl: data.uploadedImageUrl,
           dataAIUploadedImageHint: data.dataAIUploadedImageHint,
           reactions: data.reactions || { thumbsUp: 0, thumbsDown: 0 },
-          commentsData: data.commentsData || [], // Will be integrated in Step 4
           bio: data.bio || 'Usuário da comunidade Rota Segura.',
           instagramUsername: data.instagramUsername,
           cardStyle: data.cardStyle,
@@ -286,7 +285,6 @@ export default function FeedPage() {
         timestamp: serverTimestamp(),
         text: newPostText,
         reactions: { thumbsUp: 0, thumbsDown: 0 },
-        commentsData: [],
         bio: 'Este é o seu perfil.', // TODO: Fetch from profile
         instagramUsername: '', // TODO: Fetch from profile
       };
