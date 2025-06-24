@@ -13,7 +13,7 @@ import { useNotification } from '@/contexts/NotificationContext';
 import Image from 'next/image'; // For image preview
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
-import { firestore } from '@/lib/firebase/client'; // Import firestore
+import { firestore, storage } from '@/lib/firebase/client'; // Import firestore & storage
 import {
   collection,
   addDoc,
@@ -23,6 +23,7 @@ import {
   serverTimestamp,
   Timestamp // Import Timestamp
 } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const MOCK_CHAT_USER_NAMES = [
     'João Silva', 'Você', 'Ana Souza', 'Carlos Santos', 'Ozias Conrado'
@@ -60,10 +61,14 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   const [newMessage, setNewMessage] = useState('');
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
-
+  const [isRecording, setIsRecording] = useState(false);
+  
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
   const { toast } = useToast();
   const { incrementNotificationCount } = useNotification();
   const { currentUser } = useAuth(); // Get current user
@@ -170,6 +175,99 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     }
   };
 
+  const uploadAudioAndSendMessage = async (audioBlob: Blob) => {
+    if (!currentUser || !firestore || !storage) {
+        toast({ title: "Erro", description: "Não foi possível conectar para enviar o áudio.", variant: "destructive"});
+        return;
+    }
+
+    const uniqueId = `audio_${Date.now()}.webm`;
+    const storageRef = ref(storage, `chat_audio/${currentUser.uid}/${uniqueId}`);
+
+    try {
+        const snapshot = await uploadBytes(storageRef, audioBlob);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+
+        const messageData = {
+            userId: currentUser.uid,
+            senderName: currentUser.displayName || 'Usuário Anônimo',
+            avatarUrl: currentUser.photoURL || `https://placehold.co/40x40.png?text=${currentUser.displayName ? currentUser.displayName.substring(0,1).toUpperCase() : 'U'}`,
+            dataAIAvatarHint: 'user avatar',
+            timestamp: serverTimestamp(),
+            audioUrl: downloadURL,
+            file: { name: "Mensagem de voz", type: 'audio' }
+        };
+
+        await addDoc(collection(firestore, 'chatMessages'), messageData);
+
+    } catch (error) {
+        console.error("Error uploading audio or sending message:", error);
+        toast({ variant: "destructive", title: "Erro ao Enviar Áudio", description: "Não foi possível enviar sua mensagem de voz." });
+    }
+  };
+
+
+  const startRecording = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      toast({
+        variant: "destructive",
+        title: "Não Suportado",
+        description: "Seu navegador não suporta gravação de áudio.",
+      });
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setIsRecording(true);
+      toast({ title: "Gravando...", description: "Clique no microfone novamente para parar e enviar." });
+      mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      audioChunksRef.current = [];
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+            audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorderRef.current.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        stream.getTracks().forEach(track => track.stop());
+        await uploadAudioAndSendMessage(audioBlob);
+      };
+
+      mediaRecorderRef.current.start();
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
+      toast({
+        variant: "destructive",
+        title: "Permissão Negada",
+        description: "Você precisa permitir o acesso ao microfone para enviar mensagens de voz.",
+      });
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      toast({ title: "Gravação Parada", description: "Enviando áudio..." });
+    }
+  };
+
+  const toggleRecording = () => {
+    if (!currentUser) {
+        toast({ title: "Não Autenticado", description: "Você precisa estar logado para gravar áudio.", variant: "destructive" });
+        return;
+    }
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
+
+
   const handleFileUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -217,13 +315,6 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     fileInputRef.current?.click();
   };
 
-  const handleMicClick = () => {
-    toast({
-      title: "Gravação de Áudio",
-      description: "Funcionalidade de gravação de áudio (máx. 1 minuto) ainda não implementada.",
-    });
-  };
-
   const handleTextareaInput = (event: ChangeEvent<HTMLTextAreaElement>) => {
     setNewMessage(event.target.value);
     const textarea = event.target;
@@ -261,7 +352,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
 
         <footer className="p-3 border-t border-border/50 bg-card">
           {imagePreviewUrl && (
-            <div className="relative mb-2 p-2 border rounded-lg bg-muted/30 w-fit"> {/* w-fit to shrink to content */}
+            <div className="relative mb-2 p-2 border rounded-lg bg-muted/30 w-fit">
               <Image src={imagePreviewUrl} alt="Preview" width={80} height={80} className="rounded object-cover" />
               <Button
                 variant="ghost"
@@ -283,23 +374,23 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
                 className="rounded-lg bg-background/70 min-h-[44px] max-h-[120px] resize-none text-base p-2.5 pr-20"
                 rows={1}
                 onKeyPress={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey && !currentUser?.isAnonymous) { // Prevent Enter for anonymous for now
+                  if (e.key === 'Enter' && !e.shiftKey && !currentUser?.isAnonymous) {
                     handleSendMessage(e);
                   }
                 }}
-                disabled={currentUser?.isAnonymous} // Example: disable for anonymous
+                disabled={currentUser?.isAnonymous || isRecording}
               />
               <div className="absolute right-1 bottom-1 flex items-center">
                 <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/png, image/jpeg, image/webp" className="hidden" />
-                <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-primary h-9 w-9" onClick={handleAttachmentClick} disabled={currentUser?.isAnonymous}>
+                <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-primary h-9 w-9" onClick={handleAttachmentClick} disabled={currentUser?.isAnonymous || isRecording}>
                   <Paperclip className="h-5 w-5" />
                 </Button>
                 {(newMessage.trim() === '' && !selectedImageFile) ? (
-                  <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-primary h-9 w-9" onClick={handleMicClick} disabled={currentUser?.isAnonymous}>
+                  <Button type="button" variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-primary h-9 w-9", isRecording && "text-destructive bg-destructive/10 animate-pulse")} onClick={toggleRecording} disabled={currentUser?.isAnonymous}>
                     <Mic className="h-5 w-5" />
                   </Button>
                 ) : (
-                  <Button type="submit" variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground h-9 w-9" disabled={currentUser?.isAnonymous}>
+                  <Button type="submit" variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground h-9 w-9" disabled={currentUser?.isAnonymous || isRecording}>
                     <Send className="h-5 w-5" />
                   </Button>
                 )}

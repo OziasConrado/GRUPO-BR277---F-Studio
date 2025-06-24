@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -48,7 +47,14 @@ const SoundWaveIcon = ({ className, width = "72", height = "22" }: { className?:
 
 
 export default function ChatMessageItem({ message }: { message: ChatMessageData }) {
-  const { senderName, avatarUrl, dataAIAvatarHint, text, imageUrl, dataAIImageHint, file, timestamp, isCurrentUser, textElements } = message;
+  const { senderName, avatarUrl, dataAIAvatarHint, text, imageUrl, dataAIImageHint, file, timestamp, isCurrentUser, textElements, audioUrl } = message;
+
+  const handlePlayAudio = () => {
+    if (audioUrl) {
+      const audio = new Audio(audioUrl as string);
+      audio.play().catch(e => console.error("Error playing audio:", e));
+    }
+  };
 
   const getFileIcon = () => {
     if (!file) return null;
@@ -94,12 +100,15 @@ export default function ChatMessageItem({ message }: { message: ChatMessageData 
         )}
 
         {file && file.type === 'audio' && (
-            <div className={cn(
-                "mt-2 flex items-center p-2.5 rounded-lg cursor-pointer group",
-                isCurrentUser 
-                    ? "bg-accent-foreground/10 hover:bg-accent-foreground/20" 
-                    : "bg-muted/40 hover:bg-muted/60"
-            )}>
+            <div 
+                className={cn(
+                    "mt-2 flex items-center p-2.5 rounded-lg cursor-pointer group",
+                    isCurrentUser 
+                        ? "bg-accent-foreground/10 hover:bg-accent-foreground/20" 
+                        : "bg-muted/40 hover:bg-muted/60"
+                )}
+                onClick={handlePlayAudio}
+            >
                 <PlayCircle className={cn(
                     "h-7 w-7 mr-2.5 flex-shrink-0", 
                     isCurrentUser ? "text-accent-foreground/80 group-hover:text-accent-foreground" : "text-primary group-hover:text-primary/80"
@@ -128,4 +137,3 @@ export default function ChatMessageItem({ message }: { message: ChatMessageData 
     </div>
   );
 }
-
