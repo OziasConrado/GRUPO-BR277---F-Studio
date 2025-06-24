@@ -64,7 +64,7 @@ export default function SAUPage() {
     try {
       // Fetch SAUs
       const sausCollection = collection(firestore, 'sau_locations');
-      const qSaus = query(sausCollection, orderBy('name', 'asc'));
+      const qSaus = query(sausCollection); // REMOVED orderBy to prevent index errors
       const sauSnapshot = await getDocs(qSaus);
       const fetchedSaus: SAULocation[] = sauSnapshot.docs.map(doc => {
         const data = doc.data();
