@@ -109,13 +109,6 @@ const tools: CategorizedTool[] = [
     description: 'Crie links diretos para conversas no WhatsApp.',
     category: 'Empreendedorismo',
   },
-   {
-    title: 'Gerador de Post Promocional (IA)',
-    Icon: Lightbulb, // Using direct Lightbulb here
-    href: '/ferramentas/gerador-post-promocional',
-    description: 'Crie posts chamativos para redes sociais com IA.',
-    category: 'Empreendedorismo',
-  },
   {
     title: 'Gerador de QR Code',
     Icon: QrCode,
