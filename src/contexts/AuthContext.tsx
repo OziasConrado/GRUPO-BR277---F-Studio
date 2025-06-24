@@ -12,8 +12,8 @@ import {
   getRedirectResult,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  sendPasswordResetEmail as firebaseSendPasswordResetEmail, // Renamed to avoid conflict
-  updateProfile as firebaseUpdateProfile, // Renamed
+  sendPasswordResetEmail as firebaseSendPasswordResetEmail,
+  updateProfile as firebaseUpdateProfile,
   type User as FirebaseUser,
   type AuthError,
 } from 'firebase/auth';
@@ -35,8 +35,8 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
-  sendPasswordResetEmail: (email: string) => Promise<void>; // Added
-  updateUserProfile: (data: UpdateUserProfileData) => Promise<void>; // Added
+  sendPasswordResetEmail: (email: string) => Promise<void>;
+  updateUserProfile: (data: UpdateUserProfileData) => Promise<void>;
   signOutUser: () => Promise<void>;
   isAuthenticating: boolean;
 }
@@ -53,11 +53,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!auth) {
-      console.error("AuthContext: Firebase Auth não está inicializado. Verifique a configuração do Firebase.");
+      console.error("AuthContext: Firebase Auth não está inicializado.");
       setLoading(false);
       toast({
         title: "Erro de Configuração",
-        description: "Não foi possível inicializar o sistema de autenticação. Por favor, contate o suporte.",
+        description: "Não foi possível inicializar a autenticação.",
         variant: "destructive",
         duration: Infinity, 
       });
@@ -70,43 +70,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, [auth, toast]);
 
-  // NEW: Effect to handle the result from Google's redirect
   useEffect(() => {
     if (!auth || !firestore) return;
+    if (isAuthenticating || loading) return;
 
-    if (isAuthenticating) return;
+    const processRedirect = async () => {
+        try {
+            const result = await getRedirectResult(auth);
+            if (result) {
+                setIsAuthenticating(true);
+                const user = result.user;
+                const userDocRef = doc(firestore, "Usuarios", user.uid);
+                const userDocSnap = await getDoc(userDocRef);
 
-    getRedirectResult(auth)
-      .then(async (result) => {
-        if (result) {
-          setIsAuthenticating(true);
-          const user = result.user;
-          const userDocRef = doc(firestore, "Usuarios", user.uid);
-          const userDocSnap = await getDoc(userDocRef);
-
-          if (!userDocSnap.exists()) {
-            await setDoc(userDocRef, {
-              uid: user.uid,
-              email: user.email,
-              displayName: user.displayName || user.email?.split('@')[0] || 'Usuário Google',
-              photoURL: user.photoURL || null,
-              createdAt: serverTimestamp(),
-              bio: '',
-              instagramUsername: '',
-            });
-            toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a)! Seu perfil foi criado.' });
-          } else {
-            toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a) de volta!' });
-          }
-          router.push('/');
-          setIsAuthenticating(false);
+                if (!userDocSnap.exists()) {
+                    await setDoc(userDocRef, {
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: user.displayName || user.email?.split('@')[0] || 'Usuário Google',
+                    photoURL: user.photoURL || null,
+                    createdAt: serverTimestamp(),
+                    bio: '',
+                    instagramUsername: '',
+                    });
+                    toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a)! Seu perfil foi criado.' });
+                } else {
+                    toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a) de volta!' });
+                }
+                router.push('/');
+            }
+        } catch(error) {
+            handleAuthError(error as AuthError, 'Erro no Login com Google');
+        } finally {
+            setIsAuthenticating(false);
         }
-      })
-      .catch((error) => {
-        handleAuthError(error, 'Erro no Login com Google');
-        setIsAuthenticating(false);
-      });
-  }, [auth, router, toast, isAuthenticating]);
+    }
+    processRedirect();
+  }, [auth, router, toast, loading]);
 
 
   const handleAuthError = (error: AuthError, customTitle?: string) => {
@@ -264,7 +264,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const authProfileUpdates: { displayName?: string; photoURL?: string } = {};
       const firestoreProfileUpdates: any = {};
 
-      if (data.displayName) {
+      if (data.displayName && data.displayName !== user.displayName) {
         authProfileUpdates.displayName = data.displayName;
         firestoreProfileUpdates.displayName = data.displayName;
       }
@@ -296,17 +296,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await firebaseUpdateProfile(user, authProfileUpdates);
         }
         if (Object.keys(firestoreProfileUpdates).length > 0) {
+          firestoreProfileUpdates.updatedAt = serverTimestamp();
           await updateDoc(userDocRef, firestoreProfileUpdates);
         }
-        setCurrentUser(auth.currentUser); // Atualiza o estado local do currentUser
+        setCurrentUser(auth.currentUser);
         toast({ title: 'Perfil Atualizado!', description: 'Suas informações foram salvas com sucesso.' });
+        router.push('/'); // Navigate to home or profile page after update
       } catch (error) {
         handleAuthError(error as AuthError, 'Erro ao Atualizar Perfil');
       } finally {
         setIsAuthenticating(false);
       }
     },
-    [auth, toast]
+    [auth, toast, router]
   );
 
   const signOutUser = useCallback(async () => {

@@ -72,20 +72,19 @@ export default function EditProfilePage() {
         const fetchProfile = async () => {
             const docRef = doc(firestore, "Usuarios", currentUser.uid);
             const docSnap = await getDoc(docRef);
+            let initialValues = {
+                displayName: currentUser.displayName || '',
+                bio: '',
+                instagramUsername: '',
+                newPhotoFile: undefined,
+            };
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                reset({
-                    displayName: data.displayName || currentUser.displayName || '',
-                    bio: data.bio || '',
-                    instagramUsername: data.instagramUsername || '',
-                    newPhotoFile: undefined,
-                });
-                setImagePreview(data.photoURL || currentUser.photoURL || null);
-            } else {
-                 // Fallback if firestore doc doesn't exist for some reason
-                 reset({ displayName: currentUser.displayName || '' });
-                 setImagePreview(currentUser.photoURL || null);
+                initialValues.bio = data.bio || '';
+                initialValues.instagramUsername = data.instagramUsername || '';
             }
+            reset(initialValues);
+            setImagePreview(currentUser.photoURL || null);
         };
         fetchProfile();
     }
@@ -113,24 +112,12 @@ export default function EditProfilePage() {
     }
   };
 
-  const removeImage = () => {
-    setValue("newPhotoFile", undefined, { shouldValidate: true, shouldDirty: true });
-    // Revert preview to current user's photo if it exists, otherwise null
-    setImagePreview(currentUser?.photoURL || null); 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-
   const onSubmit = async (data: ProfileFormValues) => {
     if (!isDirty) {
       toast({ title: "Nenhuma Alteração", description: "Nenhuma informação foi alterada." });
       return;
     }
     await updateUserProfile(data);
-    // After successful update, we reset the form's dirty state
-    // while keeping the newly submitted values as the new "clean" state.
     reset(data, { keepValues: true, keepDirty: false, keepDefaultValues: false, keepErrors: false });
   };
 
