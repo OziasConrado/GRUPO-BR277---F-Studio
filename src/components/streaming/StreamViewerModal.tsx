@@ -3,7 +3,7 @@
 
 import { Dialog, DialogContent, DialogClose, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
+import { X, MapPin } from 'lucide-react';
 import type { StreamCardProps } from './stream-card';
 
 interface StreamViewerModalProps {
@@ -49,13 +49,10 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
         className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none !bg-black/95 !p-0 flex flex-col !translate-x-0 !translate-y-0"
         onEscapeKeyDown={onClose}
       >
-        <DialogHeader className="shrink-0 p-2 sm:p-3 flex flex-row justify-between items-center bg-black/30 !z-[210]">
+        <DialogHeader className="shrink-0 p-2 sm:p-3 flex flex-row justify-end items-center bg-black/30 !z-[210]">
           <DialogTitle className="sr-only">
             Visualizador de Transmissão: {stream.title}
           </DialogTitle>
-          <div className="text-white text-sm font-medium truncate flex-grow pl-2">
-             {stream.title}
-          </div>
           <DialogClose asChild>
             <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full h-9 w-9 sm:h-10 sm:w-10 !z-[210] flex-shrink-0">
               <X className="h-5 w-5 sm:h-6 sm:h-6" />
@@ -77,6 +74,17 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
             ></iframe>
           </div>
         </div>
+
+        <div className="shrink-0 p-4 text-white">
+            <div className="flex items-center gap-2 mb-1">
+                <MapPin className="h-5 w-5 text-primary-foreground/80 flex-shrink-0" />
+                <h3 className="text-lg font-semibold">{stream.title}</h3>
+            </div>
+            <p className="text-sm text-primary-foreground/70 pl-7">
+                {stream.description}
+            </p>
+        </div>
+
 
         <AdMobSpace />
 
