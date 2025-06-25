@@ -62,7 +62,7 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
         
         <SponsorAdSpace />
 
-        <div className="shrink-0 p-4 text-white">
+        <div className="shrink-0 px-4 pt-4 pb-2 text-white">
             <div className="flex items-center gap-2 mb-1">
                 <MapPin className="h-5 w-5 text-primary-foreground/80 flex-shrink-0" />
                 <h3 className="text-lg font-semibold">{stream.title}</h3>
