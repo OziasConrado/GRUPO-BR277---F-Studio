@@ -62,6 +62,16 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
         
         <SponsorAdSpace />
 
+        <div className="shrink-0 p-4 text-white">
+            <div className="flex items-center gap-2 mb-1">
+                <MapPin className="h-5 w-5 text-primary-foreground/80 flex-shrink-0" />
+                <h3 className="text-lg font-semibold">{stream.title}</h3>
+            </div>
+            <p className="text-sm text-primary-foreground/70 pl-7">
+                {stream.description}
+            </p>
+        </div>
+
         <div className="flex-grow flex items-center justify-center p-1 sm:p-2 overflow-hidden">
           <div className="w-full max-w-4xl mx-auto aspect-video bg-black rounded-md overflow-hidden">
             <iframe
@@ -74,17 +84,6 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
             ></iframe>
           </div>
         </div>
-
-        <div className="shrink-0 p-4 text-white">
-            <div className="flex items-center gap-2 mb-1">
-                <MapPin className="h-5 w-5 text-primary-foreground/80 flex-shrink-0" />
-                <h3 className="text-lg font-semibold">{stream.title}</h3>
-            </div>
-            <p className="text-sm text-primary-foreground/70 pl-7">
-                {stream.description}
-            </p>
-        </div>
-
 
         <AdMobSpace />
 
