@@ -4,7 +4,7 @@
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { PlayCircle, Camera, Search } from 'lucide-react';
+import { PlayCircle, Cctv, Search } from 'lucide-react';
 import StreamFilters from '@/components/streaming/stream-filters';
 import StreamViewerModal from '@/components/streaming/StreamViewerModal';
 import type { StreamCardProps } from '@/components/streaming/stream-card'; 
@@ -274,14 +274,11 @@ export default function StreamingPage() {
             >
               <CardContent className="p-3 flex flex-row items-center gap-4">
                 <div className="w-16 h-16 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center">
-                    <Camera className="h-8 w-8 text-primary"/>
+                    <Cctv className="h-8 w-8 text-primary"/>
                 </div>
                 <div className="flex-grow flex flex-col justify-center self-stretch">
                     <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-semibold font-headline line-clamp-1">{stream.title}</h3>
-                        <Badge variant={stream.isLive ? 'default' : 'secondary'} className={cn("text-xs h-5", stream.isLive ? "bg-green-600 hover:bg-green-700" : "bg-gray-500")}>
-                         {stream.isLive ? 'Online' : 'Offline'}
-                        </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{stream.description}</p>
                 </div>
