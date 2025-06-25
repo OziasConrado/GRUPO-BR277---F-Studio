@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -12,6 +11,7 @@ import { firestore } from '@/lib/firebase/client';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from '@/lib/utils';
+import Link from 'next/link'; // Import Link
 
 const AdPlaceholder = ({ className }: { className?: string }) => (
   <div className={cn("my-4 p-4 rounded-xl bg-muted/30 border border-dashed h-24 flex items-center justify-center col-span-1 md:col-span-2 lg:col-span-3", className)}>
@@ -68,13 +68,6 @@ export default function TurismoPage() {
     });
   };
 
-  const handleViajeParana = () => {
-    toast({
-      title: "Viaje Paraná",
-      description: "Mais informações sobre como viajar pelo Paraná em breve!",
-    });
-  };
-
   return (
     <div className="w-full space-y-8">
       <div className="text-center">
@@ -87,11 +80,13 @@ export default function TurismoPage() {
           variant="outline"
           size="lg"
           className="w-full py-4 h-auto rounded-xl border-2 hover:bg-primary/10 flex flex-col items-center justify-center"
-          onClick={handleViajeParana}
+          asChild // Add asChild to use Link behavior
         >
-          <Map className="h-8 w-8 mb-1 text-primary" />
-          <span className="font-semibold text-base">Viaje Paraná</span>
-          <span className="text-xs text-muted-foreground">Dicas e Roteiros</span>
+          <Link href="/turismo/viaje-parana">
+            <Map className="h-8 w-8 mb-1 text-primary" />
+            <span className="font-semibold text-base">Viaje Paraná</span>
+            <span className="text-xs text-muted-foreground">Dicas e Roteiros</span>
+          </Link>
         </Button>
         <Button
           variant="outline"
