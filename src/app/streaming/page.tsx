@@ -4,10 +4,13 @@
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { PlayCircle } from 'lucide-react';
+import { PlayCircle, Camera, Search } from 'lucide-react';
 import StreamFilters from '@/components/streaming/stream-filters';
 import StreamViewerModal from '@/components/streaming/StreamViewerModal';
 import type { StreamCardProps } from '@/components/streaming/stream-card'; 
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 // Dados fornecidos pelo usuário
 const mockStreamsData: StreamCardProps[] = [
@@ -214,15 +217,21 @@ const mockStreamsData: StreamCardProps[] = [
 
 export default function StreamingPage() {
   const [currentFilter, setCurrentFilter] = useState('Todos');
+  const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedStream, setSelectedStream] = useState<StreamCardProps | null>(null);
 
   const filteredStreams = useMemo(() => {
-    if (currentFilter === 'Todos') {
-      return mockStreamsData;
-    }
-    return mockStreamsData.filter(stream => stream.category === currentFilter);
-  }, [currentFilter]);
+    const lowercasedSearch = searchTerm.toLowerCase();
+    return mockStreamsData
+      .filter(stream =>
+        currentFilter === 'Todos' || stream.category === currentFilter
+      )
+      .filter(stream =>
+        stream.title.toLowerCase().includes(lowercasedSearch) ||
+        stream.description.toLowerCase().includes(lowercasedSearch)
+      );
+  }, [currentFilter, searchTerm]);
 
   const handleWatchStream = (stream: StreamCardProps) => {
     setSelectedStream(stream);
@@ -231,107 +240,67 @@ export default function StreamingPage() {
 
   const streamCategories = ['Todos', ...new Set(mockStreamsData.map(s => s.category))];
 
-  const canEmbedPreview = (url: string) => {
-    const nonEmbeddableHosts = ['cloud.fullcam.me', 'playerv.logicahost.com.br', 'giseleimoveis.com.br'];
-    try {
-      const hostname = new URL(url).hostname;
-      if (nonEmbeddableHosts.some(host => hostname.includes(host))) return false;
-      return true; 
-    } catch (e) {
-      return false; 
-    }
-  };
-  
-  const getAutoplayStreamUrl = (originalUrl: string, forThumbnail: boolean = false) => {
-    try {
-      const url = new URL(originalUrl);
-      if (url.hostname.includes('rtsp.me')) {
-        url.searchParams.set('autoplay', '1');
-        if (forThumbnail) url.searchParams.set('mute', '1');
-        return url.toString();
-      }
-    } catch (e) {
-      // Invalid URL or other issue, return original
-    }
-    return originalUrl;
-  };
-
-
   return (
     <div className="w-full space-y-6">
       <div>
-        <h1 className="text-3xl font-bold font-headline text-center sm:text-left">Live Cam</h1>
-        <p className="text-muted-foreground text-center sm:text-left text-sm">Acompanhe o trânsito AO VIVO 24 horas, entre outros locais e pontos turísticos.</p>
+        <h1 className="text-3xl font-bold font-headline text-center sm:text-left">Câmeras AO VIVO</h1>
+        <p className="text-muted-foreground text-center sm:text-left text-sm">Acompanhe o trânsito 24h, locais e pontos turísticos.</p>
       </div>
       
-      <div className="p-4 rounded-xl bg-card border">
+      <Card className="p-4 rounded-xl">
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Buscar câmera por local, rodovia ou cidade..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 w-full rounded-full h-11 bg-background/70"
+          />
+        </div>
         <StreamFilters 
           currentFilter={currentFilter}
           onFilterChange={setCurrentFilter} 
           streamCategories={streamCategories}
         />
-      </div>
+      </Card>
 
       {filteredStreams.length > 0 ? (
         <div className="space-y-3">
-          {filteredStreams.map((stream) => {
-            const embedPreview = canEmbedPreview(stream.streamUrl);
-            const previewUrl = embedPreview ? getAutoplayStreamUrl(stream.streamUrl, true) : stream.thumbnailUrl;
-
-            return (
-              <Card 
-                key={stream.id} 
-                className="bg-card/70 dark:bg-card/70 backdrop-blur-sm border border-white/10 dark:border-slate-700/10 rounded-lg overflow-hidden"
-              >
-                <CardContent className="p-3 flex flex-row items-start gap-3">
-                  <div className="w-28 sm:w-32 aspect-video rounded-md overflow-hidden relative flex-shrink-0 bg-black/10">
-                    {embedPreview ? (
-                        <iframe
-                        src={previewUrl}
-                        title={`Miniatura: ${stream.title}`}
-                        className="w-full h-full border-0"
-                        sandbox="allow-scripts allow-same-origin allow-presentation"
-                        allow="autoplay; encrypted-media; picture-in-picture" // Added picture-in-picture
-                        scrolling="no"
-                      ></iframe>
-                    ) : (
-                      <img 
-                        src={stream.thumbnailUrl}
-                        alt={`Thumbnail para ${stream.title}`}
-                        className="w-full h-full object-cover"
-                        data-ai-hint={stream.dataAIThumbnailHint || "live stream thumbnail"}
-                      />
-                    )}
-                    {stream.isLive && (embedPreview || (!embedPreview && stream.thumbnailUrl.includes('placehold.co'))) && ( 
-                      <div className="absolute top-1 left-1 bg-red-600 text-white px-1.5 py-0.5 rounded text-[0.6rem] font-bold animate-pulse">
-                        AO VIVO
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex-grow flex flex-col justify-between self-stretch">
-                    <div> 
-                      <h3 className="text-sm sm:text-md font-semibold font-headline line-clamp-2">{stream.title}</h3>
-                      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{stream.description}</p>
+          {filteredStreams.map((stream) => (
+            <Card 
+              key={stream.id} 
+              className="bg-card/70 dark:bg-card/70 backdrop-blur-sm border rounded-lg overflow-hidden"
+            >
+              <CardContent className="p-3 flex flex-row items-center gap-4">
+                <div className="w-16 h-16 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center">
+                    <Camera className="h-8 w-8 text-primary"/>
+                </div>
+                <div className="flex-grow flex flex-col justify-center self-stretch">
+                    <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold font-headline line-clamp-1">{stream.title}</h3>
+                        <Badge variant={stream.isLive ? 'default' : 'secondary'} className={cn("text-xs h-5", stream.isLive ? "bg-green-600 hover:bg-green-700" : "bg-gray-500")}>
+                         {stream.isLive ? 'Online' : 'Offline'}
+                        </Badge>
                     </div>
-                    <div className="self-end"> 
-                      <Button 
-                        variant="default" 
-                        size="sm" 
-                        onClick={() => handleWatchStream(stream)}
-                        className="mt-1.5 rounded-full text-xs py-1 px-3 h-auto" // Adjusted px
-                      >
-                        <PlayCircle className="mr-1 h-4 w-4" /> Assistir
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{stream.description}</p>
+                </div>
+                <div className="flex-shrink-0 self-center"> 
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    onClick={() => handleWatchStream(stream)}
+                    className="rounded-full text-xs py-1 px-3 h-auto"
+                  >
+                    <PlayCircle className="mr-1 h-4 w-4" /> Assistir
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       ) : (
-        <p className="mt-6 text-center text-muted-foreground">Nenhuma transmissão encontrada para esta categoria.</p>
+        <p className="mt-6 text-center text-muted-foreground">Nenhuma câmera encontrada para sua busca.</p>
       )}
 
       {selectedStream && (
@@ -347,4 +316,3 @@ export default function StreamingPage() {
     </div>
   );
 }
-
