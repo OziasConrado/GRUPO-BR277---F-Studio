@@ -40,37 +40,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useAuth } from '@/contexts/AuthContext';
-import { firestore } from '@/lib/firebase/client';
+import { firestore, storage } from '@/lib/firebase/client';
 import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp, where } from 'firebase/firestore';
-
-
-// Mocks and Constants - User Video stories will be integrated in Step 3
-const mockUserVideoStories: StoryCircleProps[] = [
-  {
-    id: 'user-story-1',
-    adminName: 'Vídeo de @CarlosC',
-    avatarUrl: 'https://placehold.co/180x320.png',
-    dataAIAvatarHint: 'truck highway sunset',
-    hasNewStory: true,
-    storyType: 'video',
-  },
-  {
-    id: 'user-story-2',
-    adminName: 'Paisagem da @AnaV',
-    avatarUrl: 'https://placehold.co/180x320.png',
-    dataAIAvatarHint: 'mountain road aerial',
-    hasNewStory: true,
-    storyType: 'video',
-  },
-  {
-    id: 'user-story-3',
-    adminName: 'Dica do @PedroE',
-    avatarUrl: 'https://placehold.co/180x320.png',
-    dataAIAvatarHint: 'driver giving tips',
-    hasNewStory: false,
-    storyType: 'video',
-  },
-];
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 
 const backgroundOptions = [
@@ -91,12 +63,15 @@ export default function FeedPage() {
   const [newPostText, setNewPostText] = useState('');
   
   const [posts, setPosts] = useState<PostCardProps[]>([]);
+  const [reels, setReels] = useState<StoryCircleProps[]>([]);
   const [displayedAlertsFeed, setDisplayedAlertsFeed] = useState<HomeAlertCardData[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [loadingAlerts, setLoadingAlerts] = useState(true);
+  const [loadingReels, setLoadingReels] = useState(true);
 
-  const [selectedImageForUpload, setSelectedImageForUpload] = useState<File | null>(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [selectedMediaForUpload, setSelectedMediaForUpload] = useState<File | null>(null);
+  const [mediaPreviewUrl, setMediaPreviewUrl] = useState<string | null>(null);
   const [selectedPostBackground, setSelectedPostBackground] = useState(backgroundOptions[0]);
   const [currentPostType, setCurrentPostType] = useState<'text' | 'video' | 'image' | 'alert'>('text');
   const [isAlertTypeModalOpen, setIsAlertTypeModalOpen] = useState(false);
@@ -110,34 +85,25 @@ export default function FeedPage() {
 
   // Real-time Posts Fetch
   useEffect(() => {
-    if (!firestore) {
-      console.error("Firestore not initialized for posts");
-      setLoadingPosts(false);
-      return;
-    }
+    if (!firestore) return setLoadingPosts(false);
     setLoadingPosts(true);
 
-    const postsCollection = collection(firestore, 'posts');
-    const q = query(postsCollection, where("deleted", "==", false), orderBy('timestamp', 'desc'), limit(20));
+    const q = query(collection(firestore, 'posts'), where("deleted", "==", false), orderBy('timestamp', 'desc'), limit(20));
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const fetchedPosts: PostCardProps[] = querySnapshot.docs.map(doc => {
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedPosts = snapshot.docs.map(doc => {
         const data = doc.data();
         return {
           id: doc.id,
-          userId: data.userId, // Pass userId
+          userId: data.userId,
           userName: data.userName || 'Usuário Anônimo',
           userAvatarUrl: data.userAvatarUrl || 'https://placehold.co/40x40.png',
-          dataAIAvatarHint: data.dataAIAvatarHint || 'user avatar',
           userLocation: data.userLocation || 'Local Desconhecido',
           timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
           text: data.text || '',
-          imageUrl: data.imageUrl,
-          dataAIImageHint: data.dataAIImageHint,
           uploadedImageUrl: data.uploadedImageUrl,
-          dataAIUploadedImageHint: data.dataAIUploadedImageHint,
           reactions: data.reactions || { thumbsUp: 0, thumbsDown: 0 },
-          bio: data.bio || 'Usuário da comunidade Rota Segura.',
+          bio: data.bio,
           instagramUsername: data.instagramUsername,
           cardStyle: data.cardStyle,
           edited: data.edited || false,
@@ -146,26 +112,48 @@ export default function FeedPage() {
       setPosts(fetchedPosts);
       setLoadingPosts(false);
     }, (error) => {
-      console.error("Error fetching posts in real-time: ", error);
-      toast({ variant: "destructive", title: "Erro ao Carregar Posts", description: "Não foi possível buscar os posts. Tente recarregar a página." });
+      console.error("Error fetching posts:", error);
+      toast({ variant: "destructive", title: "Erro ao Carregar Posts" });
       setLoadingPosts(false);
     });
 
     return () => unsubscribe();
   }, [toast]);
 
+  // Real-time Reels Fetch
+  useEffect(() => {
+    if (!firestore) return setLoadingReels(false);
+    setLoadingReels(true);
+    const q = query(collection(firestore, 'reels'), orderBy('timestamp', 'desc'), limit(15));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const fetchedReels = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                adminName: data.userName,
+                avatarUrl: data.thumbnailUrl || 'https://placehold.co/180x320.png', // You'll need a way to generate thumbnails
+                dataAIAvatarHint: 'video story content',
+                hasNewStory: true,
+                storyType: 'video',
+                videoContentUrl: data.videoUrl
+            } as StoryCircleProps;
+        });
+        setReels(fetchedReels);
+        setLoadingReels(false);
+    }, (error) => {
+      console.error("Error fetching reels:", error);
+      toast({ variant: "destructive", title: "Erro ao Carregar Reels" });
+      setLoadingReels(false);
+    });
+    return () => unsubscribe();
+  }, [toast]);
+
 
   // Real-time Alerts Fetch
   useEffect(() => {
-    if (!firestore) {
-      console.error("Firestore not initialized for alerts");
-      setLoadingAlerts(false);
-      return;
-    }
+    if (!firestore) return setLoadingAlerts(false);
     setLoadingAlerts(true);
-
-    const alertsCollection = collection(firestore, 'alerts');
-    const q = query(alertsCollection, orderBy('timestamp', 'desc'), limit(5));
+    const q = query(collection(firestore, 'alerts'), orderBy('timestamp', 'desc'), limit(5));
     
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedAlerts: HomeAlertCardData[] = querySnapshot.docs.map(doc => {
@@ -175,21 +163,19 @@ export default function FeedPage() {
           type: data.type || 'Alerta',
           description: data.description || '',
           timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
-          userNameReportedBy: data.userNameReportedBy || 'Usuário Anônimo',
-          userAvatarUrl: data.userAvatarUrl || 'https://placehold.co/40x40.png',
-          dataAIAvatarHint: data.dataAIAvatarHint || 'user avatar',
-          bio: data.bio || 'Usuário da comunidade Rota Segura.',
+          userNameReportedBy: data.userNameReportedBy || 'Anônimo',
+          userAvatarUrl: data.userAvatarUrl,
+          bio: data.bio,
           instagramUsername: data.instagramUsername,
         } as HomeAlertCardData;
       });
       setDisplayedAlertsFeed(fetchedAlerts);
       setLoadingAlerts(false);
     }, (error) => {
-      console.error("Error fetching alerts in real-time: ", error);
-      toast({ variant: "destructive", title: "Erro ao Carregar Alertas", description: "Não foi possível buscar os alertas." });
+      console.error("Error fetching alerts:", error);
+      toast({ variant: "destructive", title: "Erro ao Carregar Alertas" });
       setLoadingAlerts(false);
     });
-
     return () => unsubscribe();
   }, [toast]);
 
@@ -199,143 +185,129 @@ export default function FeedPage() {
     setIsStoryModalOpen(true);
   };
 
-  const handleImageInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleMediaInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        toast({
-          variant: 'destructive',
-          title: 'Arquivo muito grande',
-          description: `O tamanho máximo é 5MB.`,
-        });
-        if (fileInputRef.current) fileInputRef.current.value = '';
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
+
+      if (!isImage && !isVideo) {
+        toast({ variant: 'destructive', title: 'Arquivo Inválido', description: 'Por favor, selecione uma imagem ou um vídeo.' });
         return;
       }
-      // For now, we only handle image selection. Video will be in Step 3.
-      if (currentPostType === 'image' && !file.type.startsWith('image/')) {
-         toast({ variant: 'destructive', title: 'Tipo de arquivo inválido', description: 'Por favor, selecione uma imagem.' });
-         if (fileInputRef.current) fileInputRef.current.value = '';
-         return;
+      
+      const MAX_SIZE_MB = isVideo ? 50 : 5; // 50MB for video, 5MB for image
+      if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+        toast({ variant: 'destructive', title: 'Arquivo Muito Grande', description: `O tamanho máximo é ${MAX_SIZE_MB}MB.` });
+        return;
       }
 
-
-      setSelectedImageForUpload(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreviewUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      setCurrentPostType(isVideo ? 'video' : 'image');
+      setSelectedMediaForUpload(file);
+      setMediaPreviewUrl(URL.createObjectURL(file));
       setSelectedPostBackground(backgroundOptions[0]);
     }
   };
 
-  const handleRemoveImage = () => {
-    setSelectedImageForUpload(null);
-    setImagePreviewUrl(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const handlePublishPost = async () => {
-    if (!currentUser) {
-      toast({ variant: 'destructive', title: 'Usuário não autenticado', description: 'Faça login para publicar.' });
-      return;
-    }
-    if (!firestore) {
-        toast({ variant: 'destructive', title: 'Erro de Conexão', description: 'Não foi possível conectar ao servidor.' });
-        return;
-    }
-
-    if (newPostText.trim() === '' && !selectedImageForUpload && currentPostType !== 'alert') {
-      toast({ variant: 'destructive', title: 'Publicação vazia', description: 'Escreva algo ou adicione uma imagem para publicar.'});
-      return;
-    }
-  
-    if (currentPostType === 'alert') {
-      if (!selectedAlertType || !newPostText.trim()) {
-        toast({ variant: 'destructive', title: 'Alerta incompleto', description: 'Selecione um tipo e descreva o alerta.'});
-        return;
-      }
-      try {
-        const alertData: Omit<HomeAlertCardData, 'id' | 'timestamp'> & { userId: string, timestamp: any } = {
-            type: selectedAlertType,
-            description: newPostText.trim(),
-            userNameReportedBy: currentUser.displayName || 'Usuário Anônimo',
-            userAvatarUrl: currentUser.photoURL || undefined,
-            dataAIAvatarHint: 'user avatar',
-            userId: currentUser.uid,
-            timestamp: serverTimestamp(),
-            bio: "Usuário do Rota Segura", // This could be fetched from user profile later
-            instagramUsername: '', // This too
-        };
-        await addDoc(collection(firestore, 'alerts'), alertData);
-        toast({ title: "Alerta Publicado!", description: "Seu alerta foi adicionado ao mural." });
-        setSelectedAlertType(undefined);
-      } catch (error) {
-        console.error("Error publishing alert: ", error);
-        toast({ variant: 'destructive', title: 'Erro ao Publicar Alerta', description: 'Não foi possível salvar o alerta.' });
-      }
-    } else { // Handle text and image posts
-      // Note: Image upload to Storage will happen in Step 3. For now, we only save text.
-      const postDataToSave: any = {
-        userId: currentUser.uid,
-        userName: currentUser.displayName || 'Usuário Anônimo',
-        userAvatarUrl: currentUser.photoURL || undefined,
-        dataAIAvatarHint: 'user avatar',
-        userLocation: 'Sua Localização', // TODO: Implement location fetching
-        timestamp: serverTimestamp(),
-        text: newPostText,
-        reactions: { thumbsUp: 0, thumbsDown: 0 },
-        bio: 'Este é o seu perfil.', // TODO: Fetch from profile
-        instagramUsername: '', // TODO: Fetch from profile
-        edited: false,
-        deleted: false,
-      };
-      
-      // Add cardStyle for short, colored text posts
-      if (currentPostType === 'text' && !selectedImageForUpload && newPostText.length <= 150 && selectedPostBackground?.name !== 'Padrão') {
-        postDataToSave.cardStyle = {
-          backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
-          backgroundImage: selectedPostBackground.gradient,
-          color: selectedPostBackground.text,
-          name: selectedPostBackground.name,
-        };
-      }
-
-      // In Step 3, we'll handle the 'uploadedImageUrl' field here after uploading the image to Storage.
-      // For now, we just acknowledge an image was selected but don't save it.
-      if (selectedImageForUpload) {
-        postDataToSave.dataAIUploadedImageHint = 'user uploaded image'; // Placeholder for future use
-      }
-
-      try {
-        await addDoc(collection(firestore, 'posts'), postDataToSave);
-        toast({ title: "Publicado!", description: "Sua postagem está na Time Line." });
-        // No need to call fetchPosts(), onSnapshot will handle it.
-      } catch (error) {
-        console.error("Error publishing post: ", error);
-        toast({ variant: 'destructive', title: 'Erro ao Publicar', description: 'Não foi possível salvar sua postagem.' });
-      }
-    }
-  
-    // Reset form state
-    setNewPostText('');
-    setSelectedImageForUpload(null);
-    setImagePreviewUrl(null);
-    setSelectedPostBackground(backgroundOptions[0]);
+  const handleRemoveMedia = () => {
+    setSelectedMediaForUpload(null);
+    if(mediaPreviewUrl) URL.revokeObjectURL(mediaPreviewUrl);
+    setMediaPreviewUrl(null);
     setCurrentPostType('text');
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+  
+  const resetFormState = () => {
+    setNewPostText('');
+    handleRemoveMedia();
+    setIsPublishing(false);
+    setSelectedAlertType(undefined);
+  }
+
+  const handlePublish = async () => {
+    if (!currentUser || !firestore || !storage) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado ou o serviço está indisponível.' });
+      return;
+    }
+
+    setIsPublishing(true);
+
+    try {
+        let mediaUrl: string | undefined;
+        let storagePath: string | undefined;
+
+        if (selectedMediaForUpload) {
+            const mediaType = selectedMediaForUpload.type.startsWith('image/') ? 'images' : 'videos';
+            storagePath = `${mediaType}/${currentUser.uid}/${Date.now()}_${selectedMediaForUpload.name}`;
+            const storageRef = ref(storage, storagePath);
+            await uploadBytes(storageRef, selectedMediaForUpload);
+            mediaUrl = await getDownloadURL(storageRef);
+        }
+
+        if (currentPostType === 'alert') {
+          await addDoc(collection(firestore, 'alerts'), {
+              type: selectedAlertType,
+              description: newPostText.trim(),
+              userId: currentUser.uid,
+              userNameReportedBy: currentUser.displayName || 'Anônimo',
+              userAvatarUrl: currentUser.photoURL,
+              timestamp: serverTimestamp(),
+          });
+          toast({ title: "Alerta Publicado!", description: "Seu alerta foi adicionado ao mural." });
+        
+        } else if (currentPostType === 'video') {
+            await addDoc(collection(firestore, 'reels'), {
+                userId: currentUser.uid,
+                userName: currentUser.displayName || 'Anônimo',
+                userAvatarUrl: currentUser.photoURL,
+                description: newPostText.trim(),
+                videoUrl: mediaUrl,
+                timestamp: serverTimestamp(),
+            });
+            toast({ title: "Reel Publicado!", description: "Seu vídeo está disponível para a comunidade." });
+
+        } else { // 'image' or 'text' post
+            const postData: any = {
+                userId: currentUser.uid,
+                userName: currentUser.displayName || 'Anônimo',
+                userAvatarUrl: currentUser.photoURL,
+                text: newPostText,
+                reactions: { thumbsUp: 0, thumbsDown: 0 },
+                edited: false,
+                deleted: false,
+                timestamp: serverTimestamp(),
+            };
+            if(mediaUrl) postData.uploadedImageUrl = mediaUrl;
+            if (currentPostType === 'text' && !selectedMediaForUpload && newPostText.length <= 150 && selectedPostBackground.name !== 'Padrão') {
+                postData.cardStyle = selectedPostBackground;
+            }
+            await addDoc(collection(firestore, 'posts'), postData);
+            toast({ title: "Publicado!", description: "Sua postagem está na Time Line." });
+        }
+
+        resetFormState();
+    } catch (error) {
+        console.error("Error publishing content:", error);
+        toast({ variant: 'destructive', title: 'Erro ao Publicar', description: 'Não foi possível salvar sua publicação.' });
+        setIsPublishing(false);
     }
   };
+
 
   const handleOpenAlertTypeModal = () => {
+    handleRemoveMedia(); 
     setCurrentPostType('alert'); 
-    handleRemoveImage(); 
     setSelectedPostBackground(backgroundOptions[0]); 
     setIsAlertTypeModalOpen(true);
   };
+  
+  const handleOpenMediaSelector = (type: 'image' | 'video') => {
+    setCurrentPostType(type);
+    if(fileInputRef.current) {
+        fileInputRef.current.accept = `${type}/*`;
+        fileInputRef.current.click();
+    }
+  }
 
   const handleConfirmAlertType = () => {
     if (!selectedAlertType) {
@@ -349,9 +321,11 @@ export default function FeedPage() {
 
 
   // Derived State
-  const canPublish = (currentPostType === 'alert' && selectedAlertType && newPostText.trim() !== '') || (currentPostType !== 'alert' && (newPostText.trim() !== '' || selectedImageForUpload !== null));
-  const showColorPalette = !imagePreviewUrl && currentPostType === 'text' && newPostText.length <= 150 && newPostText.length > 0;
-
+  const canPublish = !isPublishing && currentUser && (
+    (currentPostType === 'alert' && selectedAlertType && newPostText.trim() !== '') || 
+    (currentPostType !== 'alert' && (newPostText.trim() !== '' || selectedMediaForUpload !== null))
+  );
+  const showColorPalette = !mediaPreviewUrl && currentPostType === 'text' && newPostText.length <= 150 && newPostText.length > 0;
 
   return (
     <div className="w-full space-y-6">
@@ -403,7 +377,7 @@ export default function FeedPage() {
             value={newPostText}
             onChange={(e) => setNewPostText(e.target.value)}
             style={
-              !imagePreviewUrl && currentPostType === 'text' && selectedPostBackground?.name !== 'Padrão'
+              !mediaPreviewUrl && currentPostType === 'text' && selectedPostBackground?.name !== 'Padrão'
                 ? {
                     backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
                     backgroundImage: selectedPostBackground.gradient,
@@ -414,18 +388,18 @@ export default function FeedPage() {
             maxLength={currentPostType === 'alert' ? 500 : undefined}
           />
 
-          {imagePreviewUrl && (
+          {mediaPreviewUrl && (
             <div className="relative mb-3">
-              {selectedImageForUpload?.type.startsWith('video/') ? (
-                <video src={imagePreviewUrl} controls className="max-w-full h-auto rounded-md border" data-ai-hint="user uploaded video preview" />
+              {selectedMediaForUpload?.type.startsWith('video/') ? (
+                <video src={mediaPreviewUrl} controls className="max-w-full h-auto rounded-md border" data-ai-hint="user uploaded video preview" />
               ) : (
-                <img src={imagePreviewUrl} alt="Prévia da imagem" className="max-w-full h-auto rounded-md border" data-ai-hint="user uploaded image preview"/>
+                <img src={mediaPreviewUrl} alt="Prévia da imagem" className="max-w-full h-auto rounded-md border" data-ai-hint="user uploaded image preview"/>
               )}
               <Button
                 variant="ghost"
                 size="icon"
                 className="absolute top-2 right-2 rounded-full bg-black/50 text-white hover:bg-black/70 h-7 w-7"
-                onClick={handleRemoveImage}
+                onClick={handleRemoveMedia}
               >
                 <XCircle className="h-5 w-5" />
               </Button>
@@ -454,7 +428,7 @@ export default function FeedPage() {
 
           <div className="flex items-center justify-between mt-4">
             <div className="flex items-center gap-2">
-            {!imagePreviewUrl && (
+            {!mediaPreviewUrl && (
                 <>
                   <Button
                     variant="outline"
@@ -466,31 +440,21 @@ export default function FeedPage() {
                     <Edit3 className="h-4 w-4" /> 
                     Alertas
                   </Button>
-                  {/* Video upload will be implemented in Step 3 */}
                   <Button
                     variant="outline"
                     size="sm"
                     className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1"
-                    onClick={() => toast({ title: "Em Breve", description: "O upload de vídeos será implementado no próximo passo."})}
+                    onClick={() => handleOpenMediaSelector('video')}
                     title="Postar Vídeo"
                   >
                     <Video className="h-4 w-4" />
                     Vídeo
                   </Button>
-                  {/* Image upload will be fully implemented in Step 3 */}
                   <Button
                     variant="outline"
                     size="sm"
                     className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1"
-                    onClick={() => {
-                      setCurrentPostType('image');
-                      handleRemoveImage();
-                      setSelectedPostBackground(backgroundOptions[0]);
-                      if (fileInputRef.current) {
-                        fileInputRef.current.accept = "image/*";
-                        fileInputRef.current.click();
-                      }
-                    }}
+                    onClick={() => handleOpenMediaSelector('image')}
                     title="Postar Foto"
                   >
                     <ImageIcon className="h-4 w-4" />
@@ -498,30 +462,25 @@ export default function FeedPage() {
                   </Button>
                 </>
               )}
-              {imagePreviewUrl && (
-                 <div className="flex-1">
-                 </div>
-              )}
             </div>
 
             <input
               type="file"
               ref={fileInputRef}
               className="hidden"
-              onChange={handleImageInputChange}
+              onChange={handleMediaInputChange}
             />
             <Button
-              onClick={handlePublishPost}
+              onClick={handlePublish}
               className="bg-primary hover:bg-primary/90 text-white rounded-full px-6"
-              disabled={!canPublish || !currentUser}
+              disabled={!canPublish}
             >
-              Publicar
+              {isPublishing ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Publicar'}
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Seção de Reels (mantida como mock por enquanto) */}
       <div className="mb-3 mt-4">
         <div className="px-1">
             <h2 className="text-xl font-bold font-headline flex items-center mb-3 text-foreground">
@@ -529,14 +488,19 @@ export default function FeedPage() {
             Reels
             </h2>
         </div>
-        <div className="flex overflow-x-auto space-x-2 pb-3 -mx-4 px-4 no-scrollbar">
-            {mockUserVideoStories.map((story) => (
-            <StoryCircle key={story.id} {...story} onClick={() => handleStoryClick(story)} />
-            ))}
-        </div>
+        {loadingReels ? (
+            <div className="flex justify-center items-center h-24"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+        ) : reels.length > 0 ? (
+            <div className="flex overflow-x-auto space-x-2 pb-3 -mx-4 px-4 no-scrollbar">
+                {reels.map((story) => (
+                    <StoryCircle key={story.id} {...story} onClick={() => handleStoryClick(story)} />
+                ))}
+            </div>
+        ) : (
+             <p className="text-muted-foreground text-center py-4 text-sm">Nenhum Reel publicado. Seja o primeiro!</p>
+        )}
       </div>
 
-      {/* Seção de Alertas Recentes (Real-time) */}
       {loadingAlerts ? (
         <div className="flex justify-center items-center h-24">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -561,9 +525,7 @@ export default function FeedPage() {
             )}
           </div>
         </div>
-      ) : (
-        <p className="text-muted-foreground text-center py-4">Nenhum alerta recente. Seja o primeiro a reportar algo!</p>
-      )}
+      ) : null}
 
       <h2 className="text-xl font-bold pt-2 font-headline text-left">
         <List className="h-5 w-5 mr-2 text-primary inline-block" />
@@ -593,7 +555,6 @@ export default function FeedPage() {
         />
       )}
 
-      {/* Modal para Seleção de Tipo de Alerta */}
       <Dialog open={isAlertTypeModalOpen} onOpenChange={setIsAlertTypeModalOpen}>
         <DialogContent className="sm:max-w-md rounded-xl">
           <DialogHeader>
@@ -626,3 +587,5 @@ export default function FeedPage() {
     </div>
   );
 }
+
+    
