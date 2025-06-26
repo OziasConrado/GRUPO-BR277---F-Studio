@@ -2,17 +2,17 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Map, Loader2 } from "lucide-react";
+import { PlusCircle, Loader2 } from "lucide-react";
 import type { TouristPointData } from '@/types/turismo';
 import TouristPointCard from '@/components/turismo/tourist-point-card';
 import { useToast } from '@/hooks/use-toast';
 import React from 'react';
 import { firestore, storage } from '@/lib/firebase/client';
 import { collection, getDocs, query, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import IndicatePointModal, { type IndicatePointSubmitData } from '@/components/turismo/IndicatePointModal';
 import { ToastAction } from '@/components/ui/toast';
@@ -136,9 +136,16 @@ export default function TurismoPage() {
             asChild
           >
             <Link href="/turismo/viaje-parana">
-              <Map className="h-8 w-8 mb-1 text-primary" />
-              <span className="font-semibold text-base">Viaje Paraná</span>
-              <span className="text-xs text-muted-foreground">Dicas e Roteiros</span>
+              <div className="relative w-40 h-16">
+                <Image
+                    src="https://firebasestorage.googleapis.com/v0/b/grupo-br277.firebasestorage.app/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2FTurismo-PR%2Fviaje-parana.webp?alt=media"
+                    alt="Logo Viaje Paraná"
+                    layout="fill"
+                    objectFit="contain"
+                    data-ai-hint="viaje parana logo"
+                />
+              </div>
+              <span className="text-xs text-muted-foreground mt-2">Dicas e Roteiros</span>
             </Link>
           </Button>
           <Button
