@@ -120,7 +120,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         location: '',
                     };
                     await setDoc(userDocRef, newProfileData);
-                    setUserProfile(newProfileData);
+                    setUserProfile({
+                      bio: newProfileData.bio,
+                      instagramUsername: newProfileData.instagramUsername,
+                      location: newProfileData.location,
+                    });
                     toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a)! Seu perfil foi criado.' });
                 } else {
                     setUserProfile(userDocSnap.data() as UserProfile);
@@ -224,7 +228,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               location: '',
             };
             await setDoc(userDocRef, newProfileData);
-            setUserProfile(newProfileData);
+            setUserProfile({
+              bio: newProfileData.bio,
+              instagramUsername: newProfileData.instagramUsername,
+              location: newProfileData.location,
+            });
             toast({ title: 'Cadastro bem-sucedido!', description: 'Sua conta e perfil foram criados.' });
             router.push('/');
           } catch (profileError) {
