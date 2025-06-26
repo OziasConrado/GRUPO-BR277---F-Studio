@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -11,24 +10,23 @@ import {
   Mail, 
   ThumbsUp, 
   ThumbsDown, 
-  Lightbulb as IdeaIcon, // Alias for feedback section
-  Droplets, // For Álcool ou Gasolina?
-  Flame, // For Calculadora de Calorias
-  Calculator, // For Calculadora de Frete
-  Scale, // For Calculadora de IMC
-  ListChecks, // For Checklist de Viagem
-  ClipboardList, // For Custo de Viagem (Diesel + Arla)
-  ClipboardSignature, // For Declaração de Transporte
-  UserSquare, // For Gerador de Currículo
-  ClipboardCopy, // For Gerador de Link Pix
-  Send, // For Gerador de Link WhatsApp
-  Lightbulb, // For Gerador de Post Promocional (IA) - direct use
-  QrCode, // For Gerador de QR Code
-  Clock, // For Gestão do Tempo
-  ActivitySquare, // For Monitorar Pressão Arterial
-  HeartPulse, // For Monitoramento de Glicemia
-  Bed, // For Qualidade do Sono
-  ScanLine // For Scanner de Documentos
+  Lightbulb,
+  Droplets,
+  Flame,
+  Calculator,
+  Scale,
+  ListChecks,
+  ClipboardList,
+  ClipboardSignature,
+  UserSquare,
+  ClipboardCopy,
+  Send,
+  QrCode,
+  Clock,
+  ActivitySquare,
+  HeartPulse,
+  Bed,
+  ScanLine
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -273,7 +271,7 @@ export default function FerramentasPage() {
           </div>
           <div className="text-center sm:text-left pt-3">
             <Button onClick={handleSendIdeaClick} className="rounded-full w-full sm:w-auto">
-              <IdeaIcon className="mr-2 h-4 w-4" /> Enviar Ideias para Melhorias
+              <Lightbulb className="mr-2 h-4 w-4" /> Enviar Ideias para Melhorias
             </Button>
           </div>
         </CardContent>
