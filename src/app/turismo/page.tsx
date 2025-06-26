@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -145,7 +146,8 @@ export default function TurismoPage() {
                     data-ai-hint="viaje parana logo"
                 />
               </div>
-              <span className="text-xs text-muted-foreground mt-2">Dicas e Roteiros</span>
+              <span className="font-semibold text-base mt-1">Ver Roteiros</span>
+              <span className="text-xs text-muted-foreground">Dicas e roteiros oficiais</span>
             </Link>
           </Button>
           <Button
