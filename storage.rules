@@ -3,18 +3,40 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    
-    // Allow public read for all files by default.
-    // You might want to restrict this further based on your app's needs.
+  
+    // Default security: Deny all reads and writes by default
     match /{allPaths=**} {
+      allow read, write: if false;
+    }
+    
+    // Profile Pictures: Publicly readable, but only the user can write.
+    match /profile_pictures/{userId}/{fileName} {
       allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Post Images: Publicly readable, only the author can write.
+    match /images/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Users can only write to their own profile picture folder.
-    // The uploaded file size can also be validated here if needed.
-    // e.g., request.resource.size < 5 * 1024 * 1024
-    match /profile_pictures/{userId}/{fileName} {
+    // Post Videos: Publicly readable, only the author can write.
+    match /videos/{userId}/{fileName} {
+      allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Chat Audio: Publicly readable, only the sender can write.
+    match /chat_audio/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Indicated Tourist Point Images: Publicly readable, only the submitter can write.
+    match /indicated_points_images/{userId}/{fileName} {
+        allow read: if true;
+        allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
