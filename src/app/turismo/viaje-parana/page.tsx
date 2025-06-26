@@ -241,7 +241,7 @@ const RegionCard = ({ region }: { region: RegionData }) => {
                       src={region.imageUrl}
                       alt={region.title}
                       layout="fill"
-                      objectFit="cover"
+                      objectFit="contain"
                       data-ai-hint={region.imageHint}
                   />
               </div>
