@@ -23,14 +23,24 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
+interface UserProfile {
+    bio?: string;
+    instagramUsername?: string;
+    location?: string;
+}
+
 interface UpdateUserProfileData {
   displayName?: string;
   newPhotoFile?: File;
   bio?: string;
   instagramUsername?: string;
+  location?: string;
 }
+
 interface AuthContextType {
   currentUser: FirebaseUser | null;
+  userProfile: UserProfile | null;
+  isProfileComplete: boolean;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
@@ -45,6 +55,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const auth = getAuth(app);
@@ -63,12 +74,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       return;
     }
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setCurrentUser(user);
+        if (firestore) {
+            const userDocRef = doc(firestore, "Usuarios", user.uid);
+            const docSnap = await getDoc(userDocRef);
+            if (docSnap.exists()) {
+                setUserProfile(docSnap.data() as UserProfile);
+            } else {
+                setUserProfile(null);
+            }
+        }
+      } else {
+        setCurrentUser(null);
+        setUserProfile(null);
+      }
       setLoading(false);
     });
     return () => unsubscribe();
-  }, [auth, toast]);
+  }, [auth, toast, firestore]);
 
   useEffect(() => {
     if (!auth || !firestore) return;
@@ -84,17 +109,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 const userDocSnap = await getDoc(userDocRef);
 
                 if (!userDocSnap.exists()) {
-                    await setDoc(userDocRef, {
-                    uid: user.uid,
-                    email: user.email,
-                    displayName: user.displayName || user.email?.split('@')[0] || 'Usuário Google',
-                    photoURL: user.photoURL || null,
-                    createdAt: serverTimestamp(),
-                    bio: '',
-                    instagramUsername: '',
-                    });
+                    const newProfileData = {
+                        uid: user.uid,
+                        email: user.email,
+                        displayName: user.displayName || user.email?.split('@')[0] || 'Usuário Google',
+                        photoURL: user.photoURL || null,
+                        createdAt: serverTimestamp(),
+                        bio: '',
+                        instagramUsername: '',
+                        location: '',
+                    };
+                    await setDoc(userDocRef, newProfileData);
+                    setUserProfile(newProfileData);
                     toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a)! Seu perfil foi criado.' });
                 } else {
+                    setUserProfile(userDocSnap.data() as UserProfile);
                     toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a) de volta!' });
                 }
                 router.push('/');
@@ -184,7 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (user) {
           const userDocRef = doc(firestore, "Usuarios", user.uid);
           try {
-            await setDoc(userDocRef, {
+            const newProfileData = {
               uid: user.uid,
               email: user.email,
               displayName: user.email?.split('@')[0] || 'Usuário',
@@ -192,7 +221,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               createdAt: serverTimestamp(),
               bio: '',
               instagramUsername: '',
-            });
+              location: '',
+            };
+            await setDoc(userDocRef, newProfileData);
+            setUserProfile(newProfileData);
             toast({ title: 'Cadastro bem-sucedido!', description: 'Sua conta e perfil foram criados.' });
             router.push('/');
           } catch (profileError) {
@@ -272,6 +304,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (data.bio !== undefined) {
         firestoreProfileUpdates.bio = data.bio;
       }
+      
+      if (data.location !== undefined) {
+        firestoreProfileUpdates.location = data.location;
+      }
 
       if (data.instagramUsername !== undefined) {
         firestoreProfileUpdates.instagramUsername = data.instagramUsername.replace('@','');
@@ -298,6 +334,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (Object.keys(firestoreProfileUpdates).length > 0) {
           firestoreProfileUpdates.updatedAt = serverTimestamp();
           await updateDoc(userDocRef, firestoreProfileUpdates);
+          setUserProfile(prev => ({...prev, ...firestoreProfileUpdates}));
         }
         setCurrentUser(auth.currentUser);
         toast({ title: 'Perfil Atualizado!', description: 'Suas informações foram salvas com sucesso.' });
@@ -319,6 +356,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthenticating(true); 
     try {
       await signOut(auth);
+      setUserProfile(null);
       toast({ title: 'Logout realizado', description: 'Você saiu da sua conta.' });
       router.push('/login'); 
     } catch (error) {
@@ -328,8 +366,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [auth, router, toast]);
 
+  const isProfileComplete = !!(currentUser?.displayName && userProfile?.location);
+
   const value = {
     currentUser,
+    userProfile,
+    isProfileComplete,
     loading,
     signInWithGoogle,
     signUpWithEmail,

@@ -25,7 +25,8 @@ const MAX_FILE_SIZE_MB = 2;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 const profileSchema = z.object({
-  displayName: z.string().min(3, 'O nome deve ter pelo menos 3 caracteres.').max(50, 'O nome deve ter no máximo 50 caracteres.'),
+  displayName: z.string().min(3, 'O nome ou apelido deve ter pelo menos 3 caracteres.').max(50, 'O nome deve ter no máximo 50 caracteres.'),
+  location: z.string().min(3, 'A cidade ou município é obrigatório.').max(50, 'A cidade deve ter no máximo 50 caracteres.'),
   newPhotoFile: z.custom<File | undefined>()
     .refine(file => file === undefined || file.size <= MAX_FILE_SIZE_BYTES, `Foto deve ter no máximo ${MAX_FILE_SIZE_MB}MB.`)
     .refine(file => file === undefined || ["image/jpeg", "image/png", "image/webp"].includes(file.type), "Formato de foto inválido (JPG, PNG, WebP).")
@@ -41,7 +42,7 @@ const profileSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
 export default function EditProfilePage() {
-  const { currentUser, updateUserProfile, loading, isAuthenticating, signOutUser } = useAuth();
+  const { currentUser, userProfile, updateUserProfile, loading, isAuthenticating, signOutUser } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -58,6 +59,7 @@ export default function EditProfilePage() {
     resolver: zodResolver(profileSchema),
     defaultValues: {
       displayName: '',
+      location: '',
       newPhotoFile: undefined,
       bio: '',
       instagramUsername: '',
@@ -68,27 +70,17 @@ export default function EditProfilePage() {
     if (!loading && !currentUser) {
       router.push('/login');
     }
-    if (currentUser && firestore) {
-        const fetchProfile = async () => {
-            const docRef = doc(firestore, "Usuarios", currentUser.uid);
-            const docSnap = await getDoc(docRef);
-            let initialValues = {
-                displayName: currentUser.displayName || '',
-                bio: '',
-                instagramUsername: '',
-                newPhotoFile: undefined,
-            };
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                initialValues.bio = data.bio || '';
-                initialValues.instagramUsername = data.instagramUsername || '';
-            }
-            reset(initialValues);
-            setImagePreview(currentUser.photoURL || null);
-        };
-        fetchProfile();
+    if (currentUser) {
+      reset({
+        displayName: currentUser.displayName || '',
+        location: userProfile?.location || '',
+        bio: userProfile?.bio || '',
+        instagramUsername: userProfile?.instagramUsername || '',
+        newPhotoFile: undefined,
+      });
+      setImagePreview(currentUser.photoURL || null);
     }
-  }, [currentUser, loading, router, reset]);
+  }, [currentUser, userProfile, loading, router, reset]);
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -165,13 +157,24 @@ export default function EditProfilePage() {
             </div>
 
             <div>
-              <Label htmlFor="displayName">Nome de Exibição</Label>
+              <Label htmlFor="displayName">Nome ou Apelido <span className="text-destructive">*</span></Label>
               <Input
                 id="displayName"
                 {...register('displayName')}
                 className="mt-1 rounded-lg"
               />
               {errors.displayName && <p className="text-sm text-destructive mt-1">{errors.displayName.message}</p>}
+            </div>
+
+            <div>
+              <Label htmlFor="location">Cidade ou Município <span className="text-destructive">*</span></Label>
+              <Input
+                id="location"
+                {...register('location')}
+                className="mt-1 rounded-lg"
+                placeholder="Ex: Curitiba, PR"
+              />
+              {errors.location && <p className="text-sm text-destructive mt-1">{errors.location.message}</p>}
             </div>
             
             <div>

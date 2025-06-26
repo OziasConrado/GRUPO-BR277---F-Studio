@@ -42,6 +42,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { firestore, storage } from '@/lib/firebase/client';
 import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp, where } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useRouter } from 'next/navigation';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ToastAction } from '@/components/ui/toast';
 
 
 const backgroundOptions = [
@@ -78,7 +81,8 @@ export default function FeedPage() {
 
   // Hooks
   const { toast } = useToast();
-  const { currentUser } = useAuth();
+  const { currentUser, isProfileComplete } = useAuth();
+  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -228,6 +232,16 @@ export default function FeedPage() {
       toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado ou o serviço está indisponível.' });
       return;
     }
+    
+    if (!isProfileComplete) {
+        toast({
+            title: "Perfil Incompleto",
+            description: "Por favor, preencha seu nome e cidade no seu perfil para poder publicar.",
+            variant: "destructive",
+            action: <ToastAction altText="Editar Perfil" onClick={() => router.push('/profile/edit')}>Editar Perfil</ToastAction>,
+        });
+        return;
+    }
 
     setIsPublishing(true);
 
@@ -325,9 +339,28 @@ export default function FeedPage() {
     (currentPostType !== 'alert' && (newPostText.trim() !== '' || selectedMediaForUpload !== null))
   );
   const showColorPalette = !mediaPreviewUrl && currentPostType === 'text' && newPostText.length <= 150 && newPostText.length > 0;
+  
+  const ProfileCompletionAlert = () => {
+    if (isProfileComplete || !currentUser) return null;
+
+    return (
+        <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Complete seu Perfil</AlertTitle>
+            <AlertDescription>
+                Você precisa adicionar seu nome e cidade para interagir e publicar.
+                <Link href="/profile/edit" className="font-bold underline ml-2">
+                    Ir para o perfil
+                </Link>
+            </AlertDescription>
+        </Alert>
+    )
+  }
 
   return (
     <div className="w-full space-y-6">
+      <ProfileCompletionAlert />
+      
       <Button asChild
         variant="destructive"
         size="default"
@@ -473,7 +506,7 @@ export default function FeedPage() {
             <Button
               onClick={handlePublish}
               className="bg-primary hover:bg-primary/90 text-white rounded-full px-6"
-              disabled={!canPublish}
+              disabled={isPublishing || (isProfileComplete && !canPublish)}
             >
               {isPublishing ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Publicar'}
             </Button>

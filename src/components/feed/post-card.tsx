@@ -52,6 +52,8 @@ import {
   Timestamp,
   updateDoc,
 } from 'firebase/firestore';
+import { ToastAction } from '../ui/toast';
+import { useRouter } from 'next/navigation';
 
 
 export interface CommentProps {
@@ -169,9 +171,10 @@ export default function PostCard({
   cardStyle,
   edited,
 }: PostCardProps) {
-  const { currentUser } = useAuth();
+  const { currentUser, isProfileComplete } = useAuth();
   const { toast } = useToast();
   const { incrementNotificationCount } = useNotification();
+  const router = useRouter();
   
   // State
   const [localPostReactions, setLocalPostReactions] = useState(initialReactions);
@@ -244,6 +247,19 @@ export default function PostCard({
   }, [postId]);
 
   // Handlers
+  const handleInteractionAttempt = (callback: () => void) => {
+    if (!isProfileComplete) {
+        toast({
+            title: "Perfil Incompleto",
+            description: "Você precisa completar seu perfil para interagir com as publicações.",
+            variant: "destructive",
+            action: <ToastAction altText="Editar Perfil" onClick={() => router.push('/profile/edit')}>Editar Perfil</ToastAction>,
+        });
+        return;
+    }
+    callback();
+  };
+  
   const handlePostReactionClick = async (reactionType: 'thumbsUp' | 'thumbsDown') => {
     if (!currentUser || !firestore) {
       toast({ variant: 'destructive', title: 'Ação Requer Login', description: 'Faça login para interagir.' });
@@ -436,7 +452,7 @@ export default function PostCard({
         </div>
         <p className="text-base mt-1 whitespace-pre-wrap">{comment.textElements || comment.text}</p>
         <div className="flex items-center mt-1.5 space-x-0.5">
-          <Button variant="link" size="sm" className="p-0 h-auto text-xs text-primary ml-1" onClick={() => { setReplyingTo({ userNameToReply: comment.userName }); setNewCommentText(`@${comment.userName} `); footerTextareaRef.current?.focus(); }}>
+          <Button variant="link" size="sm" className="p-0 h-auto text-xs text-primary ml-1" onClick={() => { handleInteractionAttempt(() => { setReplyingTo({ userNameToReply: comment.userName }); setNewCommentText(`@${comment.userName} `); footerTextareaRef.current?.focus(); }); }}>
             Responder
           </Button>
         </div>
@@ -496,15 +512,15 @@ export default function PostCard({
 
         <CardFooter className="flex items-center justify-between px-4 py-2 border-t border-border/50">
           <div className="flex items-center gap-1">
-              <Button variant="ghost" onClick={() => handlePostReactionClick('thumbsUp')} className={cn(`p-2 h-auto ${currentUserPostReaction === 'thumbsUp' ? reactionButtonActivePrimaryColor : reactionButtonTextColor} ${reactionButtonHoverBg} flex items-center gap-0.5`)} aria-label="Curtir">
+              <Button variant="ghost" onClick={() => handleInteractionAttempt(() => handlePostReactionClick('thumbsUp'))} className={cn(`p-2 h-auto ${currentUserPostReaction === 'thumbsUp' ? reactionButtonActivePrimaryColor : reactionButtonTextColor} ${reactionButtonHoverBg} flex items-center gap-0.5`)} aria-label="Curtir">
                   <ThumbsUp className={`h-7 w-7 ${currentUserPostReaction === 'thumbsUp' ? (cardStyle?.color === '#FFFFFF' ? 'fill-yellow-400' : 'fill-primary') : ''}`} />
                   {localPostReactions.thumbsUp > 0 && <span className="text-xs tabular-nums">({localPostReactions.thumbsUp})</span>}
               </Button>
-              <Button variant="ghost" onClick={() => handlePostReactionClick('thumbsDown')} className={cn(`p-2 h-auto ${currentUserPostReaction === 'thumbsDown' ? reactionButtonActiveDestructiveColor : reactionButtonTextColor} ${reactionButtonHoverBg} flex items-center gap-0.5`)} aria-label="Não curtir">
+              <Button variant="ghost" onClick={() => handleInteractionAttempt(() => handlePostReactionClick('thumbsDown'))} className={cn(`p-2 h-auto ${currentUserPostReaction === 'thumbsDown' ? reactionButtonActiveDestructiveColor : reactionButtonTextColor} ${reactionButtonHoverBg} flex items-center gap-0.5`)} aria-label="Não curtir">
                   <ThumbsDown className={`h-7 w-7 ${currentUserPostReaction === 'thumbsDown' ? (cardStyle?.color === '#FFFFFF' ? 'fill-orange-400' : 'fill-destructive') : ''}`} />
                    {localPostReactions.thumbsDown > 0 && <span className="text-xs tabular-nums">({localPostReactions.thumbsDown})</span>}
               </Button>
-              <Button variant="ghost" onClick={() => setIsSheetOpen(true)} className={cn(reactionButtonTextColor, reactionButtonHoverBg, "p-2 h-auto flex items-center gap-0.5")} aria-label="Comentários">
+              <Button variant="ghost" onClick={() => handleInteractionAttempt(() => setIsSheetOpen(true))} className={cn(reactionButtonTextColor, reactionButtonHoverBg, "p-2 h-auto flex items-center gap-0.5")} aria-label="Comentários">
                   <MessageSquare className="h-7 w-7" />
                   {comments.length > 0 && <span className="text-xs tabular-nums">({comments.length})</span>}
               </Button>
@@ -560,7 +576,7 @@ export default function PostCard({
                           </Button>
                       </div>
                   )}
-                  <form onSubmit={handleFooterSubmit} className="flex gap-2 items-end">
+                  <form onSubmit={(e) => handleInteractionAttempt(() => handleFooterSubmit(e))} className="flex gap-2 items-end">
                       <Avatar className="h-9 w-9 self-end mb-0.5">
                           <AvatarImage src={currentUser?.photoURL || ''} />
                           <AvatarFallback><UserCircle/></AvatarFallback>
