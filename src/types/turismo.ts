@@ -1,3 +1,8 @@
+export const touristCategories = [
+  "Natureza", "Histórico", "Cultural", "Lazer", "Aventura"
+] as const;
+
+export type TouristCategory = typeof touristCategories[number];
 
 export interface TouristPointData {
   id: string;
@@ -6,13 +11,16 @@ export interface TouristPointData {
   description: string;
   imageUrl: string;
   dataAIImageHint: string;
-  category: 'Natureza' | 'Histórico' | 'Cultural' | 'Lazer' | 'Aventura';
+  category: TouristCategory;
   averageRating?: number; // Futuro uso
   reviewCount?: number; // Futuro uso
+  indicatedByUserId?: string;
+  indicatedByUserName?: string;
+  status?: 'pending' | 'approved';
 }
 
-export const touristCategories = [
-  "Natureza", "Histórico", "Cultural", "Lazer", "Aventura"
-] as const;
-
-export type TouristCategory = typeof touristCategories[number];
+export interface IndicatedTouristPointData extends TouristPointData {
+  indicatedByUserId: string;
+  indicatedByUserName: string;
+  status: 'pending' | 'approved';
+}
