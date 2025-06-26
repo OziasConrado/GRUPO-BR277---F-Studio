@@ -207,7 +207,7 @@ const RegionCard = ({ region }: { region: RegionData }) => {
 
   return (
     <Card className="w-full shadow-lg rounded-xl overflow-hidden bg-white dark:bg-card border">
-      <CardContent className="p-4 flex flex-row gap-4">
+      <CardContent className="p-4 flex flex-row items-start gap-4">
         <div className="relative w-28 aspect-square flex-shrink-0 rounded-lg overflow-hidden">
           <Image
             src={region.imageUrl}
@@ -217,18 +217,20 @@ const RegionCard = ({ region }: { region: RegionData }) => {
             data-ai-hint={region.imageHint}
           />
         </div>
-        <div className="flex flex-col flex-grow">
+        <div className="flex flex-col flex-grow min-w-0">
           <h3 className="font-headline text-lg mb-1">{region.title}</h3>
           <p className="text-xs uppercase font-semibold text-muted-foreground mb-2 tracking-wide">{region.subtitle}</p>
           
-          <p className="text-sm text-foreground/80 flex-grow whitespace-pre-line">
-            {textToShow}
-            {isLongText && !isExpanded && (
-              <Button variant="link" onClick={() => setIsExpanded(true)} className="p-0 h-auto text-sm ml-1">
-                Ver mais
-              </Button>
-            )}
-          </p>
+          <div className="text-sm text-foreground/80 flex-grow">
+            <p className="whitespace-pre-line">
+              {textToShow}
+              {isLongText && !isExpanded && (
+                <Button variant="link" onClick={() => setIsExpanded(true)} className="p-0 h-auto text-sm ml-1">
+                  Ver mais
+                </Button>
+              )}
+            </p>
+          </div>
 
           {isExpanded && (
             <div className="mt-4">
