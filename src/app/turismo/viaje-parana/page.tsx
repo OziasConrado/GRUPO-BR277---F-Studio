@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, ExternalLink, Map } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface RegionData {
   imageUrl: string;
@@ -201,52 +202,65 @@ const AdPlaceholder = ({ className }: { className?: string }) => (
 );
 
 const RegionCard = ({ region }: { region: RegionData }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const isLongText = region.description.length > 150;
-  const textToShow = isExpanded ? region.description : `${region.description.substring(0, 150)}...`;
-
   return (
-    <Card className="w-full shadow-lg rounded-xl overflow-hidden bg-white dark:bg-card border">
-      <CardContent className="p-4 flex flex-row items-start gap-4">
-        <div className="relative w-28 aspect-square flex-shrink-0 rounded-lg overflow-hidden">
-          <Image
-            src={region.imageUrl}
-            alt={region.title}
-            layout="fill"
-            objectFit="cover"
-            data-ai-hint={region.imageHint}
-          />
-        </div>
-        <div className="flex flex-col flex-grow min-w-0">
-          <h3 className="font-headline text-lg mb-1">{region.title}</h3>
-          <p className="text-xs uppercase font-semibold text-muted-foreground mb-2 tracking-wide">{region.subtitle}</p>
-          
-          <div className="text-sm text-foreground/80 flex-grow">
-            <p className="whitespace-pre-line">
-              {textToShow}
-              {isLongText && !isExpanded && (
-                <Button variant="link" onClick={() => setIsExpanded(true)} className="p-0 h-auto text-sm ml-1">
-                  Ver mais
-                </Button>
-              )}
-            </p>
-          </div>
-
-          {isExpanded && (
-            <div className="mt-4">
-              <Button asChild className="w-full sm:w-fit self-end">
-                <a href={region.buttonUrl} target="_blank" rel="noopener noreferrer">
-                  {region.buttonText} <ExternalLink className="ml-2 h-4 w-4" />
-                </a>
-              </Button>
-              <AdPlaceholder className="mt-4" />
+    <Dialog>
+      <DialogTrigger asChild>
+        <Card className="w-full shadow-lg rounded-xl overflow-hidden bg-white dark:bg-card border cursor-pointer hover:shadow-xl transition-shadow duration-200">
+          <CardContent className="p-4 flex flex-row items-start gap-4">
+            <div className="relative w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 rounded-lg overflow-hidden">
+              <Image
+                src={region.imageUrl}
+                alt={region.title}
+                layout="fill"
+                objectFit="cover"
+                data-ai-hint={region.imageHint}
+              />
             </div>
-          )}
+            <div className="flex flex-col flex-grow min-w-0">
+              <h3 className="font-headline text-lg mb-1 line-clamp-1">{region.title}</h3>
+              <p className="text-xs uppercase font-semibold text-muted-foreground mb-2 tracking-wide line-clamp-2">{region.subtitle}</p>
+              
+              <div className="text-sm text-foreground/80 flex-grow">
+                <p className="line-clamp-3">
+                  {region.description}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg p-0 flex flex-col h-[90vh] max-h-[700px] rounded-xl">
+        <DialogHeader className="p-4 border-b shrink-0">
+          <DialogTitle className="font-headline text-xl">{region.title}</DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground pt-1">{region.subtitle}</DialogDescription>
+        </DialogHeader>
+        <ScrollArea className="flex-grow">
+          <div className="p-4 pt-2">
+              <div className="relative w-full aspect-video rounded-lg overflow-hidden mb-4">
+                <Image
+                      src={region.imageUrl}
+                      alt={region.title}
+                      layout="fill"
+                      objectFit="cover"
+                      data-ai-hint={region.imageHint}
+                  />
+              </div>
+              <p className="text-base text-foreground/90 whitespace-pre-line">{region.description}</p>
+          </div>
+        </ScrollArea>
+        <div className="p-4 border-t shrink-0 space-y-3 bg-background">
+            <Button asChild className="w-full">
+              <a href={region.buttonUrl} target="_blank" rel="noopener noreferrer">
+                {region.buttonText} <ExternalLink className="ml-2 h-4 w-4" />
+              </a>
+            </Button>
+            <AdPlaceholder />
         </div>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 };
+
 
 export default function ViajeParanaPage() {
     const [isMapOpen, setIsMapOpen] = useState(false);
