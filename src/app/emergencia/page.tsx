@@ -128,12 +128,10 @@ export default function EmergenciaPage() {
         <Card className="rounded-xl shadow-md">
           <CardHeader>
             <CardTitle>Disque 100</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground text-sm">
+            <CardDescription>
               O Disque 100 é vinculado ao Programa Nacional de Enfrentamento da Violência Sexual contra Crianças e Adolescentes.
-            </p>
-          </CardContent>
+            </CardDescription>
+          </CardHeader>
           <CardContent>
              <Button asChild variant="default" className="w-full rounded-full">
               <a href="tel:100"><Phone className="mr-2 h-4 w-4" /> Ligar para 100</a>
@@ -144,12 +142,10 @@ export default function EmergenciaPage() {
         <Card className="rounded-xl shadow-md">
           <CardHeader>
             <CardTitle>Disque 180</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground text-sm">
+            <CardDescription>
               O Disque 180 é um serviço de utilidade pública essencial para o enfrentamento à violência contra a mulher.
-            </p>
-          </CardContent>
+            </CardDescription>
+          </CardHeader>
           <CardContent>
             <Button asChild variant="default" className="w-full rounded-full">
               <a href="tel:180"><Phone className="mr-2 h-4 w-4" /> Ligar para 180</a>
