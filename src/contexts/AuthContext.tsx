@@ -4,7 +4,6 @@
 import type { ReactNode, Dispatch, SetStateAction } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import {
-  getAuth,
   onAuthStateChanged,
   signOut,
   GoogleAuthProvider,
@@ -17,7 +16,7 @@ import {
   type User as FirebaseUser,
   type AuthError,
 } from 'firebase/auth';
-import { app, firestore, storage } from '@/lib/firebase/client'; 
+import { auth, app, firestore, storage } from '@/lib/firebase/client'; 
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'; 
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useRouter } from 'next/navigation';
@@ -58,7 +57,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const auth = getAuth(app);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -93,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
     return () => unsubscribe();
-  }, [auth, toast, firestore]);
+  }, [auth, toast]);
 
   useEffect(() => {
     if (!auth || !firestore) return;
@@ -139,7 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }
     processRedirect();
-  }, [auth, router, toast, loading, isAuthenticating, firestore]);
+  }, [auth, router, toast, loading, isAuthenticating]);
 
 
   const handleAuthError = (error: AuthError, customTitle?: string) => {
@@ -245,7 +243,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAuthenticating(false);
       }
     },
-    [auth, router, toast, firestore]
+    [auth, router, toast]
   );
 
   const signInWithEmail = useCallback(
@@ -265,7 +263,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAuthenticating(false);
       }
     },
-    [auth, router, toast, firestore]
+    [auth, router, toast]
   );
 
   const sendPasswordResetEmail = useCallback(
@@ -353,7 +351,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAuthenticating(false);
       }
     },
-    [auth, toast, router, firestore, storage]
+    [auth, toast, router]
   );
 
   const signOutUser = useCallback(async () => {

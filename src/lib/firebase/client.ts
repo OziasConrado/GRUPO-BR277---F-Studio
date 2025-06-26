@@ -1,3 +1,4 @@
+
 // src/lib/firebase/client.ts
 import { initializeApp, getApp, getApps, type FirebaseOptions } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
@@ -5,25 +6,34 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAnalytics, isSupported } from 'firebase/analytics';
 
-const firebaseConfig: FirebaseOptions = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
-};
+const firebaseConfigString = process.env.NEXT_PUBLIC_FIREBASE_CONFIG;
 
-// Inicialização direta para garantir que estamos usando a configuração mais recente.
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+// A function to initialize the app safely
+function initializeFirebase() {
+    if (firebaseConfigString) {
+        try {
+            const firebaseConfig = JSON.parse(firebaseConfigString);
+            return initializeApp(firebaseConfig);
+        } catch (e) {
+            console.error("Failed to parse Firebase config:", e);
+            return null;
+        }
+    }
+    console.error("Firebase config not found. Cannot initialize Firebase. Make sure NEXT_PUBLIC_FIREBASE_CONFIG is set in your environment.");
+    return null;
+}
 
-const auth = getAuth(app);
-const firestore = getFirestore(app);
-const storage = getStorage(app);
+// Get the existing app or initialize a new one
+const app = getApps().length ? getApp() : initializeFirebase();
+
+// Conditionally get services
+const auth = app ? getAuth(app) : null;
+const firestore = app ? getFirestore(app) : null;
+const storage = app ? getStorage(app) : null;
 let analytics;
 
-if (typeof window !== 'undefined') {
+// Initialize analytics only on client side if supported
+if (app && typeof window !== 'undefined') {
   isSupported().then((supported) => {
     if (supported) {
       analytics = getAnalytics(app);
@@ -31,4 +41,4 @@ if (typeof window !== 'undefined') {
   });
 }
 
-export { app, auth, firestore, storage, analytics, firebaseConfig };
+export { app, auth, firestore, storage, analytics };

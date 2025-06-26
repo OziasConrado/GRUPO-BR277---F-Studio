@@ -14,15 +14,6 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'lh3.googleusercontent.com',
       },
-      // Adicionado para suportar logos de concessionárias se necessário no futuro
-      {
-        protocol: 'https',
-        hostname: 'playerv.logicahost.com.br',
-      },
-      {
-          protocol: 'https',
-          hostname: 'www.giseleimoveis.com.br',
-      },
     ],
   },
 };

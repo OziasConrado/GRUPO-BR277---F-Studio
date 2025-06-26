@@ -15,5 +15,5 @@ runConfig:
 environmentVariables:
   GOOGLE_MAPS_API_KEY: {secret: GOOGLE_MAPS_API_KEY}
 
-# As variáveis NEXT_PUBLIC_FIREBASE_* são injetadas automaticamente pelo App Hosting.
-# Não é necessário (e não é seguro) defini-las aqui.
+# A variável NEXT_PUBLIC_FIREBASE_CONFIG é injetada automaticamente pelo App Hosting.
+# Não é necessário (e não é seguro) defini-la aqui.
