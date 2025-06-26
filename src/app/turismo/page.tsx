@@ -29,31 +29,11 @@ export default function TurismoPage() {
   const router = useRouter();
   const { currentUser, isProfileComplete } = useAuth();
   
-  const [paranaPoints, setParanaPoints] = useState<TouristPointData[]>([]);
   const [indicatedPoints, setIndicatedPoints] = useState<TouristPointData[]>([]);
-  
-  const [loadingParanaPoints, setLoadingParanaPoints] = useState(true);
   const [loadingIndicatedPoints, setLoadingIndicatedPoints] = useState(true);
   
   const [isIndicateModalOpen, setIsIndicateModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const fetchCuratedPoints = useCallback(async () => {
-    if (!firestore) return;
-    setLoadingParanaPoints(true);
-    try {
-      const pointsCollection = collection(firestore, 'tourist_points');
-      const q = query(pointsCollection, orderBy('name', 'asc'));
-      const querySnapshot = await getDocs(q);
-      const fetchedPoints: TouristPointData[] = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TouristPointData));
-      setParanaPoints(fetchedPoints);
-    } catch (error) {
-      console.error("Error fetching curated tourist points: ", error);
-      toast({ variant: "destructive", title: "Erro ao Carregar Pontos Turísticos", description: "Não foi possível buscar os pontos principais." });
-    } finally {
-      setLoadingParanaPoints(false);
-    }
-  }, [toast]);
   
   const fetchIndicatedPoints = useCallback(async () => {
     if (!firestore) return;
@@ -74,9 +54,8 @@ export default function TurismoPage() {
   }, [toast]);
 
   useEffect(() => {
-    fetchCuratedPoints();
     fetchIndicatedPoints();
-  }, [fetchCuratedPoints, fetchIndicatedPoints]);
+  }, [fetchIndicatedPoints]);
 
 
   const handleOpenIndicateModal = () => {
@@ -173,30 +152,6 @@ export default function TurismoPage() {
             <span className="text-xs text-muted-foreground">Contribua com a comunidade</span>
           </Button>
         </div>
-
-        <section>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-semibold font-headline">Descubra o Paraná</h2>
-          </div>
-          {loadingParanaPoints ? (
-            <Alert>
-              <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              <AlertTitle className="font-headline">Carregando Pontos Turísticos...</AlertTitle>
-              <AlertDescription>Buscando maravilhas do Paraná para você.</AlertDescription>
-            </Alert>
-          ) : paranaPoints.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {paranaPoints.map((point, index) => (
-                <React.Fragment key={`${point.id}-fragment`}>
-                  <TouristPointCard key={point.id} point={point} />
-                  {(index + 1) % 3 === 0 && index < paranaPoints.length -1 && <AdPlaceholder />}
-                </React.Fragment>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground text-center py-4">Nenhum ponto turístico do Paraná cadastrado no momento.</p>
-          )}
-        </section>
 
         <section>
           <h2 className="text-2xl font-semibold font-headline mb-4">Pontos Indicados pela Comunidade</h2>
