@@ -13,8 +13,8 @@ export interface SAULocation {
   concessionaire: string;
   name: string;
   address: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
   services: string[];
   operatingHours: string;
   // These will be dynamically calculated or managed in state

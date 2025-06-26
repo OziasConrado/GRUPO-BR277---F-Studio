@@ -28,6 +28,7 @@ const concessionaireLogos: Record<string, { url: string; hint: string }> = {
   'Arteris Régis Bitencourt': { url: 'https://placehold.co/64x64.png?text=ARB', hint: 'logo arteris regis bitencourt' },
   'CCR PRVias': { url: 'https://placehold.co/64x64.png?text=CCRPR', hint: 'logo ccr prvias' },
   'CCR RioSP': { url: 'https://placehold.co/64x64.png?text=CCRRS', hint: 'logo ccr riosp' },
+  'EPR IGUAÇU': { url: 'https://placehold.co/64x64.png?text=EPR-I', hint: 'logo epr iguacu' },
 };
 
 
@@ -37,18 +38,26 @@ export default function SauLocationCard({ sau, reviews, onAddReview }: SauLocati
 
 
   const handleNavigate = () => {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(position => {
-            const userLat = position.coords.latitude;
-            const userLng = position.coords.longitude;
-            const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${userLat},${userLng}&destination=${sau.latitude},${sau.longitude}`;
-            window.open(mapsUrl, '_blank');
-        }, () => {
+    if (sau.latitude && sau.longitude) {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(position => {
+                const userLat = position.coords.latitude;
+                const userLng = position.coords.longitude;
+                const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${userLat},${userLng}&destination=${sau.latitude},${sau.longitude}`;
+                window.open(mapsUrl, '_blank');
+            }, () => {
+                // Fallback if user location cannot be obtained, but business location is known
+                const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${sau.latitude},${sau.longitude}`;
+                window.open(mapsUrl, '_blank');
+            });
+        } else {
+            // Fallback if geolocation API not supported
             const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${sau.latitude},${sau.longitude}`;
             window.open(mapsUrl, '_blank');
-        });
+        }
     } else {
-        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${sau.latitude},${sau.longitude}`;
+        // Fallback if business location is not known, search by address
+        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(sau.address)}`;
         window.open(mapsUrl, '_blank');
     }
   };
@@ -67,7 +76,7 @@ export default function SauLocationCard({ sau, reviews, onAddReview }: SauLocati
           />
           <div className="flex-grow">
             <h2 className="text-md font-semibold text-foreground">{sau.concessionaire}</h2>
-            {sau.distance !== undefined && (
+            {sau.distance !== undefined && sau.distance !== Infinity && (
               <Badge variant="outline" className="mt-1.5 text-xs whitespace-nowrap">
                 <MapPin className="h-3 w-3 mr-1" />
                 Aprox. {sau.distance.toFixed(1)} km
@@ -77,6 +86,13 @@ export default function SauLocationCard({ sau, reviews, onAddReview }: SauLocati
         </CardHeader>
 
         <CardContent className="pb-4 pt-2 px-4 space-y-3">
+          
+          <div>
+            <h3 className="text-md font-headline text-foreground">{sau.name}</h3>
+          </div>
+
+          <Separator />
+          
           <div>
             <div className="flex items-start text-sm">
               <MapPin className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground flex-shrink-0" />
@@ -108,6 +124,13 @@ export default function SauLocationCard({ sau, reviews, onAddReview }: SauLocati
               </div>
             </>
           )}
+          
+          <Separator />
+
+          <Button variant="default" size="sm" onClick={handleNavigate} className="w-full mt-2">
+            <Navigation className="mr-1.5 h-4 w-4" />
+            Navegar até o Local
+          </Button>
 
           <Separator />
 

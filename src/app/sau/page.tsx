@@ -16,9 +16,24 @@ import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, Timestamp
 import { useAuth } from '@/contexts/AuthContext';
 
 const concessionairesForFilter = [
-  "Todos", "Via Araucária", "EPR Litoral Pioneiro", "Arteris Litoral Sul",
+  "Todos", "EPR IGUAÇU", "Via Araucária", "EPR Litoral Pioneiro", "Arteris Litoral Sul",
   "Arteris Planalto Sul", "Arteris Régis Bitencourt", "CCR PRVias",
   "CCR RioSP"
+];
+
+// Hardcoded data for EPR IGUAÇU
+const eprIguacuSaus: SAULocation[] = [
+  { id: 'epr-iguacu-1', concessionaire: 'EPR IGUAÇU', name: 'BR-277, km 310', address: 'Prudentópolis/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas' },
+  { id: 'epr-iguacu-2', concessionaire: 'EPR IGUAÇU', name: 'BR-277, km 381', address: 'Candói/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas' },
+  { id: 'epr-iguacu-3', concessionaire: 'EPR IGUAÇU', name: 'BR-277, km 454', address: 'Laranjeiras do Sul/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas' },
+  { id: 'epr-iguacu-4', concessionaire: 'EPR IGUAÇU', name: 'BR-277, km 519', address: 'Guaraniaçu/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas' },
+  { id: 'epr-iguacu-5', concessionaire: 'EPR IGUAÇU', name: 'BR-277, km 574', address: 'Cascavel/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas' },
+  { id: 'epr-iguacu-6', concessionaire: 'EPR IGUAÇU', name: 'BR-277, km 664', address: 'Matelândia/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas' },
+  { id: 'epr-iguacu-7', concessionaire: 'EPR IGUAÇU', name: 'BR-163, km 711', address: 'Santa Terezinha de Itaipu/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas' },
+  { id: 'epr-iguacu-8', concessionaire: 'EPR IGUAÇU', name: 'PR-182, km 177', address: 'Lindoeste/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas' },
+  { id: 'epr-iguacu-9', concessionaire: 'EPR IGUAÇU', name: 'PR-182, km 128', address: 'Marmelândia/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas' },
+  { id: 'epr-iguacu-10', concessionaire: 'EPR IGUAÇU', name: 'PR-280, km 521', address: 'Ampére/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas' },
+  { id: 'epr-iguacu-11', concessionaire: 'EPR IGUAÇU', name: 'PR-280, km 247', address: 'Renascença/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas' },
 ];
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -79,10 +94,11 @@ export default function SAUPage() {
           operatingHours: data.operatingHours,
         } as SAULocation;
       });
-      setSauLocations(fetchedSaus);
+      setSauLocations([...fetchedSaus, ...eprIguacuSaus]);
     } catch (error) {
       console.error("Error fetching SAUs: ", error);
-      toast({ variant: "destructive", title: "Erro ao Carregar SAUs", description: "Não foi possível buscar os SAUs." });
+      setSauLocations(eprIguacuSaus); // Fallback to hardcoded if fetch fails
+      toast({ variant: "destructive", title: "Erro ao Carregar SAUs", description: "Não foi possível buscar os SAUs. Mostrando dados locais." });
     } finally {
       setLoadingSaus(false);
     }
@@ -175,10 +191,12 @@ export default function SAUPage() {
 
 
     if (userLocation && locationStatus === 'success') {
-      const sausWithDistance = sausWithAggregatedReviews.map(sau => ({
-        ...sau,
-        distance: calculateDistance(userLocation.latitude, userLocation.longitude, sau.latitude, sau.longitude),
-      }));
+      const sausWithDistance = sausWithAggregatedReviews.map(sau => {
+        const distance = (sau.latitude && sau.longitude)
+          ? calculateDistance(userLocation.latitude, userLocation.longitude, sau.latitude, sau.longitude)
+          : Infinity;
+        return { ...sau, distance };
+      });
       sausWithDistance.sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
       return sausWithDistance;
     } else {
