@@ -45,12 +45,12 @@ const AlertTitle = React.forwardRef<
 AlertTitle.displayName = "AlertTitle"
 
 const AlertDescription = React.forwardRef<
-  HTMLParagraphElement,
-  React.HTMLAttributes<HTMLParagraphElement>
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("text-base [&_p]:leading-relaxed", className)} // Changed from text-sm to text-base
+    className={cn("text-sm text-muted-foreground", className)}
     {...props}
   />
 ))
