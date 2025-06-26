@@ -225,6 +225,12 @@ const RegionCard = ({ region }: { region: RegionData }) => {
                   {region.description}
                 </p>
               </div>
+
+              <div className="mt-auto pt-1">
+                <p className="text-xs text-primary font-semibold hover:underline">
+                  Ver detalhes...
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
