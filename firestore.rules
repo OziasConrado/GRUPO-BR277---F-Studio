@@ -1,94 +1,93 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Default security: Deny all reads and writes by default
+
+    // Regra geral: Nega acesso a qualquer documento não especificado abaixo.
     match /{document=**} {
       allow read, write: if false;
     }
-    
-    // USERS: Users can read anyone's profile, but only write to their own.
+
+    // Coleção de Usuários
     match /Usuarios/{userId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth.uid == userId;
-      allow update: if request.auth.uid == userId;
+      // Qualquer um pode ler perfis de usuários (para exibir nomes, fotos, etc.)
+      allow read: if true;
+      // Apenas o próprio usuário autenticado pode criar ou atualizar seu perfil.
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // POSTS: Logged-in users can read all posts. They can only create, update,
-    // or soft-delete their own posts.
+    // Coleção de Posts
     match /posts/{postId} {
-      allow read: if request.auth != null;
-      
-      // Create: User must be author, can't create deleted/edited posts
-      allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.deleted == false
-                    && request.resource.data.edited == false;
-      
-      // Update: User must be author. Allow updating text or soft-deleting.
-      allow update: if request.auth != null
-                     && resource.data.userId == request.auth.uid
-                     && (
-                       (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'edited', 'editedAt'])) ||
-                       (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deleted']))
-                     );
+      // Qualquer um pode ler os posts
+      allow read: if true;
+      // Apenas usuários autenticados e com perfil completo podem criar posts.
+      allow create: if request.auth != null && get(/databases/$(database)/documents/Usuarios/$(request.auth.uid)).data.location != '';
+      // Apenas o autor do post pode atualizar (editar) ou "deletar" (marcar como deletado).
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
     }
-    
-    // POST COMMENTS: Logged-in users can read/write comments.
+
+    // Coleção de Comentários (aninhada em Posts)
     match /posts/{postId}/comments/{commentId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null 
-                     && request.resource.data.userId == request.auth.uid;
-    }
-    
-    // POST REACTIONS: Users can only create/update their own reaction.
-    match /posts/{postId}/userReactions/{reactionId} {
-        allow read: if request.auth != null;
-        allow create, update: if request.auth != null && request.auth.uid == reactionId;
-    }
-    
-    // CHAT MESSAGES: Group chat where logged-in users can read/write.
-    match /chatMessages/{messageId} {
-        allow read: if request.auth != null;
-        allow create: if request.auth != null
-                       && request.resource.data.userId == request.auth.uid;
-    }
-    
-    // ALERTS: Logged-in users can read all alerts and create their own.
-    match /alerts/{alertId} {
-        allow read: if request.auth != null;
-        allow create: if request.auth != null
-                       && request.resource.data.userId == request.auth.uid;
+      // Qualquer um pode ler os comentários.
+      allow read: if true;
+      // Apenas usuários autenticados e com perfil completo podem criar comentários.
+      allow create: if request.auth != null && get(/databases/$(database)/documents/Usuarios/$(request.auth.uid)).data.location != '';
+      // O autor do comentário pode atualizá-lo ou deletá-lo.
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
 
-    // REELS: Logged-in users can read all reels and create their own.
+    // Coleção de Reações (aninhada em Posts)
+    match /posts/{postId}/userReactions/{userId} {
+      // Qualquer um pode ler as reações.
+      allow read: if true;
+      // Um usuário autenticado só pode criar/alterar/deletar a sua própria reação.
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Coleção de Reels
     match /reels/{reelId} {
-        allow read: if request.auth != null;
-        allow create: if request.auth != null
-                       && request.resource.data.userId == request.auth.uid;
+        // Qualquer um pode ler os reels.
+        allow read: if true;
+        // Apenas usuários autenticados e com perfil completo podem criar reels.
+        allow create: if request.auth != null && get(/databases/$(database)/documents/Usuarios/$(request.auth.uid)).data.location != '';
     }
 
-    // SAU REVIEWS: Logged-in users can read all reviews and create their own.
+    // Coleção de Alertas
+    match /alerts/{alertId} {
+      // Qualquer um pode ler os alertas.
+      allow read: if true;
+      // Apenas usuários autenticados e com perfil completo podem criar alertas.
+      allow create: if request.auth != null && get(/databases/$(database)/documents/Usuarios/$(request.auth.uid)).data.location != '';
+    }
+    
+    // Coleção de Avaliações de SAU
     match /sau_reviews/{reviewId} {
-        allow read: if request.auth != null;
-        allow create: if request.auth != null
-                       && request.resource.data.userId == request.auth.uid;
+      // Todos podem ler as avaliações.
+      allow read: if true;
+      // Apenas usuários autenticados e com perfil completo podem criar avaliações.
+      allow create: if request.auth != null && get(/databases/$(database)/documents/Usuarios/$(request.auth.uid)).data.location != '';
     }
-
-    // BUSINESSES: Logged-in users can read all business listings and create their own.
+    
+    // Coleção de Comércios do Guia
     match /businesses/{businessId} {
-        allow read: if request.auth != null;
-        allow create: if request.auth != null
-                       && request.resource.data.userId == request.auth.uid;
+        // Todos podem ler as informações dos comércios.
+        allow read: if true;
+        // Apenas usuários autenticados podem cadastrar novos comércios.
+        allow create: if request.auth != null;
     }
 
-    // TOURIST POINTS: Logged-in users can read all and indicate new ones.
+    // Coleção de Pontos Turísticos Indicados
     match /tourist_points_indicated/{pointId} {
-        allow read: if request.auth != null;
-        allow create: if request.auth != null
-                       && request.resource.data.indicatedByUserId == request.auth.uid;
+        // Todos podem ler os pontos que foram indicados.
+        allow read: if true;
+        // Apenas usuários autenticados e com perfil completo podem indicar novos pontos.
+        allow create: if request.auth != null && get(/databases/$(database)/documents/Usuarios/$(request.auth.uid)).data.location != '';
+    }
+    
+    // Coleção de Mensagens do Chat
+    match /chatMessages/{messageId} {
+      // Apenas usuários autenticados podem ler e escrever no chat.
+      allow read, write: if request.auth != null;
     }
   }
 }
