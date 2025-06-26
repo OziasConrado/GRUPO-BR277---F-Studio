@@ -1,19 +1,27 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
   images: {
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'placehold.co',
-        port: '',
-        pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'firebasestorage.googleapis.com',
-        port: '',
-        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
+      // Adicionado para suportar logos de concessionárias se necessário no futuro
+      {
+        protocol: 'https',
+        hostname: 'playerv.logicahost.com.br',
+      },
+      {
+          protocol: 'https',
+          hostname: 'www.giseleimoveis.com.br',
       },
     ],
   },
