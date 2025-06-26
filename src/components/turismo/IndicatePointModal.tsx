@@ -107,16 +107,16 @@ export default function IndicatePointModal({ isOpen, onClose, onSubmit, isSubmit
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleCloseDialog(); }}>
-      <DialogContent className="sm:max-w-lg rounded-xl">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-lg p-0 rounded-xl flex flex-col h-[90vh] max-h-[700px]">
+        <DialogHeader className="p-4 border-b shrink-0">
           <DialogTitle className="font-headline text-xl">Indicar Ponto Turístico</DialogTitle>
           <DialogDescription>
             Ajude outros viajantes a descobrir lugares incríveis.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-3">
-          <ScrollArea className="h-[65vh] pr-5">
-            <div className="space-y-3 py-1">
+        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="flex-grow flex flex-col overflow-hidden">
+          <ScrollArea className="flex-grow p-4">
+            <div className="space-y-4">
               <div>
                 <Label htmlFor="name-turismo">Nome do Local <span className="text-destructive">*</span></Label>
                 <Input id="name-turismo" {...form.register("name")} className="mt-1" />
@@ -192,7 +192,7 @@ export default function IndicatePointModal({ isOpen, onClose, onSubmit, isSubmit
               </div>
             </div>
           </ScrollArea>
-          <DialogFooter className="pt-4">
+          <DialogFooter className="p-4 border-t shrink-0">
             <Button type="button" variant="outline" onClick={handleCloseDialog}>Cancelar</Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Enviando..." : "Enviar Indicação"}
