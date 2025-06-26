@@ -26,7 +26,7 @@ const regions: RegionData[] = [
     imageHint: 'Paisagem com araucárias representando as Rotas do Pinhão',
     title: 'Rotas do Pinhão',
     subtitle: 'UM MUNDO DE OPÇÕES E O PINHÃO COMO ANFITRIÃO',
-    description: 'Que tal viajar pelo mundo dentro do Paraná? Isso é possível visitando a região Rotas do Pinhão. O lugar, que compreende Curitiba e grande parte da Região Metropolitana, tem forte influência da imigração europeia, principalmente polonesa, ucraniana, italiana e alemã. Traços distintivos das culturas mineira, paulista e do tropeirismo também ajudam a formar um caleidoscópio de sotaques, sabores e tradições.\n\nA convivência harmônica entre o ritmo frenético da metrópole e o bucolismo das áreas rurais é um atrativo à parte e oferece inúmeras opções de turismo, do cultural ao de aventura, do religioso ao rural.\n\nE a culinária? É tanta comida boa, de tantas partes do mundo, que fica difícil escolher o que pedir ou manter a dieta. São muitas opções! Algumas delas temperadas com o sabor inconfundível de um dos maiores patrimônios gastronômicos do Paraná – o pinhão.',
+    description: 'Que tal viajar pelo mundo dentro do Paraná? Isso é possível visitando a região Rotas do Pinhão. O lugar, que compreende Curitiba e grande parte da Região Metropolitana, tem forte influência da imigração europeia, principalmente polonesa, ucraniana, italiana e alemã. Traços distintivos das culturas mineira, paulista e do tropeirismo também ajudam a formar um caleidoscópio de sotaques, sabores e tradições.\n\nA convivência harmônica entre o ritmo frenético da metrópole e o bucolismo das áreas rurais é um atrativo à parte e oferece inúmeras opções de turismo, do cultural ao de aventura, do religioso ao rural.\n\nA culinária? É tanta comida boa, de tantas partes do mundo, que fica difícil escolher o que pedir ou manter a dieta. São muitas opções! Algumas delas temperadas com o sabor inconfundível de um dos maiores patrimônios gastronômicos do Paraná – o pinhão.',
     buttonText: 'Ver mais no site oficial',
     buttonUrl: 'https://www.viajeparana.com/Rotas-do-Pinhao',
   },
@@ -206,9 +206,9 @@ const RegionCard = ({ region }: { region: RegionData }) => {
   const textToShow = isExpanded ? region.description : `${region.description.substring(0, 150)}...`;
 
   return (
-    <Card className="w-full shadow-lg rounded-xl overflow-hidden bg-card/80 dark:bg-card/80 backdrop-blur-sm border-white/10 dark:border-slate-700/10">
-      <CardContent className="p-4 flex flex-col sm:flex-row gap-4">
-        <div className="relative w-full sm:w-40 aspect-video flex-shrink-0 rounded-lg overflow-hidden">
+    <Card className="w-full shadow-lg rounded-xl overflow-hidden bg-white dark:bg-card border">
+      <CardContent className="p-4 flex flex-row gap-4">
+        <div className="relative w-28 aspect-square flex-shrink-0 rounded-lg overflow-hidden">
           <Image
             src={region.imageUrl}
             alt={region.title}
@@ -218,7 +218,7 @@ const RegionCard = ({ region }: { region: RegionData }) => {
           />
         </div>
         <div className="flex flex-col flex-grow">
-          <h3 className="font-headline text-xl mb-1">{region.title}</h3>
+          <h3 className="font-headline text-lg mb-1">{region.title}</h3>
           <p className="text-xs uppercase font-semibold text-muted-foreground mb-2 tracking-wide">{region.subtitle}</p>
           
           <p className="text-sm text-foreground/80 flex-grow whitespace-pre-line">
