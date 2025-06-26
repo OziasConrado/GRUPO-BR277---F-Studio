@@ -21,19 +21,40 @@ const concessionairesForFilter = [
   "CCR RioSP"
 ];
 
-// Hardcoded data for EPR IGUAÇU
-const eprIguacuSaus: SAULocation[] = [
-  { id: 'epr-iguacu-1', concessionaire: 'EPR IGUAÇU', name: 'BR-277, km 310', address: 'Prudentópolis/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas' },
-  { id: 'epr-iguacu-2', concessionaire: 'EPR IGUAÇU', name: 'BR-277, km 381', address: 'Candói/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas' },
-  { id: 'epr-iguacu-3', concessionaire: 'EPR IGUAÇU', name: 'BR-277, km 454', address: 'Laranjeiras do Sul/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas' },
-  { id: 'epr-iguacu-4', concessionaire: 'EPR IGUAÇU', name: 'BR-277, km 519', address: 'Guaraniaçu/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas' },
-  { id: 'epr-iguacu-5', concessionaire: 'EPR IGUAÇU', name: 'BR-277, km 574', address: 'Cascavel/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas' },
-  { id: 'epr-iguacu-6', concessionaire: 'EPR IGUAÇU', name: 'BR-277, km 664', address: 'Matelândia/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas' },
-  { id: 'epr-iguacu-7', concessionaire: 'EPR IGUAÇU', name: 'BR-163, km 711', address: 'Santa Terezinha de Itaipu/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas' },
-  { id: 'epr-iguacu-8', concessionaire: 'EPR IGUAÇU', name: 'PR-182, km 177', address: 'Lindoeste/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas' },
-  { id: 'epr-iguacu-9', concessionaire: 'EPR IGUAÇU', name: 'PR-182, km 128', address: 'Marmelândia/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas' },
-  { id: 'epr-iguacu-10', concessionaire: 'EPR IGUAÇU', name: 'PR-280, km 521', address: 'Ampére/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas' },
-  { id: 'epr-iguacu-11', concessionaire: 'EPR IGUAÇU', name: 'PR-280, km 247', address: 'Renascença/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas' },
+const allSausData: SAULocation[] = [
+  // EPR IGUAÇU
+  { id: 'epr-iguacu-1', concessionaire: 'EPR IGUAÇU', name: 'SAU 01 - BR-277, km 310', address: 'Prudentópolis/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.21, longitude: -50.98 },
+  { id: 'epr-iguacu-2', concessionaire: 'EPR IGUAÇU', name: 'SAU 02 - BR-277, km 381', address: 'Candói/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.56, longitude: -51.65 },
+  { id: 'epr-iguacu-3', concessionaire: 'EPR IGUAÇU', name: 'SAU 03 - BR-277, km 454', address: 'Laranjeiras do Sul/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.41, longitude: -52.41 },
+  { id: 'epr-iguacu-4', concessionaire: 'EPR IGUAÇU', name: 'SAU 04 - BR-277, km 519', address: 'Guaraniaçu/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.09, longitude: -52.88 },
+  { id: 'epr-iguacu-5', concessionaire: 'EPR IGUAÇU', name: 'SAU 05 - BR-277, km 574', address: 'Cascavel/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -24.96, longitude: -53.46 },
+  { id: 'epr-iguacu-6', concessionaire: 'EPR IGUAÇU', name: 'SAU 06 - BR-277, km 664', address: 'Matelândia/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.25, longitude: -53.99 },
+  { id: 'epr-iguacu-7', concessionaire: 'EPR IGUAÇU', name: 'SAU 07 - BR-163, km 711', address: 'Santa Terezinha de Itaipu/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.43, longitude: -54.49 },
+  { id: 'epr-iguacu-8', concessionaire: 'EPR IGUAÇU', name: 'SAU 08 - PR-182, km 177', address: 'Lindoeste/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.26, longitude: -53.54 },
+  { id: 'epr-iguacu-9', concessionaire: 'EPR IGUAÇU', name: 'SAU 09 - PR-182, km 128', address: 'Marmelândia/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.64, longitude: -53.77 },
+  { id: 'epr-iguacu-10', concessionaire: 'EPR IGUAÇU', name: 'SAU 10 - PR-280, km 521', address: 'Ampére/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.92, longitude: -53.46 },
+  { id: 'epr-iguacu-11', concessionaire: 'EPR IGUAÇU', name: 'SAU 11 - PR-280, km 247', address: 'Renascença/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -26.15, longitude: -52.97 },
+
+  // Via Araucária
+  { id: 'via-araucaria-1', concessionaire: 'Via Araucária', name: 'SAU 01 - BR-277, km 107', address: 'Campo Largo/PR', services: ['Banheiro', 'Água', 'Wi-Fi'], operatingHours: '24 horas', latitude: -25.45, longitude: -49.52 },
+  { id: 'via-araucaria-2', concessionaire: 'Via Araucária', name: 'SAU 02 - BR-277, km 152', address: 'Palmeira/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.42, longitude: -50.00 },
+  { id: 'via-araucaria-3', concessionaire: 'Via Araucária', name: 'SAU 03 - BR-277, km 233', address: 'Irati/PR', services: ['Banheiro', 'Água', 'Wi-Fi', 'Totem'], operatingHours: '24 horas', latitude: -25.47, longitude: -50.65 },
+
+  // EPR Litoral Pioneiro
+  { id: 'epr-litoral-1', concessionaire: 'EPR Litoral Pioneiro', name: 'SAU 01 - PR-407, km 12', address: 'Pontal do Paraná/PR', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -25.58, longitude: -48.56 },
+  { id: 'epr-litoral-2', concessionaire: 'EPR Litoral Pioneiro', name: 'SAU 02 - PR-092, km 280', address: 'Wenceslau Braz/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -23.87, longitude: -49.80 },
+
+  // Arteris Litoral Sul
+  { id: 'arteris-litoral-1', concessionaire: 'Arteris Litoral Sul', name: 'SAU 01 - BR-376, km 658', address: 'Tijucas do Sul/PR', services: ['Banheiro', 'Água', 'Wi-Fi'], operatingHours: '24 horas', latitude: -25.93, longitude: -49.19 },
+  { id: 'arteris-litoral-2', concessionaire: 'Arteris Litoral Sul', name: 'SAU 02 - BR-101, km 157', address: 'Porto Belo/SC', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -27.15, longitude: -48.55 },
+
+  // Arteris Planalto Sul
+  { id: 'arteris-planalto-1', concessionaire: 'Arteris Planalto Sul', name: 'SAU 01 - BR-116, km 198', address: 'Rio Negro/PR', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -26.10, longitude: -49.79 },
+  { id: 'arteris-planalto-2', concessionaire: 'Arteris Planalto Sul', name: 'SAU 02 - BR-116, km 287', address: 'Correia Pinto/SC', services: ['Banheiro', 'Água', 'Wi-Fi'], operatingHours: '24 horas', latitude: -27.58, longitude: -50.36 },
+
+  // Arteris Régis Bitencourt
+  { id: 'arteris-regis-1', concessionaire: 'Arteris Régis Bitencourt', name: 'SAU 01 - BR-116, km 426', address: 'Juquiá/SP', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -24.32, longitude: -47.63 },
+  { id: 'arteris-regis-2', concessionaire: 'Arteris Régis Bitencourt', name: 'SAU 02 - BR-116, km 548', address: 'Barra do Turvo/SP', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -24.75, longitude: -48.50 },
 ];
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -66,74 +87,6 @@ export default function SAUPage() {
   const { currentUser } = useAuth();
 
 
-  const fetchSausAndReviews = useCallback(async () => {
-    if (!firestore) {
-      toast({ variant: "destructive", title: "Erro de Conexão", description: "Não foi possível conectar ao banco de dados." });
-      setLoadingSaus(false);
-      setLoadingReviews(false);
-      return;
-    }
-    setLoadingSaus(true);
-    setLoadingReviews(true);
-
-    try {
-      // Fetch SAUs
-      const sausCollection = collection(firestore, 'sau_locations');
-      const qSaus = query(sausCollection); // REMOVED orderBy to prevent index errors
-      const sauSnapshot = await getDocs(qSaus);
-      const fetchedSaus: SAULocation[] = sauSnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          concessionaire: data.concessionaire,
-          name: data.name,
-          address: data.address,
-          latitude: data.latitude,
-          longitude: data.longitude,
-          services: data.services || [],
-          operatingHours: data.operatingHours,
-        } as SAULocation;
-      });
-      setSauLocations([...fetchedSaus, ...eprIguacuSaus]);
-    } catch (error) {
-      console.error("Error fetching SAUs: ", error);
-      setSauLocations(eprIguacuSaus); // Fallback to hardcoded if fetch fails
-      toast({ variant: "destructive", title: "Erro ao Carregar SAUs", description: "Não foi possível buscar os SAUs. Mostrando dados locais." });
-    } finally {
-      setLoadingSaus(false);
-    }
-
-    try {
-        // Fetch all Reviews
-        const reviewsCollection = collection(firestore, 'sau_reviews');
-        const qReviews = query(reviewsCollection, orderBy('timestamp', 'desc'));
-        const reviewSnapshot = await getDocs(qReviews);
-        const fetchedReviews: SAUReview[] = reviewSnapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                sauId: data.sauId,
-                author: data.author,
-                rating: data.rating,
-                comment: data.comment,
-                timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
-            } as SAUReview;
-        });
-        setReviews(fetchedReviews);
-    } catch (error) {
-        console.error("Error fetching SAU reviews: ", error);
-        toast({ variant: "destructive", title: "Erro ao Carregar Avaliações", description: "Não foi possível buscar as avaliações dos SAUs." });
-    } finally {
-        setLoadingReviews(false);
-    }
-  }, [toast]);
-
-
-  useEffect(() => {
-    fetchSausAndReviews();
-  }, [fetchSausAndReviews]);
-
-
   const requestLocation = useCallback(() => {
     setLocationStatus('loading');
     if (navigator.geolocation) {
@@ -148,11 +101,6 @@ export default function SAUPage() {
         (error) => {
           console.error("Error getting location:", error);
           setLocationStatus('error');
-          // toast({ // Can be noisy
-          //   title: "Erro de Localização",
-          //   description: "Não foi possível obter sua localização. Mostrando SAUs em ordem padrão.",
-          //   variant: "default"
-          // });
         }
       );
     } else {
@@ -166,8 +114,46 @@ export default function SAUPage() {
   }, [toast]);
 
   useEffect(() => {
-    requestLocation();
-  }, [requestLocation]);
+    const loadDataAndLocation = async () => {
+      // Set hardcoded SAUs immediately
+      setSauLocations(allSausData);
+      setLoadingSaus(false);
+
+      // Fetch reviews from Firestore
+      if (firestore) {
+        setLoadingReviews(true);
+        try {
+            const reviewsCollection = collection(firestore, 'sau_reviews');
+            const qReviews = query(reviewsCollection, orderBy('timestamp', 'desc'));
+            const reviewSnapshot = await getDocs(qReviews);
+            const fetchedReviews: SAUReview[] = reviewSnapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    sauId: data.sauId,
+                    author: data.author,
+                    rating: data.rating,
+                    comment: data.comment,
+                    timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
+                } as SAUReview;
+            });
+            setReviews(fetchedReviews);
+        } catch (error) {
+            console.error("Error fetching SAU reviews: ", error);
+            toast({ variant: "destructive", title: "Erro ao Carregar Avaliações", description: "Não foi possível buscar as avaliações." });
+        } finally {
+            setLoadingReviews(false);
+        }
+      } else {
+        setLoadingReviews(false);
+      }
+      
+      requestLocation();
+    };
+
+    loadDataAndLocation();
+  }, [requestLocation, toast]);
+  
 
   const processedSaus = useMemo(() => {
     let filteredSaus = sauLocations;
