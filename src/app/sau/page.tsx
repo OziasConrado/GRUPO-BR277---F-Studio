@@ -29,7 +29,7 @@ const allSausData: SAULocation[] = [
   { id: 'epr-iguacu-4', concessionaire: 'EPR IGUAÇU', name: 'SAU 04 - BR-277, km 519', address: 'Guaraniaçu/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.09, longitude: -52.88 },
   { id: 'epr-iguacu-5', concessionaire: 'EPR IGUAÇU', name: 'SAU 05 - BR-277, km 574', address: 'Cascavel/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -24.96, longitude: -53.46 },
   { id: 'epr-iguacu-6', concessionaire: 'EPR IGUAÇU', name: 'SAU 06 - BR-277, km 664', address: 'Matelândia/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.25, longitude: -53.99 },
-  { id: 'epr-iguacu-7', concessionaire: 'EPR IGUAÇU', name: 'SAU 07 - BR-163, km 711', address: 'Santa Terezinha de Itaipu/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.43, longitude: -54.49 },
+  { id: 'epr-iguacu-7', concessionaire: 'EPR IGUAÇU', name: 'SAU 07 - BR-277, km 711', address: 'Santa Terezinha de Itaipu/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.43, longitude: -54.49 },
   { id: 'epr-iguacu-8', concessionaire: 'EPR IGUAÇU', name: 'SAU 08 - PR-182, km 177', address: 'Lindoeste/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.26, longitude: -53.54 },
   { id: 'epr-iguacu-9', concessionaire: 'EPR IGUAÇU', name: 'SAU 09 - PR-182, km 128', address: 'Marmelândia/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.64, longitude: -53.77 },
   { id: 'epr-iguacu-10', concessionaire: 'EPR IGUAÇU', name: 'SAU 10 - PR-280, km 521', address: 'Ampére/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.92, longitude: -53.46 },
@@ -39,22 +39,45 @@ const allSausData: SAULocation[] = [
   { id: 'via-araucaria-1', concessionaire: 'Via Araucária', name: 'SAU 01 - BR-277, km 107', address: 'Campo Largo/PR', services: ['Banheiro', 'Água', 'Wi-Fi'], operatingHours: '24 horas', latitude: -25.45, longitude: -49.52 },
   { id: 'via-araucaria-2', concessionaire: 'Via Araucária', name: 'SAU 02 - BR-277, km 152', address: 'Palmeira/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.42, longitude: -50.00 },
   { id: 'via-araucaria-3', concessionaire: 'Via Araucária', name: 'SAU 03 - BR-277, km 233', address: 'Irati/PR', services: ['Banheiro', 'Água', 'Wi-Fi', 'Totem'], operatingHours: '24 horas', latitude: -25.47, longitude: -50.65 },
+  { id: 'via-araucaria-4', concessionaire: 'Via Araucária', name: 'SAU 04 - BR-373, km 214', address: 'Prudentópolis/PR', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -25.37, longitude: -50.97 },
+  { id: 'via-araucaria-5', concessionaire: 'Via Araucária', name: 'SAU 05 - BR-476, km 353', address: 'Lapa/PR', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -25.77, longitude: -49.71 },
 
   // EPR Litoral Pioneiro
   { id: 'epr-litoral-1', concessionaire: 'EPR Litoral Pioneiro', name: 'SAU 01 - PR-407, km 12', address: 'Pontal do Paraná/PR', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -25.58, longitude: -48.56 },
   { id: 'epr-litoral-2', concessionaire: 'EPR Litoral Pioneiro', name: 'SAU 02 - PR-092, km 280', address: 'Wenceslau Braz/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -23.87, longitude: -49.80 },
+  { id: 'epr-litoral-3', concessionaire: 'EPR Litoral Pioneiro', name: 'SAU 03 - BR-277, km 28', address: 'Morretes/PR', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -25.48, longitude: -48.84 },
+  { id: 'epr-litoral-4', concessionaire: 'EPR Litoral Pioneiro', name: 'SAU 04 - PR-151, km 260', address: 'Sengés/PR', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -24.11, longitude: -49.46 },
 
   // Arteris Litoral Sul
   { id: 'arteris-litoral-1', concessionaire: 'Arteris Litoral Sul', name: 'SAU 01 - BR-376, km 658', address: 'Tijucas do Sul/PR', services: ['Banheiro', 'Água', 'Wi-Fi'], operatingHours: '24 horas', latitude: -25.93, longitude: -49.19 },
   { id: 'arteris-litoral-2', concessionaire: 'Arteris Litoral Sul', name: 'SAU 02 - BR-101, km 157', address: 'Porto Belo/SC', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -27.15, longitude: -48.55 },
+  { id: 'arteris-litoral-3', concessionaire: 'Arteris Litoral Sul', name: 'SAU 03 - BR-101, km 07', address: 'Garuva/SC', services: ['Banheiro', 'Água', 'Wi-Fi'], operatingHours: '24 horas', latitude: -26.03, longitude: -48.85 },
+  { id: 'arteris-litoral-4', concessionaire: 'Arteris Litoral Sul', name: 'SAU 04 - BR-101, km 79', address: 'Barra Velha/SC', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -26.63, longitude: -48.68 },
+  { id: 'arteris-litoral-5', concessionaire: 'Arteris Litoral Sul', name: 'SAU 05 - BR-101, km 220', address: 'Palhoça/SC', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -27.64, longitude: -48.67 },
 
   // Arteris Planalto Sul
   { id: 'arteris-planalto-1', concessionaire: 'Arteris Planalto Sul', name: 'SAU 01 - BR-116, km 198', address: 'Rio Negro/PR', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -26.10, longitude: -49.79 },
   { id: 'arteris-planalto-2', concessionaire: 'Arteris Planalto Sul', name: 'SAU 02 - BR-116, km 287', address: 'Correia Pinto/SC', services: ['Banheiro', 'Água', 'Wi-Fi'], operatingHours: '24 horas', latitude: -27.58, longitude: -50.36 },
+  { id: 'arteris-planalto-3', concessionaire: 'Arteris Planalto Sul', name: 'SAU 03 - BR-116, km 136', address: 'Fazenda Rio Grande/PR', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -25.66, longitude: -49.31 },
+  { id: 'arteris-planalto-4', concessionaire: 'Arteris Planalto Sul', name: 'SAU 04 - BR-116, km 57', address: 'Papanduva/SC', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -26.37, longitude: -50.15 },
+  { id: 'arteris-planalto-5', concessionaire: 'Arteris Planalto Sul', name: 'SAU 05 - BR-116, km 95', address: 'Monte Castelo/SC', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -26.47, longitude: -50.23 },
 
   // Arteris Régis Bitencourt
   { id: 'arteris-regis-1', concessionaire: 'Arteris Régis Bitencourt', name: 'SAU 01 - BR-116, km 426', address: 'Juquiá/SP', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -24.32, longitude: -47.63 },
   { id: 'arteris-regis-2', concessionaire: 'Arteris Régis Bitencourt', name: 'SAU 02 - BR-116, km 548', address: 'Barra do Turvo/SP', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -24.75, longitude: -48.50 },
+  { id: 'arteris-regis-3', concessionaire: 'Arteris Régis Bitencourt', name: 'SAU 03 - BR-116, km 40', address: 'Campina Grande do Sul/PR', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -25.30, longitude: -49.05 },
+  { id: 'arteris-regis-4', concessionaire: 'Arteris Régis Bitencourt', name: 'SAU 04 - BR-116, km 366', address: 'Miracatu/SP', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -24.28, longitude: -47.46 },
+  { id: 'arteris-regis-5', concessionaire: 'Arteris Régis Bitencourt', name: 'SAU 05 - BR-116, km 299', address: 'Itapecerica da Serra/SP', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -23.71, longitude: -46.85 },
+
+  // CCR PRVias
+  { id: 'ccr-prvias-1', concessionaire: 'CCR PRVias', name: 'SAU Exemplo 1', address: 'Rodovia do Xisto, Araucária/PR', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -25.67, longitude: -49.63 },
+  { id: 'ccr-prvias-2', concessionaire: 'CCR PRVias', name: 'SAU Exemplo 2', address: 'São Luiz do Purunã, Balsa Nova/PR', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -25.46, longitude: -49.68 },
+  { id: 'ccr-prvias-3', concessionaire: 'CCR PRVias', name: 'SAU Exemplo 3', address: 'Imbituva/PR', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -25.22, longitude: -50.60 },
+
+  // CCR RioSP
+  { id: 'ccr-riosp-1', concessionaire: 'CCR RioSP', name: 'SAU Exemplo 1', address: 'Via Dutra - Queluz/SP', services: ['Banheiro', 'Água', 'Wi-Fi'], operatingHours: '24 horas', latitude: -22.53, longitude: -44.78 },
+  { id: 'ccr-riosp-2', concessionaire: 'CCR RioSP', name: 'SAU Exemplo 2', address: 'Via Dutra - Arujá/SP', services: ['Banheiro', 'Água', 'Wi-Fi'], operatingHours: '24 horas', latitude: -23.39, longitude: -46.32 },
+  { id: 'ccr-riosp-3', concessionaire: 'CCR RioSP', name: 'SAU Exemplo 3', address: 'Via Dutra - Piraí/RJ', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -22.62, longitude: -43.90 },
 ];
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
