@@ -468,14 +468,22 @@ export default function PostCard({
             {userAvatarUrl ? <AvatarImage src={userAvatarUrl as string} alt={userName} data-ai-hint={dataAIAvatarHint} /> : null}
             <AvatarFallback>{userName ? userName.substring(0,2).toUpperCase() : <UserCircle className="h-10 w-10" />}</AvatarFallback>
           </Avatar>
-          <div className="flex justify-between items-start w-full">
+          <div className="flex-grow">
             <div className="cursor-pointer" onClick={handleAvatarOrNameClick}>
-              <PostCardTitleUI className={cn("text-base font-headline", headerTextColor)} style={cardStyle ? { color: cardStyle.color } : {}}>{userName}</PostCardTitleUI>
-              {userLocation && <p className={cn("text-xs", mutedTextColor)} style={cardStyle ? { color: cardStyle.color, opacity: 0.8 } : {}}>{userLocation}</p>}
+              <PostCardTitleUI className={cn("text-base font-headline", headerTextColor)} style={cardStyle ? { color: cardStyle.color } : {}}>
+                {userName}
+              </PostCardTitleUI>
             </div>
-            <div className="flex items-center gap-1">
-                {edited && <span className={cn("text-xs", mutedTextColor)} style={cardStyle ? { color: cardStyle.color, opacity: 0.8 } : {}}>(Editado)</span>}
-                <p className={cn("text-xs whitespace-nowrap pl-2", mutedTextColor)} style={cardStyle ? { color: cardStyle.color, opacity: 0.8 } : {}}>{timestamp}</p>
+            <div className="flex flex-wrap items-center gap-x-1.5 text-xs">
+              {userLocation && <p className={cn(mutedTextColor)} style={cardStyle ? { color: cardStyle.color, opacity: 0.8 } : {}}>{userLocation}</p>}
+              {userLocation && <span className={cn(mutedTextColor)} style={cardStyle ? { color: cardStyle.color, opacity: 0.8 } : {}}>&middot;</span>}
+              <p className={cn(mutedTextColor)} style={cardStyle ? { color: cardStyle.color, opacity: 0.8 } : {}}>{timestamp}</p>
+              {edited && (
+                <>
+                  <span className={cn(mutedTextColor)} style={cardStyle ? { color: cardStyle.color, opacity: 0.8 } : {}}>&middot;</span>
+                  <p className={cn("italic", mutedTextColor)} style={cardStyle ? { color: cardStyle.color, opacity: 0.8 } : {}}>(Editado)</p>
+                </>
+              )}
             </div>
           </div>
         </CardHeader>
