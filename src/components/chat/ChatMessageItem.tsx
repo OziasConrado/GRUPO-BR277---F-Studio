@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -174,7 +175,7 @@ export default function ChatMessageItem({
                       <MoreVertical className="h-4 w-4" />
                   </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="z-[70]">
                   {text && (
                     <DropdownMenuItem onClick={() => setIsEditing(true)}>
                         <Edit className="mr-2 h-4 w-4" />
