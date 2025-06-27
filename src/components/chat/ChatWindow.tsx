@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, type ChangeEvent, type FormEvent } from 'react';
@@ -21,7 +22,10 @@ import {
   orderBy,
   onSnapshot,
   serverTimestamp,
-  Timestamp // Import Timestamp
+  Timestamp,
+  doc,
+  runTransaction,
+  increment,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
@@ -100,13 +104,14 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
           avatarUrl: data.avatarUrl,
           dataAIAvatarHint: data.dataAIAvatarHint,
           text: data.text,
-          imageUrl: data.imageUrl, // Will be undefined for now
+          imageUrl: data.imageUrl,
           dataAIImageHint: data.dataAIImageHint,
           audioUrl: data.audioUrl,
           file: data.file,
           timestamp: messageTimestamp,
           isCurrentUser: currentUser ? data.userId === currentUser.uid : false,
           textElements: data.text ? renderTextWithMentionsForChat(data.text, MOCK_CHAT_USER_NAMES) : undefined,
+          reactions: data.reactions,
         });
       });
       setMessages(fetchedMessages);
@@ -144,7 +149,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
       toast({ title: "Não Autenticado", description: "Você precisa estar logado para enviar mensagens.", variant: "destructive" });
       return;
     }
-    if (!firestore) {
+    if (!firestore || !storage) {
         toast({ title: "Erro de Conexão", description: "Não é possível enviar mensagem.", variant: "destructive" });
         return;
     }
@@ -152,16 +157,33 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     if (newMessage.trim() === '' && !selectedImageFile) return;
 
     if(newMessage.trim()) checkForMentionsAndNotifyChat(newMessage);
+    
+    let imageUrl: string | undefined;
+    let fileInfo: { name: string, type: 'image' } | undefined;
 
-    const messageData: Omit<ChatMessageData, 'id' | 'timestamp' | 'isCurrentUser' | 'textElements' | 'imageUrl' | 'file'> & { userId: string; timestamp: any } = {
+    if (selectedImageFile) {
+        const uniqueId = `image_${Date.now()}_${selectedImageFile.name}`;
+        const storageRef = ref(storage, `chat_images/${currentUser.uid}/${uniqueId}`);
+        const snapshot = await uploadBytes(storageRef, selectedImageFile);
+        imageUrl = await getDownloadURL(snapshot.ref);
+        fileInfo = { name: selectedImageFile.name, type: 'image' };
+    }
+
+    const messageData: any = {
       userId: currentUser.uid,
       senderName: currentUser.displayName || 'Usuário Anônimo',
       avatarUrl: currentUser.photoURL || `https://placehold.co/40x40.png?text=${currentUser.displayName ? currentUser.displayName.substring(0,1).toUpperCase() : 'U'}`,
       dataAIAvatarHint: 'user avatar',
       text: newMessage.trim() || undefined,
       timestamp: serverTimestamp(),
-      // Image/file upload to Firestore will be handled in a future step
+      reactions: { heart: 0 },
     };
+
+    if (imageUrl) {
+        messageData.imageUrl = imageUrl;
+        messageData.dataAIImageHint = "user uploaded chat image";
+        messageData.file = fileInfo;
+    }
 
     try {
       await addDoc(collection(firestore, 'chatMessages'), messageData);
@@ -201,7 +223,8 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
             dataAIAvatarHint: 'user avatar',
             timestamp: serverTimestamp(),
             audioUrl: downloadURL,
-            file: { name: "Mensagem de voz", type: 'audio' }
+            file: { name: "Mensagem de voz", type: 'audio' },
+            reactions: { heart: 0 },
         };
 
         await addDoc(collection(firestore, 'chatMessages'), messageData);
@@ -340,6 +363,36 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     setNewMessage("");
   };
 
+  const handleReactionClick = async (messageId: string) => {
+    if (!currentUser || !firestore) {
+      toast({ variant: 'destructive', title: 'Ação Requer Login' });
+      return;
+    }
+
+    const messageRef = doc(firestore, 'chatMessages', messageId);
+    const reactionRef = doc(firestore, 'chatMessages', messageId, 'userReactions', currentUser.uid);
+
+    try {
+      await runTransaction(firestore, async (transaction) => {
+        const reactionDoc = await transaction.get(reactionRef);
+        
+        if (reactionDoc.exists()) {
+          // User has already reacted with a heart, so remove reaction
+          transaction.delete(reactionRef);
+          transaction.update(messageRef, { 'reactions.heart': increment(-1) });
+        } else {
+          // User has not reacted, so add reaction
+          transaction.set(reactionRef, { type: 'heart', timestamp: serverTimestamp() });
+          // Use set with merge to ensure the reactions object and heart field are created if they don't exist
+          transaction.set(messageRef, { reactions: { heart: increment(1) } }, { merge: true });
+        }
+      });
+    } catch (error) {
+      console.error("Error handling reaction:", error);
+      toast({ variant: 'destructive', title: 'Erro ao Reagir' });
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center sm:p-4">
       <div className="bg-background w-full h-full sm:max-w-lg sm:max-h-[90vh] sm:rounded-xl shadow-2xl flex flex-col overflow-hidden">
@@ -362,7 +415,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
         <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>
           <div className="space-y-4">
             {messages.map(msg => (
-              <ChatMessageItem key={msg.id} message={msg} onReply={handleReply} />
+              <ChatMessageItem key={msg.id} message={msg} onReply={handleReply} onReaction={handleReactionClick} />
             ))}
           </div>
         </ScrollArea>
