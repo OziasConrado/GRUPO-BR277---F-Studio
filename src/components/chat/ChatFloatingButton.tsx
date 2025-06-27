@@ -11,7 +11,7 @@ export default function ChatFloatingButton() {
     <Button
       onClick={openChat}
       className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-50 rounded-full h-14 w-14 shadow-xl flex items-center justify-center bg-primary hover:bg-primary/90 text-primary-foreground" // Color, size, and mobile bottom position updated
-      aria-label="Abrir chat em grupo"
+      aria-label="Abrir chat da Comunidade277"
     >
       <MessageCircle className="h-7 w-7" /> {/* Icon and size updated */}
     </Button>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect, type ChangeEvent, type FormEvent } from 'react';
@@ -399,11 +398,11 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
         <header className="p-4 border-b border-primary/50 flex items-center justify-between bg-primary text-primary-foreground">
           <div className="flex items-center gap-3">
             <Avatar>
-              <AvatarImage src="https://firebasestorage.googleapis.com/v0/b/grupo-br277.firebasestorage.app/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2Fescudo-com-sombra-vetoriozida-300x300.png?alt=media" alt="Chat277" data-ai-hint="group chat icon"/>
-              <AvatarFallback>CG</AvatarFallback>
+              <AvatarImage src="https://firebasestorage.googleapis.com/v0/b/grupo-br277.firebasestorage.app/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2Fescudo-com-sombra-vetoriozida-300x300.png?alt=media" alt="Comunidade277" data-ai-hint="group chat icon"/>
+              <AvatarFallback>C</AvatarFallback>
             </Avatar>
             <div>
-              <h3 className="font-semibold font-headline text-lg">Chat277</h3>
+              <h3 className="font-semibold font-headline text-lg">Comunidade277</h3>
               <p className="text-xs text-primary-foreground/80">Online</p>
             </div>
           </div>

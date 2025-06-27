@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from "react";
@@ -49,7 +48,7 @@ const MoreFeaturesSheet: React.FC<MoreFeaturesSheetProps> = ({ children }) => {
   const mainFeatures: Feature[] = [
     { icon: Video, label: "AO VIVO", href: "/streaming" },
     { icon: Sparkles, label: "Copiloto (IA)", onClick: () => setIsCopilotOpen(true) },
-    { icon: MessageCircle, label: "Chat277", onClick: openChat },
+    { icon: MessageCircle, label: "Comunidade277", onClick: openChat },
   ];
 
   const secondaryFeatures: Feature[] = [
