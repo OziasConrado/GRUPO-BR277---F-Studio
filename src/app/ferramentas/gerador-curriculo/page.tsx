@@ -260,16 +260,18 @@ export default function GeradorCurriculoPage() {
                       className="hidden"
                       onChange={handleImageChange}
                   />
-                  <Button 
-                      type="button" 
-                      variant="outline" 
-                      className="w-full mt-1 flex flex-col items-center justify-center h-32 border-dashed hover:border-primary rounded-lg"
-                      onClick={() => fileInputRef.current?.click()}
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Clique para enviar ou alterar a foto"
+                    onClick={() => fileInputRef.current?.click()}
+                    onKeyDown={(e) => { if (e.key === 'Enter') fileInputRef.current?.click(); }}
+                    className="mt-1 flex flex-col items-center justify-center h-32 rounded-lg border-2 border-dashed border-input hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer transition-colors"
                   >
                       {imagePreview ? (
                           <div className="relative w-24 h-24">
                               <Image src={imagePreview} alt="Preview da foto" layout="fill" objectFit="cover" className="rounded"/>
-                              <div // Changed from Button to div to fix hydration error
+                              <div
                                   role="button"
                                   tabIndex={0}
                                   aria-label="Remover foto"
@@ -287,7 +289,7 @@ export default function GeradorCurriculoPage() {
                               <span className="text-xs text-muted-foreground/80 mt-0.5">JPG, PNG, WebP</span>
                           </>
                       )}
-                  </Button>
+                  </div>
                   {errors.foto && <p className="text-sm text-destructive mt-1">{errors.foto.message}</p>}
                 </div>
                 <div>
@@ -453,4 +455,3 @@ export default function GeradorCurriculoPage() {
     </div>
   );
 }
-
