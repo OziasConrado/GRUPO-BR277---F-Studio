@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useRef, type ChangeEvent, useCallback } from 'react';
@@ -157,7 +156,7 @@ export default function FeedPage() {
   useEffect(() => {
     if (!firestore) return setLoadingAlerts(false);
     setLoadingAlerts(true);
-    const q = query(collection(firestore, 'alerts'), orderBy('timestamp', 'desc'), limit(5));
+    const q = query(collection(firestore, 'alerts'), orderBy('timestamp', 'desc'), limit(6));
     
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedAlerts: HomeAlertCardData[] = querySnapshot.docs.map(doc => {
@@ -539,22 +538,22 @@ export default function FeedPage() {
       ) : displayedAlertsFeed.length > 0 ? (
         <div className="pt-4 pb-2">
           <div className="flex overflow-x-auto space-x-3 pb-2 -mx-1 px-1 no-scrollbar">
-            {displayedAlertsFeed.slice(0, 3).map((alertData) => (
+            {displayedAlertsFeed.slice(0, 5).map((alertData) => (
               <Link href="/alertas" key={alertData.id} className="block">
                 <HomeAlertCard alert={alertData} />
               </Link>
             ))}
-            {displayedAlertsFeed.length > 3 && (
-              <div className="w-[260px] flex-shrink-0 h-full flex items-stretch">
-                <Button asChild variant="outline" className="w-full h-full rounded-xl flex flex-col items-center justify-center text-center p-3 shadow-lg hover:bg-card/95 dark:hover:bg-muted/30 transition-colors duration-150">
-                  <Link href="/alertas" className="flex flex-col items-center justify-center h-full">
-                    <ArrowRightCircle className="h-10 w-10 mb-2 text-primary" />
-                    <span className="text-sm font-semibold">Mais Alertas</span>
-                  </Link>
-                </Button>
-              </div>
-            )}
           </div>
+          {displayedAlertsFeed.length > 5 && (
+            <div className="mt-4 flex justify-center">
+              <Button asChild variant="outline" className="rounded-full">
+                <Link href="/alertas">
+                  Ver Todos os Alertas
+                  <ArrowRightCircle className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+          )}
         </div>
       ) : null}
 
