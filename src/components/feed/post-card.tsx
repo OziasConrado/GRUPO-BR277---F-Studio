@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { StaticImageData } from 'next/image';
@@ -73,6 +72,7 @@ export interface PostReactions {
 }
 
 
+// Corrected interface to match the data structure from page.tsx
 export interface PostCardProps {
   id: string;
   userId: string;
@@ -90,10 +90,10 @@ export interface PostCardProps {
   bio?: string;
   instagramUsername?: string;
   cardStyle?: {
-    backgroundColor?: string;
-    color: string;
-    backgroundImage?: string;
     name: string;
+    bg?: string;
+    gradient?: string;
+    text: string;
   };
   edited?: boolean;
 }
@@ -431,12 +431,17 @@ export default function PostCard({
   const displayImageUrl = cardStyle ? null : (uploadedImageUrl || imageUrl);
   const displayImageAlt = cardStyle ? '' : (uploadedImageUrl ? (dataAIUploadedImageHint || "Imagem do post") : (dataAIImageHint || "Imagem do post"));
   
-  const headerTextColor = cardStyle?.color === '#FFFFFF' ? 'text-primary-foreground' : 'text-foreground';
-  const mutedTextColor = cardStyle?.color === '#FFFFFF' ? 'text-primary-foreground/80' : 'text-muted-foreground';
-  const reactionButtonTextColor = cardStyle?.color === '#FFFFFF' ? 'text-primary-foreground/90 hover:text-primary-foreground' : 'text-muted-foreground hover:text-primary';
-  const reactionButtonActivePrimaryColor = cardStyle?.color === '#FFFFFF' ? 'text-yellow-400' : 'text-primary';
-  const reactionButtonActiveDestructiveColor = cardStyle?.color === '#FFFFFF' ? 'text-orange-400' : 'text-destructive';
-  const reactionButtonHoverBg = cardStyle?.color === '#FFFFFF' ? 'hover:bg-white/10' : 'hover:bg-muted/30';
+  // Corrected color logic
+  const cardInlineStyle = cardStyle ? {
+    backgroundImage: cardStyle.gradient,
+    backgroundColor: cardStyle.bg,
+  } : {};
+  const headerTextColor = cardStyle?.text === '#FFFFFF' ? 'text-primary-foreground' : 'text-foreground';
+  const mutedTextColor = cardStyle?.text === '#FFFFFF' ? 'text-primary-foreground/80' : 'text-muted-foreground';
+  const reactionButtonTextColor = cardStyle?.text === '#FFFFFF' ? 'text-primary-foreground/90 hover:text-primary-foreground' : 'text-muted-foreground hover:text-primary';
+  const reactionButtonActivePrimaryColor = cardStyle?.text === '#FFFFFF' ? 'text-yellow-400' : 'text-primary';
+  const reactionButtonActiveDestructiveColor = cardStyle?.text === '#FFFFFF' ? 'text-orange-400' : 'text-destructive';
+  const reactionButtonHoverBg = cardStyle?.text === '#FFFFFF' ? 'hover:bg-white/10' : 'hover:bg-muted/30';
   
   // Comment Component
   const CommentItem = ({ comment }: { comment: CommentProps }) => (
@@ -462,26 +467,24 @@ export default function PostCard({
 
   return (
     <>
-      <Card className="w-full max-w-2xl mx-auto mb-6 shadow-lg rounded-xl overflow-hidden" style={cardStyle?.backgroundImage ? { backgroundImage: cardStyle.backgroundImage } : { backgroundColor: cardStyle?.backgroundColor }}>
+      <Card className="w-full max-w-2xl mx-auto mb-6 shadow-lg rounded-xl overflow-hidden" style={cardInlineStyle}>
         <CardHeader className="flex flex-row items-start space-x-3 p-4">
           <Avatar className="h-10 w-10 cursor-pointer" onClick={handleAvatarOrNameClick}>
             {userAvatarUrl ? <AvatarImage src={userAvatarUrl as string} alt={userName} data-ai-hint={dataAIAvatarHint} /> : null}
             <AvatarFallback>{userName ? userName.substring(0,2).toUpperCase() : <UserCircle className="h-10 w-10" />}</AvatarFallback>
           </Avatar>
-          <div className="flex-grow">
-            <div className="cursor-pointer" onClick={handleAvatarOrNameClick}>
-              <PostCardTitleUI className={cn("text-base font-headline", headerTextColor)} style={cardStyle ? { color: cardStyle.color } : {}}>
-                {userName}
-              </PostCardTitleUI>
-            </div>
+          <div className="flex-grow" onClick={handleAvatarOrNameClick}>
+            <PostCardTitleUI className={cn("text-base font-headline cursor-pointer", headerTextColor)} style={cardStyle ? { color: cardStyle.text } : {}}>
+              {userName}
+            </PostCardTitleUI>
             <div className="flex flex-wrap items-center gap-x-1.5 text-xs">
-              {userLocation && <p className={cn(mutedTextColor)} style={cardStyle ? { color: cardStyle.color, opacity: 0.8 } : {}}>{userLocation}</p>}
-              {userLocation && <span className={cn(mutedTextColor)} style={cardStyle ? { color: cardStyle.color, opacity: 0.8 } : {}}>&middot;</span>}
-              <p className={cn(mutedTextColor)} style={cardStyle ? { color: cardStyle.color, opacity: 0.8 } : {}}>{timestamp}</p>
+              {userLocation && <p className={cn(mutedTextColor)} style={cardStyle ? { color: cardStyle.text, opacity: 0.8 } : {}}>{userLocation}</p>}
+              {userLocation && <span className={cn(mutedTextColor)} style={cardStyle ? { color: cardStyle.text, opacity: 0.8 } : {}}>&middot;</span>}
+              <p className={cn(mutedTextColor)} style={cardStyle ? { color: cardStyle.text, opacity: 0.8 } : {}}>{timestamp}</p>
               {edited && (
                 <>
-                  <span className={cn(mutedTextColor)} style={cardStyle ? { color: cardStyle.color, opacity: 0.8 } : {}}>&middot;</span>
-                  <p className={cn("italic", mutedTextColor)} style={cardStyle ? { color: cardStyle.color, opacity: 0.8 } : {}}>(Editado)</p>
+                  <span className={cn(mutedTextColor)} style={cardStyle ? { color: cardStyle.text, opacity: 0.8 } : {}}>&middot;</span>
+                  <p className={cn("italic", mutedTextColor)} style={cardStyle ? { color: cardStyle.text, opacity: 0.8 } : {}}>(Editado)</p>
                 </>
               )}
             </div>
@@ -503,7 +506,7 @@ export default function PostCard({
                 </div>
               </div>
           ) : cardStyle ? (
-            text && <p className="text-2xl font-bold leading-tight" style={{ color: cardStyle.color }}>{renderTextWithMentions(text, MOCK_USER_NAMES_FOR_MENTIONS)}</p>
+            text && <p className="text-2xl font-bold leading-tight" style={{ color: cardStyle.text }}>{renderTextWithMentions(text, MOCK_USER_NAMES_FOR_MENTIONS)}</p>
           ) : (
             <>
               {text && <div className="mb-3"><p className="text-base leading-relaxed whitespace-pre-wrap">{processedTextElementsForStandardPost}</p></div>}
@@ -521,11 +524,11 @@ export default function PostCard({
         <CardFooter className="flex items-center justify-between px-4 py-2 border-t border-border/50">
           <div className="flex items-center gap-1">
               <Button variant="ghost" onClick={() => handleInteractionAttempt(() => handlePostReactionClick('thumbsUp'))} className={cn(`p-2 h-auto ${currentUserPostReaction === 'thumbsUp' ? reactionButtonActivePrimaryColor : reactionButtonTextColor} ${reactionButtonHoverBg} flex items-center gap-0.5`)} aria-label="Curtir">
-                  <ThumbsUp className={`h-7 w-7 ${currentUserPostReaction === 'thumbsUp' ? (cardStyle?.color === '#FFFFFF' ? 'fill-yellow-400' : 'fill-primary') : ''}`} />
+                  <ThumbsUp className={`h-7 w-7 ${currentUserPostReaction === 'thumbsUp' ? (cardStyle?.text === '#FFFFFF' ? 'fill-yellow-400' : 'fill-primary') : ''}`} />
                   {localPostReactions.thumbsUp > 0 && <span className="text-xs tabular-nums">({localPostReactions.thumbsUp})</span>}
               </Button>
               <Button variant="ghost" onClick={() => handleInteractionAttempt(() => handlePostReactionClick('thumbsDown'))} className={cn(`p-2 h-auto ${currentUserPostReaction === 'thumbsDown' ? reactionButtonActiveDestructiveColor : reactionButtonTextColor} ${reactionButtonHoverBg} flex items-center gap-0.5`)} aria-label="Não curtir">
-                  <ThumbsDown className={`h-7 w-7 ${currentUserPostReaction === 'thumbsDown' ? (cardStyle?.color === '#FFFFFF' ? 'fill-orange-400' : 'fill-destructive') : ''}`} />
+                  <ThumbsDown className={`h-7 w-7 ${currentUserPostReaction === 'thumbsDown' ? (cardStyle?.text === '#FFFFFF' ? 'fill-orange-400' : 'fill-destructive') : ''}`} />
                    {localPostReactions.thumbsDown > 0 && <span className="text-xs tabular-nums">({localPostReactions.thumbsDown})</span>}
               </Button>
               <Button variant="ghost" onClick={() => handleInteractionAttempt(() => setIsSheetOpen(true))} className={cn(reactionButtonTextColor, reactionButtonHoverBg, "p-2 h-auto flex items-center gap-0.5")} aria-label="Comentários">
