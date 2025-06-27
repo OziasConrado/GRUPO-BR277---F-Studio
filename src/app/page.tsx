@@ -11,7 +11,7 @@ import {
   Newspaper,
   Video,
   Image as ImageIcon,
-  XCircle,
+  X,
   Edit,
   PlayCircle,
   AlertTriangle,
@@ -555,7 +555,7 @@ export default function FeedPage() {
             value={newPostText}
             onChange={(e) => setNewPostText(e.target.value)}
             style={
-              !mediaPreviewUrl && !pollData && currentPostType === 'text' && selectedPostBackground?.name !== 'Padrão'
+              !mediaPreviewUrl && !pollData && currentPostType === 'text' && selectedPostBackground.name !== 'Padrão'
                 ? {
                     backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
                     backgroundImage: selectedPostBackground.gradient,
@@ -567,19 +567,22 @@ export default function FeedPage() {
           />
 
           {mediaPreviewUrl && (
-            <div className="relative mb-3">
+            <div className="relative mb-3 w-32 h-32">
               {selectedMediaForUpload?.type.startsWith('video/') ? (
-                <video src={mediaPreviewUrl} controls className="max-w-full h-auto rounded-md border" data-ai-hint="user uploaded video preview" />
+                <video src={mediaPreviewUrl} className="w-full h-full object-cover rounded-md border" data-ai-hint="user uploaded video preview">
+                  <source src={mediaPreviewUrl} type={selectedMediaForUpload.type} />
+                </video>
               ) : (
-                <img src={mediaPreviewUrl} alt="Prévia da imagem" className="max-w-full h-auto rounded-md border" data-ai-hint="user uploaded image preview"/>
+                <img src={mediaPreviewUrl} alt="Prévia da imagem" className="w-full h-full object-cover rounded-md border" data-ai-hint="user uploaded image preview"/>
               )}
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute top-2 right-2 rounded-full bg-black/50 text-white hover:bg-black/70 h-7 w-7"
+                className="absolute -top-2 -right-2 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/80 h-6 w-6"
                 onClick={handleRemoveMedia}
+                aria-label="Remover mídia"
               >
-                <XCircle className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </Button>
             </div>
           )}
@@ -594,7 +597,7 @@ export default function FeedPage() {
                       className="absolute top-1 right-1 h-7 w-7 rounded-full text-muted-foreground hover:text-destructive"
                       onClick={() => setPollData(null)}
                   >
-                      <XCircle className="h-4 w-4" />
+                      <X className="h-4 w-4" />
                   </Button>
               </div>
           )}
@@ -729,7 +732,7 @@ export default function FeedPage() {
       ) : displayedAlertsFeed.length > 0 ? (
         <div className="pt-4 pb-2">
           <div className="flex overflow-x-auto space-x-3 pb-2 -mx-1 px-1 no-scrollbar">
-            {displayedAlertsFeed.slice(0, 5).map((alertData) => (
+            {displayedAlertsFeed.map((alertData) => (
               <Link href="/alertas" key={alertData.id} className="block">
                 <HomeAlertCard alert={alertData} />
               </Link>
