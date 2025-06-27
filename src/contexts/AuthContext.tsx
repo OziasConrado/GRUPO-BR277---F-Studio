@@ -339,7 +339,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         if (Object.keys(firestoreProfileUpdates).length > 0) {
           firestoreProfileUpdates.updatedAt = serverTimestamp();
-          await updateDoc(userDocRef, firestoreProfileUpdates);
+          await setDoc(userDocRef, firestoreProfileUpdates, { merge: true });
           setUserProfile(prev => ({...prev, ...firestoreProfileUpdates}));
         }
         setCurrentUser(auth.currentUser);
@@ -351,7 +351,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAuthenticating(false);
       }
     },
-    [auth, toast, router]
+    [auth, firestore, storage, toast, router]
   );
 
   const signOutUser = useCallback(async () => {
