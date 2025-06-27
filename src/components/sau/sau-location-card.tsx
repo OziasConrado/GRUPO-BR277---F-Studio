@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -28,7 +27,7 @@ const concessionaireLogos: Record<string, { url: string; hint: string }> = {
   'Arteris Régis Bitencourt': { url: 'https://placehold.co/64x64.png?text=ARB', hint: 'logo arteris regis bitencourt' },
   'CCR PRVias': { url: 'https://placehold.co/64x64.png?text=CCRPR', hint: 'logo ccr prvias' },
   'CCR RioSP': { url: 'https://placehold.co/64x64.png?text=CCRRS', hint: 'logo ccr riosp' },
-  'EPR IGUAÇU': { url: 'https://placehold.co/64x64.png?text=EPR-I', hint: 'logo epr iguacu' },
+  'EPR Iguaçu': { url: 'https://placehold.co/64x64.png?text=EPR-I', hint: 'logo epr iguacu' },
 };
 
 

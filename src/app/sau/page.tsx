@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -16,24 +15,24 @@ import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, Timestamp
 import { useAuth } from '@/contexts/AuthContext';
 
 const concessionairesForFilter = [
-  "Todos", "EPR IGUAÇU", "Via Araucária", "EPR Litoral Pioneiro", "Arteris Litoral Sul",
+  "Todos", "EPR Iguaçu", "Via Araucária", "EPR Litoral Pioneiro", "Arteris Litoral Sul",
   "Arteris Planalto Sul", "Arteris Régis Bitencourt", "CCR PRVias",
   "CCR RioSP"
 ];
 
 const allSausData: SAULocation[] = [
-  // EPR IGUAÇU
-  { id: 'epr-iguacu-1', concessionaire: 'EPR IGUAÇU', name: 'SAU 01 - BR-277, km 310', address: 'Prudentópolis/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.21, longitude: -50.98 },
-  { id: 'epr-iguacu-2', concessionaire: 'EPR IGUAÇU', name: 'SAU 02 - BR-277, km 381', address: 'Candói/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.56, longitude: -51.65 },
-  { id: 'epr-iguacu-3', concessionaire: 'EPR IGUAÇU', name: 'SAU 03 - BR-277, km 454', address: 'Laranjeiras do Sul/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.41, longitude: -52.41 },
-  { id: 'epr-iguacu-4', concessionaire: 'EPR IGUAÇU', name: 'SAU 04 - BR-277, km 519', address: 'Guaraniaçu/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.09, longitude: -52.88 },
-  { id: 'epr-iguacu-5', concessionaire: 'EPR IGUAÇU', name: 'SAU 05 - BR-277, km 574', address: 'Cascavel/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -24.96, longitude: -53.46 },
-  { id: 'epr-iguacu-6', concessionaire: 'EPR IGUAÇU', name: 'SAU 06 - BR-277, km 664', address: 'Matelândia/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.25, longitude: -53.99 },
-  { id: 'epr-iguacu-7', concessionaire: 'EPR IGUAÇU', name: 'SAU 07 - BR-277, km 711', address: 'Santa Terezinha de Itaipu/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.43, longitude: -54.49 },
-  { id: 'epr-iguacu-8', concessionaire: 'EPR IGUAÇU', name: 'SAU 08 - PR-182, km 177', address: 'Lindoeste/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.26, longitude: -53.54 },
-  { id: 'epr-iguacu-9', concessionaire: 'EPR IGUAÇU', name: 'SAU 09 - PR-182, km 128', address: 'Marmelândia/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.64, longitude: -53.77 },
-  { id: 'epr-iguacu-10', concessionaire: 'EPR IGUAÇU', name: 'SAU 10 - PR-280, km 521', address: 'Ampére/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.92, longitude: -53.46 },
-  { id: 'epr-iguacu-11', concessionaire: 'EPR IGUAÇU', name: 'SAU 11 - PR-280, km 247', address: 'Renascença/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -26.15, longitude: -52.97 },
+  // EPR Iguaçu
+  { id: 'epr-iguacu-1', concessionaire: 'EPR Iguaçu', name: 'SAU 01 - BR-277, km 310', address: 'Prudentópolis/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.21, longitude: -50.98 },
+  { id: 'epr-iguacu-2', concessionaire: 'EPR Iguaçu', name: 'SAU 02 - BR-277, km 381', address: 'Candói/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.56, longitude: -51.65 },
+  { id: 'epr-iguacu-3', concessionaire: 'EPR Iguaçu', name: 'SAU 03 - BR-277, km 454', address: 'Laranjeiras do Sul/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.41, longitude: -52.41 },
+  { id: 'epr-iguacu-4', concessionaire: 'EPR Iguaçu', name: 'SAU 04 - BR-277, km 519', address: 'Guaraniaçu/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.09, longitude: -52.88 },
+  { id: 'epr-iguacu-5', concessionaire: 'EPR Iguaçu', name: 'SAU 05 - BR-277, km 574', address: 'Cascavel/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -24.96, longitude: -53.46 },
+  { id: 'epr-iguacu-6', concessionaire: 'EPR Iguaçu', name: 'SAU 06 - BR-277, km 664', address: 'Matelândia/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.25, longitude: -53.99 },
+  { id: 'epr-iguacu-7', concessionaire: 'EPR Iguaçu', name: 'SAU 07 - BR-277, km 711', address: 'Santa Terezinha de Itaipu/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.43, longitude: -54.49 },
+  { id: 'epr-iguacu-8', concessionaire: 'EPR Iguaçu', name: 'SAU 08 - PR-182, km 177', address: 'Lindoeste/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.26, longitude: -53.54 },
+  { id: 'epr-iguacu-9', concessionaire: 'EPR Iguaçu', name: 'SAU 09 - PR-182, km 128', address: 'Marmelândia/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.64, longitude: -53.77 },
+  { id: 'epr-iguacu-10', concessionaire: 'EPR Iguaçu', name: 'SAU 10 - PR-280, km 521', address: 'Ampére/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -25.92, longitude: -53.46 },
+  { id: 'epr-iguacu-11', concessionaire: 'EPR Iguaçu', name: 'SAU 11 - PR-280, km 247', address: 'Renascença/PR', services: ['Banheiro', 'Água', 'Informações'], operatingHours: '24 horas', latitude: -26.15, longitude: -52.97 },
 
   // Via Araucária
   { id: 'via-araucaria-1', concessionaire: 'Via Araucária', name: 'SAU 01 - BR-277, km 107', address: 'Campo Largo/PR', services: ['Banheiro', 'Água', 'Wi-Fi'], operatingHours: '24 horas', latitude: -25.45, longitude: -49.52 },
