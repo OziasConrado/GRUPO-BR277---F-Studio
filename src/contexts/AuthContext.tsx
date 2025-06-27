@@ -137,7 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }
     processRedirect();
-  }, [auth, router, toast, loading, isAuthenticating]);
+  }, [auth, firestore, router, toast, loading, isAuthenticating]);
 
 
   const handleAuthError = (error: AuthError, customTitle?: string) => {
@@ -243,7 +243,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAuthenticating(false);
       }
     },
-    [auth, router, toast]
+    [auth, firestore, router, toast]
   );
 
   const signInWithEmail = useCallback(
@@ -263,7 +263,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAuthenticating(false);
       }
     },
-    [auth, router, toast]
+    [auth, firestore, router, toast]
   );
 
   const sendPasswordResetEmail = useCallback(
