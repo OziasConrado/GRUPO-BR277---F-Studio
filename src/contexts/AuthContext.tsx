@@ -291,41 +291,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUserProfile = useCallback(
     async (data: UpdateUserProfileData) => {
-      if (!currentUser || !firestore || !storage) {
+      const initialUser = auth?.currentUser;
+      if (!initialUser || !firestore || !storage) {
         toast({ title: "Erro", description: "Usuário não autenticado ou serviço indisponível.", variant: "destructive" });
         return;
       }
+
       setIsAuthenticating(true);
-      const user = currentUser;
-      const userDocRef = doc(firestore, "Usuarios", user.uid);
-      
+
       const authProfileUpdates: { displayName?: string; photoURL?: string } = {};
       const firestoreProfileUpdates: any = {};
-
-      if (data.displayName && data.displayName !== user.displayName) {
-        authProfileUpdates.displayName = data.displayName;
-        firestoreProfileUpdates.displayName = data.displayName;
-      }
       
-      if (data.bio !== undefined) {
-        firestoreProfileUpdates.bio = data.bio;
-      }
-      
-      if (data.location !== undefined) {
-        firestoreProfileUpdates.location = data.location;
-      }
+      let newPhotoURL: string | undefined = undefined;
 
-      if (data.instagramUsername !== undefined) {
-        firestoreProfileUpdates.instagramUsername = data.instagramUsername.replace('@','');
-      }
-
+      // Etapa 1: Lidar com o upload da foto primeiro, pois é uma operação assíncrona
       if (data.newPhotoFile) {
         try {
-          const photoRef = ref(storage, `profile_pictures/${user.uid}/${data.newPhotoFile.name}`);
+          const photoRef = ref(storage, `profile_pictures/${initialUser.uid}/${Date.now()}_${data.newPhotoFile.name}`);
           await uploadBytes(photoRef, data.newPhotoFile);
-          const photoURL = await getDownloadURL(photoRef);
-          authProfileUpdates.photoURL = photoURL;
-          firestoreProfileUpdates.photoURL = photoURL;
+          newPhotoURL = await getDownloadURL(photoRef);
         } catch (uploadError) {
           handleAuthError(uploadError as AuthError, 'Erro no Upload da Foto');
           setIsAuthenticating(false);
@@ -333,26 +317,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
+      // Etapa 2: Agora que o trabalho assíncrono terminou, obter o objeto de usuário mais recente novamente
+      // Esta é a mudança chave para evitar problemas com tokens/objetos de usuário obsoletos.
+      const finalUser = auth?.currentUser;
+      if (!finalUser) {
+        toast({ title: "Erro de Autenticação", description: "Sua sessão expirou. Por favor, faça login novamente.", variant: "destructive" });
+        setIsAuthenticating(false);
+        return;
+      }
+      
+      const userDocRef = doc(firestore, "Usuarios", finalUser.uid);
+
+      // Etapa 3: Preparar os payloads de atualização
+      if (data.displayName && data.displayName !== finalUser.displayName) {
+        authProfileUpdates.displayName = data.displayName;
+        firestoreProfileUpdates.displayName = data.displayName;
+      }
+
+      if (newPhotoURL) {
+          authProfileUpdates.photoURL = newPhotoURL;
+          firestoreProfileUpdates.photoURL = newPhotoURL;
+      }
+      
+      if (data.bio !== undefined) firestoreProfileUpdates.bio = data.bio;
+      if (data.location !== undefined) firestoreProfileUpdates.location = data.location;
+      if (data.instagramUsername !== undefined) firestoreProfileUpdates.instagramUsername = data.instagramUsername.replace('@','');
+      
+      // Etapa 4: Realizar as atualizações
       try {
         if (Object.keys(authProfileUpdates).length > 0) {
-          await firebaseUpdateProfile(user, authProfileUpdates);
+          await firebaseUpdateProfile(finalUser, authProfileUpdates);
         }
+
         if (Object.keys(firestoreProfileUpdates).length > 0) {
           firestoreProfileUpdates.updatedAt = serverTimestamp();
           await setDoc(userDocRef, firestoreProfileUpdates, { merge: true });
-          setUserProfile(prev => ({...prev, ...firestoreProfileUpdates}));
+          
+          // Atualização otimista do estado do perfil local
+          const newProfileState: UserProfile = { ...userProfile };
+          if (firestoreProfileUpdates.bio !== undefined) newProfileState.bio = firestoreProfileUpdates.bio;
+          if (firestoreProfileUpdates.location !== undefined) newProfileState.location = firestoreProfileUpdates.location;
+          if (firestoreProfileUpdates.instagramUsername !== undefined) newProfileState.instagramUsername = firestoreProfileUpdates.instagramUsername;
+          setUserProfile(newProfileState);
         }
-        setCurrentUser(auth.currentUser);
+
+        // O listener onAuthStateChanged cuidará da atualização do estado currentUser, não há necessidade de setCurrentUser manual
         toast({ title: 'Perfil Atualizado!', description: 'Suas informações foram salvas com sucesso.' });
-        router.push('/'); 
+        router.push('/');
       } catch (error) {
         handleAuthError(error as AuthError, 'Erro ao Atualizar Perfil');
       } finally {
         setIsAuthenticating(false);
       }
     },
-    [currentUser, firestore, storage, auth, router, toast]
+    [userProfile, router, toast]
   );
+
 
   const signOutUser = useCallback(async () => {
     if (!auth) {
