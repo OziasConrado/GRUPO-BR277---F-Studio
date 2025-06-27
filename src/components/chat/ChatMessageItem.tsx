@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -171,7 +170,7 @@ export default function ChatMessageItem({
       {isCurrentUser && (
           <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 self-center group-hover/message:opacity-100 md:opacity-0 transition-opacity rounded-full">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 self-center rounded-full text-muted-foreground hover:text-primary">
                       <MoreVertical className="h-4 w-4" />
                   </Button>
               </DropdownMenuTrigger>
