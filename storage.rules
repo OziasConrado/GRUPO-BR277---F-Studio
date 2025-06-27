@@ -1,67 +1,78 @@
-
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    
-    // Default: Public read, private write
+
+    // Helper function to check auth and profile completion.
+    // Checks for non-null and non-empty displayName and location.
+    function isProfileComplete(userId) {
+      let userDocPath = /databases/(default)/documents/Usuarios/$(userId);
+      return exists(userDocPath) &&
+             get(userDocPath).data.displayName != null && get(userDocPath).data.displayName != "" &&
+             get(userDocPath).data.location != null && get(userDocPath).data.location != "";
+    }
+
+    // Default: Public read for most things, but no write.
+    // More specific rules below will override this.
     match /{allPaths=**} {
-      allow read;
+      allow read: if true;
       allow write: if false;
     }
+    
+    // --- Specific Folder Write Rules ---
 
-    // Post images: public read, private write for authenticated users
-    match /images/{userId}/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null 
-                   && request.auth.uid == userId
-                   && request.resource.size < 5 * 1024 * 1024 // 5MB limit
-                   && request.resource.contentType.matches('image/.*');
+    // Profile Pictures: users can write to their own folder.
+    match /profile_pictures/{userId}/{fileName} {
+      allow write: if request.auth != null &&
+                      request.auth.uid == userId &&
+                      request.resource.size < 2 * 1024 * 1024 &&
+                      request.resource.contentType.matches('image/.*');
     }
 
-    // Post videos: public read, private write for authenticated users
-    match /videos/{userId}/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null 
-                   && request.auth.uid == userId
-                   && request.resource.size < 50 * 1024 * 1024 // 50MB limit
-                   && request.resource.contentType.matches('video/.*');
-    }
-
-    // Chat images: private read/write for authenticated users
-    match /chat_images/{userId}/{allPaths=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null
-                   && request.auth.uid == userId
-                   && request.resource.size < 5 * 1024 * 1024 // 5MB limit
-                   && request.resource.contentType.matches('image/.*');
+    // Post Images: profile-complete users can write to their own folder.
+    match /images/{userId}/{fileName} {
+      allow write: if request.auth != null &&
+                      request.auth.uid == userId &&
+                      isProfileComplete(request.auth.uid) &&
+                      request.resource.size < 5 * 1024 * 1024 && // 5MB limit
+                      request.resource.contentType.matches('image/.*');
     }
     
-    // Chat audio: private read/write for authenticated users
-    match /chat_audio/{userId}/{allPaths=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null
-                   && request.auth.uid == userId
-                   && request.resource.size < 10 * 1024 * 1024 // 10MB limit
-                   && request.resource.contentType.matches('audio/.*');
-    }
-    
-    // Profile pictures: public read, private write for owner
-    match /profile_pictures/{userId}/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null 
-                   && request.auth.uid == userId
-                   && request.resource.size < 2 * 1024 * 1024 // 2MB limit
-                   && request.resource.contentType.matches('image/.*');
+    // Post Videos (Reels): profile-complete users can write to their own folder.
+    match /videos/{userId}/{fileName} {
+      allow write: if request.auth != null &&
+                      request.auth.uid == userId &&
+                      isProfileComplete(request.auth.uid) &&
+                      request.resource.size < 50 * 1024 * 1024 && // 50MB limit
+                      request.resource.contentType.matches('video/.*');
     }
 
-    // Indicated points images: public read, private write for authenticated users
-    match /indicated_points_images/{userId}/{allPaths=**} {
-        allow read;
-        allow write: if request.auth != null
-                     && request.auth.uid == userId
-                     && request.resource.size < 2 * 1024 * 1024 // 2MB limit
-                     && request.resource.contentType.matches('image/.*');
+    // Tourist Point Indications: profile-complete users can write to their own folder.
+    match /indicated_points_images/{userId}/{fileName} {
+       allow write: if request.auth != null &&
+                       request.auth.uid == userId &&
+                       isProfileComplete(request.auth.uid) &&
+                       request.resource.size < 2 * 1024 * 1024 &&
+                       request.resource.contentType.matches('image/.*');
+    }
+
+    // Chat media is private.
+    // Read is allowed for any authenticated user.
+    // Write is only for the owner of the folder.
+    match /chat_images/{userId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null &&
+                      request.auth.uid == userId &&
+                      request.resource.size < 5 * 1024 * 1024 &&
+                      request.resource.contentType.matches('image/.*');
+    }
+
+    match /chat_audio/{userId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null &&
+                      request.auth.uid == userId &&
+                      request.resource.size < 10 * 1024 * 1024 &&
+                      request.resource.contentType.matches('audio/.*');
     }
   }
 }
