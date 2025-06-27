@@ -1,42 +1,72 @@
-
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-  
-    // Default security: Deny all reads and writes by default
-    match /{allPaths=**} {
-      allow read, write: if false;
+
+    // Helper functions
+    function isImage(request) {
+      return request.resource.contentType.matches('image/.*');
     }
-    
-    // Profile Pictures: Publicly readable, but only the user can write.
+    function isVideo(request) {
+      return request.resource.contentType.matches('video/.*');
+    }
+     function isAudio(request) {
+      return request.resource.contentType.matches('audio/.*');
+    }
+
+    // Profile Pictures (Max 2MB)
     match /profile_pictures/{userId}/{fileName} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId
+                   && isImage(request)
+                   && request.resource.size < 2 * 1024 * 1024;
     }
-    
-    // Post Images: Publicly readable, only the author can write.
+
+    // Post Images (from create post card, max 5MB)
     match /images/{userId}/{fileName} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId
+                   && isImage(request)
+                   && request.resource.size < 5 * 1024 * 1024;
     }
 
-    // Post Videos: Publicly readable, only the author can write.
+    // Post Videos (Reels, from create post card, max 50MB)
     match /videos/{userId}/{fileName} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Chat Audio: Publicly readable, only the sender can write.
-    match /chat_audio/{userId}/{fileName} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId
+                   && isVideo(request)
+                   && request.resource.size < 50 * 1024 * 1024;
     }
 
-    // Indicated Tourist Point Images: Publicly readable, only the submitter can write.
+    // Chat Images (Max 5MB)
+    match /chat_images/{userId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId
+                   && isImage(request)
+                   && request.resource.size < 5 * 1024 * 1024;
+    }
+
+    // Chat Audio (Max 5MB)
+    match /chat_audio/{userId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId
+                   && isAudio(request)
+                   && request.resource.size < 5 * 1024 * 1024;
+    }
+    
+    // Tourist Points Images (Max 2MB)
     match /indicated_points_images/{userId}/{fileName} {
         allow read: if true;
-        allow write: if request.auth != null && request.auth.uid == userId;
+        allow write: if request.auth != null && request.auth.uid == userId
+                     && isImage(request)
+                     && request.resource.size < 2 * 1024 * 1024;
     }
+
+    // Publicly readable assets (Logos, Icons, etc.)
+    match /Ícones e Logo do app GRUPO BR277/{allPaths=**} {
+      allow read: if true;
+      allow write: if false; // Only allow uploads via Firebase Console
+    }
+    
   }
 }
