@@ -1,6 +1,6 @@
 'use client';
 
-import { Dialog, DialogContent, DialogClose, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogClose, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { X, MapPin } from 'lucide-react';
 import type { StreamCardProps } from './stream-card';
@@ -52,6 +52,7 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
           <DialogTitle className="sr-only">
             Visualizador de Transmissão: {stream.title}
           </DialogTitle>
+          <DialogDescription className="sr-only">Transmissão ao vivo de {stream.description}.</DialogDescription>
           <DialogClose asChild>
             <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full h-9 w-9 sm:h-10 sm:w-10 !z-[210] flex-shrink-0">
               <X className="h-5 w-5 sm:h-6 sm:h-6" />

@@ -110,9 +110,6 @@ export default function IndicatePointModal({ isOpen, onClose, onSubmit, isSubmit
       <DialogContent className="sm:max-w-lg p-0 rounded-xl flex flex-col h-[90vh] max-h-[700px]">
         <DialogHeader className="p-4 border-b shrink-0">
           <DialogTitle className="font-headline text-xl">Indicar Ponto Turístico</DialogTitle>
-          {/* Add DialogDescription for accessibility */}
-          <DialogDescription>
-            Preencha os campos abaixo para indicar um novo ponto turístico.
           <DialogDescription>
             Ajude outros viajantes a descobrir lugares incríveis.
           </DialogDescription>

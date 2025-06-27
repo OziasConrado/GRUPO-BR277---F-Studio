@@ -27,7 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle as RadixAlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogHeader, DialogTitle as RadixDialogTitle, DialogClose as RadixDialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle as RadixDialogTitle, DialogDescription as RadixDialogDescription, DialogClose as RadixDialogClose } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
@@ -840,6 +840,7 @@ export default function PostCard({
           <DialogContent className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none !bg-black/90 !p-0 flex flex-col !translate-x-0 !translate-y-0" onEscapeKeyDown={() => setIsImageModalOpen(false)}>
               <DialogHeader className="shrink-0 p-2 sm:p-3 flex flex-row justify-end items-center bg-black/50 !z-[210]">
                   <RadixDialogTitle className="sr-only">Visualização de Imagem</RadixDialogTitle>
+                  <RadixDialogDescription className="sr-only">A imagem do post em tela cheia.</RadixDialogDescription>
                   <RadixDialogClose asChild>
                       <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full h-9 w-9 sm:h-10 sm:w-10 !z-[210] flex-shrink-0">
                           <X className="h-5 w-5 sm:h-6 sm:h-6" />

@@ -288,6 +288,7 @@ export default function ViajeParanaPage() {
                 <DialogContent className="sm:max-w-3xl p-2">
                     <DialogHeader>
                         <DialogTitle>Mapa das Regiões Turísticas do Paraná</DialogTitle>
+                        <DialogDescription>Mapa mostrando as diferentes regiões turísticas do estado do Paraná.</DialogDescription>
                     </DialogHeader>
                     <div className="relative w-full aspect-[4/3]">
                         <Image src={mapUrl} alt="Mapa das Regiões Turísticas do Paraná" layout="fill" objectFit="contain" />

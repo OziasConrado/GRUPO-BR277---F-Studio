@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogClose, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogClose, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { X, ThumbsUp, ThumbsDown, MessageSquare, Share2, MoreVertical, Flag } from 'lucide-react';
 import type { StoryCircleProps } from './StoryCircle';
@@ -18,7 +18,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
+  AlertDialogDescription as RadixAlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle as RadixAlertDialogTitle,
@@ -147,6 +147,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
             <DialogTitle className="text-white text-base font-semibold truncate flex-grow pl-2">
               {story.adminName}
             </DialogTitle>
+            <DialogDescription className="sr-only">Visualizador de story de {story.adminName}.</DialogDescription>
             <DialogClose asChild>
               <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full h-9 w-9 sm:h-10 sm:w-10 !z-[210] flex-shrink-0">
                 <X className="h-5 w-5 sm:h-6 sm:h-6" />
@@ -243,9 +244,9 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
         <AlertDialogContent>
           <AlertDialogHeader>
             <RadixAlertDialogTitle>Reportar Reel</RadixAlertDialogTitle>
-            <AlertDialogDescription>
+            <RadixAlertDialogDescription>
               Por favor, selecione o motivo da sua denúncia para o Reel "{story.adminName}".
-            </AlertDialogDescription>
+            </RadixAlertDialogDescription>
           </AlertDialogHeader>
           <RadioGroup value={selectedReportReasonStory} onValueChange={setSelectedReportReasonStory} className="space-y-2 my-4">
             {reportReasonsStory.map((reason) => (
@@ -272,4 +273,3 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
     </>
   );
 }
-
