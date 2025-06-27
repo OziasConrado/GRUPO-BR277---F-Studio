@@ -17,6 +17,7 @@ interface Message {
   author: 'user' | 'ai';
   content: string;
   mapUrl?: string;
+  mapImageUrl?: string;
 }
 
 interface CopilotModalProps {
@@ -56,6 +57,7 @@ export default function CopilotModal({ isOpen, onClose }: CopilotModalProps) {
         author: 'ai',
         content: result.response,
         mapUrl: result.mapUrl,
+        mapImageUrl: result.mapImageUrl,
       };
       setConversation(prev => [...prev, aiMessage]);
     } catch (error) {
@@ -116,7 +118,12 @@ export default function CopilotModal({ isOpen, onClose }: CopilotModalProps) {
                     msg.author === 'ai' ? "bg-muted text-foreground" : "bg-primary text-primary-foreground"
                 )}>
                   {msg.content}
-                   {msg.author === 'ai' && msg.mapUrl && (
+                   {msg.author === 'ai' && msg.mapImageUrl && (
+                    <a href={msg.mapUrl} target="_blank" rel="noopener noreferrer" className="mt-3 block border rounded-lg overflow-hidden hover:opacity-90 transition-opacity">
+                        <img src={msg.mapImageUrl} alt="Mapa da rota" className="w-full h-auto" />
+                    </a>
+                  )}
+                  {msg.author === 'ai' && msg.mapUrl && !msg.mapImageUrl && (
                     <Button asChild variant="outline" size="sm" className="mt-3 w-full bg-background/70 hover:bg-background">
                         <a href={msg.mapUrl} target="_blank" rel="noopener noreferrer">
                             <Map className="mr-2 h-4 w-4" /> Ver Rota no Mapa

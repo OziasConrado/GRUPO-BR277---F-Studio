@@ -50,7 +50,7 @@ async function geocode(address: string): Promise<{ lat: number; lng: number } | 
 const getTrafficInfo = ai.defineTool(
     {
         name: 'getTrafficInfo',
-        description: 'Obtém informações de trânsito em tempo real, incluindo tempo de viagem, distância, um resumo das condições e custo de pedágio entre dois locais.',
+        description: 'Obtém informações de trânsito em tempo real, incluindo tempo de viagem, distância, um resumo das condições, custo e quantidade de pedágios entre dois locais.',
         inputSchema: z.object({
             origin: z.string().describe('A cidade ou ponto de partida.'),
             destination: z.string().describe('A cidade ou ponto de destino.'),
@@ -60,6 +60,8 @@ const getTrafficInfo = ai.defineTool(
             distance: z.string().describe('A distância total da rota, por exemplo, "150 km".'),
             summary: z.string().describe('Um resumo das condições da rota, incluindo acidentes, obras ou congestionamentos.'),
             tollCost: z.number().describe('O custo total estimado dos pedágios. Retorna 0 se não houver pedágios.'),
+            tollCount: z.number().describe('O número de praças de pedágio na rota.'),
+            routePolyline: z.string().optional().describe('A polilinha codificada da rota para gerar uma imagem de mapa.')
         })
     },
     async ({ origin, destination }) => {
@@ -69,7 +71,9 @@ const getTrafficInfo = ai.defineTool(
                 travelTime: "desconhecido",
                 distance: "desconhecida",
                 summary: "A API do Google Maps não está configurada.",
-                tollCost: 0
+                tollCost: 0,
+                tollCount: 0,
+                routePolyline: undefined,
             };
         }
 
@@ -78,10 +82,8 @@ const getTrafficInfo = ai.defineTool(
 
             if (!originCoords || !destinationCoords) {
                 return {
-                    travelTime: "desconhecido",
-                    distance: "desconhecida",
-                    summary: `Não foi possível encontrar as coordenadas para ${origin} ou ${destination}.`,
-                    tollCost: 0
+                    travelTime: "desconhecido", distance: "desconhecida",
+                    summary: `Não foi possível encontrar as coordenadas para ${origin} ou ${destination}.`, tollCost: 0, tollCount: 0,
                 };
             }
 
@@ -90,7 +92,7 @@ const getTrafficInfo = ai.defineTool(
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Goog-Api-Key': apiKey,
-                    'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.travelAdvisory,routes.tollInfo'
+                    'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.travelAdvisory,routes.tollInfo,routes.polyline.encodedPolyline,routes.legs.steps.navigationInstruction'
                 },
                 body: JSON.stringify({
                     origin: { location: { latLng: originCoords } },
@@ -108,7 +110,7 @@ const getTrafficInfo = ai.defineTool(
                  console.error('Routes API error:', data.error);
                  return {
                     travelTime: "desconhecido", distance: "desconhecida",
-                    summary: `Erro ao buscar informações de rota: ${data.error.message || 'Erro de comunicação.'}`, tollCost: 0
+                    summary: `Erro ao buscar informações de rota: ${data.error.message || 'Erro de comunicação.'}`, tollCost: 0, tollCount: 0,
                 };
             }
 
@@ -133,18 +135,33 @@ const getTrafficInfo = ai.defineTool(
                     }, 0);
                 }
 
-                return { travelTime, distance, summary, tollCost };
+                let tollCount = 0;
+                if (route.legs) {
+                    for (const leg of route.legs) {
+                        if (leg.steps) {
+                            for (const step of leg.steps) {
+                                if (step.navigationInstruction?.instructions?.toLowerCase().includes('pedágio')) {
+                                    tollCount++;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                const routePolyline = route.polyline?.encodedPolyline;
+
+                return { travelTime, distance, summary, tollCost, tollCount, routePolyline };
             } else {
                  return {
                     travelTime: "desconhecido", distance: "desconhecida",
-                    summary: `Não foi possível encontrar uma rota entre ${origin} e ${destination}.`, tollCost: 0
+                    summary: `Não foi possível encontrar uma rota entre ${origin} e ${destination}.`, tollCost: 0, tollCount: 0
                 };
             }
         } catch (error: any) {
             console.error('Routes API error:', error);
             return {
                 travelTime: "desconhecido", distance: "desconhecida",
-                summary: `Erro ao buscar informações de rota: ${error.message || 'Erro de comunicação.'}`, tollCost: 0
+                summary: `Erro ao buscar informações de rota: ${error.message || 'Erro de comunicação.'}`, tollCost: 0, tollCount: 0
             };
         }
     }
@@ -259,6 +276,7 @@ const copilotFlow = ai.defineFlow(
 - **Condições de Trânsito:** Use a ferramenta \`getTrafficInfo\` para obter dados. Sua resposta DEVE incluir:
     - Uma *Condição geral do trecho* (ex: "O trânsito está fluindo bem, com alguns pontos de atenção.").
     - O *Tempo estimado de viagem* de forma visível.
+    - **Pedágios**: Informe o número de praças de pedágio (\`tollCount\`) e o custo total estimado (\`tollCost\`). Formate o custo como moeda brasileira (R$). Ex: "Há 3 praças de pedágio no caminho, com um custo total de R$ 45,90." Se o custo ou a contagem for 0, informe que não há pedágios.
     - Uma lista de *Pontos de atenção* (lentidão, congestionamentos, acidentes, obras) se houver problemas. Seja específico (ex: "Na BR-376, próximo ao km 120, há lentidão devido a obras na pista").
 - **Aviso de Dados:** Sempre termine sua resposta com a frase: "Lembre-se que as condições do trânsito podem mudar rapidamente. Dirija com segurança e boa viagem!"
 
@@ -266,17 +284,18 @@ const copilotFlow = ai.defineFlow(
 1. Saudação amigável e confirmação da rota.
 2. Apresente a *Condição geral*.
 3. Apresente o *Tempo estimado de viagem*.
-4. Se houver problemas, liste os *Pontos de atenção* com marcadores.
-5. Se não houver problemas, diga algo como "O caminho está livre!".
+4. Apresente as informações de *Pedágio* (quantidade e custo).
+5. Se houver problemas, liste os *Pontos de atenção* com marcadores. Se não houver problemas, diga algo como "O caminho está livre!".
 6. Finalize com a frase de segurança e boa viagem.
 
 **IMPORTANTE:**
 - NÃO invente informações de trânsito. Se a ferramenta não retornar dados, informe ao usuário que não há informações disponíveis no momento.
-- NÃO inclua o link do mapa na sua resposta de texto. O link será adicionado automaticamente à interface do aplicativo.`;
+- NÃO inclua o link do mapa na sua resposta de texto. O link e um mapa visual serão adicionados automaticamente à interface do aplicativo.`;
 
     const messages: MessageData[] = [{ role: 'user', content: [{ text: input.query }] }];
     let routeOrigin: string | undefined;
     let routeDestination: string | undefined;
+    let routePolyline: string | undefined;
 
     for (let i = 0; i < 5; i++) {
       const lastMessage = messages[messages.length - 1];
@@ -297,18 +316,26 @@ const copilotFlow = ai.defineFlow(
         if (routeOrigin && routeDestination) {
           mapUrl = `https://www.google.com/maps/dir/${encodeURIComponent(routeOrigin)}/${encodeURIComponent(routeDestination)}`;
         }
+
+        let mapImageUrl: string | undefined;
+        if (routePolyline) {
+            const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+            if (apiKey) {
+                mapImageUrl = `https://maps.googleapis.com/maps/api/staticmap?size=600x300&path=enc:${routePolyline}&key=${apiKey}`;
+            }
+        }
+
         return { 
             response: llmResponse.text ?? "Não foi possível obter uma resposta do assistente. Tente novamente.",
-            mapUrl: mapUrl 
+            mapUrl: mapUrl,
+            mapImageUrl: mapImageUrl,
         };
       }
       
-      if (!routeOrigin && !routeDestination) {
-        const trafficToolCall = llmResponse.toolCalls.find(tc => tc.tool === 'getTrafficInfo');
-        if (trafficToolCall && trafficToolCall.input) {
-            routeOrigin = (trafficToolCall.input as any).origin;
-            routeDestination = (trafficToolCall.input as any).destination;
-        }
+      const trafficToolCall = llmResponse.toolCalls.find(tc => tc.tool === 'getTrafficInfo');
+      if (trafficToolCall && trafficToolCall.input) {
+          if (!routeOrigin) routeOrigin = (trafficToolCall.input as any).origin;
+          if (!routeDestination) routeDestination = (trafficToolCall.input as any).destination;
       }
 
       const toolResults = await Promise.all(
@@ -322,6 +349,9 @@ const copilotFlow = ai.defineFlow(
 
           try {
             const output = await tool(call.input);
+            if (call.tool === 'getTrafficInfo' && (output as any).routePolyline) {
+                routePolyline = (output as any).routePolyline;
+            }
             return { call, output };
           } catch (e: any) {
             console.error(`Error executing tool ${call.tool}:`, e);
