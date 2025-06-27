@@ -46,7 +46,7 @@ const SoundWaveIcon = ({ className, width = "72", height = "22" }: { className?:
 );
 
 
-export default function ChatMessageItem({ message }: { message: ChatMessageData }) {
+export default function ChatMessageItem({ message, onReply }: { message: ChatMessageData, onReply: (userName: string) => void }) {
   const { senderName, avatarUrl, dataAIAvatarHint, text, imageUrl, dataAIImageHint, file, timestamp, isCurrentUser, textElements, audioUrl } = message;
 
   const handlePlayAudio = () => {
@@ -124,9 +124,19 @@ export default function ChatMessageItem({ message }: { message: ChatMessageData 
                 <span className="text-sm">{file.name || "Arquivo"}</span>
             </div>
         )}
-        <p className={cn("text-xs mt-1.5", isCurrentUser ? "text-accent-foreground/70 text-right" : "text-muted-foreground text-left")}>
-          {timestamp}
-        </p>
+        <div className="flex items-center justify-end mt-1.5 space-x-3 text-xs">
+          {!isCurrentUser &&
+              <button
+                onClick={() => onReply(senderName)}
+                className="font-semibold text-primary hover:underline mr-auto"
+              >
+                Responder
+              </button>
+          }
+          <p className={cn(isCurrentUser ? "text-accent-foreground/70" : "text-muted-foreground")}>
+              {timestamp}
+          </p>
+        </div>
       </div>
       {isCurrentUser && (
         <Avatar className="h-8 w-8 self-start">

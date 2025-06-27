@@ -56,12 +56,17 @@ interface ChatWindowProps {
   onClose: () => void;
 }
 
+interface ReplyingToInfo {
+  userName: string;
+}
+
 export default function ChatWindow({ onClose }: ChatWindowProps) {
   const [messages, setMessages] = useState<ChatMessageData[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<ReplyingToInfo | null>(null);
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -166,6 +171,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     }
 
     setNewMessage('');
+    setReplyingTo(null);
     setSelectedImageFile(null);
     setImagePreviewUrl(null);
     if (textareaRef.current) {
@@ -323,6 +329,17 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     textarea.style.height = `${newScrollHeight}px`;
   };
 
+  const handleReply = (userName: string) => {
+    setReplyingTo({ userName });
+    setNewMessage(`@${userName} `);
+    textareaRef.current?.focus();
+  };
+
+  const cancelReply = () => {
+    setReplyingTo(null);
+    setNewMessage("");
+  };
+
   return (
     <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center sm:p-4">
       <div className="bg-background w-full h-full sm:max-w-lg sm:max-h-[90vh] sm:rounded-xl shadow-2xl flex flex-col overflow-hidden">
@@ -345,58 +362,68 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
         <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>
           <div className="space-y-4">
             {messages.map(msg => (
-              <ChatMessageItem key={msg.id} message={msg} />
+              <ChatMessageItem key={msg.id} message={msg} onReply={handleReply} />
             ))}
           </div>
         </ScrollArea>
 
-        <footer className="p-3 border-t border-border/50 bg-card">
-          {imagePreviewUrl && (
-            <div className="relative mb-2 p-2 border rounded-lg bg-muted/30 w-fit">
-              <Image src={imagePreviewUrl} alt="Preview" width={80} height={80} className="rounded object-cover" />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/80 p-0"
-                onClick={handleRemoveImagePreview}
-              >
+        <footer className="border-t border-border/50 bg-card">
+          {replyingTo && (
+            <div className="px-3 pt-2 flex justify-between items-center text-xs text-muted-foreground">
+              <span>Respondendo a <strong className="text-primary">@{replyingTo.userName}</strong></span>
+              <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={cancelReply}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
           )}
-          <form onSubmit={handleSendMessage} className="flex items-end gap-2">
-            <div className="relative flex-grow">
-              <Textarea
-                ref={textareaRef}
-                placeholder="Digite uma mensagem..."
-                value={newMessage}
-                onChange={handleTextareaInput}
-                className="rounded-lg bg-background/70 min-h-[44px] max-h-[120px] resize-none text-base p-2.5 pr-20"
-                rows={1}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey && !currentUser?.isAnonymous) {
-                    handleSendMessage(e);
-                  }
-                }}
-                disabled={currentUser?.isAnonymous || isRecording}
-              />
-              <div className="absolute right-1 bottom-1 flex items-center">
-                <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/png, image/jpeg, image/webp" className="hidden" />
-                <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-primary h-9 w-9" onClick={handleAttachmentClick} disabled={currentUser?.isAnonymous || isRecording}>
-                  <Paperclip className="h-5 w-5" />
+          <div className="p-3">
+            {imagePreviewUrl && (
+              <div className="relative mb-2 p-2 border rounded-lg bg-muted/30 w-fit">
+                <Image src={imagePreviewUrl} alt="Preview" width={80} height={80} className="rounded object-cover" />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/80 p-0"
+                  onClick={handleRemoveImagePreview}
+                >
+                  <X className="h-4 w-4" />
                 </Button>
-                {(newMessage.trim() === '' && !selectedImageFile) ? (
-                  <Button type="button" variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-primary h-9 w-9", isRecording && "text-destructive bg-destructive/10 animate-pulse")} onClick={toggleRecording} disabled={currentUser?.isAnonymous}>
-                    <Mic className="h-5 w-5" />
-                  </Button>
-                ) : (
-                  <Button type="submit" variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground h-9 w-9" disabled={currentUser?.isAnonymous || isRecording}>
-                    <Send className="h-5 w-5" />
-                  </Button>
-                )}
               </div>
-            </div>
-          </form>
+            )}
+            <form onSubmit={handleSendMessage} className="flex items-end gap-2">
+              <div className="relative flex-grow">
+                <Textarea
+                  ref={textareaRef}
+                  placeholder="Digite uma mensagem..."
+                  value={newMessage}
+                  onChange={handleTextareaInput}
+                  className="rounded-lg bg-background/70 min-h-[44px] max-h-[120px] resize-none text-base p-2.5 pr-20"
+                  rows={1}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey && !currentUser?.isAnonymous) {
+                      handleSendMessage(e);
+                    }
+                  }}
+                  disabled={currentUser?.isAnonymous || isRecording}
+                />
+                <div className="absolute right-1 bottom-1 flex items-center">
+                  <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/png, image/jpeg, image/webp" className="hidden" />
+                  <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-primary h-9 w-9" onClick={handleAttachmentClick} disabled={currentUser?.isAnonymous || isRecording}>
+                    <Paperclip className="h-5 w-5" />
+                  </Button>
+                  {(newMessage.trim() === '' && !selectedImageFile) ? (
+                    <Button type="button" variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-primary h-9 w-9", isRecording && "text-destructive bg-destructive/10 animate-pulse")} onClick={toggleRecording} disabled={currentUser?.isAnonymous}>
+                      <Mic className="h-5 w-5" />
+                    </Button>
+                  ) : (
+                    <Button type="submit" variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground h-9 w-9" disabled={currentUser?.isAnonymous || isRecording}>
+                      <Send className="h-5 w-5" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </form>
+          </div>
         </footer>
       </div>
     </div>
