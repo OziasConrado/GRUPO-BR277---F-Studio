@@ -66,10 +66,11 @@
     "tailwindcss": "^3.4.1",
     "typescript": "5.3.3"
   },
-  "overrides": {
-    "@genkit-ai/next": "0.5.0"
-  },
   "engines": {
     "node": ">=20.0.0"
+  },
+  "overrides": {
+    "genkit": "0.5.0",
+    "next": "14.2.5"
   }
 }
