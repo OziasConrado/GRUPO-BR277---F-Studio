@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { StaticImageData } from 'next/image';
@@ -645,7 +644,7 @@ export default function PostCard({
        <CardContent
           className={cn(
             "p-0",
-             cardStyle && text && text.length > 0 && "py-4", // Add padding only if there is text for colored cards
+            cardStyle && text && text.length > 0 && !poll && "py-4", // Add padding only if there is text for colored cards
           )}
         >
           {isEditing ? (
@@ -662,22 +661,22 @@ export default function PostCard({
               </div>
             </div>
           ) : cardStyle ? (
-            <div
-                className="p-4 flex items-center justify-center text-center min-h-[280px]"
-                style={{
-                  backgroundImage: cardStyle.gradient,
-                  backgroundColor: cardStyle.bg,
-                }}
+             <div
+              className="p-4 flex items-center justify-center text-center min-h-[280px]"
+              style={{
+                backgroundImage: cardStyle.gradient,
+                backgroundColor: cardStyle.bg,
+              }}
             >
-                {text && (
+              {text && (
                 <p className="text-2xl font-bold leading-tight" style={{ color: cardStyle.text }}>
-                    {renderTextWithMentions(text, MOCK_USER_NAMES_FOR_MENTIONS)}
+                  {renderTextWithMentions(text, MOCK_USER_NAMES_FOR_MENTIONS)}
                 </p>
-                )}
+              )}
             </div>
           ) : (
             <div className="space-y-3">
-              {text && <p className="text-base leading-relaxed whitespace-pre-wrap px-4">{processedTextElementsForStandardPost}</p>}
+              {text && !poll && <p className="text-base leading-relaxed whitespace-pre-wrap px-4">{processedTextElementsForStandardPost}</p>}
               {poll && <PollDisplay pollData={poll} postId={postId} />}
               {displayImageUrl && (
                 <div className="bg-muted/10 dark:bg-muted/20">
