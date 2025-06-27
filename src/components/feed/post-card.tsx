@@ -521,33 +521,58 @@ export default function PostCard({
           </div>
         </CardHeader>
 
-        <CardContent
-          className={cn("p-0", cardStyle && "flex items-center justify-center text-center")}
+       <CardContent
+          className={cn(
+            "p-0", // Default: no padding on the container
+            cardStyle && "p-4 flex items-center justify-center text-center min-h-[280px]"
+          )}
+          style={
+            cardStyle
+              ? {
+                  backgroundImage: cardStyle.gradient,
+                  backgroundColor: cardStyle.bg,
+                }
+              : undefined
+          }
         >
           {isEditing ? (
-             <div className="space-y-2 w-full p-4">
-                <Textarea
-                  value={editedText}
-                  onChange={(e) => setEditedText(e.target.value)}
-                  className="min-h-[120px] bg-background text-foreground"
-                  autoFocus
-                />
-                <div className="flex justify-end gap-2">
-                  <Button variant="ghost" onClick={() => setIsEditing(false)}>Cancelar</Button>
-                  <Button onClick={handleUpdatePost}>Salvar</Button>
-                </div>
+            <div className="space-y-2 w-full p-4">
+              <Textarea
+                value={editedText}
+                onChange={(e) => setEditedText(e.target.value)}
+                className="min-h-[120px] bg-background text-foreground"
+                autoFocus
+              />
+              <div className="flex justify-end gap-2">
+                <Button variant="ghost" onClick={() => setIsEditing(false)}>Cancelar</Button>
+                <Button onClick={handleUpdatePost}>Salvar</Button>
               </div>
-          ) : cardStyle ? (
-            <div className="p-4 flex items-center justify-center text-center min-h-[280px]" style={{ backgroundImage: cardStyle.gradient, backgroundColor: cardStyle.bg }}>
-              {text && <p className="text-2xl font-bold leading-tight" style={{ color: cardStyle.text }}>{renderTextWithMentions(text, MOCK_USER_NAMES_FOR_MENTIONS)}</p>}
             </div>
+          ) : cardStyle ? (
+            text && (
+              <p className="text-2xl font-bold leading-tight" style={{ color: cardStyle.text }}>
+                {renderTextWithMentions(text, MOCK_USER_NAMES_FOR_MENTIONS)}
+              </p>
+            )
           ) : (
             <div className="space-y-3">
-              {text && <p className="text-base leading-relaxed whitespace-pre-wrap px-4">{processedTextElementsForStandardPost}</p>}
+              {text && <p className="text-base leading-relaxed whitespace-pre-wrap p-4">{processedTextElementsForStandardPost}</p>}
               {displayImageUrl && (
                 <div className="bg-muted/10 dark:bg-muted/20">
-                  <button type="button" onClick={() => handleImageClick(displayImageUrl!)} className="block w-full relative aspect-square overflow-hidden group focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" aria-label="Ampliar imagem">
-                    <Image src={displayImageUrl} alt={displayImageAlt} fill style={{ objectFit: 'cover' }} data-ai-hint={displayImageAlt} className="transition-transform duration-300 group-hover:scale-105" />
+                  <button
+                    type="button"
+                    onClick={() => handleImageClick(displayImageUrl!)}
+                    className="block w-full relative aspect-square overflow-hidden group focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                    aria-label="Ampliar imagem"
+                  >
+                    <Image
+                      src={displayImageUrl}
+                      alt={displayImageAlt}
+                      fill
+                      style={{ objectFit: 'cover' }}
+                      data-ai-hint={displayImageAlt}
+                      className="transition-transform duration-300 group-hover:scale-105"
+                    />
                   </button>
                 </div>
               )}
