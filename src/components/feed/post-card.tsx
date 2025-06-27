@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { StaticImageData } from 'next/image';
@@ -6,7 +7,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle as PostCardTitleUI
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send, MoreVertical, Trash2, Edit3, Flag, X } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send, MoreVertical, Trash2, Edit3, Flag, X, ListChecks } from 'lucide-react';
 import { useState, type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
 import {
@@ -53,6 +54,7 @@ import {
 } from 'firebase/firestore';
 import { ToastAction } from '../ui/toast';
 import { useRouter } from 'next/navigation';
+import { Progress } from '@/components/ui/progress';
 
 
 export interface CommentProps {
@@ -71,6 +73,16 @@ export interface PostReactions {
   thumbsDown: number;
 }
 
+export interface PollOption {
+  id: string;
+  text: string;
+  votes: number;
+}
+
+export interface PollData {
+  question: string;
+  options: PollOption[];
+}
 
 // Corrected interface to match the data structure from page.tsx
 export interface PostCardProps {
@@ -96,6 +108,7 @@ export interface PostCardProps {
     text: string;
   };
   edited?: boolean;
+  poll?: PollData;
 }
 
 
@@ -151,6 +164,113 @@ const renderTextWithMentions = (text: string, knownUsers: string[]): React.React
   return elements;
 };
 
+const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData, postId: string }) => {
+    const { currentUser } = useAuth();
+    const [votedOptionId, setVotedOptionId] = useState<string | null>(null);
+    const [poll, setPoll] = useState(initialPollData);
+    const { toast } = useToast();
+
+    const totalVotes = useMemo(() => {
+        return poll.options.reduce((sum, option) => sum + option.votes, 0);
+    }, [poll]);
+
+    useEffect(() => {
+        if (!currentUser || !firestore) return;
+        const voteRef = doc(firestore, 'posts', postId, 'userVotes', currentUser.uid);
+        const unsub = onSnapshot(voteRef, (doc) => {
+            if (doc.exists()) {
+                setVotedOptionId(doc.data().optionId);
+            }
+        });
+        return () => unsub();
+    }, [postId, currentUser]);
+
+    // Listen for real-time updates to the poll itself
+    useEffect(() => {
+        const postRef = doc(firestore, 'posts', postId);
+        const unsub = onSnapshot(postRef, (doc) => {
+            if (doc.exists() && doc.data().poll) {
+                setPoll(doc.data().poll as PollData);
+            }
+        });
+        return () => unsub();
+    }, [postId]);
+
+    const handleVote = async (optionId: string) => {
+        if (!currentUser) {
+            toast({ variant: 'destructive', title: 'Você precisa estar logado para votar.' });
+            return;
+        }
+        if (votedOptionId) {
+            toast({ title: 'Você já votou nesta enquete.' });
+            return;
+        }
+
+        const postRef = doc(firestore, 'posts', postId);
+        const voteRef = doc(firestore, 'posts', postId, 'userVotes', currentUser.uid);
+
+        try {
+            await runTransaction(firestore, async (transaction) => {
+                const postDoc = await transaction.get(postRef);
+                if (!postDoc.exists()) throw "Document does not exist!";
+                
+                const userVoteDoc = await transaction.get(voteRef);
+                if (userVoteDoc.exists()) {
+                    // This check prevents race conditions if the useEffect hasn't updated the state yet
+                    toast({ title: 'Você já votou nesta enquete.' });
+                    return;
+                }
+
+                const currentPollData = postDoc.data().poll as PollData;
+                const newOptions = currentPollData.options.map(option => 
+                    option.id === optionId ? { ...option, votes: option.votes + 1 } : option
+                );
+
+                transaction.update(postRef, { poll: { ...currentPollData, options: newOptions } });
+                transaction.set(voteRef, { optionId, timestamp: serverTimestamp() });
+            });
+        } catch (e) {
+            console.error("Transaction failed: ", e);
+            toast({ variant: "destructive", title: "Erro ao votar", description: "Tente novamente." });
+        }
+    };
+
+    return (
+        <div className="mt-4 px-4 space-y-3">
+            <p className="font-semibold text-foreground">{poll.question}</p>
+            <div className="space-y-2">
+                {poll.options.map((option) => {
+                    const percentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
+                    const userVotedForThis = votedOptionId === option.id;
+
+                    return (
+                        <div key={option.id}>
+                            {votedOptionId ? (
+                                <div className="relative w-full rounded-md bg-muted p-2 text-sm">
+                                    <Progress value={percentage} className={cn("absolute inset-0 h-full w-full", userVotedForThis && "bg-primary/30")} />
+                                    <div className="relative flex justify-between items-center px-2">
+                                        <span className={cn("font-medium", userVotedForThis && "text-primary-foreground")}>{option.text}</span>
+                                        <span className={cn("font-semibold text-xs", userVotedForThis ? "text-primary-foreground" : "text-muted-foreground")}>{percentage.toFixed(0)}%</span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <Button
+                                    variant="outline"
+                                    className="w-full justify-start h-auto py-2 text-base"
+                                    onClick={() => handleVote(option.id)}
+                                >
+                                    {option.text}
+                                </Button>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+            <p className="text-xs text-muted-foreground text-right">{totalVotes} votos</p>
+        </div>
+    );
+};
+
 
 export default function PostCard({
   id: postId,
@@ -170,6 +290,7 @@ export default function PostCard({
   instagramUsername,
   cardStyle,
   edited,
+  poll,
 }: PostCardProps) {
   const { currentUser, isProfileComplete } = useAuth();
   const { toast } = useToast();
@@ -503,8 +624,8 @@ export default function PostCard({
             {userAvatarUrl ? <AvatarImage src={userAvatarUrl as string} alt={userName} data-ai-hint={dataAIAvatarHint} /> : null}
             <AvatarFallback>{userName ? userName.substring(0,2).toUpperCase() : <UserCircle className="h-10 w-10" />}</AvatarFallback>
           </Avatar>
-          <div className="flex-grow" onClick={handleAvatarOrNameClick}>
-            <PostCardTitleUI className="text-base font-headline cursor-pointer text-foreground">
+          <div className="flex-grow cursor-pointer" onClick={handleAvatarOrNameClick}>
+            <PostCardTitleUI className="text-base font-headline text-foreground">
               {userName}
             </PostCardTitleUI>
             <div className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
@@ -523,17 +644,9 @@ export default function PostCard({
 
        <CardContent
           className={cn(
-            "p-0", // Default: no padding on the container
-            cardStyle && "p-4 flex items-center justify-center text-center min-h-[280px]"
+            "p-0",
+             cardStyle && text && text.length > 0 && "py-4", // Add padding only if there is text for colored cards
           )}
-          style={
-            cardStyle
-              ? {
-                  backgroundImage: cardStyle.gradient,
-                  backgroundColor: cardStyle.bg,
-                }
-              : undefined
-          }
         >
           {isEditing ? (
             <div className="space-y-2 w-full p-4">
@@ -549,14 +662,23 @@ export default function PostCard({
               </div>
             </div>
           ) : cardStyle ? (
-            text && (
-              <p className="text-2xl font-bold leading-tight" style={{ color: cardStyle.text }}>
-                {renderTextWithMentions(text, MOCK_USER_NAMES_FOR_MENTIONS)}
-              </p>
-            )
+            <div
+                className="p-4 flex items-center justify-center text-center min-h-[280px]"
+                style={{
+                  backgroundImage: cardStyle.gradient,
+                  backgroundColor: cardStyle.bg,
+                }}
+            >
+                {text && (
+                <p className="text-2xl font-bold leading-tight" style={{ color: cardStyle.text }}>
+                    {renderTextWithMentions(text, MOCK_USER_NAMES_FOR_MENTIONS)}
+                </p>
+                )}
+            </div>
           ) : (
             <div className="space-y-3">
-              {text && <p className="text-base leading-relaxed whitespace-pre-wrap p-4">{processedTextElementsForStandardPost}</p>}
+              {text && <p className="text-base leading-relaxed whitespace-pre-wrap px-4">{processedTextElementsForStandardPost}</p>}
+              {poll && <PollDisplay pollData={poll} postId={postId} />}
               {displayImageUrl && (
                 <div className="bg-muted/10 dark:bg-muted/20">
                   <button

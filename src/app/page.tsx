@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useEffect, useState, useRef, type ChangeEvent, useCallback } from 'react';
+import { useEffect, useState, useRef, type ChangeEvent, useCallback, type FormEvent } from 'react';
 import Link from 'next/link';
 import {
   List,
@@ -9,21 +10,18 @@ import {
   Headset,
   Newspaper,
   Video,
-  ListChecks,
   Image as ImageIcon,
   XCircle,
   Edit,
-  Edit3,
   PlayCircle,
   AlertTriangle,
   ShieldAlert, 
-  Construction,
-  TrafficConeIcon,
-  CloudFog,
-  Flame as FlameIcon,
   ArrowRightCircle,
   Loader2,
-  Phone
+  Phone,
+  ListChecks, // Added for Polls
+  PlusCircle, // Added for Poll Modal
+  Trash2, // Added for Poll Modal
 } from 'lucide-react';
 import {
   Tooltip,
@@ -32,7 +30,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-import PostCard, { type PostCardProps } from '@/components/feed/post-card';
+import PostCard, { type PostCardProps, type PollData } from '@/components/feed/post-card';
 import StoryCircle, { type StoryCircleProps } from '@/components/stories/StoryCircle';
 import StoryViewerModal from '@/components/stories/StoryViewerModal';
 import { Button } from '@/components/ui/button';
@@ -44,6 +42,7 @@ import HomeAlertCard, { type HomeAlertCardData } from '@/components/alerts/home-
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { firestore, storage } from '@/lib/firebase/client';
 import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp, where } from 'firebase/firestore';
@@ -62,6 +61,109 @@ const backgroundOptions = [
 ];
 
 const alertTypesForSelection = ["Acidente", "Obras na Pista", "Congestionamento", "Neblina/Cond. Climática", "Animal na Pista", "Queimada/Fumaça", "Outro"];
+
+const PollCreationModal = ({ isOpen, onClose, onSave }: { isOpen: boolean, onClose: () => void, onSave: (data: { question: string, options: string[] }) => void }) => {
+    const [question, setQuestion] = useState('');
+    const [options, setOptions] = useState(['', '']);
+    const { toast } = useToast();
+
+    const handleOptionChange = (index: number, value: string) => {
+        const newOptions = [...options];
+        newOptions[index] = value;
+        setOptions(newOptions);
+    };
+
+    const handleAddOption = () => {
+        if (options.length < 5) {
+            setOptions([...options, '']);
+        } else {
+            toast({ variant: "destructive", title: "Limite de opções", description: "Você pode adicionar no máximo 5 opções." });
+        }
+    };
+
+    const handleRemoveOption = (index: number) => {
+        if (options.length > 2) {
+            const newOptions = [...options];
+            newOptions.splice(index, 1);
+            setOptions(newOptions);
+        }
+    };
+
+    const handleSave = () => {
+        if (question.trim().length < 5) {
+            toast({ variant: "destructive", title: "Pergunta inválida", description: "A pergunta da enquete deve ter pelo menos 5 caracteres." });
+            return;
+        }
+        if (options.some(opt => opt.trim() === '')) {
+            toast({ variant: "destructive", title: "Opções vazias", description: "Todas as opções devem ser preenchidas." });
+            return;
+        }
+        onSave({ question: question.trim(), options: options.map(o => o.trim()) });
+        // Reset state after saving
+        setQuestion('');
+        setOptions(['','']);
+        onClose();
+    };
+
+    const handleClose = () => {
+        setQuestion('');
+        setOptions(['','']);
+        onClose();
+    }
+
+    return (
+        <Dialog open={isOpen} onOpenChange={handleClose}>
+            <DialogContent className="sm:max-w-md rounded-xl">
+                <DialogHeader>
+                    <DialogTitle className="font-headline text-xl">Criar Enquete</DialogTitle>
+                    <DialogDescription>
+                        Faça uma pergunta para a comunidade. Mínimo 2, máximo 5 opções.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-2">
+                    <div>
+                        <Label htmlFor="poll-question">Pergunta da Enquete</Label>
+                        <Input 
+                            id="poll-question" 
+                            value={question} 
+                            onChange={(e) => setQuestion(e.target.value)} 
+                            placeholder="Ex: Qual o melhor pão com bolinho?"
+                            className="mt-1"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Opções de Resposta</Label>
+                        {options.map((option, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                                <Input 
+                                    value={option}
+                                    onChange={(e) => handleOptionChange(index, e.target.value)}
+                                    placeholder={`Opção ${index + 1}`}
+                                />
+                                {options.length > 2 ? (
+                                    <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveOption(index)} className="text-destructive h-8 w-8">
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                ) : <div className="w-8 h-8"></div>}
+                            </div>
+                        ))}
+                    </div>
+                    {options.length < 5 && (
+                        <Button type="button" variant="outline" size="sm" onClick={handleAddOption} className="w-full">
+                            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Opção
+                        </Button>
+                    )}
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button type="button" variant="outline">Cancelar</Button>
+                    </DialogClose>
+                    <Button type="button" onClick={handleSave}>Salvar Enquete</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+};
 
 
 export default function FeedPage() {
@@ -84,6 +186,8 @@ export default function FeedPage() {
   const [currentPostType, setCurrentPostType] = useState<'text' | 'video' | 'image' | 'alert'>('text');
   const [isAlertTypeModalOpen, setIsAlertTypeModalOpen] = useState(false);
   const [selectedAlertType, setSelectedAlertType] = useState<string | undefined>(undefined);
+  const [isPollModalOpen, setIsPollModalOpen] = useState(false);
+  const [pollData, setPollData] = useState<{ question: string; options: string[] } | null>(null);
 
   // Hooks
   const { toast } = useToast();
@@ -116,6 +220,7 @@ export default function FeedPage() {
           instagramUsername: data.instagramUsername,
           cardStyle: data.cardStyle,
           edited: data.edited || false,
+          poll: data.poll || undefined, // Add poll data
         } as PostCardProps;
       });
       setPosts(fetchedPosts);
@@ -189,6 +294,19 @@ export default function FeedPage() {
   }, [toast]);
 
   // Handlers
+  const handleInteractionAttempt = (callback: () => void) => {
+    if (!isProfileComplete) {
+        toast({
+            title: "Perfil Incompleto",
+            description: "Você precisa completar seu perfil para interagir e publicar.",
+            variant: "destructive",
+            action: <ToastAction altText="Editar Perfil" onClick={() => router.push('/profile/edit')}>Editar Perfil</ToastAction>,
+        });
+        return;
+    }
+    callback();
+  };
+  
   const handleStoryClick = (story: StoryCircleProps) => {
     setSelectedStory(story);
     setIsStoryModalOpen(true);
@@ -215,6 +333,7 @@ export default function FeedPage() {
       setSelectedMediaForUpload(file);
       setMediaPreviewUrl(URL.createObjectURL(file));
       setSelectedPostBackground(backgroundOptions[0]);
+      setPollData(null); // Remove poll if media is added
     }
   };
 
@@ -231,6 +350,7 @@ export default function FeedPage() {
     handleRemoveMedia();
     setIsPublishing(false);
     setSelectedAlertType(undefined);
+    setPollData(null);
   }
 
   const handlePublish = async () => {
@@ -240,12 +360,7 @@ export default function FeedPage() {
     }
     
     if (!isProfileComplete) {
-        toast({
-            title: "Perfil Incompleto",
-            description: "Por favor, preencha seu nome e cidade no seu perfil para poder publicar.",
-            variant: "destructive",
-            action: <ToastAction altText="Editar Perfil" onClick={() => router.push('/profile/edit')}>Editar Perfil</ToastAction>,
-        });
+        handleInteractionAttempt(()=>{}); // This will show the toast to complete profile
         return;
     }
 
@@ -285,7 +400,7 @@ export default function FeedPage() {
             });
             toast({ title: "Reel Publicado!", description: "Seu vídeo está disponível para a comunidade." });
 
-        } else { // 'image' or 'text' post
+        } else { // 'image', 'text' or 'poll' post
             const postData: any = {
                 userId: currentUser.uid,
                 userName: currentUser.displayName || 'Anônimo',
@@ -297,8 +412,18 @@ export default function FeedPage() {
                 deleted: false,
                 timestamp: serverTimestamp(),
             };
-            if(mediaUrl) postData.uploadedImageUrl = mediaUrl;
-            if (currentPostType === 'text' && !selectedMediaForUpload && newPostText.length <= 150 && selectedPostBackground.name !== 'Padrão') {
+            if (mediaUrl) postData.uploadedImageUrl = mediaUrl;
+            
+            if (pollData) {
+                postData.poll = {
+                    question: pollData.question,
+                    options: pollData.options.map((opt, index) => ({
+                        id: `option_${index + 1}`,
+                        text: opt,
+                        votes: 0
+                    }))
+                };
+            } else if (currentPostType === 'text' && !selectedMediaForUpload && newPostText.length <= 150 && selectedPostBackground.name !== 'Padrão') {
                 postData.cardStyle = selectedPostBackground;
             }
             await addDoc(collection(firestore, 'posts'), postData);
@@ -313,21 +438,36 @@ export default function FeedPage() {
     }
   };
 
-
   const handleOpenAlertTypeModal = () => {
     handleRemoveMedia(); 
+    setPollData(null);
     setCurrentPostType('alert'); 
     setSelectedPostBackground(backgroundOptions[0]); 
     setIsAlertTypeModalOpen(true);
   };
   
   const handleOpenMediaSelector = (type: 'image' | 'video') => {
+    setPollData(null);
     setCurrentPostType(type);
     if(fileInputRef.current) {
         fileInputRef.current.accept = `${type}/*`;
         fileInputRef.current.click();
     }
   }
+
+  const handleOpenPollModal = () => handleInteractionAttempt(() => {
+    handleRemoveMedia();
+    setCurrentPostType('text');
+    setIsPollModalOpen(true);
+  });
+
+  const handleSavePoll = (data: { question: string; options: string[] }) => {
+    setPollData(data);
+    if (!newPostText.trim()) {
+      setNewPostText(data.question);
+    }
+    setIsPollModalOpen(false);
+  };
 
   const handleConfirmAlertType = () => {
     if (!selectedAlertType) {
@@ -343,9 +483,9 @@ export default function FeedPage() {
   // Derived State
   const canPublish = !isPublishing && currentUser && (
     (currentPostType === 'alert' && selectedAlertType && newPostText.trim() !== '') || 
-    (currentPostType !== 'alert' && (newPostText.trim() !== '' || selectedMediaForUpload !== null))
+    (currentPostType !== 'alert' && (newPostText.trim() !== '' || selectedMediaForUpload !== null || pollData !== null))
   );
-  const showColorPalette = !mediaPreviewUrl && currentPostType === 'text' && newPostText.length <= 150 && newPostText.length > 0;
+  const showColorPalette = !mediaPreviewUrl && !pollData && currentPostType === 'text' && newPostText.length <= 150 && newPostText.length > 0;
   
   const ProfileCompletionAlert = () => {
     if (isProfileComplete || !currentUser) return null;
@@ -406,6 +546,7 @@ export default function FeedPage() {
             ref={textareaRef}
             placeholder={
               currentPostType === 'alert' ? `ALERTA: ${selectedAlertType || 'Geral'} - Descreva o alerta (máx. 500 caracteres)...` :
+              pollData ? "Adicione um texto para acompanhar sua enquete (opcional)..." :
               currentPostType === 'video' ? "Adicione uma legenda para seu vídeo..." :
               currentPostType === 'image' ? "Adicione uma legenda para sua foto..." :
               "No que você está pensando, viajante?"
@@ -414,7 +555,7 @@ export default function FeedPage() {
             value={newPostText}
             onChange={(e) => setNewPostText(e.target.value)}
             style={
-              !mediaPreviewUrl && currentPostType === 'text' && selectedPostBackground?.name !== 'Padrão'
+              !mediaPreviewUrl && !pollData && currentPostType === 'text' && selectedPostBackground?.name !== 'Padrão'
                 ? {
                     backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
                     backgroundImage: selectedPostBackground.gradient,
@@ -443,7 +584,22 @@ export default function FeedPage() {
             </div>
           )}
 
-          {showColorPalette && currentPostType !== 'alert' && (
+          {pollData && (
+              <div className="relative mb-3 p-3 border rounded-lg bg-muted/20">
+                  <p className="font-semibold text-sm text-foreground pr-8">Enquete anexada:</p>
+                  <p className="text-sm text-muted-foreground truncate">{pollData.question}</p>
+                  <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-1 right-1 h-7 w-7 rounded-full text-muted-foreground hover:text-destructive"
+                      onClick={() => setPollData(null)}
+                  >
+                      <XCircle className="h-4 w-4" />
+                  </Button>
+              </div>
+          )}
+
+          {showColorPalette && (
             <div className="flex space-x-2 mb-3 overflow-x-auto no-scrollbar pb-1">
               {backgroundOptions.map((option) => (
                 <div
@@ -465,7 +621,7 @@ export default function FeedPage() {
 
           <div className="flex items-center justify-between mt-4">
             <div className="flex items-center gap-1">
-              {!mediaPreviewUrl ? (
+              {!mediaPreviewUrl && !pollData ? (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -480,6 +636,20 @@ export default function FeedPage() {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent><p>Postar Alerta</p></TooltipContent>
+                  </Tooltip>
+                   <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-primary rounded-full"
+                        onClick={handleOpenPollModal}
+                      >
+                        <ListChecks className="h-5 w-5" />
+                        <span className="sr-only">Criar Enquete</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Criar Enquete</p></TooltipContent>
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -524,7 +694,7 @@ export default function FeedPage() {
             <Button
               onClick={handlePublish}
               className="bg-primary hover:bg-primary/90 text-white rounded-full px-6"
-              disabled={isPublishing || (isProfileComplete && !canPublish)}
+              disabled={isPublishing || !canPublish}
             >
               {isPublishing ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Publicar'}
             </Button>
@@ -605,6 +775,12 @@ export default function FeedPage() {
           story={selectedStory}
         />
       )}
+      
+      <PollCreationModal 
+        isOpen={isPollModalOpen}
+        onClose={() => setIsPollModalOpen(false)}
+        onSave={handleSavePoll}
+      />
 
       <Dialog open={isAlertTypeModalOpen} onOpenChange={setIsAlertTypeModalOpen}>
         <DialogContent className="sm:max-w-md rounded-xl">
