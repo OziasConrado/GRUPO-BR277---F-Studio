@@ -3746,3 +3746,11 @@ I0627 20:41:56.372745    1583 dev.go:95] Listening on address (HTTP + gRPC): 127
  {"metadata":{"emulator":{"name":"dataconnect"},"message":"I0627 20:41:56.352044    1583 collector.go:107] schema extensions wrote into \"/home/user/studio/dataconnect/.dataconnect/schema\"\nGenerated sources: prelude.gql [71531B] \nI0627 20:41:56.359580    1583 load.go:115] Finished reloading\nI0627 20:41:56.372745    1583 dev.go:95] Listening on address (HTTP + gRPC): 127.0.0.1:50001\n"}}
 [debug] [2025-06-27T20:41:57.043Z] I0627 20:41:56.835080    1583 engine.go:170] [/emulator/s c37f] ExecuteGraphqlRead IntrospectionQuery: succeeded. 
  {"metadata":{"emulator":{"name":"dataconnect"},"message":"I0627 20:41:56.835080    1583 engine.go:170] [/emulator/s c37f] ExecuteGraphqlRead IntrospectionQuery: succeeded. \n"}}
+[debug] [2025-06-27T20:42:18.280Z] Running auto auth
+[debug] [2025-06-27T20:42:18.327Z] No OAuth tokens found
+[debug] [2025-06-27T20:42:18.330Z] [Firebase Plugin] User found:  placasteell@gmail.com
+[info] [Firebase Plugin] (Core:Project) New user detected, fetching projects
+[debug] [2025-06-27T20:42:18.335Z] No OAuth tokens found
+[debug] [2025-06-27T20:42:18.344Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=1000
+[debug] [2025-06-27T20:42:19.156Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 200
+[debug] [2025-06-27T20:42:19.157Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]

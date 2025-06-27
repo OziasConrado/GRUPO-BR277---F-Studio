@@ -8,7 +8,7 @@
  * - CopilotOutput - O tipo de retorno para askCopilot.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai } from '../genkit';
 import { z } from 'zod';
 import {
   CopilotInputSchema,
@@ -293,7 +293,7 @@ const copilotFlow = ai.defineFlow(
       const history = messages.slice(0, -1);
 
       const llmResponse = await ai.generate({
-        model: 'googleai/gemini-2.0-flash',
+        model: 'gemini-1.5-flash-latest',
         prompt: lastMessage.content,
         history: history,
         tools: tools,
