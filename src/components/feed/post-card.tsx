@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { StaticImageData } from 'next/image';
@@ -391,6 +390,47 @@ export default function PostCard({
     setIsImageModalOpen(true);
   };
 
+  const handleSharePost = async () => {
+    const shareData = {
+      title: `Post no Rota Segura por ${userName}`,
+      text: text,
+      url: window.location.href, // This will link to the current page (feed)
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        toast({
+          title: "Post compartilhado!",
+        });
+      } catch (error) {
+        if (error instanceof Error && error.name !== 'AbortError') {
+          console.error("Share error:", error);
+          toast({
+            variant: "destructive",
+            title: "Erro ao compartilhar",
+            description: "Não foi possível compartilhar neste momento.",
+          });
+        }
+      }
+    } else {
+      // Fallback for desktop or unsupported browsers
+      try {
+        await navigator.clipboard.writeText(`${shareData.text}\n\nVeja no Rota Segura: ${shareData.url}`);
+        toast({
+          title: "Link Copiado!",
+          description: "O conteúdo do post foi copiado para a área de transferência.",
+        });
+      } catch (err) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "A função de compartilhamento não é suportada neste navegador.",
+        });
+      }
+    }
+  };
+
   const handleReportSubmit = () => {
     if (!selectedReportReason) {
         toast({ variant: "destructive", title: "Erro", description: "Por favor, selecione um motivo." });
@@ -482,14 +522,10 @@ export default function PostCard({
         </CardHeader>
 
         <CardContent
-          className={cn("p-4 pt-0", cardStyle && "flex flex-col items-center justify-center text-center min-h-[280px]")}
-          style={cardStyle ? {
-            backgroundImage: cardStyle.gradient,
-            backgroundColor: cardStyle.bg,
-          } : {}}
+          className={cn("p-0", cardStyle && "flex items-center justify-center text-center")}
         >
           {isEditing ? (
-             <div className="space-y-2 w-full">
+             <div className="space-y-2 w-full p-4">
                 <Textarea
                   value={editedText}
                   onChange={(e) => setEditedText(e.target.value)}
@@ -502,18 +538,20 @@ export default function PostCard({
                 </div>
               </div>
           ) : cardStyle ? (
-            text && <p className="text-2xl font-bold leading-tight" style={{ color: cardStyle.text }}>{renderTextWithMentions(text, MOCK_USER_NAMES_FOR_MENTIONS)}</p>
+            <div className="p-4 flex items-center justify-center text-center min-h-[280px]" style={{ backgroundImage: cardStyle.gradient, backgroundColor: cardStyle.bg }}>
+              {text && <p className="text-2xl font-bold leading-tight" style={{ color: cardStyle.text }}>{renderTextWithMentions(text, MOCK_USER_NAMES_FOR_MENTIONS)}</p>}
+            </div>
           ) : (
-            <>
-              {text && <div className="mb-3"><p className="text-base leading-relaxed whitespace-pre-wrap">{processedTextElementsForStandardPost}</p></div>}
+            <div className="space-y-3">
+              {text && <p className="text-base leading-relaxed whitespace-pre-wrap px-4">{processedTextElementsForStandardPost}</p>}
               {displayImageUrl && (
-                <div className="bg-muted/10 dark:bg-muted/20 border-y border-border/50">
+                <div className="bg-muted/10 dark:bg-muted/20">
                   <button type="button" onClick={() => handleImageClick(displayImageUrl!)} className="block w-full relative aspect-square overflow-hidden group focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" aria-label="Ampliar imagem">
                     <Image src={displayImageUrl} alt={displayImageAlt} fill style={{ objectFit: 'cover' }} data-ai-hint={displayImageAlt} className="transition-transform duration-300 group-hover:scale-105" />
                   </button>
                 </div>
               )}
-            </>
+            </div>
           )}
         </CardContent>
 
@@ -531,7 +569,7 @@ export default function PostCard({
                   <MessageSquare className="h-7 w-7" />
                   {comments.length > 0 && <span className="text-xs tabular-nums">({comments.length})</span>}
               </Button>
-               <Button variant="ghost" className={cn("p-2 h-auto text-muted-foreground hover:text-primary hover:bg-muted/30")}>
+               <Button variant="ghost" onClick={handleSharePost} className={cn("p-2 h-auto text-muted-foreground hover:text-primary hover:bg-muted/30")}>
                   <Share2 className="h-7 w-7" />
               </Button>
           </div>
