@@ -1,72 +1,75 @@
+
 rules_version = '2';
 
 service firebase.storage {
+  
+  // Helper functions to be used in the rules.
+  function isAuthenticated() {
+    return request.auth != null;
+  }
+
+  function isOwner(userId) {
+    return isAuthenticated() && request.auth.uid == userId;
+  }
+
+  function isImage(resource) {
+    return resource.contentType.matches('image/jpeg|image/png|image/webp');
+  }
+  
+  function isVideo(resource) {
+    return resource.contentType.matches('video/mp4|video/webm|video/quicktime');
+  }
+  
+  function isAudio(resource) {
+    return resource.contentType.matches('audio/webm|audio/mp4|audio/mpeg');
+  }
+
+  function isWithinSizeLimit(resource, maxSizeInMB) {
+    return resource.size < maxSizeInMB * 1024 * 1024;
+  }
+
   match /b/{bucket}/o {
-
-    // Helper functions
-    function isImage(request) {
-      return request.resource.contentType.matches('image/.*');
-    }
-    function isVideo(request) {
-      return request.resource.contentType.matches('video/.*');
-    }
-     function isAudio(request) {
-      return request.resource.contentType.matches('audio/.*');
+    
+    // Default allow public read access to all files, but deny all writes.
+    // Specific write rules are defined for each path below.
+    // This approach avoids issues with special characters in folder names.
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
     }
 
-    // Profile Pictures (Max 2MB)
+    // Profile Pictures
+    // A user can only write to their own folder. Must be an image <= 2MB.
     match /profile_pictures/{userId}/{fileName} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId
-                   && isImage(request)
-                   && request.resource.size < 2 * 1024 * 1024;
+      allow write: if isOwner(userId) && isImage(request.resource) && isWithinSizeLimit(request.resource, 2);
     }
-
-    // Post Images (from create post card, max 5MB)
-    match /images/{userId}/{fileName} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId
-                   && isImage(request)
-                   && request.resource.size < 5 * 1024 * 1024;
-    }
-
-    // Post Videos (Reels, from create post card, max 50MB)
-    match /videos/{userId}/{fileName} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId
-                   && isVideo(request)
-                   && request.resource.size < 50 * 1024 * 1024;
-    }
-
-    // Chat Images (Max 5MB)
+    
+    // Chat Media (PRIVATE READ/WRITE)
+    // Override the default public read access. Only authenticated users can access.
+    // A user can only write to their own folder.
     match /chat_images/{userId}/{fileName} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId
-                   && isImage(request)
-                   && request.resource.size < 5 * 1024 * 1024;
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) && isImage(request.resource) && isWithinSizeLimit(request.resource, 5);
     }
-
-    // Chat Audio (Max 5MB)
+    
     match /chat_audio/{userId}/{fileName} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId
-                   && isAudio(request)
-                   && request.resource.size < 5 * 1024 * 1024;
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) && isAudio(request.resource) && isWithinSizeLimit(request.resource, 10);
     }
     
-    // Tourist Points Images (Max 2MB)
+    // Post Images (Public Read from default rule)
+    match /images/{userId}/{fileName} {
+      allow write: if isOwner(userId) && isImage(request.resource) && isWithinSizeLimit(request.resource, 5);
+    }
+    
+    // Post Videos (Public Read from default rule)
+    match /videos/{userId}/{fileName} {
+      allow write: if isOwner(userId) && isVideo(request.resource) && isWithinSizeLimit(request.resource, 50);
+    }
+    
+    // Indicated Points Images (Public Read from default rule)
     match /indicated_points_images/{userId}/{fileName} {
-        allow read: if true;
-        allow write: if request.auth != null && request.auth.uid == userId
-                     && isImage(request)
-                     && request.resource.size < 2 * 1024 * 1024;
+      allow write: if isOwner(userId) && isImage(request.resource) && isWithinSizeLimit(request.resource, 2);
     }
-
-    // Publicly readable assets (Logos, Icons, etc.)
-    match /Ícones e Logo do app GRUPO BR277/{allPaths=**} {
-      allow read: if true;
-      allow write: if false; // Only allow uploads via Firebase Console
-    }
-    
   }
 }
