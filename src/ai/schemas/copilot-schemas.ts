@@ -7,6 +7,7 @@ export const CopilotInputSchema = z.object({
 export type CopilotInput = z.infer<typeof CopilotInputSchema>;
 
 export const CopilotOutputSchema = z.object({
-  response: z.string(),
+  response: z.string().describe("A resposta de texto amigável e formatada para o usuário."),
+  mapUrl: z.string().url().optional().describe("O link direto para o Google Maps com a rota, se aplicável."),
 });
 export type CopilotOutput = z.infer<typeof CopilotOutputSchema>;

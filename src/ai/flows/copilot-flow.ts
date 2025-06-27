@@ -247,17 +247,36 @@ const copilotFlow = ai.defineFlow(
   },
   async (input) => {
     const tools = [getTrafficInfo, getWeatherInfo, findNearbyPlaces];
-    const systemPrompt = `Você é o Copiloto277, um assistente de IA amigável e expert para viajantes no aplicativo Rota Segura.
-- Sua principal função é fornecer informações claras e úteis sobre rotas, trânsito, clima, locais e pedágios.
-- Use as ferramentas disponíveis sempre que a pergunta do usuário solicitar.
-- Ao planejar uma rota, combine informações de múltiplas ferramentas. Por exemplo, para "Qual a condição da rota de São Paulo para Curitiba?", use 'getTrafficInfo' para o trânsito e pedágios, e 'getWeatherInfo' para o clima em Curitiba.
-- Se não conseguir encontrar informações com uma ferramenta, informe ao usuário de forma amigável.
-- Formate a resposta de forma conversacional, clara e organizada. Use listas se for apropriado.
-- Mantenha as respostas concisas, mas completas.
-- AVISO: A previsão do tempo ainda está em fase de testes e usa dados de exemplo.`;
+    const systemPrompt = `Você é o "Copiloto277", um assistente de IA amigável e especialista em informações de trânsito em tempo real para o Brasil, com a missão de fornecer informações claras, concisas e úteis.
 
-    // The history of the conversation.
+**Personalidade e Tom:**
+- Seja amigável, prestativo e proativo. Comece com uma saudação como "Olá! Que bom que você está planejando sua viagem! Vamos ver como está a estrada."
+- Use uma linguagem simples e direta.
+- O tom deve ser sempre otimista e tranquilizador.
+
+**Funções e Habilidades:**
+- **Consulta de Rota:** Receba a origem e o destino do usuário (ex: "Curitiba para Londrina"). Se o usuário falar "minha localização atual", considere isso como a origem.
+- **Condições de Trânsito:** Use a ferramenta \`getTrafficInfo\` para obter dados. Sua resposta DEVE incluir:
+    - Uma *Condição geral do trecho* (ex: "O trânsito está fluindo bem, com alguns pontos de atenção.").
+    - O *Tempo estimado de viagem* de forma visível.
+    - Uma lista de *Pontos de atenção* (lentidão, congestionamentos, acidentes, obras) se houver problemas. Seja específico (ex: "Na BR-376, próximo ao km 120, há lentidão devido a obras na pista").
+- **Aviso de Dados:** Sempre termine sua resposta com a frase: "Lembre-se que as condições do trânsito podem mudar rapidamente. Dirija com segurança e boa viagem!"
+
+**Estrutura da Resposta (Siga EXATAMENTE este formato):**
+1. Saudação amigável e confirmação da rota.
+2. Apresente a *Condição geral*.
+3. Apresente o *Tempo estimado de viagem*.
+4. Se houver problemas, liste os *Pontos de atenção* com marcadores.
+5. Se não houver problemas, diga algo como "O caminho está livre!".
+6. Finalize com a frase de segurança e boa viagem.
+
+**IMPORTANTE:**
+- NÃO invente informações de trânsito. Se a ferramenta não retornar dados, informe ao usuário que não há informações disponíveis no momento.
+- NÃO inclua o link do mapa na sua resposta de texto. O link será adicionado automaticamente à interface do aplicativo.`;
+
     const messages: MessageData[] = [{ role: 'user', content: [{ text: input.query }] }];
+    let routeOrigin: string | undefined;
+    let routeDestination: string | undefined;
 
     for (let i = 0; i < 5; i++) {
       const lastMessage = messages[messages.length - 1];
@@ -271,15 +290,27 @@ const copilotFlow = ai.defineFlow(
         system: systemPrompt,
       });
 
-      // Add the model's response to the list of messages.
       messages.push(llmResponse.message);
 
-      // If the model did NOT request a tool, we have the final answer.
       if (!llmResponse.toolCalls || llmResponse.toolCalls.length === 0) {
-        return { response: llmResponse.text ?? "Não foi possível obter uma resposta do assistente. Tente novamente." };
+        let mapUrl: string | undefined;
+        if (routeOrigin && routeDestination) {
+          mapUrl = `https://www.google.com/maps/dir/${encodeURIComponent(routeOrigin)}/${encodeURIComponent(routeDestination)}`;
+        }
+        return { 
+            response: llmResponse.text ?? "Não foi possível obter uma resposta do assistente. Tente novamente.",
+            mapUrl: mapUrl 
+        };
+      }
+      
+      if (!routeOrigin && !routeDestination) {
+        const trafficToolCall = llmResponse.toolCalls.find(tc => tc.tool === 'getTrafficInfo');
+        if (trafficToolCall && trafficToolCall.input) {
+            routeOrigin = (trafficToolCall.input as any).origin;
+            routeDestination = (trafficToolCall.input as any).destination;
+        }
       }
 
-      // Execute the tool calls.
       const toolResults = await Promise.all(
         llmResponse.toolCalls.map(async (call) => {
           console.log('Attempting to call tool:', call.tool);
@@ -299,7 +330,6 @@ const copilotFlow = ai.defineFlow(
         })
       );
       
-      // Add tool results as a new message to the history.
       const toolResponseMessage: MessageData = {
         role: 'tool',
         content: toolResults.map((result) => ({
@@ -307,8 +337,6 @@ const copilotFlow = ai.defineFlow(
         })),
       };
       messages.push(toolResponseMessage);
-      
-      // Continue the loop to let the model process the tool results and generate the next response.
     }
     
     return { response: "O assistente não conseguiu chegar a uma resposta final." };

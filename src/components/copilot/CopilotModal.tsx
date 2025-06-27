@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Sparkles, User, Loader2 } from "lucide-react";
+import { Send, Sparkles, User, Loader2, Map } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { askCopilot, type CopilotInput } from '@/ai/flows/copilot-flow';
@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 interface Message {
   author: 'user' | 'ai';
   content: string;
+  mapUrl?: string;
 }
 
 interface CopilotModalProps {
@@ -51,7 +52,11 @@ export default function CopilotModal({ isOpen, onClose }: CopilotModalProps) {
     try {
       const input: CopilotInput = { query: trimmedInput };
       const result = await askCopilot(input);
-      const aiMessage: Message = { author: 'ai', content: result.response };
+      const aiMessage: Message = {
+        author: 'ai',
+        content: result.response,
+        mapUrl: result.mapUrl,
+      };
       setConversation(prev => [...prev, aiMessage]);
     } catch (error) {
       console.error("Error asking copilot:", error);
@@ -111,6 +116,13 @@ export default function CopilotModal({ isOpen, onClose }: CopilotModalProps) {
                     msg.author === 'ai' ? "bg-muted text-foreground" : "bg-primary text-primary-foreground"
                 )}>
                   {msg.content}
+                   {msg.author === 'ai' && msg.mapUrl && (
+                    <Button asChild variant="outline" size="sm" className="mt-3 w-full bg-background/70 hover:bg-background">
+                        <a href={msg.mapUrl} target="_blank" rel="noopener noreferrer">
+                            <Map className="mr-2 h-4 w-4" /> Ver Rota no Mapa
+                        </a>
+                    </Button>
+                  )}
                 </div>
                  {msg.author === 'user' && (
                   <Avatar className="h-8 w-8">
