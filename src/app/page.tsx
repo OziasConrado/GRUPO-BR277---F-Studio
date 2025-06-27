@@ -25,6 +25,12 @@ import {
   Loader2,
   Phone
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 import PostCard, { type PostCardProps } from '@/components/feed/post-card';
 import StoryCircle, { type StoryCircleProps } from '@/components/stories/StoryCircle';
@@ -284,6 +290,7 @@ export default function FeedPage() {
                 userId: currentUser.uid,
                 userName: currentUser.displayName || 'Anônimo',
                 userAvatarUrl: currentUser.photoURL,
+                userLocation: (currentUser as any).location || 'Local Desconhecido',
                 text: newPostText,
                 reactions: { thumbsUp: 0, thumbsDown: 0 },
                 edited: false,
@@ -457,40 +464,54 @@ export default function FeedPage() {
           )}
 
           <div className="flex items-center justify-between mt-4">
-            <div className="flex items-center gap-2">
-            {!mediaPreviewUrl && (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1"
-                    onClick={handleOpenAlertTypeModal}
-                    title="Postar Alerta"
-                  >
-                    <Edit3 className="h-4 w-4" /> 
-                    Alertas
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1"
-                    onClick={() => handleOpenMediaSelector('video')}
-                    title="Postar Vídeo"
-                  >
-                    <Video className="h-4 w-4" />
-                    Vídeo
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="justify-center text-xs hover:bg-muted/50 rounded-lg py-2 px-3 gap-1"
-                    onClick={() => handleOpenMediaSelector('image')}
-                    title="Postar Foto"
-                  >
-                    <ImageIcon className="h-4 w-4" />
-                    Foto
-                  </Button>
-                </>
+            <div className="flex items-center gap-1">
+              {!mediaPreviewUrl ? (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-primary rounded-full"
+                        onClick={handleOpenAlertTypeModal}
+                      >
+                        <ShieldAlert className="h-5 w-5" />
+                        <span className="sr-only">Postar Alerta</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Postar Alerta</p></TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-primary rounded-full"
+                        onClick={() => handleOpenMediaSelector('video')}
+                      >
+                        <Video className="h-5 w-5" />
+                        <span className="sr-only">Adicionar Vídeo</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Adicionar Vídeo</p></TooltipContent>
+                  </Tooltip>
+                   <Tooltip>
+                    <TooltipTrigger asChild>
+                       <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-primary rounded-full"
+                        onClick={() => handleOpenMediaSelector('image')}
+                      >
+                        <ImageIcon className="h-5 w-5" />
+                        <span className="sr-only">Adicionar Foto</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Adicionar Foto</p></TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : (
+                <div className="w-1"></div> // Placeholder to keep layout
               )}
             </div>
 
