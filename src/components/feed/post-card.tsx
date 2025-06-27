@@ -644,7 +644,7 @@ export default function PostCard({
        <CardContent
           className={cn(
             "p-0",
-            cardStyle && text && text.length > 0 && !poll && "py-4", // Add padding only if there is text for colored cards
+            cardStyle && text.length > 0 && !poll && !uploadedImageUrl && "py-4", // Add padding only if there is text for colored cards without images
           )}
         >
           {isEditing ? (
@@ -728,10 +728,12 @@ export default function PostCard({
               <DropdownMenuContent align="end">
                   {isAuthor && (
                     <>
-                      <DropdownMenuItem onClick={() => { setIsEditing(true); setEditedText(text); }}>
-                          <Edit3 className="mr-2 h-4 w-4" />
-                          <span>Editar post</span>
-                      </DropdownMenuItem>
+                      {!poll && (
+                        <DropdownMenuItem onClick={() => { setIsEditing(true); setEditedText(text); }}>
+                            <Edit3 className="mr-2 h-4 w-4" />
+                            <span>Editar post</span>
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => setIsDeleteAlertOpen(true)}>
                           <Trash2 className="mr-2 h-4 w-4" />
                           <span>Excluir post</span>
