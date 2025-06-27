@@ -25,6 +25,8 @@ import {
   doc,
   runTransaction,
   increment,
+  updateDoc,
+  deleteDoc,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
@@ -86,6 +88,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
           isCurrentUser: currentUser ? data.userId === currentUser.uid : false,
           reactions: data.reactions,
           replyTo: data.replyTo, // Add replyTo field
+          edited: data.edited || false,
         });
       });
       setMessages(fetchedMessages);
@@ -139,6 +142,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
       text: newMessage.trim() || undefined,
       timestamp: serverTimestamp(),
       reactions: { heart: 0 },
+      edited: false,
     };
 
     if (imageUrl) {
@@ -367,6 +371,34 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     }
   };
 
+  const handleEditMessage = async (messageId: string, newText: string) => {
+    if (!firestore || !messageId || !newText.trim()) return;
+    const messageRef = doc(firestore, 'chatMessages', messageId);
+    try {
+        await updateDoc(messageRef, {
+            text: newText,
+            edited: true,
+            editedAt: serverTimestamp(),
+        });
+        toast({ title: "Mensagem editada com sucesso." });
+    } catch (error) {
+        console.error("Error editing message:", error);
+        toast({ variant: 'destructive', title: 'Erro ao Editar', description: 'Não foi possível salvar a alteração.' });
+    }
+  };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!firestore || !messageId) return;
+    const messageRef = doc(firestore, 'chatMessages', messageId);
+    try {
+        await deleteDoc(messageRef);
+        toast({ title: "Mensagem excluída com sucesso." });
+    } catch (error) {
+        console.error("Error deleting message:", error);
+        toast({ variant: 'destructive', title: 'Erro ao Excluir', description: 'Não foi possível excluir a mensagem.' });
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center sm:p-4">
       <div className="bg-background w-full h-full sm:max-w-lg sm:max-h-[90vh] sm:rounded-xl shadow-2xl flex flex-col overflow-hidden">
@@ -389,7 +421,14 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
         <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>
           <div className="space-y-4">
             {messages.map(msg => (
-              <ChatMessageItem key={msg.id} message={msg} onReply={handleReply} onReaction={handleReactionClick} />
+              <ChatMessageItem 
+                key={msg.id} 
+                message={msg} 
+                onReply={handleReply} 
+                onReaction={handleReactionClick}
+                onEdit={handleEditMessage}
+                onDelete={handleDeleteMessage}
+              />
             ))}
           </div>
         </ScrollArea>
