@@ -24,8 +24,12 @@ export interface ChatMessageData {
   file?: { name: string, type: 'image' | 'audio' | 'other' }; 
   timestamp: string;
   isCurrentUser: boolean;
-  textElements?: React.ReactNode[];
   reactions?: { heart?: number };
+  replyTo?: {
+    messageId: string;
+    userName: string;
+    messageText: string;
+  };
 }
 
 const SoundWaveIcon = ({ className, width = "72", height = "22" }: { className?: string, width?: string, height?: string }) => (
@@ -52,8 +56,33 @@ const SoundWaveIcon = ({ className, width = "72", height = "22" }: { className?:
 );
 
 
-export default function ChatMessageItem({ message, onReply, onReaction }: { message: ChatMessageData, onReply: (userName: string) => void, onReaction: (messageId: string) => void }) {
-  const { senderName, avatarUrl, dataAIAvatarHint, text, imageUrl, dataAIImageHint, file, timestamp, isCurrentUser, textElements, reactions } = message;
+const ReplyPreview = ({ replyInfo }: { replyInfo: NonNullable<ChatMessageData['replyTo']> }) => {
+    const handlePreviewClick = () => {
+        const element = document.getElementById(`message-${replyInfo.messageId}`);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Add a temporary highlight effect
+            element.classList.add('bg-primary/10', 'ring-2', 'ring-primary/50', 'transition-all', 'duration-1000', 'ease-out', 'rounded-xl');
+            setTimeout(() => {
+                element.classList.remove('bg-primary/10', 'ring-2', 'ring-primary/50', 'rounded-xl');
+            }, 2500);
+        }
+    };
+
+    return (
+        <button 
+            onClick={handlePreviewClick} 
+            className="block w-full text-left p-2 mb-2 rounded-md bg-black/5 dark:bg-white/5 border-l-2 border-primary/50 hover:bg-black/10 dark:hover:bg-white/10"
+        >
+            <p className="text-xs font-semibold text-primary">{replyInfo.userName}</p>
+            <p className="text-sm text-muted-foreground truncate">{replyInfo.messageText}</p>
+        </button>
+    );
+};
+
+
+export default function ChatMessageItem({ message, onReply, onReaction }: { message: ChatMessageData, onReply: (message: ChatMessageData) => void, onReaction: (messageId: string) => void }) {
+  const { senderName, avatarUrl, dataAIAvatarHint, text, imageUrl, dataAIImageHint, file, timestamp, isCurrentUser, reactions, replyTo } = message;
   const { currentUser } = useAuth();
   const [userHasReacted, setUserHasReacted] = useState(false);
 
@@ -68,8 +97,8 @@ export default function ChatMessageItem({ message, onReply, onReaction }: { mess
 
 
   const handlePlayAudio = () => {
-    if (audioUrl) {
-      const audio = new Audio(audioUrl as string);
+    if (message.audioUrl) {
+      const audio = new Audio(message.audioUrl as string);
       audio.play().catch(e => console.error("Error playing audio:", e));
     }
   };
@@ -82,7 +111,7 @@ export default function ChatMessageItem({ message, onReply, onReaction }: { mess
   };
 
   return (
-    <div className={cn("flex items-end gap-2 w-full", isCurrentUser ? "justify-end" : "justify-start")}>
+    <div className={cn("flex items-end gap-2 w-full", isCurrentUser ? "justify-end" : "justify-start")} id={`message-${message.id}`}>
       {!isCurrentUser && (
         <Avatar className="h-8 w-8 self-start">
           {avatarUrl && <AvatarImage src={avatarUrl as string} alt={senderName} data-ai-hint={dataAIAvatarHint} />}
@@ -98,6 +127,8 @@ export default function ChatMessageItem({ message, onReply, onReaction }: { mess
         >
           {!isCurrentUser && <p className="text-xs font-semibold mb-1 text-primary">{senderName}</p>}
           
+          {replyTo && <ReplyPreview replyInfo={replyTo} />}
+          
           {imageUrl && (
             <div className="mb-1.5 max-w-xs sm:max-w-sm rounded-lg overflow-hidden border">
               <Image
@@ -112,11 +143,7 @@ export default function ChatMessageItem({ message, onReply, onReaction }: { mess
             </div>
           )}
           
-          {textElements ? (
-            <p className="text-sm whitespace-pre-wrap">{textElements}</p>
-          ) : (
-            text && <p className="text-sm whitespace-pre-wrap">{text}</p>
-          )}
+          {text && <p className="text-sm whitespace-pre-wrap">{text}</p>}
 
           {file && file.type === 'audio' && (
               <div 
@@ -143,46 +170,33 @@ export default function ChatMessageItem({ message, onReply, onReaction }: { mess
                   <span className="text-sm">{file.name || "Arquivo"}</span>
               </div>
           )}
-          <div className="flex items-center justify-end mt-1.5 space-x-3 text-xs">
-            {!isCurrentUser &&
-                <Button
-                  variant="link"
-                  size="sm"
-                  onClick={() => onReply(senderName)}
-                  className="p-0 h-auto text-xs text-primary mr-auto"
+          <div className="flex items-center justify-between mt-1.5 text-xs">
+            <div className="flex items-center gap-3">
+              {!isCurrentUser &&
+                  <Button
+                    variant="link"
+                    size="sm"
+                    onClick={() => onReply(message)}
+                    className="p-0 h-auto text-xs text-primary"
+                  >
+                    Responder
+                  </Button>
+              }
+            </div>
+            <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => onReaction(message.id)} 
+                  className="flex items-center gap-1.5 text-muted-foreground p-1 rounded-full hover:bg-muted"
                 >
-                  Responder
-                </Button>
-            }
-            <p className={cn(isCurrentUser ? "text-accent-foreground/70" : "text-muted-foreground")}>
-                {timestamp}
-            </p>
+                    <Heart className={cn("h-4 w-4 transition-colors", userHasReacted ? "text-red-500 fill-red-500" : "hover:text-red-500/80")} />
+                    {(reactions?.heart ?? 0) > 0 && <span className="font-medium text-xs pr-1">{reactions?.heart}</span>}
+                </button>
+                <p className={cn(isCurrentUser ? "text-accent-foreground/70" : "text-muted-foreground")}>
+                    {timestamp}
+                </p>
+            </div>
           </div>
         </div>
-        
-         {/* Reaction Display/Button */}
-        {(reactions?.heart ?? 0) > 0 ? (
-          <button
-            onClick={() => onReaction(message.id)}
-            className={cn(
-              "absolute bottom-[-8px] rounded-full bg-card border shadow-sm px-1.5 py-0.5 flex items-center gap-1 cursor-pointer hover:bg-muted",
-              isCurrentUser ? 'right-2' : 'left-2'
-            )}
-          >
-            <span className={cn("text-sm transition-transform", userHasReacted && "scale-125")}>💙</span>
-            <span className="text-xs font-medium">{reactions?.heart}</span>
-          </button>
-        ) : (
-          <button
-            onClick={() => onReaction(message.id)}
-            className={cn(
-              "absolute bottom-[-10px] z-10 p-1 rounded-full bg-card border shadow-sm opacity-0 group-hover/message:opacity-100 transition-opacity",
-              isCurrentUser ? 'left-2' : 'right-2'
-            )}
-          >
-            <Heart className="h-4 w-4 text-muted-foreground" />
-          </button>
-        )}
       </div>
       {isCurrentUser && (
         <Avatar className="h-8 w-8 self-start">

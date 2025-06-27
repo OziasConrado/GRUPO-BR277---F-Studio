@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, type ChangeEvent, type FormEvent } from 'react';
@@ -9,7 +10,6 @@ import { X, Send, Paperclip, Mic } from "lucide-react";
 import ChatMessageItem, { type ChatMessageData } from "./ChatMessageItem";
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { useNotification } from '@/contexts/NotificationContext';
 import Image from 'next/image'; // For image preview
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
@@ -28,32 +28,6 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
-const MOCK_CHAT_USER_NAMES = [
-    'João Silva', 'Você', 'Ana Souza', 'Carlos Santos', 'Ozias Conrado'
-];
-
-const renderTextWithMentionsForChat = (text: string, knownUsers: string[]): React.ReactNode[] => {
-  if (!text) return [text];
-  const escapedUserNames = knownUsers.map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  const mentionRegex = new RegExp(`(@(?:${escapedUserNames.join('|')}))(?=\\s|\\p{P}|$)`, 'gu');
-
-  const parts = text.split(mentionRegex);
-  const elements: React.ReactNode[] = [];
-
-  parts.forEach((part, index) => {
-    if (part.startsWith('@')) {
-      const mentionedName = part.substring(1);
-      if (knownUsers.includes(mentionedName)) {
-        elements.push(<strong key={`${index}-${part}`} className="text-accent font-semibold cursor-pointer hover:underline">{part}</strong>);
-      } else {
-        elements.push(part);
-      }
-    } else {
-      elements.push(part);
-    }
-  });
-  return elements;
-};
 
 interface ChatWindowProps {
   onClose: () => void;
@@ -61,6 +35,8 @@ interface ChatWindowProps {
 
 interface ReplyingToInfo {
   userName: string;
+  messageId: string;
+  messageText: string;
 }
 
 export default function ChatWindow({ onClose }: ChatWindowProps) {
@@ -78,7 +54,6 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   const audioChunksRef = useRef<Blob[]>([]);
 
   const { toast } = useToast();
-  const { incrementNotificationCount } = useNotification();
   const { currentUser } = useAuth(); // Get current user
 
   useEffect(() => {
@@ -109,8 +84,8 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
           file: data.file,
           timestamp: messageTimestamp,
           isCurrentUser: currentUser ? data.userId === currentUser.uid : false,
-          textElements: data.text ? renderTextWithMentionsForChat(data.text, MOCK_CHAT_USER_NAMES) : undefined,
           reactions: data.reactions,
+          replyTo: data.replyTo, // Add replyTo field
         });
       });
       setMessages(fetchedMessages);
@@ -130,17 +105,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
         viewport.scrollTop = viewport.scrollHeight;
       }
     }
-  }, [messages]);
-
-  const checkForMentionsAndNotifyChat = (textToCheck: string) => {
-    MOCK_CHAT_USER_NAMES.forEach(name => {
-      const mentionRegex = new RegExp(`@${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=\\s|\\p{P}|$)`, 'u');
-      if (mentionRegex.test(textToCheck)) {
-        console.log(`Chat Mentioned: ${name}`);
-        incrementNotificationCount();
-      }
-    });
-  };
+  }, [messages, replyingTo]);
 
   const handleSendMessage = async (e?: FormEvent) => {
     if (e) e.preventDefault();
@@ -154,8 +119,6 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     }
 
     if (newMessage.trim() === '' && !selectedImageFile) return;
-
-    if(newMessage.trim()) checkForMentionsAndNotifyChat(newMessage);
     
     let imageUrl: string | undefined;
     let fileInfo: { name: string, type: 'image' } | undefined;
@@ -182,6 +145,14 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
         messageData.imageUrl = imageUrl;
         messageData.dataAIImageHint = "user uploaded chat image";
         messageData.file = fileInfo;
+    }
+
+    if (replyingTo) {
+        messageData.replyTo = {
+            messageId: replyingTo.messageId,
+            userName: replyingTo.userName,
+            messageText: replyingTo.messageText,
+        };
     }
 
     try {
@@ -351,15 +322,19 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     textarea.style.height = `${newScrollHeight}px`;
   };
 
-  const handleReply = (userName: string) => {
-    setReplyingTo({ userName });
-    setNewMessage(`@${userName} `);
+  const handleReply = (messageToReply: ChatMessageData) => {
+    setReplyingTo({ 
+        userName: messageToReply.senderName,
+        messageId: messageToReply.id,
+        // Truncate the text for preview
+        messageText: messageToReply.text?.substring(0, 50) || (messageToReply.file ? `Mídia: ${messageToReply.file.name}` : 'Mídia')
+    });
+    setNewMessage('');
     textareaRef.current?.focus();
   };
 
   const cancelReply = () => {
     setReplyingTo(null);
-    setNewMessage("");
   };
 
   const handleReactionClick = async (messageId: string) => {
@@ -421,11 +396,14 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
 
         <footer className="border-t border-border/50 bg-card">
           {replyingTo && (
-            <div className="px-3 pt-2 flex justify-between items-center text-xs text-muted-foreground">
-              <span>Respondendo a <strong className="text-primary">@{replyingTo.userName}</strong></span>
-              <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={cancelReply}>
-                <X className="h-4 w-4" />
-              </Button>
+            <div className="px-3 pt-2 flex justify-between items-center text-xs text-muted-foreground bg-muted/50 border-b">
+                <div className="py-1 overflow-hidden">
+                    <p>Respondendo a <strong className="text-primary">{replyingTo.userName}</strong></p>
+                    <p className="italic truncate">"{replyingTo.messageText}"</p>
+                </div>
+                <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={cancelReply}>
+                    <X className="h-4 w-4" />
+                </Button>
             </div>
           )}
           <div className="p-3">
