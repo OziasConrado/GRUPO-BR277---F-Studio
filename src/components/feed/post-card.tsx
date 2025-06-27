@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { StaticImageData } from 'next/image';
@@ -431,17 +432,6 @@ export default function PostCard({
   const displayImageUrl = cardStyle ? null : (uploadedImageUrl || imageUrl);
   const displayImageAlt = cardStyle ? '' : (uploadedImageUrl ? (dataAIUploadedImageHint || "Imagem do post") : (dataAIImageHint || "Imagem do post"));
   
-  // Corrected color logic
-  const cardInlineStyle = cardStyle ? {
-    backgroundImage: cardStyle.gradient,
-    backgroundColor: cardStyle.bg,
-  } : {};
-  const headerTextColor = cardStyle?.text === '#FFFFFF' ? 'text-primary-foreground' : 'text-foreground';
-  const mutedTextColor = cardStyle?.text === '#FFFFFF' ? 'text-primary-foreground/80' : 'text-muted-foreground';
-  const reactionButtonTextColor = cardStyle?.text === '#FFFFFF' ? 'text-primary-foreground/90 hover:text-primary-foreground' : 'text-muted-foreground hover:text-primary';
-  const reactionButtonActivePrimaryColor = cardStyle?.text === '#FFFFFF' ? 'text-yellow-400' : 'text-primary';
-  const reactionButtonActiveDestructiveColor = cardStyle?.text === '#FFFFFF' ? 'text-orange-400' : 'text-destructive';
-  const reactionButtonHoverBg = cardStyle?.text === '#FFFFFF' ? 'hover:bg-white/10' : 'hover:bg-muted/30';
   
   // Comment Component
   const CommentItem = ({ comment }: { comment: CommentProps }) => (
@@ -467,33 +457,39 @@ export default function PostCard({
 
   return (
     <>
-      <Card className="w-full max-w-2xl mx-auto mb-6 shadow-lg rounded-xl overflow-hidden" style={cardInlineStyle}>
+      <Card className="w-full max-w-2xl mx-auto mb-6 shadow-lg rounded-xl overflow-hidden">
         <CardHeader className="flex flex-row items-start space-x-3 p-4">
           <Avatar className="h-10 w-10 cursor-pointer" onClick={handleAvatarOrNameClick}>
             {userAvatarUrl ? <AvatarImage src={userAvatarUrl as string} alt={userName} data-ai-hint={dataAIAvatarHint} /> : null}
             <AvatarFallback>{userName ? userName.substring(0,2).toUpperCase() : <UserCircle className="h-10 w-10" />}</AvatarFallback>
           </Avatar>
           <div className="flex-grow" onClick={handleAvatarOrNameClick}>
-            <PostCardTitleUI className={cn("text-base font-headline cursor-pointer", headerTextColor)} style={cardStyle ? { color: cardStyle.text } : {}}>
+            <PostCardTitleUI className="text-base font-headline cursor-pointer text-foreground">
               {userName}
             </PostCardTitleUI>
-            <div className="flex flex-wrap items-center gap-x-1.5 text-xs">
-              {userLocation && <p className={cn(mutedTextColor)} style={cardStyle ? { color: cardStyle.text, opacity: 0.8 } : {}}>{userLocation}</p>}
-              {userLocation && <span className={cn(mutedTextColor)} style={cardStyle ? { color: cardStyle.text, opacity: 0.8 } : {}}>&middot;</span>}
-              <p className={cn(mutedTextColor)} style={cardStyle ? { color: cardStyle.text, opacity: 0.8 } : {}}>{timestamp}</p>
+            <div className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
+              {userLocation && <p>{userLocation}</p>}
+              {userLocation && <span>&middot;</span>}
+              <p>{timestamp}</p>
               {edited && (
                 <>
-                  <span className={cn(mutedTextColor)} style={cardStyle ? { color: cardStyle.text, opacity: 0.8 } : {}}>&middot;</span>
-                  <p className={cn("italic", mutedTextColor)} style={cardStyle ? { color: cardStyle.text, opacity: 0.8 } : {}}>(Editado)</p>
+                  <span>&middot;</span>
+                  <p className="italic">(Editado)</p>
                 </>
               )}
             </div>
           </div>
         </CardHeader>
 
-        <CardContent className={cn("p-4 pt-0", cardStyle && "flex flex-col items-center justify-center text-center min-h-[280px]")}>
+        <CardContent
+          className={cn("p-4 pt-0", cardStyle && "flex flex-col items-center justify-center text-center min-h-[280px]")}
+          style={cardStyle ? {
+            backgroundImage: cardStyle.gradient,
+            backgroundColor: cardStyle.bg,
+          } : {}}
+        >
           {isEditing ? (
-             <div className="space-y-2">
+             <div className="space-y-2 w-full">
                 <Textarea
                   value={editedText}
                   onChange={(e) => setEditedText(e.target.value)}
@@ -523,25 +519,25 @@ export default function PostCard({
 
         <CardFooter className="flex items-center justify-between px-4 py-2 border-t border-border/50">
           <div className="flex items-center gap-1">
-              <Button variant="ghost" onClick={() => handleInteractionAttempt(() => handlePostReactionClick('thumbsUp'))} className={cn(`p-2 h-auto ${currentUserPostReaction === 'thumbsUp' ? reactionButtonActivePrimaryColor : reactionButtonTextColor} ${reactionButtonHoverBg} flex items-center gap-0.5`)} aria-label="Curtir">
-                  <ThumbsUp className={`h-7 w-7 ${currentUserPostReaction === 'thumbsUp' ? (cardStyle?.text === '#FFFFFF' ? 'fill-yellow-400' : 'fill-primary') : ''}`} />
+              <Button variant="ghost" onClick={() => handleInteractionAttempt(() => handlePostReactionClick('thumbsUp'))} className={cn("p-2 h-auto flex items-center gap-0.5 hover:bg-muted/30", currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary')} aria-label="Curtir">
+                  <ThumbsUp className={`h-7 w-7 ${currentUserPostReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
                   {localPostReactions.thumbsUp > 0 && <span className="text-xs tabular-nums">({localPostReactions.thumbsUp})</span>}
               </Button>
-              <Button variant="ghost" onClick={() => handleInteractionAttempt(() => handlePostReactionClick('thumbsDown'))} className={cn(`p-2 h-auto ${currentUserPostReaction === 'thumbsDown' ? reactionButtonActiveDestructiveColor : reactionButtonTextColor} ${reactionButtonHoverBg} flex items-center gap-0.5`)} aria-label="Não curtir">
-                  <ThumbsDown className={`h-7 w-7 ${currentUserPostReaction === 'thumbsDown' ? (cardStyle?.text === '#FFFFFF' ? 'fill-orange-400' : 'fill-destructive') : ''}`} />
+              <Button variant="ghost" onClick={() => handleInteractionAttempt(() => handlePostReactionClick('thumbsDown'))} className={cn("p-2 h-auto flex items-center gap-0.5 hover:bg-muted/30", currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive')} aria-label="Não curtir">
+                  <ThumbsDown className={`h-7 w-7 ${currentUserPostReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
                    {localPostReactions.thumbsDown > 0 && <span className="text-xs tabular-nums">({localPostReactions.thumbsDown})</span>}
               </Button>
-              <Button variant="ghost" onClick={() => handleInteractionAttempt(() => setIsSheetOpen(true))} className={cn(reactionButtonTextColor, reactionButtonHoverBg, "p-2 h-auto flex items-center gap-0.5")} aria-label="Comentários">
+              <Button variant="ghost" onClick={() => handleInteractionAttempt(() => setIsSheetOpen(true))} className={cn("p-2 h-auto flex items-center gap-0.5 text-muted-foreground hover:text-primary hover:bg-muted/30")} aria-label="Comentários">
                   <MessageSquare className="h-7 w-7" />
                   {comments.length > 0 && <span className="text-xs tabular-nums">({comments.length})</span>}
               </Button>
-               <Button variant="ghost" className={cn(reactionButtonTextColor, reactionButtonHoverBg, "p-2 h-auto")}>
+               <Button variant="ghost" className={cn("p-2 h-auto text-muted-foreground hover:text-primary hover:bg-muted/30")}>
                   <Share2 className="h-7 w-7" />
               </Button>
           </div>
           <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className={cn(reactionButtonTextColor, reactionButtonHoverBg, "p-2 h-auto")}>
+                  <Button variant="ghost" className={cn("p-2 h-auto text-muted-foreground hover:text-primary hover:bg-muted/30")}>
                       <MoreVertical className="h-7 w-7" />
                   </Button>
               </DropdownMenuTrigger>
