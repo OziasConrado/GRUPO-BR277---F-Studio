@@ -1,11 +1,9 @@
-
 'use client';
 
 import Link from 'next/link';
 import { ArrowLeft, BellRing, Loader2 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import AlertCard, { type AlertProps } from '@/components/alerts/alert-card';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import React from 'react';
 import { firestore } from '@/lib/firebase/client';
@@ -70,15 +68,15 @@ export default function AlertasPage() {
         Voltar para o Feed
       </Link>
 
-      <Card className="shadow-xl rounded-xl">
-        <CardHeader className="text-center pb-4">
-          <BellRing className="mx-auto h-10 w-10 text-primary mb-2" />
-          <CardTitle className="text-3xl font-bold font-headline">Mural de Alertas</CardTitle>
-          <CardDescription>
-            Confira os últimos alertas reportados pela comunidade e mantenha-se informado sobre as condições das estradas.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6 pt-2">
+      <div className="text-center">
+        <BellRing className="mx-auto h-10 w-10 text-primary mb-2" />
+        <h1 className="text-3xl font-bold font-headline">Mural de Alertas</h1>
+        <p className="text-muted-foreground mt-2 max-w-lg mx-auto">
+          Confira os últimos alertas reportados pela comunidade e mantenha-se informado sobre as condições das estradas.
+        </p>
+      </div>
+
+      <div className="space-y-6 pt-2">
           <AdPlaceholder />
           
           {loading ? (
@@ -101,8 +99,7 @@ export default function AlertasPage() {
             </p>
           )}
           {alerts.length === 0 && !loading && <AdPlaceholder />}
-        </CardContent>
-      </Card>
+        </div>
     </div>
   );
 }
