@@ -91,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
     return () => unsubscribe();
-  }, [auth, toast]);
+  }, [toast]);
 
   useEffect(() => {
     if (!auth || !firestore) return;
@@ -243,7 +243,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAuthenticating(false);
       }
     },
-    [auth, firestore, router, toast]
+    [firestore, auth, router, toast]
   );
 
   const signInWithEmail = useCallback(
@@ -291,12 +291,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUserProfile = useCallback(
     async (data: UpdateUserProfileData) => {
-      if (!auth?.currentUser || !firestore || !storage) {
+      if (!currentUser || !firestore || !storage) {
         toast({ title: "Erro", description: "Usuário não autenticado ou serviço indisponível.", variant: "destructive" });
         return;
       }
       setIsAuthenticating(true);
-      const user = auth.currentUser;
+      const user = currentUser;
       const userDocRef = doc(firestore, "Usuarios", user.uid);
       
       const authProfileUpdates: { displayName?: string; photoURL?: string } = {};
@@ -344,14 +344,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         setCurrentUser(auth.currentUser);
         toast({ title: 'Perfil Atualizado!', description: 'Suas informações foram salvas com sucesso.' });
-        router.push('/'); // Navigate to home or profile page after update
+        router.push('/'); 
       } catch (error) {
         handleAuthError(error as AuthError, 'Erro ao Atualizar Perfil');
       } finally {
         setIsAuthenticating(false);
       }
     },
-    [auth, firestore, storage, toast, router]
+    [currentUser, firestore, storage, auth, router, toast]
   );
 
   const signOutUser = useCallback(async () => {
