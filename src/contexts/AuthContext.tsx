@@ -60,6 +60,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { toast } = useToast();
 
+  const handleAuthError = useCallback((error: AuthError, customTitle?: string) => {
+    console.error("Firebase Auth Error:", error.code, error.message);
+    let message = "Ocorreu um erro. Tente novamente.";
+    switch (error.code) {
+        case 'auth/wrong-password':
+            message = 'Senha incorreta. Verifique sua senha e tente novamente.';
+            break;
+        case 'auth/user-not-found':
+            message = 'Usuário não encontrado. Verifique o e-mail digitado ou crie uma nova conta.';
+            break;
+        case 'auth/email-already-in-use':
+            message = 'Este e-mail já está em uso. Tente fazer login ou use um e-mail diferente.';
+            break;
+        case 'auth/weak-password':
+            message = 'Senha muito fraca. A senha deve ter pelo menos 6 caracteres.';
+            break;
+        case 'auth/invalid-email':
+            message = 'O formato do e-mail é inválido.';
+            break;
+        case 'auth/popup-closed-by-user':
+        case 'auth/cancelled-popup-request':
+            message = 'A janela de login foi fechada. Por favor, tente novamente.';
+            break;
+        case 'auth/requires-recent-login':
+            message = 'Esta operação é sensível e requer autenticação recente. Faça login novamente antes de tentar novamente.';
+            break;
+        case 'auth/too-many-requests':
+            message = 'Muitas tentativas. Por favor, tente novamente mais tarde.';
+            break;
+         case 'auth/network-request-failed':
+            message = 'Erro de rede. Verifique sua conexão com a internet e tente novamente.';
+            break;
+        case 'auth/unauthorized-domain':
+            message = 'Este domínio não está autorizado para operações de login. Verifique a configuração do Firebase.';
+            break;
+        case 'auth/operation-not-allowed':
+            message = 'O método de login por e-mail e senha não está ativado para este aplicativo. Por favor, contate o suporte.';
+            break;
+        default:
+            message = `Ocorreu um problema (${error.code}). Por favor, tente novamente ou contate o suporte se o problema persistir.`;
+            break;
+    }
+    toast({
+      title: customTitle || 'Erro de Autenticação',
+      description: message,
+      variant: 'destructive',
+    });
+  }, [toast]);
+
   useEffect(() => {
     if (!auth) {
       console.error("AuthContext: Firebase Auth não está inicializado.");
@@ -137,57 +186,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }
     processRedirect();
-  }, [auth, firestore, router, toast, loading, isAuthenticating]);
+  }, [auth, firestore, router, toast, loading, isAuthenticating, handleAuthError]);
 
-
-  const handleAuthError = (error: AuthError, customTitle?: string) => {
-    console.error("Firebase Auth Error:", error.code, error.message);
-    let message = "Ocorreu um erro. Tente novamente.";
-    switch (error.code) {
-        case 'auth/wrong-password':
-            message = 'Senha incorreta. Verifique sua senha e tente novamente.';
-            break;
-        case 'auth/user-not-found':
-            message = 'Usuário não encontrado. Verifique o e-mail digitado ou crie uma nova conta.';
-            break;
-        case 'auth/email-already-in-use':
-            message = 'Este e-mail já está em uso. Tente fazer login ou use um e-mail diferente.';
-            break;
-        case 'auth/weak-password':
-            message = 'Senha muito fraca. A senha deve ter pelo menos 6 caracteres.';
-            break;
-        case 'auth/invalid-email':
-            message = 'O formato do e-mail é inválido.';
-            break;
-        case 'auth/popup-closed-by-user':
-        case 'auth/cancelled-popup-request':
-            message = 'A janela de login foi fechada. Por favor, tente novamente.';
-            break;
-        case 'auth/requires-recent-login':
-            message = 'Esta operação é sensível e requer autenticação recente. Faça login novamente antes de tentar novamente.';
-            break;
-        case 'auth/too-many-requests':
-            message = 'Muitas tentativas. Por favor, tente novamente mais tarde.';
-            break;
-         case 'auth/network-request-failed':
-            message = 'Erro de rede. Verifique sua conexão com a internet e tente novamente.';
-            break;
-        case 'auth/unauthorized-domain':
-            message = 'Este domínio não está autorizado para operações de login. Verifique a configuração do Firebase.';
-            break;
-        case 'auth/operation-not-allowed':
-            message = 'O método de login por e-mail e senha não está ativado para este aplicativo. Por favor, contate o suporte.';
-            break;
-        default:
-            message = `Ocorreu um problema (${error.code}). Por favor, tente novamente ou contate o suporte se o problema persistir.`;
-            break;
-    }
-    toast({
-      title: customTitle || 'Erro de Autenticação',
-      description: message,
-      variant: 'destructive',
-    });
-  };
 
   const signInWithGoogle = useCallback(async () => {
     if (!auth) {
@@ -200,7 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       handleAuthError(err, 'Erro ao Redirecionar para Google');
       setIsAuthenticating(false);
     });
-  }, [auth, toast]);
+  }, [auth, toast, handleAuthError]);
 
   const signUpWithEmail = useCallback(
     async (email: string, password: string) => {
@@ -243,7 +243,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAuthenticating(false);
       }
     },
-    [firestore, auth, router, toast]
+    [firestore, auth, router, toast, handleAuthError]
   );
 
   const signInWithEmail = useCallback(
@@ -263,7 +263,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAuthenticating(false);
       }
     },
-    [auth, firestore, router, toast]
+    [auth, firestore, router, toast, handleAuthError]
   );
 
   const sendPasswordResetEmail = useCallback(
@@ -286,74 +286,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAuthenticating(false);
       }
     },
-    [auth, toast]
+    [auth, toast, handleAuthError]
   );
 
   const updateUserProfile = useCallback(
     async (data: UpdateUserProfileData) => {
-      const initialUser = auth?.currentUser;
-      if (!initialUser || !firestore || !storage) {
+      if (!auth || !currentUser || !firestore || !storage) {
         toast({ title: "Erro", description: "Usuário não autenticado ou serviço indisponível.", variant: "destructive" });
         return;
       }
-
+      
       setIsAuthenticating(true);
 
-      const authProfileUpdates: { displayName?: string; photoURL?: string } = {};
-      const firestoreProfileUpdates: any = {};
-      
-      let newPhotoURL: string | undefined = undefined;
+      try {
+        let newPhotoURL: string | undefined = undefined;
 
-      // Etapa 1: Lidar com o upload da foto primeiro, pois é uma operação assíncrona
-      if (data.newPhotoFile) {
-        try {
-          const photoRef = ref(storage, `profile_pictures/${initialUser.uid}/${Date.now()}_${data.newPhotoFile.name}`);
+        if (data.newPhotoFile) {
+          const photoRef = ref(storage, `profile_pictures/${currentUser.uid}/${Date.now()}_${data.newPhotoFile.name}`);
           await uploadBytes(photoRef, data.newPhotoFile);
           newPhotoURL = await getDownloadURL(photoRef);
-        } catch (uploadError) {
-          handleAuthError(uploadError as AuthError, 'Erro no Upload da Foto');
-          setIsAuthenticating(false);
-          return;
-        }
-      }
-
-      // Etapa 2: Agora que o trabalho assíncrono terminou, obter o objeto de usuário mais recente novamente
-      // Esta é a mudança chave para evitar problemas com tokens/objetos de usuário obsoletos.
-      const finalUser = auth?.currentUser;
-      if (!finalUser) {
-        toast({ title: "Erro de Autenticação", description: "Sua sessão expirou. Por favor, faça login novamente.", variant: "destructive" });
-        setIsAuthenticating(false);
-        return;
-      }
-      
-      const userDocRef = doc(firestore, "Usuarios", finalUser.uid);
-
-      // Etapa 3: Preparar os payloads de atualização
-      if (data.displayName && data.displayName !== finalUser.displayName) {
-        authProfileUpdates.displayName = data.displayName;
-        firestoreProfileUpdates.displayName = data.displayName;
-      }
-
-      if (newPhotoURL) {
-          authProfileUpdates.photoURL = newPhotoURL;
-          firestoreProfileUpdates.photoURL = newPhotoURL;
-      }
-      
-      if (data.bio !== undefined) firestoreProfileUpdates.bio = data.bio;
-      if (data.location !== undefined) firestoreProfileUpdates.location = data.location;
-      if (data.instagramUsername !== undefined) firestoreProfileUpdates.instagramUsername = data.instagramUsername.replace('@','');
-      
-      // Etapa 4: Realizar as atualizações
-      try {
-        if (Object.keys(authProfileUpdates).length > 0) {
-          await firebaseUpdateProfile(finalUser, authProfileUpdates);
         }
 
-        if (Object.keys(firestoreProfileUpdates).length > 0) {
+        const authProfileUpdates: { displayName?: string; photoURL?: string } = {};
+        const firestoreProfileUpdates: any = {};
+        
+        if (data.displayName && data.displayName !== currentUser.displayName) {
+          authProfileUpdates.displayName = data.displayName;
+          firestoreProfileUpdates.displayName = data.displayName;
+        }
+
+        if (newPhotoURL) {
+            authProfileUpdates.photoURL = newPhotoURL;
+            firestoreProfileUpdates.photoURL = newPhotoURL;
+        }
+        
+        if (data.bio !== undefined && data.bio !== userProfile?.bio) firestoreProfileUpdates.bio = data.bio;
+        if (data.location !== undefined && data.location !== userProfile?.location) firestoreProfileUpdates.location = data.location;
+        if (data.instagramUsername !== undefined && data.instagramUsername !== userProfile?.instagramUsername) {
+            firestoreProfileUpdates.instagramUsername = data.instagramUsername.replace('@','');
+        }
+        
+        const hasAuthUpdates = Object.keys(authProfileUpdates).length > 0;
+        const hasFirestoreUpdates = Object.keys(firestoreProfileUpdates).length > 0;
+
+        if (hasAuthUpdates) {
+          await firebaseUpdateProfile(currentUser, authProfileUpdates);
+        }
+
+        if (hasFirestoreUpdates) {
+          const userDocRef = doc(firestore, "Usuarios", currentUser.uid);
           firestoreProfileUpdates.updatedAt = serverTimestamp();
           await setDoc(userDocRef, firestoreProfileUpdates, { merge: true });
           
-          // Atualização otimista do estado do perfil local
           const newProfileState: UserProfile = { ...userProfile };
           if (firestoreProfileUpdates.bio !== undefined) newProfileState.bio = firestoreProfileUpdates.bio;
           if (firestoreProfileUpdates.location !== undefined) newProfileState.location = firestoreProfileUpdates.location;
@@ -361,16 +345,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUserProfile(newProfileState);
         }
 
-        // O listener onAuthStateChanged cuidará da atualização do estado currentUser, não há necessidade de setCurrentUser manual
-        toast({ title: 'Perfil Atualizado!', description: 'Suas informações foram salvas com sucesso.' });
-        router.push('/');
+        if (hasAuthUpdates || hasFirestoreUpdates) {
+            toast({ title: 'Perfil Atualizado!', description: 'Suas informações foram salvas com sucesso.' });
+            router.push('/');
+        } else {
+            toast({ title: 'Nenhuma Alteração', description: 'Nenhuma informação foi alterada.' });
+        }
       } catch (error) {
         handleAuthError(error as AuthError, 'Erro ao Atualizar Perfil');
       } finally {
         setIsAuthenticating(false);
       }
     },
-    [userProfile, router, toast]
+    [currentUser, userProfile, router, toast, handleAuthError]
   );
 
 
@@ -390,7 +377,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsAuthenticating(false);
     }
-  }, [auth, router, toast]);
+  }, [auth, router, toast, handleAuthError]);
 
   const isProfileComplete = !!(currentUser?.displayName && userProfile?.location);
 
