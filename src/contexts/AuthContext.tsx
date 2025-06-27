@@ -186,7 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }
     processRedirect();
-  }, [auth, firestore, router, toast, loading, isAuthenticating, handleAuthError]);
+  }, [loading, isAuthenticating, router, toast, handleAuthError]);
 
 
   const signInWithGoogle = useCallback(async () => {
@@ -200,7 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       handleAuthError(err, 'Erro ao Redirecionar para Google');
       setIsAuthenticating(false);
     });
-  }, [auth, toast, handleAuthError]);
+  }, [toast, handleAuthError]);
 
   const signUpWithEmail = useCallback(
     async (email: string, password: string) => {
@@ -243,13 +243,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAuthenticating(false);
       }
     },
-    [firestore, auth, router, toast, handleAuthError]
+    [router, toast, handleAuthError]
   );
 
   const signInWithEmail = useCallback(
     async (email: string, password: string) => {
-      if (!auth || !firestore) {
-        toast({ title: "Erro de Inicialização", description: "Serviço de autenticação ou banco de dados não disponível.", variant: "destructive" });
+      if (!auth) {
+        toast({ title: "Erro de Inicialização", description: "Serviço de autenticação não disponível.", variant: "destructive" });
         return;
       }
       setIsAuthenticating(true);
@@ -263,7 +263,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAuthenticating(false);
       }
     },
-    [auth, firestore, router, toast, handleAuthError]
+    [router, toast, handleAuthError]
   );
 
   const sendPasswordResetEmail = useCallback(
@@ -286,79 +286,84 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAuthenticating(false);
       }
     },
-    [auth, toast, handleAuthError]
+    [toast, handleAuthError]
   );
 
-  const updateUserProfile = useCallback(
-    async (data: UpdateUserProfileData) => {
-      if (!auth || !currentUser || !firestore || !storage) {
+  const updateUserProfile = useCallback(async (data: UpdateUserProfileData) => {
+    // Get the freshest user at the start of the operation.
+    const userForUpdate = auth.currentUser; 
+
+    if (!userForUpdate || !firestore || !storage) {
         toast({ title: "Erro", description: "Usuário não autenticado ou serviço indisponível.", variant: "destructive" });
         return;
-      }
-      
-      setIsAuthenticating(true);
+    }
+    
+    setIsAuthenticating(true);
 
-      try {
-        let newPhotoURL: string | undefined = undefined;
+    try {
+        let newPhotoURL: string | null = null;
 
+        // Step 1: Handle file upload if it exists.
         if (data.newPhotoFile) {
-          const photoRef = ref(storage, `profile_pictures/${currentUser.uid}/${Date.now()}_${data.newPhotoFile.name}`);
-          await uploadBytes(photoRef, data.newPhotoFile);
-          newPhotoURL = await getDownloadURL(photoRef);
+            const photoRef = ref(storage, `profile_pictures/${userForUpdate.uid}/${Date.now()}_${data.newPhotoFile.name}`);
+            await uploadBytes(photoRef, data.newPhotoFile);
+            newPhotoURL = await getDownloadURL(photoRef);
         }
 
+        // Step 2: Prepare updates for Firebase Auth profile.
         const authProfileUpdates: { displayName?: string; photoURL?: string } = {};
-        const firestoreProfileUpdates: any = {};
-        
-        if (data.displayName && data.displayName !== currentUser.displayName) {
-          authProfileUpdates.displayName = data.displayName;
-          firestoreProfileUpdates.displayName = data.displayName;
+        if (data.displayName && data.displayName !== userForUpdate.displayName) {
+            authProfileUpdates.displayName = data.displayName;
         }
-
         if (newPhotoURL) {
             authProfileUpdates.photoURL = newPhotoURL;
-            firestoreProfileUpdates.photoURL = newPhotoURL;
         }
-        
+
+        // Step 3: Prepare updates for Firestore document.
+        const firestoreProfileUpdates: any = {};
+        if (data.displayName && data.displayName !== userForUpdate.displayName) firestoreProfileUpdates.displayName = data.displayName;
+        if (newPhotoURL) firestoreProfileUpdates.photoURL = newPhotoURL;
         if (data.bio !== undefined && data.bio !== userProfile?.bio) firestoreProfileUpdates.bio = data.bio;
         if (data.location !== undefined && data.location !== userProfile?.location) firestoreProfileUpdates.location = data.location;
         if (data.instagramUsername !== undefined && data.instagramUsername !== userProfile?.instagramUsername) {
             firestoreProfileUpdates.instagramUsername = data.instagramUsername.replace('@','');
         }
-        
+
         const hasAuthUpdates = Object.keys(authProfileUpdates).length > 0;
         const hasFirestoreUpdates = Object.keys(firestoreProfileUpdates).length > 0;
 
+        // Step 4: Execute updates if there's anything to update.
+        if (!hasAuthUpdates && !hasFirestoreUpdates) {
+            toast({ title: 'Nenhuma Alteração', description: 'Nenhuma informação foi alterada.' });
+            setIsAuthenticating(false);
+            return;
+        }
+
         if (hasAuthUpdates) {
-          await firebaseUpdateProfile(currentUser, authProfileUpdates);
+            await firebaseUpdateProfile(userForUpdate, authProfileUpdates);
         }
 
         if (hasFirestoreUpdates) {
-          const userDocRef = doc(firestore, "Usuarios", currentUser.uid);
-          firestoreProfileUpdates.updatedAt = serverTimestamp();
-          await setDoc(userDocRef, firestoreProfileUpdates, { merge: true });
-          
-          const newProfileState: UserProfile = { ...userProfile };
-          if (firestoreProfileUpdates.bio !== undefined) newProfileState.bio = firestoreProfileUpdates.bio;
-          if (firestoreProfileUpdates.location !== undefined) newProfileState.location = firestoreProfileUpdates.location;
-          if (firestoreProfileUpdates.instagramUsername !== undefined) newProfileState.instagramUsername = firestoreProfileUpdates.instagramUsername;
-          setUserProfile(newProfileState);
+            const userDocRef = doc(firestore, "Usuarios", userForUpdate.uid);
+            firestoreProfileUpdates.updatedAt = serverTimestamp();
+            await setDoc(userDocRef, firestoreProfileUpdates, { merge: true });
+            
+            const newProfileState: UserProfile = { ...userProfile };
+            if (firestoreProfileUpdates.bio !== undefined) newProfileState.bio = firestoreProfileUpdates.bio;
+            if (firestoreProfileUpdates.location !== undefined) newProfileState.location = firestoreProfileUpdates.location;
+            if (firestoreProfileUpdates.instagramUsername !== undefined) newProfileState.instagramUsername = firestoreProfileUpdates.instagramUsername;
+            setUserProfile(newProfileState);
         }
+        
+        toast({ title: 'Perfil Atualizado!', description: 'Suas informações foram salvas com sucesso.' });
+        router.push('/');
 
-        if (hasAuthUpdates || hasFirestoreUpdates) {
-            toast({ title: 'Perfil Atualizado!', description: 'Suas informações foram salvas com sucesso.' });
-            router.push('/');
-        } else {
-            toast({ title: 'Nenhuma Alteração', description: 'Nenhuma informação foi alterada.' });
-        }
-      } catch (error) {
+    } catch (error) {
         handleAuthError(error as AuthError, 'Erro ao Atualizar Perfil');
-      } finally {
+    } finally {
         setIsAuthenticating(false);
-      }
-    },
-    [currentUser, userProfile, router, toast, handleAuthError]
-  );
+    }
+  }, [userProfile, handleAuthError, router, toast]);
 
 
   const signOutUser = useCallback(async () => {
@@ -377,7 +382,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsAuthenticating(false);
     }
-  }, [auth, router, toast, handleAuthError]);
+  }, [router, toast, handleAuthError]);
 
   const isProfileComplete = !!(currentUser?.displayName && userProfile?.location);
 
