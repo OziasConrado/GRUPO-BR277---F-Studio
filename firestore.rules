@@ -1,93 +1,73 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Regra geral: Nega acesso a qualquer documento não especificado abaixo.
-    match /{document=**} {
-      allow read, write: if false;
+    // Helper function to check if a user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
     }
 
-    // Coleção de Usuários
+    // Helper function to check if the user is the owner of the document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // User profiles can only be read and updated by the owner
     match /Usuarios/{userId} {
-      // Qualquer um pode ler perfis de usuários (para exibir nomes, fotos, etc.)
-      allow read: if true;
-      // Apenas o próprio usuário autenticado pode criar ou atualizar seu perfil.
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow read, update: if isOwner(userId);
+      allow create: if isAuthenticated();
     }
-    
-    // Coleção de Posts
+
+    // Public content that anyone can read, but only authenticated users can create.
     match /posts/{postId} {
-      // Qualquer um pode ler os posts
       allow read: if true;
-      // Apenas usuários autenticados e com perfil completo podem criar posts.
-      allow create: if request.auth != null && get(/databases/$(database)/documents/Usuarios/$(request.auth.uid)).data.location != '';
-      // Apenas o autor do post pode atualizar (editar) ou "deletar" (marcar como deletado).
-      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if isAuthenticated();
+      // Allow update only for the owner, and don't allow changing the userId
+      allow update: if isOwner(request.resource.data.userId)
+                    && request.resource.data.userId == resource.data.userId;
     }
 
-    // Coleção de Comentários (aninhada em Posts)
-    match /posts/{postId}/comments/{commentId} {
-      // Qualquer um pode ler os comentários.
-      allow read: if true;
-      // Apenas usuários autenticados e com perfil completo podem criar comentários.
-      allow create: if request.auth != null && get(/databases/$(database)/documents/Usuarios/$(request.auth.uid)).data.location != '';
-      // O autor do comentário pode atualizá-lo ou deletá-lo.
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-    }
-
-    // Coleção de Reações (aninhada em Posts)
-    match /posts/{postId}/userReactions/{userId} {
-      // Qualquer um pode ler as reações.
-      allow read: if true;
-      // Um usuário autenticado só pode criar/alterar/deletar a sua própria reação.
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Coleção de Reels
     match /reels/{reelId} {
-        // Qualquer um pode ler os reels.
-        allow read: if true;
-        // Apenas usuários autenticados e com perfil completo podem criar reels.
-        allow create: if request.auth != null && get(/databases/$(database)/documents/Usuarios/$(request.auth.uid)).data.location != '';
+      allow read: if true;
+      allow create: if isAuthenticated();
     }
-
-    // Coleção de Alertas
+    
     match /alerts/{alertId} {
-      // Qualquer um pode ler os alertas.
       allow read: if true;
-      // Apenas usuários autenticados e com perfil completo podem criar alertas.
-      allow create: if request.auth != null && get(/databases/$(database)/documents/Usuarios/$(request.auth.uid)).data.location != '';
+      allow create: if isAuthenticated();
     }
     
-    // Coleção de Avaliações de SAU
-    match /sau_reviews/{reviewId} {
-      // Todos podem ler as avaliações.
-      allow read: if true;
-      // Apenas usuários autenticados e com perfil completo podem criar avaliações.
-      allow create: if request.auth != null && get(/databases/$(database)/documents/Usuarios/$(request.auth.uid)).data.location != '';
-    }
-    
-    // Coleção de Comércios do Guia
     match /businesses/{businessId} {
-        // Todos podem ler as informações dos comércios.
-        allow read: if true;
-        // Apenas usuários autenticados podem cadastrar novos comércios.
-        allow create: if request.auth != null;
+      allow read: if true;
+      allow create: if isAuthenticated();
     }
 
-    // Coleção de Pontos Turísticos Indicados
-    match /tourist_points_indicated/{pointId} {
-        // Todos podem ler os pontos que foram indicados.
+    match /sau_reviews/{reviewId} {
         allow read: if true;
-        // Apenas usuários autenticados e com perfil completo podem indicar novos pontos.
-        allow create: if request.auth != null && get(/databases/$(database)/documents/Usuarios/$(request.auth.uid)).data.location != '';
+        allow create: if isAuthenticated();
     }
     
-    // Coleção de Mensagens do Chat
+    match /tourist_points_indicated/{pointId} {
+        allow read: if true;
+        allow create: if isAuthenticated();
+    }
+
+    // Subcollections for posts
+    match /posts/{postId}/comments/{commentId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+    }
+    
+    match /posts/{postId}/userReactions/{userId} {
+      allow read: if true;
+      allow create, update, delete: if isOwner(userId);
+    }
+    
+    // Chat messages: Only authenticated users can read and write
     match /chatMessages/{messageId} {
-      // Apenas usuários autenticados podem ler e escrever no chat.
-      allow read, write: if request.auth != null;
+      allow read, create: if isAuthenticated();
     }
   }
 }
