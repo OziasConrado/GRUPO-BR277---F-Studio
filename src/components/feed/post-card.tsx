@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { StaticImageData } from 'next/image';
@@ -477,16 +478,19 @@ export default function PostCard({
 
   const handleDeletePost = async () => {
     if (!isAuthor || !firestore) return;
-    const postRef = doc(firestore, "posts", postId);
+    
+    // Close the dialog FIRST to prevent the overlay from getting stuck
+    setIsDeleteAlertOpen(false);
+
     try {
-      await updateDoc(postRef, {
+      await updateDoc(doc(firestore, "posts", postId), {
         deleted: true,
       });
       toast({
         title: "Post Excluído",
         description: "Sua publicação foi removida do feed.",
       });
-      // The component will be unmounted automatically by the parent's onSnapshot listener filter
+      // The component will be unmounted by the parent's onSnapshot listener.
     } catch (error) {
       console.error("Error deleting post: ", error);
       toast({
@@ -495,7 +499,6 @@ export default function PostCard({
         description: "Não foi possível excluir a publicação.",
       });
     }
-    setIsDeleteAlertOpen(false);
   };
 
   const handleAvatarOrNameClick = () => {

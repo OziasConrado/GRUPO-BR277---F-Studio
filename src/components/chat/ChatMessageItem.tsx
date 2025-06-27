@@ -175,7 +175,7 @@ export default function ChatMessageItem({
                       <MoreVertical className="h-4 w-4" />
                   </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="z-[70]">
+              <DropdownMenuContent align="end" className="z-[90]">
                   {text && (
                     <DropdownMenuItem onClick={() => setIsEditing(true)}>
                         <Edit className="mr-2 h-4 w-4" />
@@ -303,7 +303,7 @@ export default function ChatMessageItem({
     </div>
 
     <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="z-[90]">
         <AlertDialogHeader>
             <AlertDialogTitle>Excluir Mensagem</AlertDialogTitle>
             <AlertDialogDescription>
@@ -313,11 +313,11 @@ export default function ChatMessageItem({
         <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-            className="bg-destructive hover:bg-destructive/90"
-            onClick={() => {
-                onDelete(message.id);
-                setIsDeleteDialogOpen(false);
-            }}
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={async () => {
+                setIsDeleteDialogOpen(false); // Close dialog first
+                await onDelete(message.id);  // Then delete
+              }}
             >
             Excluir
             </AlertDialogAction>
