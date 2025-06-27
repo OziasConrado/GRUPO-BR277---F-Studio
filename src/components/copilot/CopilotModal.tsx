@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { askCopilot, type CopilotInput } from '@/ai/flows/copilot-flow';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import ReactMarkdown from 'react-markdown';
 
 interface Message {
   author: 'user' | 'ai';
@@ -114,10 +115,20 @@ export default function CopilotModal({ isOpen, onClose }: CopilotModalProps) {
                   </Avatar>
                 )}
                 <div className={cn(
-                    "max-w-[80%] p-3 rounded-lg text-sm whitespace-pre-wrap",
+                    "max-w-[80%] p-3 rounded-lg text-sm",
                     msg.author === 'ai' ? "bg-muted text-foreground" : "bg-primary text-primary-foreground"
                 )}>
-                  {msg.content}
+                  <ReactMarkdown
+                    components={{
+                        p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
+                        strong: ({node, ...props}) => <strong className="font-bold" {...props} />,
+                        ul: ({node, ...props}) => <ul className="list-disc list-inside space-y-1 my-2" {...props} />,
+                        li: ({node, ...props}) => <li className="pl-1" {...props} />,
+                    }}
+                  >
+                    {msg.content}
+                  </ReactMarkdown>
+
                    {msg.author === 'ai' && msg.mapImageUrl && (
                     <a href={msg.mapUrl} target="_blank" rel="noopener noreferrer" className="mt-3 block border rounded-lg overflow-hidden hover:opacity-90 transition-opacity">
                         <img src={msg.mapImageUrl} alt="Mapa da rota" className="w-full h-auto" />
