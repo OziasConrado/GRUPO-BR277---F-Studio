@@ -9,6 +9,7 @@
  */
 
 import { ai } from '../genkit';
+import { googleAI } from '@genkit-ai/googleai';
 import { z } from 'zod';
 import {
   CopilotInputSchema,
@@ -293,7 +294,7 @@ const copilotFlow = ai.defineFlow(
       const history = messages.slice(0, -1);
 
       const llmResponse = await ai.generate({
-        model: 'gemini-1.5-flash-latest',
+        model: googleAI.model('gemini-1.5-flash-latest'),
         prompt: lastMessage.content,
         history: history,
         tools: tools,
