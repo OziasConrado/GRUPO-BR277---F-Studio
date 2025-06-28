@@ -76,14 +76,16 @@ const allSausData: SAULocation[] = [
   { id: 'arteris-regis-5', concessionaire: 'Arteris Régis Bitencourt', name: 'SAU 05 - BR-116, km 299', address: 'Itapecerica da Serra/SP', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -23.71, longitude: -46.85 },
 
   // CCR PRVias
-  { id: 'ccr-prvias-1', concessionaire: 'CCR PRVias', name: 'SAU Exemplo 1', address: 'Rodovia do Xisto, Araucária/PR', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -25.67, longitude: -49.63 },
-  { id: 'ccr-prvias-2', concessionaire: 'CCR PRVias', name: 'SAU Exemplo 2', address: 'São Luiz do Purunã, Balsa Nova/PR', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -25.46, longitude: -49.68 },
-  { id: 'ccr-prvias-3', concessionaire: 'CCR PRVias', name: 'SAU Exemplo 3', address: 'Imbituva/PR', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -25.22, longitude: -50.60 },
-
+  { id: 'ccr-prvias-1', concessionaire: 'CCR PRVias', name: 'SAU 01 - BR-376, km 460', address: 'Imbaú/PR', services: ['Banheiro', 'Água', 'Wi-Fi'], operatingHours: '24 horas', latitude: -24.43, longitude: -50.75 },
+  { id: 'ccr-prvias-2', concessionaire: 'CCR PRVias', name: 'SAU 02 - BR-376, km 540', address: 'Tibagi/PR', services: ['Banheiro', 'Água', 'Wi-Fi'], operatingHours: '24 horas', latitude: -24.51, longitude: -50.41 },
+  { id: 'ccr-prvias-3', concessionaire: 'CCR PRVias', name: 'SAU 03 - PR-151, km 301', address: 'Piraí do Sul/PR', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -24.52, longitude: -49.94 },
+  
   // CCR RioSP
-  { id: 'ccr-riosp-1', concessionaire: 'CCR RioSP', name: 'SAU Exemplo 1', address: 'Via Dutra - Queluz/SP', services: ['Banheiro', 'Água', 'Wi-Fi'], operatingHours: '24 horas', latitude: -22.53, longitude: -44.78 },
-  { id: 'ccr-riosp-2', concessionaire: 'CCR RioSP', name: 'SAU Exemplo 2', address: 'Via Dutra - Arujá/SP', services: ['Banheiro', 'Água', 'Wi-Fi'], operatingHours: '24 horas', latitude: -23.39, longitude: -46.32 },
-  { id: 'ccr-riosp-3', concessionaire: 'CCR RioSP', name: 'SAU Exemplo 3', address: 'Via Dutra - Piraí/RJ', services: ['Banheiro', 'Água'], operatingHours: '24 horas', latitude: -22.62, longitude: -43.90 },
+  { id: 'ccr-riosp-1', concessionaire: 'CCR RioSP', name: 'SAU Arujá - BR-116, km 204', address: 'Arujá/SP (Pista sentido SP)', services: ['Banheiro', 'Água', 'Wi-Fi', 'Fraldário'], operatingHours: '24 horas', latitude: -23.39, longitude: -46.32 },
+  { id: 'ccr-riosp-2', concessionaire: 'CCR RioSP', name: 'SAU Pindamonhangaba - BR-116, km 99', address: 'Pindamonhangaba/SP (Pista sentido RJ)', services: ['Banheiro', 'Água', 'Wi-Fi', 'Fraldário'], operatingHours: '24 horas', latitude: -22.92, longitude: -45.45 },
+  { id: 'ccr-riosp-3', concessionaire: 'CCR RioSP', name: 'SAU Resende - BR-116, km 304', address: 'Resende/RJ (Pista sentido RJ)', services: ['Banheiro', 'Água', 'Wi-Fi', 'Fraldário'], operatingHours: '24 horas', latitude: -22.47, longitude: -44.44 },
+  { id: 'ccr-riosp-4', concessionaire: 'CCR RioSP', name: 'SAU Piraí - BR-116, km 227', address: 'Piraí/RJ (Pista sentido RJ)', services: ['Banheiro', 'Água', 'Wi-Fi', 'Fraldário'], operatingHours: '24 horas', latitude: -22.62, longitude: -43.90 },
+  { id: 'ccr-riosp-5', concessionaire: 'CCR RioSP', name: 'SAU Seropédica - BR-116, km 200', address: 'Seropédica/RJ (Pista sentido RJ)', services: ['Banheiro', 'Água', 'Wi-Fi', 'Fraldário'], operatingHours: '24 horas', latitude: -22.74, longitude: -43.70 },
 ];
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
