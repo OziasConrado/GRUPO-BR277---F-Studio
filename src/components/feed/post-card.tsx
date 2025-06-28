@@ -7,7 +7,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle as PostCardTitleUI
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send, MoreVertical, Trash2, Edit3, Flag, X, ListChecks, Check } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send, MoreVertical, Trash2, Edit3, Flag, X, ListChecks, Check, Link as LinkIcon } from 'lucide-react';
 import { useState, type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
 import {
@@ -677,6 +677,58 @@ export default function PostCard({
       </div>
     </div>
   );
+  
+  const PostContent = () => {
+    const linkRegex = /\(\((https?:\/\/[^\s()]+)\)\)/;
+    const match = text.match(linkRegex);
+
+    if (match && match[1] && !poll) {
+        const url = match[1];
+        const remainingText = text.replace(linkRegex, '').trim();
+        let domain = "Link Externo";
+        try {
+            domain = new URL(url).hostname.replace('www.', '');
+        } catch (e) {}
+
+        return (
+            <>
+                {remainingText && (
+                    <p className="text-base leading-relaxed whitespace-pre-wrap px-4">
+                        {renderTextWithMentions(remainingText, MOCK_USER_NAMES_FOR_MENTIONS)}
+                    </p>
+                )}
+                <div className="px-4 mt-2">
+                    <a href={url} target="_blank" rel="noopener noreferrer" className="block group">
+                        <Card className="hover:bg-muted/50 transition-colors">
+                            <CardContent className="p-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-3 bg-muted rounded-lg">
+                                        <LinkIcon className="h-5 w-5 text-muted-foreground" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">{domain}</p>
+                                        <p className="text-xs text-muted-foreground truncate">{url}</p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </a>
+                </div>
+            </>
+        );
+    }
+
+    if (text && !poll) {
+        return (
+            <p className="text-base leading-relaxed whitespace-pre-wrap px-4">
+                {processedTextElementsForStandardPost}
+            </p>
+        );
+    }
+
+    return null;
+  };
+
 
   return (
     <>
@@ -767,7 +819,7 @@ export default function PostCard({
             </div>
           ) : (
             <div className="space-y-3">
-              {text && !poll && <p className="text-base leading-relaxed whitespace-pre-wrap px-4">{processedTextElementsForStandardPost}</p>}
+              <PostContent />
               {poll && <PollDisplay pollData={poll} postId={postId} />}
               {displayImageUrl && (
                 <div className="bg-muted/10 dark:bg-muted/20">
