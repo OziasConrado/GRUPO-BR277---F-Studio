@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -47,6 +48,7 @@ export default function AlertasPage() {
           dataAIAvatarHint: data.dataAIAvatarHint || 'user avatar',
           bio: data.bio || 'Usuário da comunidade Rota Segura.',
           instagramUsername: data.instagramUsername,
+          userLocation: data.userLocation || 'Localização Desconhecida',
         } as AlertProps;
       });
       setAlerts(fetchedAlerts);

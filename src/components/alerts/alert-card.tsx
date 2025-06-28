@@ -20,6 +20,7 @@ export interface AlertProps {
   dataAIAvatarHint?: string;
   bio?: string;
   instagramUsername?: string;
+  userLocation?: string;
 }
 
 interface AlertCardProps {
@@ -56,7 +57,7 @@ export default function AlertCard({ alert }: AlertCardProps) {
       name: alert.userNameReportedBy,
       avatarUrl: alert.userAvatarUrl,
       dataAIAvatarHint: alert.dataAIAvatarHint,
-      location: "Localização do Usuário", // Simulação
+      location: alert.userLocation,
       bio: alert.bio || "Usuário da comunidade Rota Segura.",
       instagramUsername: alert.instagramUsername,
     });

@@ -21,6 +21,7 @@ export interface HomeAlertCardData {
   dataAIAvatarHint?: string;
   bio?: string;
   instagramUsername?: string;
+  userLocation?: string;
 }
 
 interface HomeAlertCardProps {
@@ -62,7 +63,7 @@ export default function HomeAlertCard({ alert }: HomeAlertCardProps) {
       name: alert.userNameReportedBy,
       avatarUrl: alert.userAvatarUrl,
       dataAIAvatarHint: alert.dataAIAvatarHint,
-      location: "Localização do Usuário", // Placeholder as actual location isn't in alert card data
+      location: alert.userLocation,
       bio: alert.bio || "Usuário da comunidade Rota Segura.",
       instagramUsername: alert.instagramUsername,
     });

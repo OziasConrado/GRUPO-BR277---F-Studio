@@ -353,8 +353,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         
         toast({ title: 'Perfil Atualizado!', description: 'Suas informações foram salvas com sucesso.' });
-        router.push('/');
-
+        
     } catch (error) {
         console.error("Error updating profile:", error);
         toast({ variant: "destructive", title: 'Erro ao Atualizar Perfil', description: 'Não foi possível salvar. Verifique o console para detalhes.'});

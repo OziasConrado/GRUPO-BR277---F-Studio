@@ -191,7 +191,7 @@ export default function FeedPage() {
 
   // Hooks
   const { toast } = useToast();
-  const { currentUser, isProfileComplete } = useAuth();
+  const { currentUser, userProfile, isProfileComplete } = useAuth();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -281,6 +281,7 @@ export default function FeedPage() {
           userAvatarUrl: data.userAvatarUrl,
           bio: data.bio,
           instagramUsername: data.instagramUsername,
+          userLocation: data.userLocation || 'Localização Desconhecida',
         } as HomeAlertCardData;
       });
       setDisplayedAlertsFeed(fetchedAlerts);
@@ -386,6 +387,7 @@ export default function FeedPage() {
           userId: currentUser.uid,
           userNameReportedBy: currentUser.displayName || 'Anônimo',
           userAvatarUrl: currentUser.photoURL,
+          userLocation: userProfile?.location || 'Local Desconhecido',
           timestamp: serverTimestamp(),
         });
         toast({ title: "Alerta Publicado!", description: "Seu alerta foi adicionado ao mural." });
@@ -405,7 +407,7 @@ export default function FeedPage() {
           userId: currentUser.uid,
           userName: currentUser.displayName || 'Anônimo',
           userAvatarUrl: currentUser.photoURL,
-          userLocation: (currentUser as any).location || 'Local Desconhecido',
+          userLocation: userProfile?.location || 'Local Desconhecido',
           text: newPostText,
           reactions: { thumbsUp: 0, thumbsDown: 0 },
           edited: false,
