@@ -222,7 +222,19 @@ export default function AppLayout({ children }: AppLayoutProps) {
                                     <span className="font-semibold">{n.fromUserName}</span> mencionou você: <span className="text-muted-foreground italic">"{n.textSnippet}"</span>
                                 </p>
                                 <p className="text-xs text-muted-foreground mt-0.5">
-                                  {n.timestamp instanceof Timestamp ? formatDistanceToNow(n.timestamp.toDate(), { addSuffix: true, locale: ptBR }) : 'agora'}
+                                  {n.timestamp instanceof Timestamp ? formatDistanceToNow(n.timestamp.toDate(), { addSuffix: true, locale: ptBR })
+                                      .replace('cerca de ', '')
+                                      .replace(' minuto', ' min')
+                                      .replace(' minutos', ' min')
+                                      .replace(' hora', ' h')
+                                      .replace(' horas', ' h')
+                                      .replace(' dia', ' d')
+                                      .replace(' dias', ' d')
+                                      .replace('mês', 'm')
+                                      .replace('meses', 'm')
+                                      .replace(' ano', 'a')
+                                      .replace(' anos', 'a')
+                                   : 'agora'}
                                 </p>
                             </div>
                         </DropdownMenuItem>

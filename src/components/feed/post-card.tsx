@@ -7,7 +7,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle as PostCardTitleUI
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send, MoreVertical, Trash2, Edit3, Flag, X, ListChecks } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send, MoreVertical, Trash2, Edit3, Flag, X, ListChecks, Check } from 'lucide-react';
 import { useState, type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
 import {
@@ -362,7 +362,21 @@ export default function PostCard({
   const footerTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Derived state and constants
-  const timestamp = useMemo(() => formatDistanceToNow(parseISO(initialTimestamp), { addSuffix: true, locale: ptBR }), [initialTimestamp]);
+  const timestamp = useMemo(() => {
+    const timeAgo = formatDistanceToNow(parseISO(initialTimestamp), { addSuffix: true, locale: ptBR });
+    return timeAgo
+      .replace('cerca de ', '')
+      .replace(' minuto', ' min')
+      .replace(' minutos', ' min')
+      .replace(' hora', ' h')
+      .replace(' horas', ' h')
+      .replace(' dia', ' d')
+      .replace(' dias', ' d')
+      .replace('mês', 'm')
+      .replace('meses', 'm')
+      .replace(' ano', 'a')
+      .replace(' anos', 'a');
+  }, [initialTimestamp]);
   const isAuthor = currentUser?.uid === userId;
   const MAX_CHARS = 130;
   const needsTruncation = text.length > MAX_CHARS;
@@ -688,6 +702,34 @@ export default function PostCard({
               )}
             </div>
           </div>
+           <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className={cn("p-2 h-auto text-muted-foreground hover:text-primary hover:bg-muted/30 -mr-2")}>
+                    <MoreVertical />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                {isAuthor ? (
+                  <>
+                    {!poll && (
+                      <DropdownMenuItem onClick={() => { setIsEditing(true); setEditedText(text); }}>
+                          <Edit3 className="mr-2 h-4 w-4" />
+                          <span>Editar post</span>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => setIsDeleteAlertOpen(true)}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        <span>Excluir post</span>
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <DropdownMenuItem onClick={() => setIsReportModalOpen(true)}>
+                      <Flag className="mr-2 h-4 w-4" />
+                      <span>Sinalizar conteúdo</span>
+                  </DropdownMenuItem>
+                )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </CardHeader>
 
        <CardContent
@@ -768,34 +810,6 @@ export default function PostCard({
                   <Share2 />
               </Button>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className={cn("p-2 h-auto text-muted-foreground hover:text-primary hover:bg-muted/30")}>
-                    <MoreVertical />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                {isAuthor ? (
-                  <>
-                    {!poll && (
-                      <DropdownMenuItem onClick={() => { setIsEditing(true); setEditedText(text); }}>
-                          <Edit3 className="mr-2 h-4 w-4" />
-                          <span>Editar post</span>
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => setIsDeleteAlertOpen(true)}>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        <span>Excluir post</span>
-                    </DropdownMenuItem>
-                  </>
-                ) : (
-                  <DropdownMenuItem onClick={() => setIsReportModalOpen(true)}>
-                      <Flag className="mr-2 h-4 w-4" />
-                      <span>Sinalizar conteúdo</span>
-                  </DropdownMenuItem>
-                )}
-            </DropdownMenuContent>
-          </DropdownMenu>
         </CardFooter>
       </Card>
       

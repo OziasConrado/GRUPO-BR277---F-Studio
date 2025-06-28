@@ -56,7 +56,18 @@ const getAlertIcon = (type: AlertProps['type']) => {
 };
 
 export default function AlertCard({ alert }: AlertCardProps) {
-  const timeAgo = formatDistanceToNow(parseISO(alert.timestamp), { addSuffix: true, locale: ptBR });
+  const timeAgo = formatDistanceToNow(parseISO(alert.timestamp), { addSuffix: true, locale: ptBR })
+      .replace('cerca de ', '')
+      .replace(' minuto', ' min')
+      .replace(' minutos', ' min')
+      .replace(' hora', ' h')
+      .replace(' horas', ' h')
+      .replace(' dia', ' d')
+      .replace(' dias', ' d')
+      .replace('mês', 'm')
+      .replace('meses', 'm')
+      .replace(' ano', 'a')
+      .replace(' anos', 'a');
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedUserProfile, setSelectedUserProfile] = useState<UserProfileData | null>(null);
 

@@ -63,7 +63,18 @@ export default function HomeAlertCard({ alert }: HomeAlertCardProps) {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedUserProfile, setSelectedUserProfile] = useState<UserProfileData | null>(null);
 
-  const timeAgo = formatDistanceToNow(parseISO(alert.timestamp), { addSuffix: true, locale: ptBR });
+  const timeAgo = formatDistanceToNow(parseISO(alert.timestamp), { addSuffix: true, locale: ptBR })
+      .replace('cerca de ', '')
+      .replace(' minuto', ' min')
+      .replace(' minutos', ' min')
+      .replace(' hora', ' h')
+      .replace(' horas', ' h')
+      .replace(' dia', ' d')
+      .replace(' dias', ' d')
+      .replace('mês', 'm')
+      .replace('meses', 'm')
+      .replace(' ano', 'a')
+      .replace(' anos', 'a');
 
   const handleReporterClick = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent navigation if card is wrapped in Link
