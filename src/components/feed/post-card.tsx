@@ -611,7 +611,7 @@ export default function PostCard({
         {comment.userAvatarUrl && <AvatarImage src={comment.userAvatarUrl as string} alt={comment.userName} />}
         <AvatarFallback>{comment.userName?.substring(0, 2).toUpperCase()}</AvatarFallback>
       </Avatar>
-      <div className="flex-grow p-3 rounded-lg bg-muted dark:bg-muted">
+      <div className="flex-grow p-3 rounded-lg bg-muted dark:bg-muted/60">
         <div className="flex items-center justify-between">
           <p className="text-xs font-semibold font-headline">{comment.userName}</p>
           <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
@@ -654,7 +654,7 @@ export default function PostCard({
 
        <CardContent
           className={cn(
-            "p-0",
+            "p-0 bg-white dark:bg-card",
             cardStyle && text.length > 0 && !poll && !uploadedImageUrl && "py-4", // Add padding only if there is text for colored cards without images
           )}
         >
@@ -712,7 +712,7 @@ export default function PostCard({
           )}
         </CardContent>
 
-        <CardFooter className="flex items-center justify-between px-4 py-2 border-t border-border/50">
+        <CardFooter className="flex items-center justify-between px-4 py-2 border-t border-border/50 bg-white dark:bg-card">
           <div className="flex items-center gap-1">
               <Button variant="ghost" onClick={() => handleInteractionAttempt(() => handlePostReactionClick('thumbsUp'))} className={cn("p-2 h-auto flex items-center gap-0.5 hover:bg-muted/30", currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary')} aria-label="Curtir">
                   <ThumbsUp className={`h-7 w-7 ${currentUserPostReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
@@ -731,32 +731,32 @@ export default function PostCard({
               </Button>
           </div>
           <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className={cn("p-2 h-auto text-muted-foreground hover:text-primary hover:bg-muted/30")}>
-                      <MoreVertical className="h-7 w-7" />
-                  </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                  {isAuthor && (
-                    <>
-                      {!poll && (
-                        <DropdownMenuItem onClick={() => { setIsEditing(true); setEditedText(text); }}>
-                            <Edit3 className="mr-2 h-4 w-4" />
-                            <span>Editar post</span>
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => setIsDeleteAlertOpen(true)}>
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          <span>Excluir post</span>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className={cn("p-2 h-auto text-muted-foreground hover:text-primary hover:bg-muted/30")}>
+                    <MoreVertical className="h-7 w-7" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                {isAuthor ? (
+                  <>
+                    {!poll && (
+                      <DropdownMenuItem onClick={() => { setIsEditing(true); setEditedText(text); }}>
+                          <Edit3 className="mr-2 h-4 w-4" />
+                          <span>Editar post</span>
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
+                    )}
+                    <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => setIsDeleteAlertOpen(true)}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        <span>Excluir post</span>
+                    </DropdownMenuItem>
+                  </>
+                ) : (
                   <DropdownMenuItem onClick={() => setIsReportModalOpen(true)}>
                       <Flag className="mr-2 h-4 w-4" />
                       <span>Sinalizar conteúdo</span>
                   </DropdownMenuItem>
-              </DropdownMenuContent>
+                )}
+            </DropdownMenuContent>
           </DropdownMenu>
         </CardFooter>
       </Card>
