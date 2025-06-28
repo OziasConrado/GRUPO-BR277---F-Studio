@@ -512,30 +512,30 @@ export default function FeedPage() {
     <div className="w-full space-y-6">
       <ProfileCompletionAlert />
       
-      <Button asChild
-        variant="destructive"
-        size="default"
-        className="w-full bg-red-500 hover:bg-red-600 text-white py-3 text-base font-semibold rounded-lg shadow-md"
-      >
-        <Link href="/emergencia">
-            <Phone className="mr-2 h-5 w-5" />
-            EMERGÊNCIA
-        </Link>
-      </Button>
-
-      <div className="grid grid-cols-2 gap-3">
-        <Button asChild variant="outline" className="py-3 text-base rounded-lg hover:bg-primary/10">
-          <Link href="/sau">
-            <Headset className="mr-2 h-5 w-5" />
-            Contato SAU
+      <div className="flex gap-3 h-24">
+        <Button asChild
+          variant="destructive"
+          className="w-2/3 h-full bg-red-500 hover:bg-red-600 text-white text-lg font-semibold rounded-lg shadow-md"
+        >
+          <Link href="/emergencia">
+              <Phone className="mr-2 h-6 w-6" />
+              EMERGÊNCIA
           </Link>
         </Button>
-        <Button asChild variant="outline" className="py-3 text-base rounded-lg hover:bg-primary/10">
-          <Link href="/turismo">
-            <Landmark className="mr-2 h-5 w-5" />
-            Turismo
-          </Link>
-        </Button>
+        <div className="w-1/3 flex flex-col gap-3">
+            <Button asChild variant="outline" className="h-full w-full text-xs rounded-lg hover:bg-primary/10">
+              <Link href="/sau" className="flex-col items-center justify-center">
+                <Headset className="h-5 w-5 mb-1" />
+                <span>SAU</span>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-full w-full text-xs rounded-lg hover:bg-primary/10">
+              <Link href="/turismo" className="flex-col items-center justify-center">
+                <Landmark className="h-5 w-5 mb-1" />
+                <span>Turismo</span>
+              </Link>
+            </Button>
+        </div>
       </div>
 
       <Card className="p-4 shadow-sm rounded-xl bg-white dark:bg-card">
