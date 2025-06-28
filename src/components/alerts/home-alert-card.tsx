@@ -5,7 +5,7 @@ import type { StaticImageData } from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import UserProfileModal, { type UserProfileData } from '@/components/profile/UserProfileModal';
-import { AlertTriangle, Construction, TrafficConeIcon as TrafficCone, Flame, CloudFog, Clock, UserCircle, MapPin } from "lucide-react";
+import { AlertTriangle, Construction, Car, CarCrash, Flame, CloudFog, Clock, UserCircle, MapPin } from "lucide-react";
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -31,12 +31,12 @@ const AlertTypeIcon = ({ type, className }: { type: string, className?: string }
   const iconProps = { className: cn("h-5 w-5", className) };
   switch (type) {
     case 'Acidente':
-      return <AlertTriangle {...iconProps} color="hsl(var(--destructive))" />;
+      return <CarCrash {...iconProps} color="hsl(var(--destructive))" />;
     case 'Obras na Pista':
     case 'Obras':
       return <Construction {...iconProps} color="hsl(var(--primary))" />;
     case 'Congestionamento':
-      return <TrafficCone {...iconProps} color="hsl(var(--accent))" />;
+      return <Car {...iconProps} color="hsl(var(--accent))" />;
     case 'Condição Climática Adversa':
     case 'Neblina':
       return <CloudFog {...iconProps} color="hsl(var(--muted-foreground))" />;

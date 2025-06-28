@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserProfileData, default as UserProfileModal } from '@/components/profile/UserProfileModal';
-import { AlertTriangle, Car, Construction, CloudFog, Clock, UserCircle, TrafficCone, Waves, MountainSnow, Wind, Flame } from "lucide-react";
+import { AlertTriangle, Car, CarCrash, Construction, CloudFog, Clock, UserCircle, Waves, MountainSnow, Wind, Flame } from "lucide-react";
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -30,11 +29,11 @@ interface AlertCardProps {
 const getAlertIcon = (type: AlertProps['type']) => {
   switch (type) {
     case 'Acidente':
-      return <Car className="h-5 w-5 text-red-500" />;
+      return <CarCrash className="h-5 w-5 text-red-500" />;
     case 'Obras na Pista':
       return <Construction className="h-5 w-5 text-yellow-500" />;
     case 'Congestionamento':
-      return <TrafficCone className="h-5 w-5 text-orange-500" />;
+      return <Car className="h-5 w-5 text-orange-500" />;
     case 'Neblina/Cond. Climática':
       return <CloudFog className="h-5 w-5 text-blue-500" />;
     case 'Animal na Pista':
