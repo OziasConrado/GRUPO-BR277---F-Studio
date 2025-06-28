@@ -1,55 +1,56 @@
-
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    
-    // As imagens, vídeos e áudios são públicos para leitura por padrão neste app.
-    // Em um cenário com dados sensíveis, a leitura também seria restrita.
-    match /{allPaths=**} {
+
+    // Helper function to check ownership
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // Profile Pictures: Users can only write to their own folder.
+    // File must be an image and less than 2MB.
+    match /profile_pictures/{userId}/{allPaths=**} {
       allow read: if true;
+      allow write: if isOwner(userId)
+                    && request.resource.contentType.matches('image/.*')
+                    && request.resource.size < 2 * 1024 * 1024;
     }
 
-    // Regras para Fotos de Perfil (max 2MB)
-    match /profile_pictures/{userId}/{fileName} {
-      allow write: if request.auth != null && request.auth.uid == userId
-                    && request.resource.size < 2 * 1024 * 1024
-                    && request.resource.contentType.matches('image/.*');
+    // Feed content
+    match /images/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(userId)
+                    && request.resource.contentType.matches('image/.*')
+                    && request.resource.size < 5 * 1024 * 1024;
+    }
+    match /videos/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(userId)
+                    && request.resource.contentType.matches('video/.*')
+                    && request.resource.size < 50 * 1024 * 1024;
     }
 
-    // Regras para Imagens do Feed (max 5MB)
-    match /images/{userId}/{fileName} {
-      allow write: if request.auth != null && request.auth.uid == userId
-                    && request.resource.size < 5 * 1024 * 1024
-                    && request.resource.contentType.matches('image/.*');
+    // Chat content
+    match /chat_images/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(userId)
+                    && request.resource.contentType.matches('image/.*')
+                    && request.resource.size < 5 * 1024 * 1024;
     }
-
-    // Regras para Vídeos do Feed (max 50MB)
-    match /videos/{userId}/{fileName} {
-      allow write: if request.auth != null && request.auth.uid == userId
-                    && request.resource.size < 50 * 1024 * 1024
-                    && request.resource.contentType.matches('video/.*');
+    match /chat_audio/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(userId)
+                    && request.resource.contentType.matches('audio/.*')
+                    && request.resource.size < 10 * 1024 * 1024;
     }
     
-    // Regras para Imagens do Chat (max 5MB)
-    match /chat_images/{userId}/{fileName} {
-      allow write: if request.auth != null && request.auth.uid == userId
-                    && request.resource.size < 5 * 1024 * 1024
-                    && request.resource.contentType.matches('image/.*');
-    }
-
-    // Regras para Áudio do Chat (max 10MB)
-    match /chat_audio/{userId}/{fileName} {
-      allow write: if request.auth != null && request.auth.uid == userId
-                    && request.resource.size < 10 * 1024 * 1024
-                    && request.resource.contentType.matches('audio/.*');
-    }
-    
-    // Regras para Imagens de Pontos Turísticos Indicados (max 2MB)
-    match /indicated_points_images/{userId}/{fileName} {
-      allow write: if request.auth != null && request.auth.uid == userId
-                    && request.resource.size < 2 * 1024 * 1024
-                    && request.resource.contentType.matches('image/.*');
+    // Indicated Tourist Points Images
+    match /indicated_points_images/{userId}/{allPaths=**} {
+        allow read: if true;
+        allow write: if isOwner(userId)
+                      && request.resource.contentType.matches('image/.*')
+                      && request.resource.size < 2 * 1024 * 1024;
     }
   }
 }
