@@ -293,17 +293,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const userForUpdate = auth.currentUser;
     if (!userForUpdate || !firestore || !storage) {
         toast({ title: "Erro", description: "Usuário não autenticado ou serviço indisponível.", variant: "destructive" });
+        console.error("Update Profile Error: currentUser, firestore, or storage is not available.");
         return;
     }
 
     setIsAuthenticating(true);
+    console.log("Starting profile update...");
 
     try {
         let newPhotoURL: string | null = null;
         if (data.newPhotoFile) {
+            console.log("New profile photo selected:", data.newPhotoFile.name);
             const photoRef = ref(storage, `profile_pictures/${userForUpdate.uid}/${Date.now()}_${data.newPhotoFile.name}`);
+
+            console.log(`Uploading profile photo to: ${photoRef.fullPath}`);
             await uploadBytes(photoRef, data.newPhotoFile);
+            console.log("Profile photo upload successful.");
+
             newPhotoURL = await getDownloadURL(photoRef);
+            console.log("Got profile photo download URL:", newPhotoURL);
+        } else {
+            console.log("No new profile photo selected.");
         }
 
         const authProfileUpdates: { displayName?: string; photoURL?: string } = {};
@@ -333,25 +343,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (hasAuthUpdates) {
+            console.log("Updating Firebase Auth profile:", authProfileUpdates);
             await firebaseUpdateProfile(userForUpdate, authProfileUpdates);
+            console.log("Firebase Auth profile updated.");
         }
 
         if (hasFirestoreUpdates) {
+            console.log("Updating Firestore profile document:", firestoreProfileUpdates);
             const userDocRef = doc(firestore, "Usuarios", userForUpdate.uid);
             firestoreProfileUpdates.updatedAt = serverTimestamp();
             await setDoc(userDocRef, firestoreProfileUpdates, { merge: true });
+            console.log("Firestore profile document updated.");
         }
         
-        // Force reload of user data to get the latest state including photoURL
+        console.log("Reloading user data...");
         await userForUpdate.reload();
+        console.log("User data reloaded.");
         
         toast({ title: 'Perfil Atualizado!', description: 'Suas informações foram salvas com sucesso.' });
         router.push('/');
 
     } catch (error) {
+        console.error("Error updating profile:", error);
+        toast({ variant: "destructive", title: 'Erro ao Atualizar Perfil', description: 'Não foi possível salvar. Verifique o console para detalhes.'});
         handleAuthError(error as AuthError, 'Erro ao Atualizar Perfil');
     } finally {
         setIsAuthenticating(false);
+        console.log("Profile update process finished.");
     }
   }, [userProfile, handleAuthError, router, toast]);
 

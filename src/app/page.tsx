@@ -356,88 +356,102 @@ export default function FeedPage() {
   const handlePublish = async () => {
     if (!currentUser || !firestore || !storage) {
       toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado ou o serviço está indisponível.' });
+      console.error("Publish Error: currentUser, firestore, or storage is not available.");
       return;
     }
-    
+
     if (!isProfileComplete) {
-        handleInteractionAttempt(()=>{}); // This will show the toast to complete profile
-        return;
+      handleInteractionAttempt(() => {}); // This will show the toast to complete profile
+      return;
     }
 
+    console.log("Starting publication process...");
     setIsPublishing(true);
 
     try {
-        let mediaUrl: string | undefined;
-        let storagePath: string | undefined;
+      let mediaUrl: string | undefined;
 
-        if (selectedMediaForUpload) {
-            const mediaType = selectedMediaForUpload.type.startsWith('image/') ? 'images' : 'videos';
-            storagePath = `${mediaType}/${currentUser.uid}/${Date.now()}_${selectedMediaForUpload.name}`;
-            const storageRef = ref(storage, storagePath);
-            await uploadBytes(storageRef, selectedMediaForUpload);
-            mediaUrl = await getDownloadURL(storageRef);
-        }
-
-        if (currentPostType === 'alert') {
-          await addDoc(collection(firestore, 'alerts'), {
-              type: selectedAlertType,
-              description: newPostText.trim(),
-              userId: currentUser.uid,
-              userNameReportedBy: currentUser.displayName || 'Anônimo',
-              userAvatarUrl: currentUser.photoURL,
-              timestamp: serverTimestamp(),
-          });
-          toast({ title: "Alerta Publicado!", description: "Seu alerta foi adicionado ao mural." });
+      if (selectedMediaForUpload) {
+        console.log("Media file selected for upload:", selectedMediaForUpload.name);
+        const mediaType = selectedMediaForUpload.type.startsWith('image/') ? 'images' : 'videos';
+        const storagePath = `${mediaType}/${currentUser.uid}/${Date.now()}_${selectedMediaForUpload.name}`;
+        const storageRef = ref(storage, storagePath);
         
-        } else if (currentPostType === 'video') {
-            await addDoc(collection(firestore, 'reels'), {
-                userId: currentUser.uid,
-                userName: currentUser.displayName || 'Anônimo',
-                userAvatarUrl: currentUser.photoURL,
-                thumbnailUrl: currentUser.photoURL,
-                description: newPostText.trim(),
-                videoUrl: mediaUrl,
-                timestamp: serverTimestamp(),
-            });
-            toast({ title: "Reel Publicado!", description: "Seu vídeo está disponível para a comunidade." });
+        console.log(`Uploading to: ${storagePath}`);
+        await uploadBytes(storageRef, selectedMediaForUpload);
+        console.log("Upload successful.");
 
-        } else { // 'image', 'text' or 'poll' post
-            const postData: any = {
-                userId: currentUser.uid,
-                userName: currentUser.displayName || 'Anônimo',
-                userAvatarUrl: currentUser.photoURL,
-                userLocation: (currentUser as any).location || 'Local Desconhecido',
-                text: newPostText,
-                reactions: { thumbsUp: 0, thumbsDown: 0 },
-                edited: false,
-                deleted: false,
-                timestamp: serverTimestamp(),
-            };
-            if (mediaUrl) postData.uploadedImageUrl = mediaUrl;
-            
-            if (pollData) {
-                postData.poll = {
-                    question: pollData.question,
-                    options: pollData.options.map((opt, index) => ({
-                        id: `option_${index + 1}`,
-                        text: opt,
-                        votes: 0
-                    }))
-                };
-            } else if (currentPostType === 'text' && !selectedMediaForUpload && newPostText.length <= 150 && selectedPostBackground.name !== 'Padrão') {
-                postData.cardStyle = selectedPostBackground;
-            }
-            await addDoc(collection(firestore, 'posts'), postData);
-            toast({ title: "Publicado!", description: "Sua postagem está na Time Line." });
+        mediaUrl = await getDownloadURL(storageRef);
+        console.log("Got download URL:", mediaUrl);
+      } else {
+        console.log("No media file selected.");
+      }
+
+      if (currentPostType === 'alert') {
+        console.log("Publishing an alert...");
+        await addDoc(collection(firestore, 'alerts'), {
+          type: selectedAlertType,
+          description: newPostText.trim(),
+          userId: currentUser.uid,
+          userNameReportedBy: currentUser.displayName || 'Anônimo',
+          userAvatarUrl: currentUser.photoURL,
+          timestamp: serverTimestamp(),
+        });
+        toast({ title: "Alerta Publicado!", description: "Seu alerta foi adicionado ao mural." });
+        console.log("Alert published successfully.");
+      } else if (currentPostType === 'video') {
+        console.log("Publishing a reel...");
+        await addDoc(collection(firestore, 'reels'), {
+          userId: currentUser.uid,
+          userName: currentUser.displayName || 'Anônimo',
+          userAvatarUrl: currentUser.photoURL,
+          thumbnailUrl: currentUser.photoURL,
+          description: newPostText.trim(),
+          videoUrl: mediaUrl,
+          timestamp: serverTimestamp(),
+        });
+        toast({ title: "Reel Publicado!", description: "Seu vídeo está disponível para a comunidade." });
+        console.log("Reel published successfully.");
+      } else { // 'image', 'text' or 'poll' post
+        console.log("Publishing a post...");
+        const postData: any = {
+          userId: currentUser.uid,
+          userName: currentUser.displayName || 'Anônimo',
+          userAvatarUrl: currentUser.photoURL,
+          userLocation: (currentUser as any).location || 'Local Desconhecido',
+          text: newPostText,
+          reactions: { thumbsUp: 0, thumbsDown: 0 },
+          edited: false,
+          deleted: false,
+          timestamp: serverTimestamp(),
+        };
+        if (mediaUrl) postData.uploadedImageUrl = mediaUrl;
+
+        if (pollData) {
+          postData.poll = {
+            question: pollData.question,
+            options: pollData.options.map((opt, index) => ({
+              id: `option_${index + 1}`,
+              text: opt,
+              votes: 0
+            }))
+          };
+        } else if (currentPostType === 'text' && !selectedMediaForUpload && newPostText.length <= 150 && selectedPostBackground.name !== 'Padrão') {
+          postData.cardStyle = selectedPostBackground;
         }
+        await addDoc(collection(firestore, 'posts'), postData);
+        toast({ title: "Publicado!", description: "Sua postagem está na Time Line." });
+        console.log("Post published successfully.");
+      }
 
-        resetFormState();
+      resetFormState();
     } catch (error) {
-        console.error("Error publishing content:", error);
-        toast({ variant: 'destructive', title: 'Erro ao Publicar', description: 'Não foi possível salvar sua publicação.' });
-        setIsPublishing(false);
+      console.error("Error publishing content:", error);
+      toast({ variant: 'destructive', title: 'Erro ao Publicar', description: 'Não foi possível salvar. Verifique o console para detalhes.' });
+      setIsPublishing(false);
     }
   };
+
 
   const handleOpenAlertTypeModal = () => {
     handleRemoveMedia(); 
