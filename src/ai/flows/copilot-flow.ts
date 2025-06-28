@@ -33,6 +33,10 @@ async function geocode(address: string): Promise<{ lat: number; lng: number } | 
     try {
         const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`;
         const response = await fetch(url);
+        if (!response.ok) {
+            console.error(`Geocoding failed for ${address} with status ${response.status}`);
+            return null;
+        }
         const data = await response.json();
 
         if (data.status === 'OK' && data.results.length > 0) {
@@ -103,6 +107,18 @@ const getTrafficInfo = ai.defineTool(
                 })
             });
             
+            if (!response.ok) {
+                console.error('Routes API error:', response.status, response.statusText);
+                try {
+                    const errorBody = await response.json();
+                    console.error('Routes API error body:', errorBody);
+                    const summary = errorBody?.error?.message || 'Falha na comunicação com a API de rotas.';
+                    return { travelTime: "desconhecido", distance: "desconhecida", summary, tollCount: 0 };
+                } catch (e) {
+                    return { travelTime: "desconhecido", distance: "desconhecida", summary: 'Falha na comunicação com a API de rotas.', tollCount: 0 };
+                }
+            }
+
             const data = await response.json();
             
             if (data.error) {
@@ -226,6 +242,12 @@ const findNearbyPlaces = ai.defineTool(
             });
             const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?${params.toString()}`;
             const response = await fetch(url);
+            
+            if (!response.ok) {
+                console.error(`Places API request failed with status: ${response.status}`);
+                return { places: [] };
+            }
+
             const data = await response.json();
 
 
