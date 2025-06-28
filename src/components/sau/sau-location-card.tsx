@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -20,14 +21,14 @@ interface SauLocationCardProps {
 }
 
 const concessionaireLogos: Record<string, { url: string; hint: string }> = {
-  'Via Araucária': { url: 'https://placehold.co/64x64.png?text=VA', hint: 'logo via araucaria' },
-  'EPR Litoral Pioneiro': { url: 'https://placehold.co/64x64.png?text=EPRLP', hint: 'logo epr litoral pioneiro' },
-  'Arteris Litoral Sul': { url: 'https://placehold.co/64x64.png?text=ALS', hint: 'logo arteris litoral sul' },
-  'Arteris Planalto Sul': { url: 'https://placehold.co/64x64.png?text=APS', hint: 'logo arteris planalto sul' },
-  'Arteris Régis Bitencourt': { url: 'https://placehold.co/64x64.png?text=ARB', hint: 'logo arteris regis bitencourt' },
-  'CCR PRVias': { url: 'https://placehold.co/64x64.png?text=CCRPR', hint: 'logo ccr prvias' },
-  'CCR RioSP': { url: 'https://placehold.co/64x64.png?text=CCRRS', hint: 'logo ccr riosp' },
-  'EPR Iguaçu': { url: 'https://placehold.co/64x64.png?text=EPR-I', hint: 'logo epr iguacu' },
+  'Via Araucária': { url: 'https://firebasestorage.googleapis.com/v0/b/grupo-br277.firebasestorage.app/o/Concess%C3%B5es%20de%20Ped%C3%A1gio%2FVia%20Arauc%C3%A1ria.png?alt=media', hint: 'logo via araucaria' },
+  'EPR Litoral Pioneiro': { url: 'https://firebasestorage.googleapis.com/v0/b/grupo-br277.firebasestorage.app/o/Concess%C3%B5es%20de%20Ped%C3%A1gio%2FEPR%20Litoral%20Pioneiro.png?alt=media', hint: 'logo epr litoral pioneiro' },
+  'EPR Iguaçu': { url: 'https://firebasestorage.googleapis.com/v0/b/grupo-br277.firebasestorage.app/o/Concess%C3%B5es%20de%20Ped%C3%A1gio%2FEPR%20Igua%C3%A7u.png?alt=media', hint: 'logo epr iguacu' },
+  'CCR PRVias': { url: 'https://firebasestorage.googleapis.com/v0/b/grupo-br277.firebasestorage.app/o/Concess%C3%B5es%20de%20Ped%C3%A1gio%2FCCR%20PRVias.png?alt=media', hint: 'logo ccr prvias' },
+  'Arteris Litoral Sul': { url: 'https://firebasestorage.googleapis.com/v0/b/grupo-br277.firebasestorage.app/o/Concess%C3%B5es%20de%20Ped%C3%A1gio%2FArteris%20Litoral%20Sul.png?alt=media', hint: 'logo arteris litoral sul' },
+  'Arteris Planalto Sul': { url: 'https://firebasestorage.googleapis.com/v0/b/grupo-br277.firebasestorage.app/o/Concess%C3%B5es%20de%20Ped%C3%A1gio%2FArteris%20Planalto%20Sul.png?alt=media', hint: 'logo arteris planalto sul' },
+  'Arteris Régis Bitencourt': { url: 'https://firebasestorage.googleapis.com/v0/b/grupo-br277.firebasestorage.app/o/Concess%C3%B5es%20de%20Ped%C3%A1gio%2FArteris%20R%C3%A9gis%20Bitencourt.png?alt=media', hint: 'logo arteris regis bitencourt' },
+  'CCR RioSP': { url: 'https://firebasestorage.googleapis.com/v0/b/grupo-br277.firebasestorage.app/o/Concess%C3%B5es%20de%20Ped%C3%A1gio%2FCCR%20RioSP.png?alt=media', hint: 'logo ccr riosp' },
 };
 
 
@@ -39,14 +40,16 @@ export default function SauLocationCard({ sau, reviews, onAddReview }: SauLocati
     <>
       <Card className="w-full shadow-lg rounded-xl overflow-hidden bg-card/80 dark:bg-card/80 border border-border">
         <CardHeader className="p-4 flex flex-row items-start gap-3">
-          <Image
-            src={logoData.url}
-            alt={`${sau.concessionaire} logo`}
-            width={64}
-            height={64}
-            className="rounded-md w-16 h-16 flex-shrink-0"
-            data-ai-hint={logoData.hint}
-          />
+          <div className="w-16 h-16 flex-shrink-0 bg-white p-1 rounded-md border border-border/20">
+            <Image
+              src={logoData.url}
+              alt={`${sau.concessionaire} logo`}
+              width={64}
+              height={64}
+              className="w-full h-full object-contain"
+              data-ai-hint={logoData.hint}
+            />
+          </div>
           <div className="flex-grow">
             <h2 className="text-md font-semibold text-foreground">{sau.concessionaire}</h2>
             {sau.distance !== undefined && sau.distance !== Infinity && (

@@ -16,9 +16,15 @@ import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, Timestamp
 import { useAuth } from '@/contexts/AuthContext';
 
 const concessionairesForFilter = [
-  "Todos", "EPR Iguaçu", "Via Araucária", "EPR Litoral Pioneiro", "Arteris Litoral Sul",
-  "Arteris Planalto Sul", "Arteris Régis Bitencourt", "CCR PRVias",
-  "CCR RioSP"
+  "Todos",
+  "Via Araucária",
+  "EPR Litoral Pioneiro",
+  "EPR Iguaçu",
+  "CCR PRVias",
+  "Arteris Litoral Sul",
+  "Arteris Planalto Sul",
+  "Arteris Régis Bitencourt",
+  "CCR RioSP",
 ];
 
 const allSausData: SAULocation[] = [
