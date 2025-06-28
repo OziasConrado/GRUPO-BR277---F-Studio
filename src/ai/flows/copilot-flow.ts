@@ -95,14 +95,14 @@ const getTrafficInfo = ai.defineTool(
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Goog-Api-Key': apiKey,
-                    'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.travelAdvisory,routes.polyline.encodedPolyline,routes.legs.steps.navigationInstruction'
+                    'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.travelAdvisory,routes.polyline.encodedPolyline'
                 },
                 body: JSON.stringify({
                     origin: { location: { latLng: originCoords } },
                     destination: { location: { latLng: destinationCoords } },
                     travelMode: 'DRIVE',
                     computeAlternativeRoutes: false,
-                    extraComputations: ["TRAFFIC_ON_POLYLINE"], // TOLLS computation removed
+                    extraComputations: ["TRAFFIC_ON_POLYLINE"],
                     languageCode: "pt-BR",
                 })
             });
@@ -143,18 +143,7 @@ const getTrafficInfo = ai.defineTool(
                     ? `Condição do trânsito: ${route.travelAdvisory.trafficAdvisory.trafficCondition}.`
                     : "Sem informações de tráfego disponíveis.";
 
-                let tollCount = 0;
-                if (route.legs) {
-                    for (const leg of route.legs) {
-                        if (leg.steps) {
-                            for (const step of leg.steps) {
-                                if (step.navigationInstruction?.instructions?.toLowerCase().includes('pedágio')) {
-                                    tollCount++;
-                                }
-                            }
-                        }
-                    }
-                }
+                const tollCount = 0; // Toll counting removed for stability
                 
                 const routePolyline = route.polyline?.encodedPolyline;
 
@@ -290,7 +279,7 @@ const copilotFlow = ai.defineFlow(
 - **Condições de Trânsito:** Use a ferramenta \`getTrafficInfo\` para obter dados. Sua resposta DEVE incluir:
     - Uma *Condição geral do trecho* (ex: "O trânsito está fluindo bem, com alguns pontos de atenção.").
     - **Distância total** e **Tempo estimado de viagem** de forma visível.
-    - **Pedágios**: Informe o **número de praças de pedágio** (\`tollCount\`). Se a contagem for 0, informe que não há pedágios.
+    - **Pedágios**: A contagem de pedágios está temporariamente indisponível. Informe ao usuário que você não pode fornecer essa informação no momento, mas que as outras informações (tempo, distância, etc.) estão corretas.
     - Uma lista de *Pontos de atenção* (lentidão, congestionamentos, acidentes, obras) se houver problemas. Seja específico (ex: "Na BR-376, próximo ao km 120, há lentidão devido a obras na pista").
 - **Aviso de Dados:** Sempre termine sua resposta com a frase: "Lembre-se que as condições do trânsito podem mudar rapidamente. Dirija com segurança e boa viagem! 🛣️"
 
@@ -298,7 +287,7 @@ const copilotFlow = ai.defineFlow(
 1. Saudação amigável e confirmação da rota.
 2. Apresente a *Condição geral*.
 3. Apresente o **Tempo estimado de viagem** e a **Distância total**.
-4. Apresente as informações de **Pedágio** (quantidade).
+4. Apresente as informações de **Pedágio** (informando que está indisponível).
 5. Se houver problemas, liste os *Pontos de atenção* com marcadores (\`* \`). Se não houver problemas, diga algo como "O caminho está livre! ✅".
 6. Finalize com a frase de segurança e boa viagem.
 
