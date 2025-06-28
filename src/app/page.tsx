@@ -6,7 +6,6 @@ import Link from 'next/link';
 import {
   List,
   Store,
-  Landmark,
   Headset,
   Newspaper,
   Video,
@@ -57,11 +56,11 @@ const backgroundOptions = [
   { name: 'Padrão', bg: 'hsl(var(--card))', text: 'hsl(var(--card-foreground))' },
   { name: 'Azul', bg: '#002776', text: '#FFFFFF' },
   { name: 'Verde', bg: '#009c3b', text: '#FFFFFF' },
-  { name: 'Amarelo', bg: '#ffdf00', text: '#002776' },
+  { name: 'Amarelo', bg: '#ffdf00', text: '#FFFFFF' },
   { name: 'Gradiente', gradient: 'linear-gradient(to right, #002776, #009c3b, #ffdf00)', text: '#FFFFFF' },
 ];
 
-const alertTypesForSelection = ["Acidente", "Obras na Pista", "Congestionamento", "Neblina/Cond. Climática", "Animal na Pista", "Queimada/Fumaça", "Outro"];
+const alertTypesForSelection = ["Acidente", "Obras na Pista", "Congestionamento", "Neblina/Cond. Climática", "Remoção/Veículo Acidentado", "Óleo na Pista", "Queda de Barreira", "Animal na Pista", "Queimada/Fumaça", "Ocorrência Policial", "Manifestação Popular", "Outro"];
 
 const PollCreationModal = ({ isOpen, onClose, onSave }: { isOpen: boolean, onClose: () => void, onSave: (data: { question: string, options: string[] }) => void }) => {
     const [question, setQuestion] = useState('');
