@@ -39,13 +39,13 @@ export default function SauLocationCard({ sau, reviews, onAddReview }: SauLocati
     <>
       <Card className="w-full shadow-lg rounded-xl overflow-hidden bg-card/80 dark:bg-card/80 border border-border">
         <CardHeader className="p-4 flex flex-row items-start gap-3">
-          <div className="w-16 h-16 flex-shrink-0 bg-white p-1 rounded-lg border border-border/20 shadow-md">
+          <div className="w-16 h-16 flex-shrink-0 bg-white rounded-lg border border-border/20 shadow-md overflow-hidden">
             <Image
               src={logoData.url}
               alt={`${sau.concessionaire} logo`}
               width={64}
               height={64}
-              className="w-full h-full object-contain"
+              className="w-full h-full object-cover"
               data-ai-hint={logoData.hint}
             />
           </div>
