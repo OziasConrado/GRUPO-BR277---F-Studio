@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useRef, type ChangeEvent, useCallback, type FormEvent } from 'react';
@@ -387,7 +386,7 @@ export default function FeedPage() {
           userId: currentUser.uid,
           userNameReportedBy: currentUser.displayName || 'Anônimo',
           userAvatarUrl: currentUser.photoURL,
-          userLocation: userProfile?.location || 'Local Desconhecido',
+          userLocation: userProfile?.location || 'Localização Desconhecida',
           timestamp: serverTimestamp(),
         });
         toast({ title: "Alerta Publicado!", description: "Seu alerta foi adicionado ao mural." });
@@ -407,7 +406,7 @@ export default function FeedPage() {
           userId: currentUser.uid,
           userName: currentUser.displayName || 'Anônimo',
           userAvatarUrl: currentUser.photoURL,
-          userLocation: userProfile?.location || 'Local Desconhecido',
+          userLocation: userProfile?.location || 'Localização Desconhecida',
           text: newPostText,
           reactions: { thumbsUp: 0, thumbsDown: 0 },
           edited: false,
@@ -537,7 +536,7 @@ export default function FeedPage() {
         </Button>
       </div>
 
-      <Card className="p-4 shadow-sm rounded-xl">
+      <Card className="p-4 shadow-sm rounded-xl bg-white dark:bg-card">
         <CardHeader className="p-0 pb-3">
           <CardTitle className="text-lg font-semibold flex items-center">
             <Edit className="h-5 w-5 mr-2 text-primary" />

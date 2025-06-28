@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { StaticImageData } from 'next/image';
@@ -620,7 +619,7 @@ export default function PostCard({
 
   return (
     <>
-      <Card className="w-full max-w-2xl mx-auto mb-6 shadow-lg rounded-xl overflow-hidden">
+      <Card className="w-full max-w-2xl mx-auto mb-6 shadow-lg rounded-xl overflow-hidden bg-white dark:bg-card">
         <CardHeader className="flex flex-row items-start space-x-3 p-4">
           <Avatar className="h-10 w-10 cursor-pointer" onClick={handleAvatarOrNameClick}>
             {userAvatarUrl ? <AvatarImage src={userAvatarUrl as string} alt={userName} data-ai-hint={dataAIAvatarHint} /> : null}
