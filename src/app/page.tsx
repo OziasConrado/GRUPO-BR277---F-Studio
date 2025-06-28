@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef, type ChangeEvent, useCallback, type FormEvent } from 'react';
@@ -21,6 +22,7 @@ import {
   ListChecks, // Added for Polls
   PlusCircle, // Added for Poll Modal
   Trash2, // Added for Poll Modal
+  Check,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -609,17 +611,21 @@ export default function FeedPage() {
               {backgroundOptions.map((option) => (
                 <div
                   key={option.name}
-                  className={cn(
-                    'w-8 h-8 rounded-full cursor-pointer border-2 border-transparent flex-shrink-0 shadow-inner',
-                    selectedPostBackground.name === option.name && 'ring-2 ring-primary ring-offset-1',
-                  )}
+                  onClick={() => setSelectedPostBackground(option)}
+                  title={option.name}
+                  className="w-8 h-8 rounded-full cursor-pointer flex-shrink-0 shadow-inner flex items-center justify-center border border-muted"
                   style={{
                     backgroundColor: option.gradient ? undefined : option.bg,
                     backgroundImage: option.gradient,
                   }}
-                  onClick={() => setSelectedPostBackground(option)}
-                  title={option.name}
-                />
+                >
+                  {selectedPostBackground.name === option.name && (
+                    <Check className={cn(
+                        "h-5 w-5",
+                        option.name === 'Padrão' || option.name === 'Amarelo' ? 'text-foreground' : 'text-white'
+                    )} />
+                  )}
+                </div>
               ))}
             </div>
           )}
