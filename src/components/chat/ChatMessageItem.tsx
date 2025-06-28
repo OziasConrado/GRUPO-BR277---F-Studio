@@ -216,7 +216,7 @@ export default function ChatMessageItem({
             <div
             className={cn(
                 "p-3 rounded-xl shadow",
-                isCurrentUser ? "bg-primary/10 text-primary border border-primary/20 rounded-br-none" : "bg-card text-card-foreground rounded-bl-none border"
+                isCurrentUser ? "bg-primary/5 text-primary border border-primary/10 rounded-br-none" : "bg-card text-card-foreground rounded-bl-none border"
             )}
             >
                 {!isCurrentUser && <p className="text-xs font-semibold mb-1 text-primary">{senderName}</p>}
