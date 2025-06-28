@@ -344,6 +344,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         await userForUpdate.reload();
         
+        // Manually update local state to reflect changes immediately
+        if (hasFirestoreUpdates) {
+            setUserProfile(prevProfile => ({
+                ...prevProfile,
+                ...firestoreProfileUpdates,
+            }));
+        }
+        if (hasAuthUpdates && auth.currentUser) {
+            setCurrentUser(auth.currentUser);
+        }
+        
         toast({ title: 'Perfil Atualizado!', description: 'Suas informações foram salvas com sucesso.' });
         router.push('/');
 
