@@ -216,7 +216,7 @@ export default function ChatMessageItem({
             <div
             className={cn(
                 "p-3 rounded-xl shadow",
-                isCurrentUser ? "bg-accent text-accent-foreground rounded-br-none" : "bg-card text-card-foreground rounded-bl-none border"
+                isCurrentUser ? "bg-primary/10 text-primary border border-primary/20 rounded-br-none" : "bg-card text-card-foreground rounded-bl-none border"
             )}
             >
                 {!isCurrentUser && <p className="text-xs font-semibold mb-1 text-primary">{senderName}</p>}
@@ -244,17 +244,17 @@ export default function ChatMessageItem({
                         className={cn(
                             "mt-2 flex items-center p-2.5 rounded-lg cursor-pointer group",
                             isCurrentUser 
-                                ? "bg-accent-foreground/10 hover:bg-accent-foreground/20" 
+                                ? "bg-primary/20 hover:bg-primary/30" 
                                 : "bg-muted/40 hover:bg-muted/60"
                         )}
                         onClick={handlePlayAudio}
                     >
                         <PlayCircle className={cn(
                             "h-7 w-7 mr-2.5 flex-shrink-0", 
-                            isCurrentUser ? "text-accent-foreground/80 group-hover:text-accent-foreground" : "text-primary group-hover:text-primary/80"
+                            isCurrentUser ? "text-primary group-hover:text-primary/80" : "text-primary group-hover:text-primary/80"
                         )} />
                         <SoundWaveIcon className={cn(
-                            isCurrentUser ? "text-accent-foreground/60 group-hover:text-accent-foreground/80" : "text-muted-foreground group-hover:text-foreground/80"
+                            isCurrentUser ? "text-primary/60 group-hover:text-primary/80" : "text-muted-foreground group-hover:text-foreground/80"
                         )} />
                     </div>
                 )}
@@ -285,8 +285,8 @@ export default function ChatMessageItem({
                         <Heart className={cn("h-4 w-4 transition-colors", userHasReacted ? "text-red-500 fill-red-500" : "hover:text-red-500/80")} />
                         {(reactions?.heart ?? 0) > 0 && <span className="font-medium text-xs pr-1">{reactions?.heart}</span>}
                     </button>
-                    {edited && <p className={cn("italic", isCurrentUser ? "text-accent-foreground/70" : "text-muted-foreground")}>(editado)</p>}
-                    <p className={cn(isCurrentUser ? "text-accent-foreground/70" : "text-muted-foreground")}>
+                    {edited && <p className={cn("italic", isCurrentUser ? "text-primary/70" : "text-muted-foreground")}>(editado)</p>}
+                    <p className={cn(isCurrentUser ? "text-primary/70" : "text-muted-foreground")}>
                         {timestamp}
                     </p>
                 </div>
