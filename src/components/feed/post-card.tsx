@@ -377,10 +377,17 @@ export default function PostCard({
       .replace(' ano', 'a')
       .replace(' anos', 'a');
   }, [initialTimestamp]);
+
   const isAuthor = currentUser?.uid === userId;
+  
+  const linkRegex = /\(\((https?:\/\/[^\s()]+)\)\)/;
+  const linkMatch = text.match(linkRegex);
+  const urlToPreview = linkMatch?.[1];
+  const textContent = linkMatch ? text.replace(linkRegex, '').trim() : text;
+  
   const MAX_CHARS = 130;
-  const needsTruncation = text.length > MAX_CHARS;
-  const textToShow = isTextExpanded ? text : text.substring(0, MAX_CHARS);
+  const needsTruncation = textContent.length > MAX_CHARS;
+  const textToShow = isTextExpanded ? textContent : textContent.substring(0, MAX_CHARS);
 
   // Fetch user's reaction on mount
   useEffect(() => {
@@ -628,32 +635,6 @@ export default function PostCard({
     textarea.style.height = `${newScrollHeight}px`;
   };
 
-  const processedTextElementsForStandardPost = useMemo(() => {
-    const baseElements = renderTextWithMentions(textToShow, MOCK_USER_NAMES_FOR_MENTIONS);
-    return (
-      <>
-        {baseElements}
-        {needsTruncation && (
-          isTextExpanded ? (
-            <>
-              {' '}
-              <Button variant="link" size="sm" className="p-0 h-auto text-xs text-primary inline" onClick={(e) => { e.stopPropagation(); setIsTextExpanded(false); }}>
-                Ver menos.
-              </Button>
-            </>
-          ) : (
-            <>
-              ...{' '}
-              <Button variant="link" size="sm" className="p-0 h-auto text-xs text-primary inline" onClick={(e) => { e.stopPropagation(); setIsTextExpanded(true); }}>
-                Ver mais...
-              </Button>
-            </>
-          )
-        )}
-      </>
-    );
-  }, [textToShow, isTextExpanded, needsTruncation, text]);
-
   const displayImageUrl = cardStyle ? null : (uploadedImageUrl || imageUrl);
   const displayImageAlt = cardStyle ? '' : (uploadedImageUrl ? (dataAIUploadedImageHint || "Imagem do post") : (dataAIImageHint || "Imagem do post"));
   
@@ -677,58 +658,6 @@ export default function PostCard({
       </div>
     </div>
   );
-  
-  const PostContent = () => {
-    const linkRegex = /\(\((https?:\/\/[^\s()]+)\)\)/;
-    const match = text.match(linkRegex);
-
-    if (match && match[1] && !poll) {
-        const url = match[1];
-        const remainingText = text.replace(linkRegex, '').trim();
-        let domain = "Link Externo";
-        try {
-            domain = new URL(url).hostname.replace('www.', '');
-        } catch (e) {}
-
-        return (
-            <>
-                {remainingText && (
-                    <p className="text-base leading-relaxed whitespace-pre-wrap px-4">
-                        {renderTextWithMentions(remainingText, MOCK_USER_NAMES_FOR_MENTIONS)}
-                    </p>
-                )}
-                <div className="px-4 mt-2">
-                    <a href={url} target="_blank" rel="noopener noreferrer" className="block group">
-                        <Card className="hover:bg-muted/50 transition-colors">
-                            <CardContent className="p-3">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-3 bg-muted rounded-lg">
-                                        <LinkIcon className="h-5 w-5 text-muted-foreground" />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">{domain}</p>
-                                        <p className="text-xs text-muted-foreground truncate">{url}</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </a>
-                </div>
-            </>
-        );
-    }
-
-    if (text && !poll) {
-        return (
-            <p className="text-base leading-relaxed whitespace-pre-wrap px-4">
-                {processedTextElementsForStandardPost}
-            </p>
-        );
-    }
-
-    return null;
-  };
-
 
   return (
     <>
@@ -784,10 +713,10 @@ export default function PostCard({
           </DropdownMenu>
         </CardHeader>
 
-       <CardContent
-          className={cn(
+        <CardContent
+            className={cn(
             "p-0 bg-white dark:bg-card",
-            cardStyle && text.length > 0 && !poll && !uploadedImageUrl && "py-4",
+            cardStyle && text.length > 0 && !poll && !uploadedImageUrl && !urlToPreview && "py-4",
           )}
         >
           {isEditing ? (
@@ -803,7 +732,7 @@ export default function PostCard({
                 <Button onClick={handleUpdatePost}>Salvar</Button>
               </div>
             </div>
-          ) : cardStyle ? (
+          ) : cardStyle && !urlToPreview && !uploadedImageUrl ? (
              <div
               className="p-4 flex items-center justify-center text-center min-h-[280px]"
               style={{
@@ -818,11 +747,46 @@ export default function PostCard({
               )}
             </div>
           ) : (
-            <div className="space-y-3">
-              <PostContent />
+            <div className="space-y-3 pb-2 pt-1">
+              {textContent && (
+                <p className="text-base leading-normal whitespace-pre-wrap px-4">
+                  {renderTextWithMentions(textToShow, MOCK_USER_NAMES_FOR_MENTIONS)}
+                  {needsTruncation && (
+                    <>
+                      ...{' '}
+                      <Button variant="link" size="sm" className="p-0 h-auto text-xs text-primary inline align-baseline" onClick={(e) => { e.stopPropagation(); setIsTextExpanded(!isTextExpanded); }}>
+                        {isTextExpanded ? "Ver menos" : "Ver mais"}
+                      </Button>
+                    </>
+                  )}
+                </p>
+              )}
+              {urlToPreview && !poll && (() => {
+                let domain = "Link Externo";
+                try { domain = new URL(urlToPreview).hostname.replace('www.', ''); } catch (e) {}
+                return (
+                  <div className="px-4 mt-3">
+                    <a href={urlToPreview} target="_blank" rel="noopener noreferrer" className="block group">
+                      <Card className="hover:bg-muted/50 transition-colors">
+                        <CardContent className="p-3">
+                          <div className="flex items-center gap-3">
+                            <div className="p-3 bg-muted rounded-lg">
+                              <LinkIcon className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">{domain}</p>
+                              <p className="text-xs text-muted-foreground truncate">{urlToPreview}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </a>
+                  </div>
+                );
+              })()}
               {poll && <PollDisplay pollData={poll} postId={postId} />}
               {displayImageUrl && (
-                <div className="bg-muted/10 dark:bg-muted/20">
+                <div className="bg-muted/10 dark:bg-muted/20 mt-3">
                   <button
                     type="button"
                     onClick={() => handleImageClick(displayImageUrl!)}
@@ -846,12 +810,12 @@ export default function PostCard({
 
         <CardFooter className="flex items-center justify-between px-4 py-2 border-t border-border/50 bg-white dark:bg-card">
           <div className="flex items-center gap-1">
-              <Button variant="ghost" onClick={() => handleInteractionAttempt(() => handlePostReactionClick('thumbsUp'))} className={cn("p-2 h-auto flex items-center gap-1 text-muted-foreground hover:bg-muted/30 hover:text-primary", currentUserPostReaction === 'thumbsUp' && 'text-primary')} aria-label="Curtir">
-                  <ThumbsUp className={cn(currentUserPostReaction === 'thumbsUp' && 'fill-current')} />
+              <Button variant="ghost" onClick={() => handleInteractionAttempt(() => handlePostReactionClick('thumbsUp'))} className={cn("p-2 h-auto flex items-center gap-1 text-muted-foreground hover:bg-muted/30", currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'hover:text-primary')} aria-label="Curtir">
+                  <ThumbsUp className={cn(currentUserPostReaction === 'thumbsUp' && 'fill-primary text-primary-foreground')} />
                   {localPostReactions.thumbsUp > 0 && <span className="text-xs font-semibold tabular-nums">({localPostReactions.thumbsUp})</span>}
               </Button>
-              <Button variant="ghost" onClick={() => handleInteractionAttempt(() => handlePostReactionClick('thumbsDown'))} className={cn("p-2 h-auto flex items-center gap-1 text-muted-foreground hover:bg-muted/30 hover:text-destructive", currentUserPostReaction === 'thumbsDown' && 'text-destructive')} aria-label="Não curtir">
-                  <ThumbsDown className={cn(currentUserPostReaction === 'thumbsDown' && 'fill-current')} />
+              <Button variant="ghost" onClick={() => handleInteractionAttempt(() => handlePostReactionClick('thumbsDown'))} className={cn("p-2 h-auto flex items-center gap-1 text-muted-foreground hover:bg-muted/30", currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'hover:text-destructive')} aria-label="Não curtir">
+                  <ThumbsDown className={cn(currentUserPostReaction === 'thumbsDown' && 'fill-destructive text-destructive-foreground')} />
                    {localPostReactions.thumbsDown > 0 && <span className="text-xs font-semibold tabular-nums">({localPostReactions.thumbsDown})</span>}
               </Button>
               <Button variant="ghost" onClick={() => handleInteractionAttempt(() => setIsSheetOpen(true))} className={cn("p-2 h-auto flex items-center gap-1 text-muted-foreground hover:text-primary hover:bg-muted/30")} aria-label="Comentários">
