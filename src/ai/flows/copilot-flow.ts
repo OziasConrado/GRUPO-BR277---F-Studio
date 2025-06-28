@@ -95,14 +95,13 @@ const getTrafficInfo = ai.defineTool(
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Goog-Api-Key': apiKey,
-                    'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.travelAdvisory,routes.polyline.encodedPolyline'
+                    'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline'
                 },
                 body: JSON.stringify({
                     origin: { location: { latLng: originCoords } },
                     destination: { location: { latLng: destinationCoords } },
                     travelMode: 'DRIVE',
                     computeAlternativeRoutes: false,
-                    extraComputations: ["TRAFFIC_ON_POLYLINE"],
                     languageCode: "pt-BR",
                 })
             });
@@ -139,9 +138,7 @@ const getTrafficInfo = ai.defineTool(
                 const minutes = Math.floor((durationSeconds % 3600) / 60);
                 const travelTime = `${hours > 0 ? `${hours} hora${hours > 1 ? 's' : ''} e ` : ''}${minutes} minuto${minutes > 1 ? 's' : ''}`;
 
-                const summary = route.travelAdvisory?.trafficAdvisory?.trafficCondition 
-                    ? `Condição do trânsito: ${route.travelAdvisory.trafficAdvisory.trafficCondition}.`
-                    : "Sem informações de tráfego disponíveis.";
+                const summary = "Sem informações detalhadas de tráfego disponíveis.";
 
                 const tollCount = 0; // Toll counting removed for stability
                 
