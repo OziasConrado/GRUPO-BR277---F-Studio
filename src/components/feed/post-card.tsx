@@ -714,12 +714,12 @@ export default function PostCard({
 
         <CardFooter className="flex items-center justify-between px-4 py-2 border-t border-border/50 bg-white dark:bg-card">
           <div className="flex items-center gap-1">
-              <Button variant="ghost" onClick={() => handleInteractionAttempt(() => handlePostReactionClick('thumbsUp'))} className={cn("p-2 h-auto flex items-center gap-0.5 hover:bg-muted/30", currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'text-muted-foreground hover:text-primary')} aria-label="Curtir">
-                  <ThumbsUp className={`h-7 w-7 ${currentUserPostReaction === 'thumbsUp' ? 'fill-primary' : ''}`} />
+              <Button variant="ghost" onClick={() => handleInteractionAttempt(() => handlePostReactionClick('thumbsUp'))} className={cn("p-2 h-auto flex items-center gap-0.5 hover:bg-muted/30 hover:text-primary", currentUserPostReaction === 'thumbsUp' ? 'text-primary [&_svg]:fill-current' : 'text-muted-foreground')} aria-label="Curtir">
+                  <ThumbsUp className="h-7 w-7" />
                   {localPostReactions.thumbsUp > 0 && <span className="text-xs tabular-nums">({localPostReactions.thumbsUp})</span>}
               </Button>
-              <Button variant="ghost" onClick={() => handleInteractionAttempt(() => handlePostReactionClick('thumbsDown'))} className={cn("p-2 h-auto flex items-center gap-0.5 hover:bg-muted/30", currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'text-muted-foreground hover:text-destructive')} aria-label="Não curtir">
-                  <ThumbsDown className={`h-7 w-7 ${currentUserPostReaction === 'thumbsDown' ? 'fill-destructive' : ''}`} />
+              <Button variant="ghost" onClick={() => handleInteractionAttempt(() => handlePostReactionClick('thumbsDown'))} className={cn("p-2 h-auto flex items-center gap-0.5 hover:bg-muted/30 hover:text-destructive", currentUserPostReaction === 'thumbsDown' ? 'text-destructive [&_svg]:fill-current' : 'text-muted-foreground')} aria-label="Não curtir">
+                  <ThumbsDown className="h-7 w-7" />
                    {localPostReactions.thumbsDown > 0 && <span className="text-xs tabular-nums">({localPostReactions.thumbsDown})</span>}
               </Button>
               <Button variant="ghost" onClick={() => handleInteractionAttempt(() => setIsSheetOpen(true))} className={cn("p-2 h-auto flex items-center gap-0.5 text-muted-foreground hover:text-primary hover:bg-muted/30")} aria-label="Comentários">
