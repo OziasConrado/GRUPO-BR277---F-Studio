@@ -42,7 +42,7 @@ import HomeAlertCard, { type HomeAlertCardData } from '@/components/alerts/home-
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Input } from '@/components/ui/input';
+import { Input } from "@/components/ui/input";
 import { useAuth } from '@/contexts/AuthContext';
 import { firestore, storage } from '@/lib/firebase/client';
 import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp, where } from 'firebase/firestore';
@@ -736,8 +736,8 @@ export default function FeedPage() {
         <div className="pt-4 pb-2">
           <div className="flex justify-between items-center px-1 mb-3">
             <h2 className="text-xl font-bold font-headline flex items-center">
-              <AlertTriangle className="h-5 w-5 mr-2 text-primary" />
-              Alertas da Rodovia
+              <ShieldAlert className="h-5 w-5 mr-2 text-primary" />
+              Alertas
             </h2>
             <Link href="/alertas" className="text-sm font-medium text-primary hover:underline flex items-center gap-1">
                 Ver todos
