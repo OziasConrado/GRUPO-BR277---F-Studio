@@ -734,6 +734,16 @@ export default function FeedPage() {
         </div>
       ) : displayedAlertsFeed.length > 0 ? (
         <div className="pt-4 pb-2">
+          <div className="flex justify-between items-center px-1 mb-3">
+            <h2 className="text-xl font-bold font-headline flex items-center">
+              <AlertTriangle className="h-5 w-5 mr-2 text-primary" />
+              Alertas da Rodovia
+            </h2>
+            <Link href="/alertas" className="text-sm font-medium text-primary hover:underline flex items-center gap-1">
+                Ver todos
+                <ArrowRightCircle className="h-4 w-4" />
+            </Link>
+          </div>
           <div className="flex overflow-x-auto space-x-3 pb-2 -mx-1 px-1 no-scrollbar">
             {displayedAlertsFeed.map((alertData) => (
               <Link href="/alertas" key={alertData.id} className="block">
@@ -741,16 +751,6 @@ export default function FeedPage() {
               </Link>
             ))}
           </div>
-          {displayedAlertsFeed.length > 5 && (
-            <div className="mt-4 flex justify-center">
-              <Button asChild variant="outline" className="rounded-full">
-                <Link href="/alertas">
-                  Ver Todos os Alertas
-                  <ArrowRightCircle className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-          )}
         </div>
       ) : null}
 
