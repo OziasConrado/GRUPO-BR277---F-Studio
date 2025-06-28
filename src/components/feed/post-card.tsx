@@ -564,6 +564,14 @@ export default function PostCard({
     setSelectedReportReason(undefined);
     setOtherReportReasonText('');
   };
+  
+  const handleCommentTextareaInput = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    setNewCommentText(event.target.value);
+    const textarea = event.target;
+    textarea.style.height = 'auto'; // Reset height
+    const newScrollHeight = Math.min(textarea.scrollHeight, 120); // Max height of 120px
+    textarea.style.height = `${newScrollHeight}px`;
+  };
 
   const processedTextElementsForStandardPost = useMemo(() => {
     const baseElements = renderTextWithMentions(textToShow, MOCK_USER_NAMES_FOR_MENTIONS);
@@ -753,7 +761,7 @@ export default function PostCard({
       </Card>
       
       <Sheet open={isSheetOpen} onOpenChange={(open) => { setIsSheetOpen(open); if (!open) setReplyingTo(null); }}>
-          <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0 rounded-t-[25px]">
+          <SheetContent side="bottom" className="h-[95vh] flex flex-col p-0 rounded-t-[25px]">
               <SheetHeader className="p-3 border-b border-border text-center"><SheetTitle>Comentários</SheetTitle></SheetHeader>
               <div className="flex-grow overflow-y-auto p-4 space-y-4">
                 {comments.length > 0 ? (
@@ -771,23 +779,25 @@ export default function PostCard({
                           </Button>
                       </div>
                   )}
-                  <form onSubmit={(e) => handleInteractionAttempt(() => handleFooterSubmit(e))} className="flex gap-2 items-end">
-                      <Avatar className="h-9 w-9 self-end mb-0.5">
-                          <AvatarImage src={currentUser?.photoURL || ''} />
-                          <AvatarFallback><UserCircle/></AvatarFallback>
-                      </Avatar>
-                      <Textarea
-                        ref={footerTextareaRef}
-                        placeholder={replyingTo ? `Responder a @${replyingTo.userNameToReply}...` : "Escreva um comentário..."}
-                        value={newCommentText}
-                        onChange={(e) => setNewCommentText(e.target.value)}
-                        className="rounded-lg flex-grow bg-background/70 min-h-[40px] max-h-[120px] resize-none text-base"
-                        rows={1}
-                      />
-                      <Button type="submit" size="icon" className="shrink-0 h-10 w-10 self-end" disabled={!newCommentText.trim() || !currentUser}>
-                          <Send className="h-4 w-4" />
-                      </Button>
-                  </form>
+                  <form onSubmit={(e) => handleInteractionAttempt(() => handleFooterSubmit(e))} className="flex items-end gap-2">
+                    <div className="relative flex-grow">
+                        <Textarea
+                          ref={footerTextareaRef}
+                          placeholder={replyingTo ? `Responder a @${replyingTo.userNameToReply}...` : "Escreva um comentário..."}
+                          value={newCommentText}
+                          onChange={handleCommentTextareaInput}
+                          className="rounded-lg bg-background/70 min-h-[44px] max-h-[120px] resize-none text-base p-3 pr-12"
+                          rows={1}
+                        />
+                        <Button 
+                          type="submit" 
+                          size="icon" 
+                          className="absolute right-2 bottom-2 h-8 w-8 rounded-full" 
+                          disabled={!newCommentText.trim() || !currentUser}>
+                            <Send className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </form>
               </div>
           </SheetContent>
       </Sheet>
