@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useRef, type ChangeEvent, useCallback, type FormEvent } from 'react';
@@ -742,11 +741,13 @@ export default function FeedPage() {
                 <ArrowRightCircle className="h-4 w-4" />
             </Link>
           </div>
-          <div className="flex overflow-x-auto space-x-3 pb-2 -mx-1 px-1 no-scrollbar">
+          <div className="flex overflow-x-auto space-x-4 pb-2 -mx-4 px-4 no-scrollbar snap-x snap-mandatory">
             {displayedAlertsFeed.map((alertData) => (
-              <Link href="/alertas" key={alertData.id} className="block">
-                <HomeAlertCard alert={alertData} />
-              </Link>
+              <div key={alertData.id} className="snap-start flex-shrink-0">
+                <Link href="/alertas" className="block">
+                  <HomeAlertCard alert={alertData} />
+                </Link>
+              </div>
             ))}
           </div>
         </div>
