@@ -556,7 +556,7 @@ export default function FeedPage() {
     <div className="w-full space-y-6">
       <ProfileCompletionAlert />
       
-      <div className="flex gap-3 h-24">
+      <div className="flex gap-3 h-20">
         <Button asChild
           variant="destructive"
           className="w-2/3 h-full bg-red-500 hover:bg-red-600 text-white text-lg font-semibold rounded-lg shadow-md"
