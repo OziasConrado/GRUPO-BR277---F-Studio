@@ -336,23 +336,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             await firebaseUpdateProfile(userForUpdate, authProfileUpdates);
         }
 
+        const userDocRef = doc(firestore, "Usuarios", userForUpdate.uid);
         if (hasFirestoreUpdates) {
-            const userDocRef = doc(firestore, "Usuarios", userForUpdate.uid);
             firestoreProfileUpdates.updatedAt = serverTimestamp();
             await setDoc(userDocRef, firestoreProfileUpdates, { merge: true });
         }
         
+        // Re-fetch all data from source of truth to guarantee consistency
         await userForUpdate.reload();
-        
-        // Manually update local state to reflect changes immediately
-        if (hasFirestoreUpdates) {
-            setUserProfile(prevProfile => ({
-                ...prevProfile,
-                ...firestoreProfileUpdates,
-            }));
-        }
-        if (hasAuthUpdates && auth.currentUser) {
-            setCurrentUser(auth.currentUser);
+        const updatedDocSnap = await getDoc(userDocRef);
+
+        // Update local state with the freshly fetched data
+        setCurrentUser(auth.currentUser);
+        if (updatedDocSnap.exists()) {
+            setUserProfile(updatedDocSnap.data() as UserProfile);
         }
         
         toast({ title: 'Perfil Atualizado!', description: 'Suas informações foram salvas com sucesso.' });
