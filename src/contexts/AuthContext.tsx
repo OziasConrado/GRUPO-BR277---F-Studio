@@ -290,27 +290,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const updateUserProfile = useCallback(async (data: UpdateUserProfileData) => {
-    // Get the freshest user at the start of the operation.
-    const userForUpdate = auth.currentUser; 
-
+    const userForUpdate = auth.currentUser;
     if (!userForUpdate || !firestore || !storage) {
         toast({ title: "Erro", description: "Usuário não autenticado ou serviço indisponível.", variant: "destructive" });
         return;
     }
-    
+
     setIsAuthenticating(true);
 
     try {
         let newPhotoURL: string | null = null;
-
-        // Step 1: Handle file upload if it exists.
         if (data.newPhotoFile) {
             const photoRef = ref(storage, `profile_pictures/${userForUpdate.uid}/${Date.now()}_${data.newPhotoFile.name}`);
             await uploadBytes(photoRef, data.newPhotoFile);
             newPhotoURL = await getDownloadURL(photoRef);
         }
 
-        // Step 2: Prepare updates for Firebase Auth profile.
         const authProfileUpdates: { displayName?: string; photoURL?: string } = {};
         if (data.displayName && data.displayName !== userForUpdate.displayName) {
             authProfileUpdates.displayName = data.displayName;
@@ -319,7 +314,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             authProfileUpdates.photoURL = newPhotoURL;
         }
 
-        // Step 3: Prepare updates for Firestore document.
         const firestoreProfileUpdates: any = {};
         if (data.displayName && data.displayName !== userForUpdate.displayName) firestoreProfileUpdates.displayName = data.displayName;
         if (newPhotoURL) firestoreProfileUpdates.photoURL = newPhotoURL;
@@ -332,7 +326,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const hasAuthUpdates = Object.keys(authProfileUpdates).length > 0;
         const hasFirestoreUpdates = Object.keys(firestoreProfileUpdates).length > 0;
 
-        // Step 4: Execute updates if there's anything to update.
         if (!hasAuthUpdates && !hasFirestoreUpdates) {
             toast({ title: 'Nenhuma Alteração', description: 'Nenhuma informação foi alterada.' });
             setIsAuthenticating(false);
@@ -347,13 +340,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const userDocRef = doc(firestore, "Usuarios", userForUpdate.uid);
             firestoreProfileUpdates.updatedAt = serverTimestamp();
             await setDoc(userDocRef, firestoreProfileUpdates, { merge: true });
-            
-            const newProfileState: UserProfile = { ...userProfile };
-            if (firestoreProfileUpdates.bio !== undefined) newProfileState.bio = firestoreProfileUpdates.bio;
-            if (firestoreProfileUpdates.location !== undefined) newProfileState.location = firestoreProfileUpdates.location;
-            if (firestoreProfileUpdates.instagramUsername !== undefined) newProfileState.instagramUsername = firestoreProfileUpdates.instagramUsername;
-            setUserProfile(newProfileState);
         }
+        
+        // Force reload of user data to get the latest state including photoURL
+        await userForUpdate.reload();
         
         toast({ title: 'Perfil Atualizado!', description: 'Suas informações foram salvas com sucesso.' });
         router.push('/');

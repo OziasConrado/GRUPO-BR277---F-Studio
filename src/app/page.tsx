@@ -245,7 +245,7 @@ export default function FeedPage() {
             return {
                 id: doc.id,
                 adminName: data.userName,
-                avatarUrl: data.thumbnailUrl || 'https://placehold.co/180x320.png', // You'll need a way to generate thumbnails
+                avatarUrl: data.thumbnailUrl || data.userAvatarUrl || 'https://placehold.co/180x320.png',
                 dataAIAvatarHint: 'video story content',
                 hasNewStory: true,
                 storyType: 'video',
@@ -394,6 +394,7 @@ export default function FeedPage() {
                 userId: currentUser.uid,
                 userName: currentUser.displayName || 'Anônimo',
                 userAvatarUrl: currentUser.photoURL,
+                thumbnailUrl: currentUser.photoURL,
                 description: newPostText.trim(),
                 videoUrl: mediaUrl,
                 timestamp: serverTimestamp(),
