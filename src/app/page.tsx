@@ -529,12 +529,6 @@ export default function FeedPage() {
                 <span>SAU</span>
               </Link>
             </Button>
-            <Button asChild variant="outline" className="h-full w-full text-xs rounded-lg hover:bg-primary/10">
-              <Link href="/turismo" className="flex-col items-center justify-center">
-                <Landmark className="h-5 w-5 mb-1" />
-                <span>Turismo</span>
-              </Link>
-            </Button>
         </div>
       </div>
 
