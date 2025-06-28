@@ -1,66 +1,55 @@
+
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-
-    // --- Helper Functions ---
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
+    
+    // As imagens, vídeos e áudios são públicos para leitura por padrão neste app.
+    // Em um cenário com dados sensíveis, a leitura também seria restrita.
+    match /{allPaths=**} {
+      allow read: if true;
     }
 
-    function isImage(maxSizeMB) {
-      return request.resource.contentType.matches('image/.*') 
-             && request.resource.size < maxSizeMB * 1024 * 1024;
+    // Regras para Fotos de Perfil (max 2MB)
+    match /profile_pictures/{userId}/{fileName} {
+      allow write: if request.auth != null && request.auth.uid == userId
+                    && request.resource.size < 2 * 1024 * 1024
+                    && request.resource.contentType.matches('image/.*');
     }
 
-    function isVideo(maxSizeMB) {
-      return request.resource.contentType.matches('video/.*') 
-             && request.resource.size < maxSizeMB * 1024 * 1024;
+    // Regras para Imagens do Feed (max 5MB)
+    match /images/{userId}/{fileName} {
+      allow write: if request.auth != null && request.auth.uid == userId
+                    && request.resource.size < 5 * 1024 * 1024
+                    && request.resource.contentType.matches('image/.*');
+    }
+
+    // Regras para Vídeos do Feed (max 50MB)
+    match /videos/{userId}/{fileName} {
+      allow write: if request.auth != null && request.auth.uid == userId
+                    && request.resource.size < 50 * 1024 * 1024
+                    && request.resource.contentType.matches('video/.*');
     }
     
-    function isAudio(maxSizeMB) {
-      return request.resource.contentType.matches('audio/.*') 
-             && request.resource.size < maxSizeMB * 1024 * 1024;
+    // Regras para Imagens do Chat (max 5MB)
+    match /chat_images/{userId}/{fileName} {
+      allow write: if request.auth != null && request.auth.uid == userId
+                    && request.resource.size < 5 * 1024 * 1024
+                    && request.resource.contentType.matches('image/.*');
     }
 
-    // --- Path Rules ---
-
-    // Profile Pictures: Logged-in users can read, owner can write images up to 2MB.
-    match /profile_pictures/{userId}/{allPaths=**} {
-      allow read: if request.auth != null;
-      allow write: if isOwner(userId) && isImage(2);
+    // Regras para Áudio do Chat (max 10MB)
+    match /chat_audio/{userId}/{fileName} {
+      allow write: if request.auth != null && request.auth.uid == userId
+                    && request.resource.size < 10 * 1024 * 1024
+                    && request.resource.contentType.matches('audio/.*');
     }
-
-    // Chat Media: Logged-in users can read. Owner can write images (5MB) or audio (10MB).
-    match /chat_images/{userId}/{allPaths=**} {
-      allow read: if request.auth != null;
-      allow write: if isOwner(userId) && isImage(5);
-    }
-    match /chat_audio/{userId}/{allPaths=**} {
-      allow read: if request.auth != null;
-      allow write: if isOwner(userId) && isAudio(10);
-    }
-
-    // Feed Media (Reels and Posts): Logged-in users can read. Owner can write images (5MB) or videos (50MB).
-    match /images/{userId}/{allPaths=**} {
-      allow read: if request.auth != null;
-      allow write: if isOwner(userId) && isImage(5);
-    }
-    match /videos/{userId}/{allPaths=**} {
-      allow read: if request.auth != null;
-      allow write: if isOwner(userId) && isVideo(50);
-    }
-
-    // Tourist Point Images: Logged-in users can read. Owner can write images up to 2MB.
+    
+    // Regras para Imagens de Pontos Turísticos Indicados (max 2MB)
     match /indicated_points_images/{userId}/{fileName} {
-       allow read: if request.auth != null;
-       allow write: if isOwner(userId) && isImage(2);
-    }
-    
-    // Business Guide Images: Logged-in users can read. Owner can write images up to 2MB.
-    match /business_guide_images/{userId}/{fileName} {
-       allow read: if request.auth != null;
-       allow write: if isOwner(userId) && isImage(2);
+      allow write: if request.auth != null && request.auth.uid == userId
+                    && request.resource.size < 2 * 1024 * 1024
+                    && request.resource.contentType.matches('image/.*');
     }
   }
 }
