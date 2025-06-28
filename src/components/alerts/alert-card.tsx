@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserProfileData, default as UserProfileModal } from '@/components/profile/UserProfileModal';
-import { AlertTriangle, Car, CarCrash, Construction, CloudFog, Clock, UserCircle, Flame, Wrench, Droplets, MountainSnow, Siren, Users } from "lucide-react";
+import { AlertTriangle, Car, Ambulance, Construction, CloudFog, Clock, UserCircle, Flame, Wrench, Droplets, MountainSnow, Siren, Users } from "lucide-react";
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -29,7 +29,7 @@ interface AlertCardProps {
 const getAlertIcon = (type: AlertProps['type']) => {
   switch (type) {
     case 'Acidente':
-      return <CarCrash className="h-5 w-5 text-red-500" />;
+      return <Ambulance className="h-5 w-5 text-red-500" />;
     case 'Obras na Pista':
       return <Construction className="h-5 w-5 text-yellow-500" />;
     case 'Congestionamento':

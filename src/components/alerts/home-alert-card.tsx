@@ -5,7 +5,7 @@ import type { StaticImageData } from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import UserProfileModal, { type UserProfileData } from '@/components/profile/UserProfileModal';
-import { AlertTriangle, Construction, Car, CarCrash, Flame, CloudFog, Clock, UserCircle, MapPin, Wrench, Droplets, MountainSnow, Siren, Users } from "lucide-react";
+import { AlertTriangle, Construction, Car, Ambulance, Flame, CloudFog, Clock, UserCircle, MapPin, Wrench, Droplets, MountainSnow, Siren, Users } from "lucide-react";
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -31,7 +31,7 @@ const AlertTypeIcon = ({ type, className }: { type: string, className?: string }
   const iconProps = { className: cn("h-5 w-5", className) };
   switch (type) {
     case 'Acidente':
-      return <CarCrash {...iconProps} className={cn(iconProps.className, "text-red-500")} />;
+      return <Ambulance {...iconProps} className={cn(iconProps.className, "text-red-500")} />;
     case 'Obras na Pista':
     case 'Obras':
       return <Construction {...iconProps} className={cn(iconProps.className, "text-yellow-500")} />;
