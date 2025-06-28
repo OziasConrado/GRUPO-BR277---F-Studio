@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Separator } from '@/components/ui/separator';
-import { MapPin, Clock, ShieldCheck, Star, MessageSquare, Edit3, Navigation } from 'lucide-react';
+import { MapPin, Clock, ShieldCheck, Star, MessageSquare, Edit3 } from 'lucide-react';
 import type { SAULocation, SAUReview } from '@/types/sau';
 import SubmitReviewModal from './submit-review-modal';
 import StarDisplay from './star-display';
@@ -34,32 +34,6 @@ const concessionaireLogos: Record<string, { url: string; hint: string }> = {
 export default function SauLocationCard({ sau, reviews, onAddReview }: SauLocationCardProps) {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const logoData = concessionaireLogos[sau.concessionaire] || { url: 'https://placehold.co/64x64.png?text=LOGO', hint: 'logo concessionaria generico' };
-
-
-  const handleNavigate = () => {
-    if (sau.latitude && sau.longitude) {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(position => {
-                const userLat = position.coords.latitude;
-                const userLng = position.coords.longitude;
-                const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${userLat},${userLng}&destination=${sau.latitude},${sau.longitude}`;
-                window.open(mapsUrl, '_blank');
-            }, () => {
-                // Fallback if user location cannot be obtained, but business location is known
-                const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${sau.latitude},${sau.longitude}`;
-                window.open(mapsUrl, '_blank');
-            });
-        } else {
-            // Fallback if geolocation API not supported
-            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${sau.latitude},${sau.longitude}`;
-            window.open(mapsUrl, '_blank');
-        }
-    } else {
-        // Fallback if business location is not known, search by address
-        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(sau.address)}`;
-        window.open(mapsUrl, '_blank');
-    }
-  };
 
   return (
     <>
@@ -124,13 +98,6 @@ export default function SauLocationCard({ sau, reviews, onAddReview }: SauLocati
             </>
           )}
           
-          <Separator />
-
-          <Button variant="default" size="sm" onClick={handleNavigate} className="w-full mt-2">
-            <Navigation className="mr-1.5 h-4 w-4" />
-            Navegar até o Local
-          </Button>
-
           <Separator />
 
           <div className="pt-1">

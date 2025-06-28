@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { BusinessData } from '@/types/guia-comercial';
@@ -6,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { Phone, MessageCircle, MapPin, Settings, Info, ExternalLink, Clock, Instagram, Star as StarIcon, Edit3, Navigation } from 'lucide-react';
+import { Phone, MessageCircle, MapPin, Settings, Info, ExternalLink, Clock, Instagram, Star as StarIcon, Edit3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import StarDisplay from '@/components/sau/star-display'; // Reusing star display component
 import { useToast } from '@/hooks/use-toast';
@@ -42,32 +41,6 @@ export default function BusinessCard({ business }: { business: BusinessData }) {
         description: "Funcionalidade de avaliação estará disponível em breve!",
     });
   };
-
-  const handleNavigate = () => {
-    if (business.latitude && business.longitude) {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(position => {
-                const userLat = position.coords.latitude;
-                const userLng = position.coords.longitude;
-                const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${userLat},${userLng}&destination=${business.latitude},${business.longitude}`;
-                window.open(mapsUrl, '_blank');
-            }, () => {
-                // Fallback if user location cannot be obtained, but business location is known
-                const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${business.latitude},${business.longitude}`;
-                window.open(mapsUrl, '_blank');
-            });
-        } else {
-            // Fallback if geolocation API not supported
-            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${business.latitude},${business.longitude}`;
-            window.open(mapsUrl, '_blank');
-        }
-    } else {
-        // Fallback if business location is not known, search by address
-        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business.address)}`;
-        window.open(mapsUrl, '_blank');
-    }
-  };
-
 
   return (
     <Card className="w-full overflow-hidden shadow-lg rounded-xl flex flex-col h-full bg-card/80 dark:bg-card/80 backdrop-blur-sm border-white/10 dark:border-slate-700/10">
@@ -161,15 +134,6 @@ export default function BusinessCard({ business }: { business: BusinessData }) {
             <Edit3 className="mr-1.5 h-4 w-4" /> Avaliar
         </Button>
         
-        <Button 
-            variant="default" 
-            size="sm"
-            className="w-full col-span-2 mt-2"
-            onClick={handleNavigate}
-        >
-            <Navigation className="mr-1.5 h-4 w-4" />
-            Navegar até o Local
-        </Button>
       </CardFooter>
     </Card>
   );
