@@ -94,7 +94,7 @@ export default function CopilotModal({ isOpen, onClose }: CopilotModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg p-0 rounded-xl flex flex-col h-[85vh] max-h-[700px]">
+      <DialogContent className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none bg-background !p-0 flex flex-col !translate-x-0 !translate-y-0">
         <DialogHeader className="p-4 border-b">
           <DialogTitle className="flex items-center gap-2 font-headline text-lg">
             <Sparkles className="w-5 h-5 text-primary" />
