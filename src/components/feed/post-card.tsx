@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { StaticImageData } from 'next/image';
@@ -610,7 +611,7 @@ export default function PostCard({
         {comment.userAvatarUrl && <AvatarImage src={comment.userAvatarUrl as string} alt={comment.userName} />}
         <AvatarFallback>{comment.userName?.substring(0, 2).toUpperCase()}</AvatarFallback>
       </Avatar>
-      <div className="flex-grow p-3 rounded-lg bg-muted/30 dark:bg-slate-700/30">
+      <div className="flex-grow p-3 rounded-lg bg-muted dark:bg-muted">
         <div className="flex items-center justify-between">
           <p className="text-xs font-semibold font-headline">{comment.userName}</p>
           <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
@@ -770,7 +771,7 @@ export default function PostCard({
                   <p className="text-muted-foreground text-center pt-8">Nenhum comentário ainda. Seja o primeiro a comentar!</p>
                 )}
               </div>
-              <div className="p-3 border-t border-border bg-background sticky bottom-0 space-y-2">
+              <div className="p-3 border-t border-border bg-card sticky bottom-0 space-y-2">
                   {replyingTo && (
                       <div className="flex justify-between items-center text-xs text-muted-foreground px-1">
                           <span>Respondendo a <strong className="text-primary">@{replyingTo.userNameToReply}</strong></span>
@@ -786,7 +787,7 @@ export default function PostCard({
                           placeholder={replyingTo ? `Responder a @${replyingTo.userNameToReply}...` : "Escreva um comentário..."}
                           value={newCommentText}
                           onChange={handleCommentTextareaInput}
-                          className="rounded-lg bg-background/70 min-h-[44px] max-h-[120px] resize-none text-base p-3 pr-12"
+                          className="rounded-lg bg-muted min-h-[44px] max-h-[120px] resize-none text-base p-3 pr-12"
                           rows={1}
                         />
                         <Button 

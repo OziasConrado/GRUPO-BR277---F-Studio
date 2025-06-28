@@ -418,7 +418,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
           </Button>
         </header>
 
-        <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>
+        <ScrollArea className="flex-grow p-4 bg-muted/20" ref={scrollAreaRef}>
           <div className="space-y-4">
             {messages.map(msg => (
               <ChatMessageItem 
