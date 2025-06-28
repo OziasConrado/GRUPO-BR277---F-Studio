@@ -523,7 +523,7 @@ export default function FeedPage() {
           </Link>
         </Button>
         <div className="w-1/3 flex flex-col gap-3">
-            <Button asChild variant="outline" className="h-full w-full text-xs rounded-lg hover:bg-primary/10">
+            <Button asChild variant="outline" className="h-full w-full text-xs rounded-lg hover:bg-primary/10 hover:text-primary">
               <Link href="/sau" className="flex-col items-center justify-center">
                 <Headset className="h-5 w-5 mb-1" />
                 <span>Concessões/SAU</span>
