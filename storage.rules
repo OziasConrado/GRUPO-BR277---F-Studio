@@ -1,43 +1,65 @@
+
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-
-    // As fotos de perfil só podem ser escritas pelo próprio usuário.
-    // A leitura é pública.
-    match /profile_pictures/{userId}/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
+    
+    // Helper functions for validation
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
     }
 
-    // Imagens de postagens podem ser lidas por qualquer pessoa, mas apenas criadas pelo usuário.
-    match /images/{userId}/{allPaths=**} {
+    function isImage(maxSizeMB) {
+      return request.resource.contentType.matches('image/.*') && request.resource.size < maxSizeMB * 1024 * 1024;
+    }
+
+    function isVideo(maxSizeMB) {
+        return request.resource.contentType.matches('video/.*') && request.resource.size < maxSizeMB * 1024 * 1024;
+    }
+
+    function isAudio(maxSizeMB) {
+        return request.resource.contentType.matches('audio/.*') && request.resource.size < maxSizeMB * 1024 * 1024;
+    }
+
+    // Profile pictures (images, up to 2MB)
+    match /profile_pictures/{userId}/{fileName} {
       allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow write: if isOwner(userId) && isImage(2);
+    }
+
+    // Feed images (up to 5MB)
+    match /images/{userId}/{fileName} {
+      allow read;
+      allow write: if isOwner(userId) && isImage(5);
+    }
+
+    // Feed videos (up to 50MB)
+    match /videos/{userId}/{fileName} {
+      allow read;
+      allow write: if isOwner(userId) && isVideo(50);
     }
     
-    // Vídeos de postagens (reels) podem ser lidos por qualquer pessoa, mas apenas criados pelo usuário.
-    match /videos/{userId}/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
+    // Chat audio (up to 5MB)
+    match /chat_audio/{userId}/{fileName} {
+        allow read;
+        allow write: if isOwner(userId) && isAudio(5);
     }
 
-    // Imagens do chat
-    match /chat_images/{userId}/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
+    // Chat images (up to 5MB)
+    match /chat_images/{userId}/{fileName} {
+        allow read;
+        allow write: if isOwner(userId) && isImage(5);
     }
 
-    // Áudios do chat
-    match /chat_audio/{userId}/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
+    // Tourist point images (up to 2MB)
+    match /indicated_points_images/{userId}/{fileName} {
+        allow read;
+        allow write: if isOwner(userId) && isImage(2);
     }
-
-    // Imagens de pontos turísticos indicados
-    match /indicated_points_images/{userId}/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
+    
+    // Public assets (Logos, etc.) can be made readable by all
+    match /Ícones e Logo do app GRUPO BR277/{allPaths=**} {
+        allow read;
     }
   }
 }

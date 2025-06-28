@@ -356,7 +356,6 @@ export default function FeedPage() {
   const handlePublish = async () => {
     if (!currentUser || !firestore || !storage) {
       toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado ou o serviço está indisponível.' });
-      console.error("Publish Error: currentUser, firestore, or storage is not available.");
       return;
     }
 
@@ -365,30 +364,22 @@ export default function FeedPage() {
       return;
     }
 
-    console.log("Starting publication process...");
     setIsPublishing(true);
 
     try {
       let mediaUrl: string | undefined;
 
       if (selectedMediaForUpload) {
-        console.log("Media file selected for upload:", selectedMediaForUpload.name);
         const mediaType = selectedMediaForUpload.type.startsWith('image/') ? 'images' : 'videos';
         const storagePath = `${mediaType}/${currentUser.uid}/${Date.now()}_${selectedMediaForUpload.name}`;
         const storageRef = ref(storage, storagePath);
         
-        console.log(`Uploading to: ${storagePath}`);
         await uploadBytes(storageRef, selectedMediaForUpload);
-        console.log("Upload successful.");
 
         mediaUrl = await getDownloadURL(storageRef);
-        console.log("Got download URL:", mediaUrl);
-      } else {
-        console.log("No media file selected.");
       }
 
       if (currentPostType === 'alert') {
-        console.log("Publishing an alert...");
         await addDoc(collection(firestore, 'alerts'), {
           type: selectedAlertType,
           description: newPostText.trim(),
@@ -398,9 +389,7 @@ export default function FeedPage() {
           timestamp: serverTimestamp(),
         });
         toast({ title: "Alerta Publicado!", description: "Seu alerta foi adicionado ao mural." });
-        console.log("Alert published successfully.");
       } else if (currentPostType === 'video') {
-        console.log("Publishing a reel...");
         await addDoc(collection(firestore, 'reels'), {
           userId: currentUser.uid,
           userName: currentUser.displayName || 'Anônimo',
@@ -411,9 +400,7 @@ export default function FeedPage() {
           timestamp: serverTimestamp(),
         });
         toast({ title: "Reel Publicado!", description: "Seu vídeo está disponível para a comunidade." });
-        console.log("Reel published successfully.");
       } else { // 'image', 'text' or 'poll' post
-        console.log("Publishing a post...");
         const postData: any = {
           userId: currentUser.uid,
           userName: currentUser.displayName || 'Anônimo',
@@ -441,7 +428,6 @@ export default function FeedPage() {
         }
         await addDoc(collection(firestore, 'posts'), postData);
         toast({ title: "Publicado!", description: "Sua postagem está na Time Line." });
-        console.log("Post published successfully.");
       }
 
       resetFormState();
