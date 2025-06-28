@@ -51,10 +51,52 @@ import {
   getDoc,
   Timestamp,
   updateDoc,
+  where,
+  getDocs,
+  limit,
 } from 'firebase/firestore';
 import { ToastAction } from '../ui/toast';
 import { useRouter } from 'next/navigation';
 import { Progress } from '@/components/ui/progress';
+
+
+async function createMentions(text: string, postId: string, fromUser: { uid: string, displayName: string | null, photoURL: string | null }, type: 'mention_post' | 'mention_comment') {
+    if (!firestore) return;
+    const mentionRegex = /@([\p{L}\p{N}_\s.-]+)/gu;
+    const mentions = text.match(mentionRegex);
+    if (!mentions) return;
+
+    const mentionedUsernames = [...new Set(mentions.map(m => m.substring(1).trim()))];
+    
+    for (const username of mentionedUsernames) {
+        if (username === fromUser.displayName) continue; // Don't notify self
+
+        const usersRef = collection(firestore, "Usuarios");
+        const q = query(usersRef, where("displayName", "==", username), limit(1));
+        
+        try {
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+                const userDoc = querySnapshot.docs[0];
+                const mentionedUserId = userDoc.id;
+
+                const notificationRef = collection(firestore, 'Usuarios', mentionedUserId, 'notifications');
+                await addDoc(notificationRef, {
+                    type: type,
+                    fromUserId: fromUser.uid,
+                    fromUserName: fromUser.displayName || "Usuário",
+                    fromUserAvatar: fromUser.photoURL || null,
+                    postId: postId,
+                    textSnippet: text.substring(0, 70) + (text.length > 70 ? '...' : ''), // Snippet of the text
+                    timestamp: serverTimestamp(),
+                    read: false,
+                });
+            }
+        } catch (error) {
+            console.error(`Error creating notification for ${username}:`, error);
+        }
+    }
+}
 
 
 export interface CommentProps {
@@ -294,7 +336,6 @@ export default function PostCard({
 }: PostCardProps) {
   const { currentUser, isProfileComplete } = useAuth();
   const { toast } = useToast();
-  const { incrementNotificationCount } = useNotification();
   const router = useRouter();
   
   // State
@@ -406,7 +447,6 @@ export default function PostCard({
         const reactionDoc = await transaction.get(reactionRef);
         const storedReaction = reactionDoc.exists() ? reactionDoc.data().type : null;
         
-        // This transaction logic ensures backend consistency, even if optimistic UI is slightly different
         if (storedReaction === reactionType) {
             transaction.delete(reactionRef);
             transaction.update(postRef, { [`reactions.${reactionType}`]: increment(-1) });
@@ -421,7 +461,6 @@ export default function PostCard({
     } catch (error) {
       console.error("Error handling reaction:", error);
       toast({ variant: 'destructive', title: 'Erro ao Reagir', description: 'Não foi possível processar sua reação. A página será atualizada.' });
-      // Revert optimistic update on error
       setCurrentUserPostReaction(oldReaction);
       setLocalPostReactions(initialReactions);
     }
@@ -432,14 +471,18 @@ export default function PostCard({
     if (!newCommentText.trim() || !currentUser || !firestore) return;
     
     try {
+        const commentText = newCommentText.trim();
         await addDoc(collection(firestore, 'posts', postId, 'comments'), {
             userId: currentUser.uid,
             userName: currentUser.displayName || 'Usuário Anônimo',
             userAvatarUrl: currentUser.photoURL,
-            text: newCommentText.trim(),
+            text: commentText,
             timestamp: serverTimestamp(),
-            // reactions can be added here later
         });
+
+        if (currentUser) {
+            await createMentions(commentText, postId, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL }, 'mention_comment');
+        }
         
         setNewCommentText('');
         setReplyingTo(null);
@@ -479,7 +522,6 @@ export default function PostCard({
   const handleDeletePost = async () => {
     if (!isAuthor || !firestore) return;
     
-    // Close the dialog FIRST to prevent the overlay from getting stuck
     setIsDeleteAlertOpen(false);
 
     try {
@@ -490,7 +532,6 @@ export default function PostCard({
         title: "Post Excluído",
         description: "Sua publicação foi removida do feed.",
       });
-      // The component will be unmounted by the parent's onSnapshot listener.
     } catch (error) {
       console.error("Error deleting post: ", error);
       toast({
@@ -517,7 +558,7 @@ export default function PostCard({
     const shareData = {
       title: `Post no Rota Segura por ${userName}`,
       text: text,
-      url: window.location.href, // This will link to the current page (feed)
+      url: window.location.href, 
     };
 
     if (navigator.share) {
@@ -537,7 +578,6 @@ export default function PostCard({
         }
       }
     } else {
-      // Fallback for desktop or unsupported browsers
       try {
         await navigator.clipboard.writeText(`${shareData.text}\n\nVeja no Rota Segura: ${shareData.url}`);
         toast({
@@ -603,20 +643,18 @@ export default function PostCard({
   const displayImageUrl = cardStyle ? null : (uploadedImageUrl || imageUrl);
   const displayImageAlt = cardStyle ? '' : (uploadedImageUrl ? (dataAIUploadedImageHint || "Imagem do post") : (dataAIImageHint || "Imagem do post"));
   
-  
-  // Comment Component
   const CommentItem = ({ comment }: { comment: CommentProps }) => (
     <div key={comment.id} className="flex items-start space-x-2">
       <Avatar className="h-8 w-8">
         {comment.userAvatarUrl && <AvatarImage src={comment.userAvatarUrl as string} alt={comment.userName} />}
         <AvatarFallback>{comment.userName?.substring(0, 2).toUpperCase()}</AvatarFallback>
       </Avatar>
-      <div className="flex-grow p-3 rounded-lg bg-muted dark:bg-muted/60">
+      <div className="flex-grow p-3 rounded-lg bg-muted/60 dark:bg-muted/30">
         <div className="flex items-center justify-between">
           <p className="text-xs font-semibold font-headline">{comment.userName}</p>
           <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
         </div>
-        <p className="text-base mt-1 whitespace-pre-wrap">{comment.textElements || comment.text}</p>
+        <p className="text-sm mt-1 whitespace-pre-wrap">{comment.textElements || comment.text}</p>
         <div className="flex items-center mt-1.5 space-x-0.5">
           <Button variant="link" size="sm" className="p-0 h-auto text-xs text-primary ml-1" onClick={() => { handleInteractionAttempt(() => { setReplyingTo({ userNameToReply: comment.userName }); setNewCommentText(`@${comment.userName} `); footerTextareaRef.current?.focus(); }); }}>
             Responder
@@ -628,7 +666,7 @@ export default function PostCard({
 
   return (
     <>
-      <Card className="w-full max-w-2xl mx-auto mb-6 shadow-lg rounded-xl overflow-hidden bg-white dark:bg-card">
+      <Card id={`post-${postId}`} className="w-full max-w-2xl mx-auto mb-6 shadow-lg rounded-xl overflow-hidden bg-white dark:bg-card">
         <CardHeader className="flex flex-row items-start space-x-3 p-4">
           <Avatar className="h-10 w-10 cursor-pointer" onClick={handleAvatarOrNameClick}>
             {userAvatarUrl ? <AvatarImage src={userAvatarUrl as string} alt={userName} data-ai-hint={dataAIAvatarHint} /> : null}
@@ -655,7 +693,7 @@ export default function PostCard({
        <CardContent
           className={cn(
             "p-0 bg-white dark:bg-card",
-            cardStyle && text.length > 0 && !poll && !uploadedImageUrl && "py-4", // Add padding only if there is text for colored cards without images
+            cardStyle && text.length > 0 && !poll && !uploadedImageUrl && "py-4",
           )}
         >
           {isEditing ? (
@@ -714,26 +752,26 @@ export default function PostCard({
 
         <CardFooter className="flex items-center justify-between px-4 py-2 border-t border-border/50 bg-white dark:bg-card">
           <div className="flex items-center gap-1">
-              <Button variant="ghost" onClick={() => handleInteractionAttempt(() => handlePostReactionClick('thumbsUp'))} className={cn("p-2 h-auto flex items-center gap-0.5 hover:bg-muted/30 hover:text-primary", currentUserPostReaction === 'thumbsUp' ? 'text-primary [&_svg]:fill-current' : 'text-muted-foreground')} aria-label="Curtir">
-                  <ThumbsUp className="h-7 w-7" />
-                  {localPostReactions.thumbsUp > 0 && <span className="text-xs tabular-nums">({localPostReactions.thumbsUp})</span>}
+              <Button variant="ghost" onClick={() => handleInteractionAttempt(() => handlePostReactionClick('thumbsUp'))} className={cn("p-2 h-auto flex items-center gap-1 text-muted-foreground hover:bg-muted/30 hover:text-primary", currentUserPostReaction === 'thumbsUp' && 'text-primary')} aria-label="Curtir">
+                  <ThumbsUp className={cn(currentUserPostReaction === 'thumbsUp' && 'fill-current')} />
+                  {localPostReactions.thumbsUp > 0 && <span className="text-xs font-semibold tabular-nums">({localPostReactions.thumbsUp})</span>}
               </Button>
-              <Button variant="ghost" onClick={() => handleInteractionAttempt(() => handlePostReactionClick('thumbsDown'))} className={cn("p-2 h-auto flex items-center gap-0.5 hover:bg-muted/30 hover:text-destructive", currentUserPostReaction === 'thumbsDown' ? 'text-destructive [&_svg]:fill-current' : 'text-muted-foreground')} aria-label="Não curtir">
-                  <ThumbsDown className="h-7 w-7" />
-                   {localPostReactions.thumbsDown > 0 && <span className="text-xs tabular-nums">({localPostReactions.thumbsDown})</span>}
+              <Button variant="ghost" onClick={() => handleInteractionAttempt(() => handlePostReactionClick('thumbsDown'))} className={cn("p-2 h-auto flex items-center gap-1 text-muted-foreground hover:bg-muted/30 hover:text-destructive", currentUserPostReaction === 'thumbsDown' && 'text-destructive')} aria-label="Não curtir">
+                  <ThumbsDown className={cn(currentUserPostReaction === 'thumbsDown' && 'fill-current')} />
+                   {localPostReactions.thumbsDown > 0 && <span className="text-xs font-semibold tabular-nums">({localPostReactions.thumbsDown})</span>}
               </Button>
-              <Button variant="ghost" onClick={() => handleInteractionAttempt(() => setIsSheetOpen(true))} className={cn("p-2 h-auto flex items-center gap-0.5 text-muted-foreground hover:text-primary hover:bg-muted/30")} aria-label="Comentários">
-                  <MessageSquare className="h-7 w-7" />
-                  {comments.length > 0 && <span className="text-xs tabular-nums">({comments.length})</span>}
+              <Button variant="ghost" onClick={() => handleInteractionAttempt(() => setIsSheetOpen(true))} className={cn("p-2 h-auto flex items-center gap-1 text-muted-foreground hover:text-primary hover:bg-muted/30")} aria-label="Comentários">
+                  <MessageSquare />
+                  {comments.length > 0 && <span className="text-xs font-semibold tabular-nums">({comments.length})</span>}
               </Button>
                <Button variant="ghost" onClick={handleSharePost} className={cn("p-2 h-auto text-muted-foreground hover:text-primary hover:bg-muted/30")}>
-                  <Share2 className="h-7 w-7" />
+                  <Share2 />
               </Button>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className={cn("p-2 h-auto text-muted-foreground hover:text-primary hover:bg-muted/30")}>
-                    <MoreVertical className="h-7 w-7" />
+                    <MoreVertical />
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -793,7 +831,7 @@ export default function PostCard({
                         <Button 
                           type="submit" 
                           size="icon" 
-                          className="absolute right-2 bottom-2 h-8 w-8 rounded-full" 
+                          className="absolute right-2 bottom-1.5 h-8 w-8 rounded-full" 
                           disabled={!newCommentText.trim() || !currentUser}>
                             <Send className="h-4 w-4" />
                         </Button>

@@ -2,12 +2,12 @@
 'use client';
 
 import type { ReactNode, Dispatch, SetStateAction } from 'react';
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Navigation from './navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { RefreshCcw, Moon, Sun, ArrowLeft, Bell, User, MoreVertical, LifeBuoy, FileText, Shield, Bug, Edit3, LogOut, Loader2 } from 'lucide-react';
+import { RefreshCcw, Moon, Sun, ArrowLeft, Bell, User, MoreVertical, LifeBuoy, FileText, Shield, Bug, Edit3, LogOut, Loader2, MessageCircle, BellRing } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -24,6 +24,11 @@ import { useChat } from '@/contexts/ChatContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { doc, writeBatch, Timestamp } from 'firebase/firestore';
+import { firestore } from '@/lib/firebase/client';
+import type { Notification } from '@/types/notifications';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -34,10 +39,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
-  const { toast } = useToast();
-  const { notificationCount } = useNotification();
   const { isChatOpen, closeChat } = useChat();
   const { currentUser, loading, signOutUser, isAuthenticating } = useAuth();
+  const { notifications, unreadCount, loading: notificationsLoading } = useNotification();
 
   useEffect(() => {
     setIsMounted(true);
@@ -63,32 +67,60 @@ export default function AppLayout({ children }: AppLayoutProps) {
     }
     setIsDarkMode(newIsDarkMode);
   };
+  
+  const handleMarkAsRead = async (notificationId?: string) => {
+    if (!currentUser || !firestore || unreadCount === 0) return;
 
-  const handleNotificationClick = () => {
-    toast({
-        title: "Notificações",
-        description: notificationCount > 0 ? `Você tem ${notificationCount} nova(s) notificação(ões).` : "Nenhuma nova notificação.",
-    });
+    const batch = writeBatch(firestore);
+    if (notificationId) {
+        const notifRef = doc(firestore, 'Usuarios', currentUser.uid, 'notifications', notificationId);
+        batch.update(notifRef, { read: true });
+    } else {
+        notifications.forEach(n => {
+            if (!n.read) {
+                const notifRef = doc(firestore, 'Usuarios', currentUser.uid, 'notifications', n.id);
+                batch.update(notifRef, { read: true });
+            }
+        });
+    }
+
+    try {
+        await batch.commit();
+    } catch (error) {
+        console.error("Error marking notification(s) as read:", error);
+    }
+  };
+  
+  const handleNotificationClick = async (notification: Notification) => {
+      if (!notification.read) {
+          await handleMarkAsRead(notification.id);
+      }
+      router.push(`/#post-${notification.postId}`);
+      // Simple scroll logic, might need improvement.
+      setTimeout(() => {
+          const element = document.getElementById(`post-${notification.postId}`);
+          if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              element.classList.add('bg-primary/10', 'ring-2', 'ring-primary/50', 'transition-all', 'duration-1000', 'ease-out', 'rounded-xl');
+              setTimeout(() => {
+                  element.classList.remove('bg-primary/10', 'ring-2', 'ring-primary/50', 'rounded-xl');
+              }, 2500);
+          }
+      }, 300); // Timeout to allow router to navigate
   };
 
-  const handleMenuAction = (action: string) => {
-    toast({
-        title: "Menu Ação",
-        description: `${action} clicado. Funcionalidade em breve!`,
-    });
-  };
 
   const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/forgot-password';
   
-  // Auth protection logic - TEMPORARILY DISABLED TO UNBLOCK DEVELOPMENT
   useEffect(() => {
     if (!loading && !currentUser && !isAuthPage) {
+      // Temporarily disabled for development. Re-enable for production.
       // router.push('/login');
     }
   }, [currentUser, loading, isAuthPage, router, pathname]);
 
   const AppHeader = () => {
-    if (isAuthPage) return null; // Don't render header on auth pages
+    if (isAuthPage) return null;
 
     return (
     <header className="sticky top-0 z-50 w-full bg-primary text-primary-foreground shadow-lg">
@@ -148,27 +180,58 @@ export default function AppLayout({ children }: AppLayoutProps) {
             </TooltipContent>
           </Tooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleNotificationClick}
-                className="relative text-primary-foreground hover:bg-white/10 h-10 w-10 sm:h-12 sm:w-12"
-                aria-label="Notificações"
-              >
-                <Bell className="h-5 w-5 sm:h-6 sm:w-6" />
-                {notificationCount > 0 && (
-                  <span className="notification-badge">
-                    {notificationCount > 9 ? '9+' : notificationCount}
-                  </span>
+           <DropdownMenu onOpenChange={(open) => { if(open && unreadCount > 0) handleMarkAsRead(); }}>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="relative text-primary-foreground hover:bg-white/10 h-10 w-10 sm:h-12 sm:w-12"
+                        aria-label="Notificações"
+                    >
+                        <Bell className="h-5 w-5 sm:h-6 sm:w-6" />
+                        {unreadCount > 0 && (
+                            <span className="absolute top-2.5 right-2.5 sm:top-3.5 sm:right-3.5 flex h-3 w-3">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
+                            </span>
+                        )}
+                    </Button>
+                    </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                    <p>Notificações {unreadCount > 0 ? `(${unreadCount})` : ''}</p>
+                </TooltipContent>
+            </Tooltip>
+            <DropdownMenuContent align="end" className="w-80">
+                <DropdownMenuLabel>Notificações</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {notificationsLoading ? (
+                    <DropdownMenuItem disabled>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin"/> Carregando...
+                    </DropdownMenuItem>
+                ) : notifications.length > 0 ? (
+                    notifications.map(n => (
+                        <DropdownMenuItem key={n.id} className={cn("flex items-start gap-2 h-auto whitespace-normal cursor-pointer", !n.read && "bg-primary/10")} onClick={() => handleNotificationClick(n)}>
+                            <div className="mt-1">
+                                {n.type.includes('mention') ? <MessageCircle className="h-5 w-5 text-primary"/> : <BellRing className="h-5 w-5 text-yellow-500"/>}
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-sm">
+                                    <span className="font-semibold">{n.fromUserName}</span> mencionou você: <span className="text-muted-foreground italic">"{n.textSnippet}"</span>
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {n.timestamp instanceof Timestamp ? formatDistanceToNow(n.timestamp.toDate(), { addSuffix: true, locale: ptBR }) : 'agora'}
+                                </p>
+                            </div>
+                        </DropdownMenuItem>
+                    ))
+                ) : (
+                    <DropdownMenuItem disabled className="text-center justify-center">Nenhuma notificação</DropdownMenuItem>
                 )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              <p>Notificações {notificationCount > 0 ? `(${notificationCount})` : ''}</p>
-            </TooltipContent>
-          </Tooltip>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {currentUser ? (
             <DropdownMenu>
@@ -242,20 +305,20 @@ export default function AppLayout({ children }: AppLayoutProps) {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>Menu</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => handleMenuAction('Suporte')}>
+              <DropdownMenuItem onClick={() => {}}>
                 <LifeBuoy className="mr-2 h-4 w-4" />
                 <span>Suporte</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleMenuAction('Política de Privacidade')}>
+              <DropdownMenuItem onClick={() => {}}>
                 <FileText className="mr-2 h-4 w-4" />
                 <span>Política de Privacidade</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleMenuAction('Termos de Uso')}>
+              <DropdownMenuItem onClick={() => {}}>
                 <Shield className="mr-2 h-4 w-4" />
                 <span>Termos de Uso</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => handleMenuAction('Relatar bugs')}>
+              <DropdownMenuItem onClick={() => {}}>
                 <Bug className="mr-2 h-4 w-4" />
                 <span>Relatar bugs</span>
               </DropdownMenuItem>
@@ -267,7 +330,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
     </header>
   )};
 
-  // Show a global loader while auth state is being determined
   if (loading || !isMounted) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
@@ -282,11 +344,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
         <AppHeader />
         <main className={cn(
             "flex-grow container mx-auto px-2 py-8",
-            !isAuthPage && "pb-20 sm:pb-8" // Only add bottom padding if not an auth page
+            !isAuthPage && "pb-20 sm:pb-8"
         )}>
           {children}
         </main>
-        {/* Show navigation only if not on an auth page */}
         {!isAuthPage && (
             <>
                 <Navigation />

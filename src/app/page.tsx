@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef, type ChangeEvent, useCallback, type FormEvent } from 'react';
@@ -17,9 +18,9 @@ import {
   ArrowRightCircle,
   Loader2,
   Phone,
-  ListChecks, // Added for Polls
-  PlusCircle, // Added for Poll Modal
-  Trash2, // Added for Poll Modal
+  ListChecks,
+  PlusCircle,
+  Trash2,
   Check,
 } from 'lucide-react';
 import {
@@ -44,11 +45,50 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useAuth } from '@/contexts/AuthContext';
 import { firestore, storage } from '@/lib/firebase/client';
-import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp, where } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp, where, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ToastAction } from '@/components/ui/toast';
+
+
+async function createMentions(text: string, postId: string, fromUser: { uid: string, displayName: string | null, photoURL: string | null }, type: 'mention_post' | 'mention_comment') {
+    if (!firestore) return;
+    const mentionRegex = /@([\p{L}\p{N}_\s.-]+)/gu;
+    const mentions = text.match(mentionRegex);
+    if (!mentions) return;
+
+    const mentionedUsernames = [...new Set(mentions.map(m => m.substring(1).trim()))];
+    
+    for (const username of mentionedUsernames) {
+        if (username === fromUser.displayName) continue; // Don't notify self
+
+        const usersRef = collection(firestore, "Usuarios");
+        const q = query(usersRef, where("displayName", "==", username), limit(1));
+        
+        try {
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+                const userDoc = querySnapshot.docs[0];
+                const mentionedUserId = userDoc.id;
+
+                const notificationRef = collection(firestore, 'Usuarios', mentionedUserId, 'notifications');
+                await addDoc(notificationRef, {
+                    type: type,
+                    fromUserId: fromUser.uid,
+                    fromUserName: fromUser.displayName || "Usuário",
+                    fromUserAvatar: fromUser.photoURL || null,
+                    postId: postId,
+                    textSnippet: text.substring(0, 70) + (text.length > 70 ? '...' : ''), // Snippet of the text
+                    timestamp: serverTimestamp(),
+                    read: false,
+                });
+            }
+        } catch (error) {
+            console.error(`Error creating notification for ${username}:`, error);
+        }
+    }
+}
 
 
 const backgroundOptions = [
@@ -427,7 +467,13 @@ export default function FeedPage() {
         } else if (currentPostType === 'text' && !selectedMediaForUpload && newPostText.length <= 150 && selectedPostBackground.name !== 'Padrão') {
           postData.cardStyle = selectedPostBackground;
         }
-        await addDoc(collection(firestore, 'posts'), postData);
+        
+        const docRef = await addDoc(collection(firestore, 'posts'), postData);
+        
+        if (currentUser && newPostText.trim()) {
+            await createMentions(newPostText.trim(), docRef.id, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL }, 'mention_post');
+        }
+
         toast({ title: "Publicado!", description: "Sua postagem está na Time Line." });
       }
 

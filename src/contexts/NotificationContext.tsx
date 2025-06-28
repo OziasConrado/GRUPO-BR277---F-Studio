@@ -2,41 +2,63 @@
 'use client';
 
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import type { Notification } from '@/types/notifications'; // New type
+import { useAuth } from '@/contexts/AuthContext';
+import { firestore } from '@/lib/firebase/client';
+import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore';
 
 interface NotificationContextType {
-  notificationCount: number;
-  setNotificationCount: Dispatch<SetStateAction<number>>;
-  incrementNotificationCount: () => void;
-  decrementNotificationCount: () => void;
-  clearNotifications: () => void;
+  notifications: Notification[];
+  unreadCount: number;
+  loading: boolean;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
-  const [notificationCount, setNotificationCount] = useState(0);
+  const { currentUser } = useAuth();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  const incrementNotificationCount = useCallback(() => {
-    setNotificationCount((prevCount) => prevCount + 1);
-  }, []);
+  useEffect(() => {
+    if (!currentUser || !firestore) {
+      setNotifications([]);
+      setUnreadCount(0);
+      setLoading(false);
+      return;
+    }
 
-  const decrementNotificationCount = useCallback(() => {
-    setNotificationCount((prevCount) => Math.max(0, prevCount - 1));
-  }, []);
+    setLoading(true);
+    const notificationsCollection = collection(firestore, 'Usuarios', currentUser.uid, 'notifications');
+    const q = query(notificationsCollection, orderBy('timestamp', 'desc'), limit(20));
 
-  const clearNotifications = useCallback(() => {
-    setNotificationCount(0);
-  }, []);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedNotifications = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      } as Notification));
+      
+      const newUnreadCount = fetchedNotifications.filter(n => !n.read).length;
+      
+      setNotifications(fetchedNotifications);
+      setUnreadCount(newUnreadCount);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching notifications:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser]);
 
   return (
     <NotificationContext.Provider
       value={{
-        notificationCount,
-        setNotificationCount,
-        incrementNotificationCount,
-        decrementNotificationCount,
-        clearNotifications,
+        notifications,
+        unreadCount,
+        loading,
       }}
     >
       {children}
