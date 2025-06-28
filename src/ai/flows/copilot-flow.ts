@@ -21,36 +21,6 @@ import { type MessageData } from '@genkit-ai/ai/model';
 
 export type { CopilotInput, CopilotOutput };
 
-
-// Helper para Geocodificação
-async function geocode(address: string): Promise<{ lat: number; lng: number } | null> {
-    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-    if (!apiKey) {
-        console.error('Google Maps API Key not found.');
-        return null;
-    }
-
-    try {
-        const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`;
-        const response = await fetch(url);
-        if (!response.ok) {
-            console.error(`Geocoding failed for ${address} with status ${response.status}`);
-            return null;
-        }
-        const data = await response.json();
-
-        if (data.status === 'OK' && data.results.length > 0) {
-            return data.results[0].geometry.location;
-        }
-        console.warn(`Geocoding failed for ${address}:`, data.status);
-        return null;
-    } catch (error) {
-        console.error(`Geocoding request failed for ${address}:`, error);
-        return null;
-    }
-}
-
-
 // Ferramenta de Informações de Trânsito e Pedágio
 const getTrafficInfo = ai.defineTool(
     {
@@ -81,15 +51,6 @@ const getTrafficInfo = ai.defineTool(
         }
 
         try {
-            const [originCoords, destinationCoords] = await Promise.all([geocode(origin), geocode(destination)]);
-
-            if (!originCoords || !destinationCoords) {
-                return {
-                    travelTime: "desconhecido", distance: "desconhecida",
-                    summary: `Não foi possível encontrar as coordenadas para ${origin} ou ${destination}.`, tollCount: 0,
-                };
-            }
-
             const response = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
                 method: 'POST',
                 headers: {
@@ -98,8 +59,8 @@ const getTrafficInfo = ai.defineTool(
                     'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline'
                 },
                 body: JSON.stringify({
-                    origin: { location: { latLng: originCoords } },
-                    destination: { location: { latLng: destinationCoords } },
+                    origin: { address: origin },
+                    destination: { address: destination },
                     travelMode: 'DRIVE',
                     computeAlternativeRoutes: false,
                     languageCode: "pt-BR",
@@ -214,19 +175,12 @@ const findNearbyPlaces = ai.defineTool(
         if (!apiKey) return { places: [] };
 
         try {
-            const locationCoords = await geocode(location);
-            if (!locationCoords) {
-                return { places: [{ name: `Não foi possível encontrar a localização: ${location}`, address: undefined, rating: undefined }] };
-            }
-
             const params = new URLSearchParams({
-                location: `${locationCoords.lat},${locationCoords.lng}`,
-                radius: '15000',
-                keyword: query,
+                query: `${query} em ${location}`,
                 key: apiKey,
                 language: 'pt-BR'
             });
-            const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?${params.toString()}`;
+            const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?${params.toString()}`;
             const response = await fetch(url);
             
             if (!response.ok) {
@@ -236,12 +190,11 @@ const findNearbyPlaces = ai.defineTool(
 
             const data = await response.json();
 
-
             if (data.status === 'OK') {
                 return {
                     places: data.results.slice(0, 3).map((place: any) => ({
                         name: place.name,
-                        address: place.vicinity,
+                        address: place.formatted_address,
                         rating: place.rating
                     }))
                 };
