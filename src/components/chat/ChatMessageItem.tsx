@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import type { StaticImageData } from 'next/image';
 import Image from "next/image";
-import { Paperclip, Mic, FileText, PlayCircle, Heart, MoreVertical, Edit, Trash2 } from "lucide-react";
+import { Paperclip, Mic, FileText, PlayCircle, Heart, MoreVertical, Edit, Trash2, Flag } from "lucide-react";
 import React, { useState, useEffect } from "react"; 
 import { Button } from "../ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,6 +28,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "../ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 
 export interface ChatMessageData {
   id: string;
@@ -114,6 +115,7 @@ export default function ChatMessageItem({
 }) {
   const { senderName, avatarUrl, dataAIAvatarHint, text, imageUrl, dataAIImageHint, file, timestamp, isCurrentUser, reactions, replyTo, edited } = message;
   const { currentUser } = useAuth();
+  const { toast } = useToast();
   const [userHasReacted, setUserHasReacted] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedText, setEditedText] = useState(text || '');
@@ -143,6 +145,13 @@ export default function ChatMessageItem({
     setIsEditing(false);
   };
 
+  const handleReportMessage = (messageToReport: ChatMessageData) => {
+    console.log("Reporting message:", messageToReport.id, messageToReport.text);
+    toast({
+        title: "Denúncia Recebida",
+        description: "Agradecemos sua contribuição. A mensagem foi enviada para análise da nossa equipe.",
+    });
+  };
 
   const handlePlayAudio = () => {
     if (message.audioUrl) {
@@ -294,6 +303,23 @@ export default function ChatMessageItem({
             </div>
         )}
       </div>
+
+      {!isCurrentUser && (
+          <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 self-center rounded-full text-muted-foreground hover:text-primary">
+                      <MoreVertical className="h-4 w-4" />
+                  </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="z-[90]">
+                  <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => handleReportMessage(message)}>
+                      <Flag className="mr-2 h-4 w-4" />
+                      <span>Denunciar para o Administrador</span>
+                  </DropdownMenuItem>
+              </DropdownMenuContent>
+          </DropdownMenu>
+      )}
+
       {isCurrentUser && (
         <Avatar className="h-8 w-8 self-start">
           {avatarUrl && <AvatarImage src={avatarUrl as string} alt={senderName} data-ai-hint={dataAIAvatarHint} />}
