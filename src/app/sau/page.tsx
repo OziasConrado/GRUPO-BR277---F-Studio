@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -250,7 +251,7 @@ export default function SAUPage() {
   return (
     <div className="w-full space-y-6">
       <div className="text-center sm:text-left">
-        <h1 className="text-2xl lg:text-3xl font-bold font-headline">Serviços de Atendimento ao Usuário (SAU)</h1>
+        <h1 className="text-2xl lg:text-3xl font-bold font-headline">Concessões</h1>
         <p className="text-muted-foreground">Encontre os SAUs das concessionárias.</p>
       </div>
 
