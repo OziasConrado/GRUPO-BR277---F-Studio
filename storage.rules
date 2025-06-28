@@ -1,78 +1,51 @@
+
 rules_version = '2';
 
+// Regras de Segurança para o Cloud Storage
+// Permite leitura pública de mídias, mas escrita apenas pelo proprietário autenticado.
 service firebase.storage {
   match /b/{bucket}/o {
-
-    // Helper function to check auth and profile completion.
-    // Checks for non-null and non-empty displayName and location.
-    function isProfileComplete(userId) {
-      let userDocPath = /databases/(default)/documents/Usuarios/$(userId);
-      return exists(userDocPath) &&
-             get(userDocPath).data.displayName != null && get(userDocPath).data.displayName != "" &&
-             get(userDocPath).data.location != null && get(userDocPath).data.location != "";
+    
+    // Fotos de perfil
+    match /profile_pictures/{userId}/{allPaths=**} {
+      allow read;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Default: Public read for most things, but no write.
-    // More specific rules below will override this.
+    // Imagens do chat
+    match /chat_images/{userId}/{allPaths=**} {
+      allow read;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Áudio do chat
+    match /chat_audio/{userId}/{allPaths=**} {
+      allow read;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Imagens do feed
+    match /images/{userId}/{allPaths=**} {
+      allow read;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Vídeos (Reels) do feed
+    match /videos/{userId}/{allPaths=**} {
+      allow read;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Imagens de pontos turísticos indicados
+    match /indicated_points_images/{userId}/{allPaths=**} {
+        allow read;
+        allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Proíbe a escrita em qualquer outro local por padrão
     match /{allPaths=**} {
-      allow read: if true;
+      allow read: if false;
       allow write: if false;
-    }
-    
-    // --- Specific Folder Write Rules ---
-
-    // Profile Pictures: users can write to their own folder.
-    match /profile_pictures/{userId}/{fileName} {
-      allow write: if request.auth != null &&
-                      request.auth.uid == userId &&
-                      request.resource.size < 2 * 1024 * 1024 &&
-                      request.resource.contentType.matches('image/.*');
-    }
-
-    // Post Images: profile-complete users can write to their own folder.
-    match /images/{userId}/{fileName} {
-      allow write: if request.auth != null &&
-                      request.auth.uid == userId &&
-                      isProfileComplete(request.auth.uid) &&
-                      request.resource.size < 5 * 1024 * 1024 && // 5MB limit
-                      request.resource.contentType.matches('image/.*');
-    }
-    
-    // Post Videos (Reels): profile-complete users can write to their own folder.
-    match /videos/{userId}/{fileName} {
-      allow write: if request.auth != null &&
-                      request.auth.uid == userId &&
-                      isProfileComplete(request.auth.uid) &&
-                      request.resource.size < 50 * 1024 * 1024 && // 50MB limit
-                      request.resource.contentType.matches('video/.*');
-    }
-
-    // Tourist Point Indications: profile-complete users can write to their own folder.
-    match /indicated_points_images/{userId}/{fileName} {
-       allow write: if request.auth != null &&
-                       request.auth.uid == userId &&
-                       isProfileComplete(request.auth.uid) &&
-                       request.resource.size < 2 * 1024 * 1024 &&
-                       request.resource.contentType.matches('image/.*');
-    }
-
-    // Chat media is private.
-    // Read is allowed for any authenticated user.
-    // Write is only for the owner of the folder.
-    match /chat_images/{userId}/{fileName} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null &&
-                      request.auth.uid == userId &&
-                      request.resource.size < 5 * 1024 * 1024 &&
-                      request.resource.contentType.matches('image/.*');
-    }
-
-    match /chat_audio/{userId}/{fileName} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null &&
-                      request.auth.uid == userId &&
-                      request.resource.size < 10 * 1024 * 1024 &&
-                      request.resource.contentType.matches('audio/.*');
     }
   }
 }
