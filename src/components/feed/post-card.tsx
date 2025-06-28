@@ -661,7 +661,7 @@ export default function PostCard({
 
   return (
     <>
-      <Card id={`post-${postId}`} className="w-full max-w-2xl mx-auto mb-6 shadow-lg rounded-xl overflow-hidden bg-white dark:bg-card">
+      <Card id={`post-${postId}`} className="w-full max-w-2xl mx-auto mb-6 shadow-lg rounded-xl overflow-hidden">
         <CardHeader className="flex flex-row items-start space-x-3 p-4">
           <Avatar className="h-10 w-10 cursor-pointer" onClick={handleAvatarOrNameClick}>
             {userAvatarUrl ? <AvatarImage src={userAvatarUrl as string} alt={userName} data-ai-hint={dataAIAvatarHint} /> : null}
@@ -715,7 +715,7 @@ export default function PostCard({
 
         <CardContent
             className={cn(
-            "p-0 bg-white dark:bg-card",
+            "p-0",
             cardStyle && text.length > 0 && !poll && !uploadedImageUrl && !urlToPreview && "py-4",
           )}
         >
@@ -808,7 +808,7 @@ export default function PostCard({
           )}
         </CardContent>
 
-        <CardFooter className="flex items-center justify-between px-4 py-2 border-t border-border/50 bg-white dark:bg-card">
+        <CardFooter className="flex items-center justify-between px-4 py-2 border-t border-border/50">
           <div className="flex items-center gap-1">
               <Button variant="ghost" onClick={() => handleInteractionAttempt(() => handlePostReactionClick('thumbsUp'))} className={cn("p-2 h-auto flex items-center gap-1 text-muted-foreground hover:bg-muted/30", currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'hover:text-primary')} aria-label="Curtir">
                   <ThumbsUp className={cn(currentUserPostReaction === 'thumbsUp' && 'fill-primary text-primary-foreground')} />

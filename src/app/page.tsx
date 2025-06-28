@@ -22,6 +22,7 @@ import {
   PlusCircle,
   Trash2,
   Check,
+  Link as LinkIcon,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -576,7 +577,7 @@ export default function FeedPage() {
         </div>
       </div>
 
-      <Card className="p-4 shadow-sm rounded-xl bg-white dark:bg-card">
+      <Card className="p-4 shadow-sm rounded-xl">
         <CardHeader className="p-0 pb-3">
           <CardTitle className="text-lg font-semibold flex items-center">
             <Edit className="h-5 w-5 mr-2 text-primary" />

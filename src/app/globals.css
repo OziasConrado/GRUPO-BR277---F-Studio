@@ -10,13 +10,13 @@
   }
 
   :root {
-    --background: 210 17% 96%; /* #f4f6f8 */
+    --background: 0 0% 96%; /* #f5f5f5 */
     --foreground: 210 11% 15%; /* #212529 */
 
-    --card: 210 17% 96%;
+    --card: 0 0% 100%; /* white */
     --card-foreground: 210 11% 15%;
 
-    --popover: 210 17% 96%;
+    --popover: 0 0% 100%; /* white */
     --popover-foreground: 210 11% 15%;
 
     --primary: 220 100% 23.1%; /* #002776 Blue (Kept from original) */
