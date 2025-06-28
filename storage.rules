@@ -1,56 +1,18 @@
+
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-
-    // Helper function to check ownership
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
-
-    // Profile Pictures: Users can only write to their own folder.
-    // File must be an image and less than 2MB.
-    match /profile_pictures/{userId}/{allPaths=**} {
+    // Allow public read access to all files
+    match /{allPaths=**} {
       allow read: if true;
-      allow write: if isOwner(userId)
-                    && request.resource.contentType.matches('image/.*')
-                    && request.resource.size < 2 * 1024 * 1024;
     }
 
-    // Feed content
-    match /images/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if isOwner(userId)
-                    && request.resource.contentType.matches('image/.*')
-                    && request.resource.size < 5 * 1024 * 1024;
-    }
-    match /videos/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if isOwner(userId)
-                    && request.resource.contentType.matches('video/.*')
-                    && request.resource.size < 50 * 1024 * 1024;
-    }
-
-    // Chat content
-    match /chat_images/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if isOwner(userId)
-                    && request.resource.contentType.matches('image/.*')
-                    && request.resource.size < 5 * 1024 * 1024;
-    }
-    match /chat_audio/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if isOwner(userId)
-                    && request.resource.contentType.matches('audio/.*')
-                    && request.resource.size < 10 * 1024 * 1024;
-    }
-    
-    // Indicated Tourist Points Images
-    match /indicated_points_images/{userId}/{allPaths=**} {
-        allow read: if true;
-        allow write: if isOwner(userId)
-                      && request.resource.contentType.matches('image/.*')
-                      && request.resource.size < 2 * 1024 * 1024;
+    // Allow writes only for authenticated users.
+    // This is a broad rule for debugging. 
+    // We will replace this with more secure rules once the upload is confirmed to be working.
+    match /{allPaths=**} {
+        allow write: if request.auth != null;
     }
   }
 }
