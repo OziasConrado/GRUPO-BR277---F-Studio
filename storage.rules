@@ -1,13 +1,23 @@
-
 rules_version = '2';
 
-// Regras de Segurança para o Cloud Storage
-// Permite leitura pública de mídias, mas escrita apenas pelo proprietário autenticado.
 service firebase.storage {
   match /b/{bucket}/o {
-    
-    // Fotos de perfil
+
+    // As fotos de perfil só podem ser escritas pelo próprio usuário.
+    // A leitura é pública.
     match /profile_pictures/{userId}/{allPaths=**} {
+      allow read;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Imagens de postagens podem ser lidas por qualquer pessoa, mas apenas criadas pelo usuário.
+    match /images/{userId}/{allPaths=**} {
+      allow read;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Vídeos de postagens (reels) podem ser lidos por qualquer pessoa, mas apenas criados pelo usuário.
+    match /videos/{userId}/{allPaths=**} {
       allow read;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
@@ -17,35 +27,17 @@ service firebase.storage {
       allow read;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
-    
-    // Áudio do chat
+
+    // Áudios do chat
     match /chat_audio/{userId}/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Imagens do feed
-    match /images/{userId}/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Vídeos (Reels) do feed
-    match /videos/{userId}/{allPaths=**} {
       allow read;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
     // Imagens de pontos turísticos indicados
     match /indicated_points_images/{userId}/{allPaths=**} {
-        allow read;
-        allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Proíbe a escrita em qualquer outro local por padrão
-    match /{allPaths=**} {
-      allow read: if false;
-      allow write: if false;
+      allow read;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
