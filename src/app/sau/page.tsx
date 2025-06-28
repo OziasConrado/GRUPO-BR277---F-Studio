@@ -252,7 +252,7 @@ export default function SAUPage() {
     <div className="w-full space-y-6">
       <div className="text-center sm:text-left">
         <h1 className="text-2xl lg:text-3xl font-bold font-headline">Concessões</h1>
-        <p className="text-muted-foreground">Encontre os SAUs das concessionárias.</p>
+        <p className="text-muted-foreground">Rodovias sob concessão e Serviço de Atendimento ao Usuário (SAU).</p>
       </div>
 
       <SauFilters
