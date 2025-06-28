@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import React from 'react'; // Import React for React.Fragment
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, MapPin, AlertTriangle, Info } from 'lucide-react';
 import type { SAULocation, SAUReview } from '@/types/sau';
@@ -251,7 +251,7 @@ export default function SAUPage() {
   return (
     <div className="w-full space-y-6">
       <div className="text-center sm:text-left">
-        <h1 className="text-2xl lg:text-3xl font-bold font-headline">Concessões</h1>
+        <h1 className="text-2xl lg:text-3xl font-bold font-headline">Concessões de Pedágio</h1>
         <p className="text-muted-foreground">Rodovias sob concessão e Serviço de Atendimento ao Usuário (SAU).</p>
       </div>
 
