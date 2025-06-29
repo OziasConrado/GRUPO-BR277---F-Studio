@@ -382,7 +382,6 @@ export default function PostCard({
   
   const linkRegex = /\(\((https?:\/\/[^\s()]+)\)\)/;
   const linkMatch = text.match(linkRegex);
-  const urlToPreview = linkMatch?.[1];
   const textContent = linkMatch ? text.replace(linkRegex, '').trim() : text;
   
   const MAX_CHARS = 130;
@@ -748,7 +747,7 @@ export default function PostCard({
             </div>
           ) : (
             <div className="space-y-3 pb-2 pt-1">
-              {textContent && (
+              {textContent && (!poll || textContent !== poll.question) && (
                 <p className="text-base leading-normal whitespace-pre-wrap px-4">
                   {renderTextWithMentions(textToShow, MOCK_USER_NAMES_FOR_MENTIONS)}
                   {needsTruncation && (
