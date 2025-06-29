@@ -400,8 +400,8 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center sm:p-4">
-      <div className="bg-background w-full h-full sm:max-w-lg sm:max-h-[90vh] sm:rounded-xl shadow-2xl flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center md:p-4">
+      <div className="bg-background w-full h-full md:max-w-lg md:max-h-[90vh] md:rounded-xl shadow-2xl flex flex-col overflow-hidden">
         <header className="p-4 border-b border-primary/50 flex items-center justify-between bg-primary text-primary-foreground">
           <div className="flex items-center gap-3">
             <Avatar>
@@ -419,7 +419,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
         </header>
 
         <ScrollArea className="flex-grow bg-muted/20" ref={scrollAreaRef}>
-          <div className="space-y-4 p-4">
+          <div className="p-4 space-y-4">
             {messages.map(msg => (
               <ChatMessageItem 
                 key={msg.id} 
