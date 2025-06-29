@@ -17,7 +17,7 @@ import {
 } from 'firebase/auth';
 import { auth, app, firestore, storage } from '@/lib/firebase/client'; 
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'; 
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, getDownloadURL, uploadBytesResumable } from "firebase/storage";
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -279,9 +279,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
         let newPhotoURL: string | null = null;
         if (data.newPhotoFile) {
-            const photoRef = ref(storage, `profile_pictures/${userForUpdate.uid}/${Date.now()}_${data.newPhotoFile.name}`);
-            await uploadBytes(photoRef, data.newPhotoFile);
-            newPhotoURL = await getDownloadURL(photoRef);
+            const file = data.newPhotoFile;
+            const photoRef = ref(storage, `profile_pictures/${userForUpdate.uid}/${Date.now()}_${file.name}`);
+            
+            const uploadTask = uploadBytesResumable(photoRef, file);
+
+            const { toast: uploadToast } = toast({
+                title: "Enviando imagem...",
+                description: "Progresso: 0%",
+            });
+
+            newPhotoURL = await new Promise<string>((resolve, reject) => {
+                uploadTask.on('state_changed',
+                    (snapshot) => {
+                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        uploadToast.update({
+                            id: uploadToast.id,
+                            description: `Progresso: ${Math.round(progress)}%`,
+                        });
+                    },
+                    (error) => {
+                        console.error("Upload error in AuthContext:", error);
+                        let description = "Não foi possível enviar a imagem.";
+                        switch (error.code) {
+                            case 'storage/unauthorized':
+                                description = "Você não tem permissão para enviar este arquivo. Verifique as regras de segurança do Storage.";
+                                break;
+                            case 'storage/canceled':
+                                description = "O envio foi cancelado.";
+                                break;
+                            case 'storage/unknown':
+                                description = "Ocorreu um erro desconhecido no servidor. Verifique as regras de armazenamento e a configuração de CORS.";
+                                break;
+                        }
+                        uploadToast.update({
+                            id: uploadToast.id,
+                            title: "Erro no Upload",
+                            description: description,
+                            variant: "destructive",
+                        });
+                        reject(error);
+                    },
+                    () => {
+                        uploadToast.dismiss();
+                        getDownloadURL(uploadTask.snapshot.ref).then(resolve).catch(reject);
+                    }
+                );
+            });
         }
 
         const authProfileUpdates: { displayName?: string; photoURL?: string } = {};
@@ -320,11 +364,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             await setDoc(userDocRef, firestoreProfileUpdates, { merge: true });
         }
         
-        // Re-fetch all data from source of truth to guarantee consistency
         await userForUpdate.reload();
         const updatedDocSnap = await getDoc(userDocRef);
 
-        // Update local state with the freshly fetched data
         setCurrentUser(auth.currentUser);
         if (updatedDocSnap.exists()) {
             setUserProfile(updatedDocSnap.data() as UserProfile);
@@ -334,12 +376,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
     } catch (error) {
         console.error("Error updating profile:", error);
-        toast({ variant: "destructive", title: 'Erro ao Atualizar Perfil', description: 'Não foi possível salvar. Verifique o console para detalhes.'});
-        handleAuthError(error as AuthError, 'Erro ao Atualizar Perfil');
     } finally {
         setAuthAction(null);
     }
-  }, [userProfile, handleAuthError, router, toast]);
+  }, [userProfile, router, toast]);
 
 
   const signOutUser = useCallback(async () => {

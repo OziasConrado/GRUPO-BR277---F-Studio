@@ -47,7 +47,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from '@/contexts/AuthContext';
 import { firestore, storage } from '@/lib/firebase/client';
 import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp, where, getDocs } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ToastAction } from '@/components/ui/toast';
@@ -423,9 +423,20 @@ export default function FeedPage() {
         const storagePath = `${mediaType}/${currentUser.uid}/${Date.now()}_${selectedMediaForUpload.name}`;
         const storageRef = ref(storage, storagePath);
         
-        await uploadBytes(storageRef, selectedMediaForUpload);
+        const uploadTask = uploadBytesResumable(storageRef, selectedMediaForUpload);
 
-        mediaUrl = await getDownloadURL(storageRef);
+        mediaUrl = await new Promise<string>((resolve, reject) => {
+            uploadTask.on('state_changed',
+                (snapshot) => { /* Can show progress here if needed */ },
+                (error) => {
+                    console.error("Upload error on feed page:", error);
+                    reject(error);
+                },
+                () => {
+                    getDownloadURL(uploadTask.snapshot.ref).then(resolve).catch(reject);
+                }
+            );
+        });
       }
 
       if (currentPostType === 'alert') {
@@ -490,7 +501,8 @@ export default function FeedPage() {
     } catch (error) {
       console.error("Error publishing content:", error);
       toast({ variant: 'destructive', title: 'Erro ao Publicar', description: 'Não foi possível salvar. Verifique o console para detalhes.' });
-      setIsPublishing(false);
+    } finally {
+        setIsPublishing(false);
     }
   };
 

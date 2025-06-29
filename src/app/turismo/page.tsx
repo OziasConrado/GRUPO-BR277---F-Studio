@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import IndicatePointModal, { type IndicatePointSubmitData } from '@/components/turismo/IndicatePointModal';
 import { ToastAction } from '@/components/ui/toast';
 import { useRouter } from 'next/navigation';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 const AdPlaceholder = ({ className }: { className?: string }) => (
   <div className={cn("my-4 p-4 rounded-xl bg-muted/30 border border-dashed h-24 flex items-center justify-center col-span-1 md:col-span-2 lg:col-span-3", className)}>
@@ -83,13 +84,23 @@ export default function TurismoPage() {
     try {
         const { imageFile, ...pointData } = data;
         
-        // 1. Upload image to Storage
         const storagePath = `indicated_points_images/${currentUser.uid}/${Date.now()}_${imageFile.name}`;
         const storageRef = ref(storage, storagePath);
-        await uploadBytes(storageRef, imageFile);
-        const imageUrl = await getDownloadURL(storageRef);
+        const uploadTask = uploadBytesResumable(storageRef, imageFile);
 
-        // 2. Save data to Firestore
+        const imageUrl = await new Promise<string>((resolve, reject) => {
+            uploadTask.on('state_changed',
+                (snapshot) => {},
+                (error) => {
+                    console.error("Upload error on tourism page:", error);
+                    reject(error);
+                },
+                () => {
+                    getDownloadURL(uploadTask.snapshot.ref).then(resolve).catch(reject);
+                }
+            );
+        });
+
         const docToSave = {
             ...pointData,
             imageUrl: imageUrl,
@@ -102,9 +113,7 @@ export default function TurismoPage() {
 
         const docRef = await addDoc(collection(firestore, 'tourist_points_indicated'), docToSave);
         
-        // Optimistic UI update
-        // @ts-ignore
-        const newPoint: TouristPointData = { ...docToSave, id: docRef.id, createdAt: new Date().toISOString() };
+        const newPoint: TouristPointData = { ...docToSave, id: docRef.id, createdAt: new Date().toISOString() } as TouristPointData;
         setIndicatedPoints(prev => [newPoint, ...prev]);
 
         toast({

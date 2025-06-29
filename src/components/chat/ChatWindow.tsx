@@ -28,7 +28,7 @@ import {
   updateDoc,
   deleteDoc,
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, getDownloadURL, uploadBytesResumable } from "firebase/storage";
 
 
 interface ChatWindowProps {
@@ -126,54 +126,64 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     let imageUrl: string | undefined;
     let fileInfo: { name: string, type: 'image' } | undefined;
 
-    if (selectedImageFile) {
-        const uniqueId = `image_${Date.now()}_${selectedImageFile.name}`;
-        const storageRef = ref(storage, `chat_images/${currentUser.uid}/${uniqueId}`);
-        const snapshot = await uploadBytes(storageRef, selectedImageFile);
-        imageUrl = await getDownloadURL(snapshot.ref);
-        fileInfo = { name: selectedImageFile.name, type: 'image' };
-    }
-
-    const messageData: any = {
-      userId: currentUser.uid,
-      senderName: currentUser.displayName || 'Usuário Anônimo',
-      avatarUrl: currentUser.photoURL || `https://placehold.co/40x40.png?text=${currentUser.displayName ? currentUser.displayName.substring(0,1).toUpperCase() : 'U'}`,
-      dataAIAvatarHint: 'user avatar',
-      text: newMessage.trim() || undefined,
-      timestamp: serverTimestamp(),
-      reactions: { heart: 0 },
-      edited: false,
-    };
-
-    if (imageUrl) {
-        messageData.imageUrl = imageUrl;
-        messageData.dataAIImageHint = "user uploaded chat image";
-        messageData.file = fileInfo;
-    }
-
-    if (replyingTo) {
-        messageData.replyTo = {
-            messageId: replyingTo.messageId,
-            userName: replyingTo.userName,
-            messageText: replyingTo.messageText,
-        };
-    }
-
     try {
-      await addDoc(collection(firestore, 'chatMessages'), messageData);
-    } catch (error) {
-      console.error("Error sending message: ", error);
-      toast({ title: "Erro ao Enviar", description: "Não foi possível enviar sua mensagem.", variant: "destructive" });
-    }
+        if (selectedImageFile) {
+            const uniqueId = `image_${Date.now()}_${selectedImageFile.name}`;
+            const storageRef = ref(storage, `chat_images/${currentUser.uid}/${uniqueId}`);
+            const uploadTask = uploadBytesResumable(storageRef, selectedImageFile);
 
-    setNewMessage('');
-    setReplyingTo(null);
-    setSelectedImageFile(null);
-    setImagePreviewUrl(null);
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.rows = 1;
-      textareaRef.current.focus();
+            imageUrl = await new Promise<string>((resolve, reject) => {
+                uploadTask.on('state_changed', 
+                    (snapshot) => {}, 
+                    (error) => reject(error), 
+                    () => {
+                        getDownloadURL(uploadTask.snapshot.ref).then(resolve).catch(reject);
+                    }
+                );
+            });
+            fileInfo = { name: selectedImageFile.name, type: 'image' };
+        }
+
+        const messageData: any = {
+          userId: currentUser.uid,
+          senderName: currentUser.displayName || 'Usuário Anônimo',
+          avatarUrl: currentUser.photoURL || `https://placehold.co/40x40.png?text=${currentUser.displayName ? currentUser.displayName.substring(0,1).toUpperCase() : 'U'}`,
+          dataAIAvatarHint: 'user avatar',
+          text: newMessage.trim() || undefined,
+          timestamp: serverTimestamp(),
+          reactions: { heart: 0 },
+          edited: false,
+        };
+
+        if (imageUrl) {
+            messageData.imageUrl = imageUrl;
+            messageData.dataAIImageHint = "user uploaded chat image";
+            messageData.file = fileInfo;
+        }
+
+        if (replyingTo) {
+            messageData.replyTo = {
+                messageId: replyingTo.messageId,
+                userName: replyingTo.userName,
+                messageText: replyingTo.messageText,
+            };
+        }
+        
+        await addDoc(collection(firestore, 'chatMessages'), messageData);
+        
+    } catch (error) {
+        console.error("Error sending message:", error);
+        toast({ title: "Erro ao Enviar", description: "Não foi possível enviar sua mensagem. Verifique permissões e tente novamente.", variant: "destructive" });
+    } finally {
+        setNewMessage('');
+        setReplyingTo(null);
+        setSelectedImageFile(null);
+        setImagePreviewUrl(null);
+        if (textareaRef.current) {
+          textareaRef.current.style.height = 'auto';
+          textareaRef.current.rows = 1;
+          textareaRef.current.focus();
+        }
     }
   };
 
@@ -187,8 +197,17 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     const storageRef = ref(storage, `chat_audio/${currentUser.uid}/${uniqueId}`);
 
     try {
-        const snapshot = await uploadBytes(storageRef, audioBlob);
-        const downloadURL = await getDownloadURL(snapshot.ref);
+        const uploadTask = uploadBytesResumable(storageRef, audioBlob);
+        
+        const downloadURL = await new Promise<string>((resolve, reject) => {
+            uploadTask.on('state_changed', 
+                (snapshot) => {}, 
+                (error) => reject(error), 
+                () => {
+                    getDownloadURL(uploadTask.snapshot.ref).then(resolve).catch(reject);
+                }
+            );
+        });
 
         const messageData = {
             userId: currentUser.uid,
