@@ -2,42 +2,37 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-
-    // Regras para conteúdo gerado pelo usuário.
-    // O usuário só pode ler e escrever em seus próprios arquivos.
-    match /profile_pictures/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    match /images/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    match /videos/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    match /chat_images/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    match /chat_audio/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    match /indicated_points_images/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Regra para recursos estáticos públicos (logos, ícones, etc.)
-    // Permite que qualquer pessoa leia esses arquivos.
-    match /Concessões de Pedágio/{allPaths=**} {
-      allow read;
-      allow write: if false; // Ninguém pode escrever
-    }
-    match /Ícones e Logo do app GRUPO BR277/{allPaths=**} {
-      allow read;
-      allow write: if false; // Ninguém pode escrever
-    }
-
-    // Regra padrão para negar acesso a qualquer outro caminho
+    // Public read access for all files.
+    // This allows the app to display logos and other public assets.
     match /{allPaths=**} {
-      allow read, write: if false;
+      allow read: if true;
+    }
+
+    // Allow write access ONLY for authenticated users to their own files
+    // in designated folders. This prevents users from writing to other users' folders.
+
+    match /profile_pictures/{userId}/{fileName} {
+      allow write: if request.auth.uid == userId;
+    }
+
+    match /chat_images/{userId}/{fileName} {
+      allow write: if request.auth.uid == userId;
+    }
+
+    match /chat_audio/{userId}/{fileName} {
+      allow write: if request.auth.uid == userId;
+    }
+
+    match /indicated_points_images/{userId}/{fileName} {
+      allow write: if request.auth.uid == userId;
+    }
+
+    match /images/{userId}/{fileName} {
+      allow write: if request.auth.uid == userId;
+    }
+
+    match /videos/{userId}/{fileName} {
+      allow write: if request.auth.uid == userId;
     }
   }
 }
