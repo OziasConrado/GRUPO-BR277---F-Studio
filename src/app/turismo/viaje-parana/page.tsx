@@ -244,12 +244,12 @@ const RegionCard = ({ region }: { region: RegionData }) => {
         </DialogHeader>
         <ScrollArea className="flex-grow">
           <div className="p-4 pt-2">
-              <div className="relative w-full aspect-video rounded-lg overflow-hidden mb-4">
+              <div className="relative w-full aspect-square rounded-lg overflow-hidden mb-4">
                 <Image
                       src={region.imageUrl}
                       alt={region.title}
                       layout="fill"
-                      objectFit="cover"
+                      objectFit="contain"
                       data-ai-hint={region.imageHint}
                   />
               </div>
