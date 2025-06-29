@@ -246,7 +246,7 @@ export default function ChatMessageItem({
                 </div>
                 )}
                 
-                {text && <p className="text-sm whitespace-pre-wrap break-words">{text}</p>}
+                {text && <p className="text-sm whitespace-pre-wrap break-all">{text}</p>}
 
                 {file && file.type === 'audio' && (
                     <div 
