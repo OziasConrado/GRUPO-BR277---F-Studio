@@ -241,11 +241,6 @@ const RegionCard = ({ region }: { region: RegionData }) => {
                 <DialogTitle className="font-headline text-xl">{region.title}</DialogTitle>
                 <DialogDescription className="text-sm text-muted-foreground pt-1">{region.subtitle}</DialogDescription>
             </div>
-            <DialogClose asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                    <X className="h-5 w-5" />
-                </Button>
-            </DialogClose>
         </DialogHeader>
         <ScrollArea className="flex-grow">
           <div className="p-4 pt-2">
@@ -262,7 +257,7 @@ const RegionCard = ({ region }: { region: RegionData }) => {
                 {region.description}
                 {' '}
                 <a href={region.buttonUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center font-semibold text-primary hover:underline">
-                    {region.buttonText}
+                    Ver mais no site oficial
                     <ExternalLink className="ml-1.5 h-4 w-4" />
                 </a>
               </p>
