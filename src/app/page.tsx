@@ -791,7 +791,7 @@ export default function FeedPage() {
           <div className="flex overflow-x-auto space-x-4 pb-2 -mx-4 px-4 no-scrollbar snap-x snap-mandatory">
             {displayedAlertsFeed.map((alertData) => (
               <div key={alertData.id} className="snap-start flex-shrink-0">
-                <Link href="/alertas" className="block">
+                <Link href="/alertas" className="block h-full">
                   <HomeAlertCard alert={alertData} />
                 </Link>
               </div>

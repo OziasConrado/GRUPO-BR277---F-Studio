@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -93,7 +94,7 @@ export default function HomeAlertCard({ alert }: HomeAlertCardProps) {
 
   return (
     <>
-      <Card className="w-[calc(100vw-4rem)] sm:w-[350px] flex flex-col rounded-xl shadow-lg overflow-hidden bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-muted/20 transition-colors duration-150 cursor-pointer">
+      <Card className="w-[calc(100vw-4rem)] sm:w-[350px] flex flex-col h-full rounded-xl shadow-lg overflow-hidden bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-muted/20 transition-colors duration-150 cursor-pointer">
         <CardHeader className="p-3 pb-1.5">
           <div className="flex items-center gap-2">
             <AlertTypeIcon type={alert.type} />
