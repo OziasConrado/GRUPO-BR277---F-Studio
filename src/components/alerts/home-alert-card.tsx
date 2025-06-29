@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -6,7 +5,7 @@ import type { StaticImageData } from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import UserProfileModal, { type UserProfileData } from '@/components/profile/UserProfileModal';
-import { AlertTriangle, Construction, Car, Ambulance, Flame, CloudFog, Clock, UserCircle, MapPin, Crane, Droplets, MountainSnow, Siren, Users } from "lucide-react";
+import { AlertTriangle, Construction, Car, Ambulance, Flame, CloudFog, Clock, UserCircle, MapPin, Crane, Droplets, Mountain, Siren, Users } from "lucide-react";
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -45,7 +44,7 @@ const AlertTypeIcon = ({ type, className }: { type: string, className?: string }
     case 'Óleo na Pista':
         return <Droplets {...iconProps} className={cn(iconProps.className, "text-slate-600")} />;
     case 'Queda de Barreira':
-        return <MountainSnow {...iconProps} className={cn(iconProps.className, "text-gray-500")} />;
+        return <Mountain {...iconProps} className={cn(iconProps.className, "text-gray-500")} />;
     case 'Animal na Pista':
       return <svg {...iconProps} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={cn(iconProps.className, "text-yellow-600")}><path d="M10 5H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4"/><path d="M18 10V7a2 2 0 0 0-2-2h-1"/><path d="M14 12a2 2 0 1 1 0-4h4v4a2 2 0 0 1-2 2h-2Z"/><path d="M12 18H7a2 2 0 0 1-2-2V9"/><path d="m18 18-3-10-1 2-1.5-1-1.5 1-1-2-3 10"/></svg>;
     case 'Queimada/Fumaça':
