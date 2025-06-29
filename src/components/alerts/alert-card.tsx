@@ -100,10 +100,6 @@ export default function AlertCard({ alert }: AlertCardProps) {
           <p className="text-sm leading-relaxed">{alert.description}</p>
         </CardContent>
         <CardFooter className="flex justify-between items-center text-xs text-muted-foreground pt-2 pb-3">
-          <div className="flex items-center">
-            <Clock className="h-3.5 w-3.5 mr-1.5" />
-            <span>{timeAgo}</span>
-          </div>
           {alert.userNameReportedBy && (
             <button
               onClick={handleReporterClick}
@@ -119,6 +115,10 @@ export default function AlertCard({ alert }: AlertCardProps) {
               <span>{alert.userNameReportedBy}</span>
             </button>
           )}
+          <div className="flex items-center">
+            <Clock className="h-3.5 w-3.5 mr-1.5" />
+            <span>{timeAgo}</span>
+          </div>
         </CardFooter>
       </Card>
       <UserProfileModal
