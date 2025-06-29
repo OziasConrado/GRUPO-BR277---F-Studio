@@ -204,7 +204,7 @@ export default function ChatMessageItem({
           </DropdownMenu>
       )}
 
-      <div className="relative max-w-[85%]">
+      <div className="relative max-w-[85%] min-w-0">
         {isEditing ? (
             <div className="p-3 rounded-xl shadow bg-accent text-accent-foreground">
                 <Textarea
@@ -253,7 +253,7 @@ export default function ChatMessageItem({
                 
                 {text && (
                   <div>
-                    <p className="text-sm whitespace-pre-wrap break-words">{displayedText}</p>
+                    <p className="text-sm whitespace-pre-wrap break-all">{displayedText}</p>
                     {isLongMessage && (
                       <Button
                         variant="link"
@@ -371,5 +371,3 @@ export default function ChatMessageItem({
     </>
   );
 }
-
-    
