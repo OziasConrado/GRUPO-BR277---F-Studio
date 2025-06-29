@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserProfileData, default as UserProfileModal } from '@/components/profile/UserProfileModal';
-import { AlertTriangle, Car, Ambulance, Construction, CloudFog, Clock, UserCircle, Flame, Crane, Droplets, Mountain, Siren, Users } from "lucide-react";
+import { AlertTriangle, Car, Ambulance, Construction, CloudFog, Clock, UserCircle, Flame, Crane, Droplets, Mountain, Siren, Users, Dog } from "lucide-react";
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -43,7 +43,7 @@ const getAlertIcon = (type: AlertProps['type']) => {
     case 'Queda de Barreira':
         return <Mountain className="h-5 w-5 text-gray-500" />;
     case 'Animal na Pista':
-      return <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-dog text-yellow-600"><path d="M10 5H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4"/><path d="M18 10V7a2 2 0 0 0-2-2h-1"/><path d="M14 12a2 2 0 1 1 0-4h4v4a2 2 0 0 1-2 2h-2Z"/><path d="M12 18H7a2 2 0 0 1-2-2V9"/><path d="m18 18-3-10-1 2-1.5-1-1.5 1-1-2-3 10"/></svg>;
+      return <Dog className="h-5 w-5 text-yellow-600" />;
     case 'Queimada/Fumaça':
       return <Flame className="h-5 w-5 text-orange-600" />;
     case 'Ocorrência Policial':
@@ -100,6 +100,10 @@ export default function AlertCard({ alert }: AlertCardProps) {
           <p className="text-sm leading-relaxed">{alert.description}</p>
         </CardContent>
         <CardFooter className="flex justify-between items-center text-xs text-muted-foreground pt-2 pb-3">
+           <div className="flex items-center">
+            <Clock className="h-3.5 w-3.5 mr-1.5" />
+            <span>{timeAgo}</span>
+          </div>
           {alert.userNameReportedBy && (
             <button
               onClick={handleReporterClick}
@@ -115,10 +119,6 @@ export default function AlertCard({ alert }: AlertCardProps) {
               <span>{alert.userNameReportedBy}</span>
             </button>
           )}
-          <div className="flex items-center">
-            <Clock className="h-3.5 w-3.5 mr-1.5" />
-            <span>{timeAgo}</span>
-          </div>
         </CardFooter>
       </Card>
       <UserProfileModal
