@@ -284,7 +284,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             
             const uploadTask = uploadBytesResumable(photoRef, file);
 
-            const { toast: uploadToast } = toast({
+            const uploadToast = toast({
                 title: "Enviando imagem...",
                 description: "Progresso: 0%",
             });
