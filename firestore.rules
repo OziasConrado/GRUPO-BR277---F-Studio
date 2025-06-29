@@ -1,107 +1,64 @@
-
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper function to check if a user is authenticated
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    // Helper function to check if the user is the owner of a document
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-
-    // USER PROFILES
-    // Anyone can read a user's public profile.
-    // Only the user themselves can create or update their own profile document.
     match /Usuarios/{userId} {
+      // Allow users to read public data, but only write to their own document.
       allow read: if true;
-      allow create, update: if isOwner(userId);
+      allow write: if request.auth.uid == userId;
+
+      // Allow users to read and write their own notifications.
+      match /notifications/{notificationId} {
+        allow read, write: if request.auth.uid == userId;
+      }
     }
 
-    // POSTS
-    // Anyone can read posts.
-    // Only authenticated users can create posts for themselves.
-    // Only the owner of the post can update (edit) or "delete" (mark as deleted).
     match /posts/{postId} {
-      allow read: if true;
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update: if isOwner(resource.data.userId);
+      allow read: if resource.data.deleted == false;
+      allow create: if request.auth.uid != null;
+      allow update: if request.auth.uid == resource.data.userId;
 
-      // Subcollections for posts
       match /comments/{commentId} {
-        allow read: if true;
-        allow create: if isAuthenticated();
-        allow update, delete: if isOwner(resource.data.userId);
+        allow read: true;
+        allow create: if request.auth.uid != null;
+        allow delete: if request.auth.uid == resource.data.userId;
       }
+
       match /userReactions/{userId} {
-          allow read: if true;
-          allow create, delete: if isOwner(userId);
+        allow read, write: if request.auth.uid == userId;
       }
+
       match /userVotes/{userId} {
-          allow read: if true;
-          allow create: if isOwner(userId);
+        allow read, write: if request.auth.uid == userId;
       }
     }
-
-    // REELS
-    // Anyone can read reels.
-    // Only authenticated users can create. Only the owner can update/delete.
-    match /reels/{reelId} {
-        allow read: if true;
-        allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-        allow update, delete: if isOwner(resource.data.userId);
-    }
-
-    // ALERTS
-    // Anyone can read alerts.
-    // Only authenticated users can create. Only the owner can update/delete.
+    
     match /alerts/{alertId} {
-        allow read: if true;
-        allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-        allow update, delete: if isOwner(resource.data.userId);
+      allow read: true;
+      allow create: if request.auth.uid != null;
+    }
+    
+    match /reels/{reelId} {
+      allow read: true;
+      allow create: if request.auth.uid != null;
     }
 
-    // BUSINESSES (Commercial Guide)
-    // Anyone can read. Authenticated users can create. Only owner can update.
-    match /businesses/{businessId} {
-        allow read: if true;
-        allow create: if isAuthenticated();
-        allow update: if isOwner(resource.data.userId);
-    }
-
-    // TOURIST POINTS (Indicated by users)
-    // Anyone can read. Authenticated users can create. Only owner can update.
     match /tourist_points_indicated/{pointId} {
-        allow read: if true;
-        allow create: if isAuthenticated();
-        allow update: if isOwner(resource.data.indicatedByUserId);
+      allow read: true;
+      allow create: if request.auth != null;
     }
 
-    // SAU REVIEWS
-    // Anyone can read. Authenticated users can create. Only owner can update/delete.
     match /sau_reviews/{reviewId} {
-      allow read: if true;
-      allow create: if isAuthenticated();
-      allow update, delete: if isOwner(resource.data.userId);
+      allow read: true;
+      allow create: if request.auth != null;
     }
-
-    // CHAT MESSAGES
-    // Anyone can read.
-    // Authenticated users can create their own messages.
-    // Only the owner can edit or delete their message.
+    
     match /chatMessages/{messageId} {
-      allow read: if true;
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isOwner(resource.data.userId);
+      allow read: true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth.uid == resource.data.userId;
 
-       // CHAT REACTIONS (subcollection of messages)
       match /userReactions/{userId} {
-          allow read: if true;
-          allow create, delete: if isOwner(userId);
+        allow read, write: if request.auth.uid == userId;
       }
     }
   }

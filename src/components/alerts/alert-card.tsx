@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserProfileData, default as UserProfileModal } from '@/components/profile/UserProfileModal';
-import { AlertTriangle, Car, Ambulance, Construction, CloudFog, Clock, UserCircle, Flame, Crane, Droplets, Mountain, Siren, Users, Dog } from "lucide-react";
+import { AlertTriangle, Car, Ambulance, Construction, CloudFog, Clock, UserCircle, Flame, Wrench, Droplets, Mountain, Siren, Users, Dog } from "lucide-react";
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -32,7 +32,7 @@ const iconMap: Record<string, React.ElementType> = {
     'Obras na Pista': Construction,
     'Congestionamento': Car,
     'Neblina/Cond. Climática': CloudFog,
-    'Remoção/Veículo Acidentado': Crane,
+    'Remoção/Veículo Acidentado': Wrench,
     'Óleo na Pista': Droplets,
     'Queda de Barreira': Mountain,
     'Animal na Pista': Dog,
