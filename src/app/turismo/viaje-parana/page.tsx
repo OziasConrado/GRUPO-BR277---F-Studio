@@ -6,9 +6,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, ExternalLink, Map } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Map, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface RegionData {
@@ -235,10 +235,17 @@ const RegionCard = ({ region }: { region: RegionData }) => {
           </CardContent>
         </Card>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg p-0 flex flex-col h-[90vh] max-h-[700px] rounded-xl">
-        <DialogHeader className="p-4 border-b shrink-0">
-          <DialogTitle className="font-headline text-xl">{region.title}</DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground pt-1">{region.subtitle}</DialogDescription>
+      <DialogContent className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none bg-background !p-0 flex flex-col !translate-x-0 !translate-y-0">
+        <DialogHeader className="p-4 border-b shrink-0 flex flex-row items-center justify-between">
+            <div>
+                <DialogTitle className="font-headline text-xl">{region.title}</DialogTitle>
+                <DialogDescription className="text-sm text-muted-foreground pt-1">{region.subtitle}</DialogDescription>
+            </div>
+            <DialogClose asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                    <X className="h-5 w-5" />
+                </Button>
+            </DialogClose>
         </DialogHeader>
         <ScrollArea className="flex-grow">
           <div className="p-4 pt-2">
@@ -247,19 +254,21 @@ const RegionCard = ({ region }: { region: RegionData }) => {
                       src={region.imageUrl}
                       alt={region.title}
                       layout="fill"
-                      objectFit="contain"
+                      objectFit="cover"
                       data-ai-hint={region.imageHint}
                   />
               </div>
-              <p className="text-base text-foreground/90 whitespace-pre-line">{region.description}</p>
+              <p className="text-base text-foreground/90 whitespace-pre-line">
+                {region.description}
+                {' '}
+                <a href={region.buttonUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center font-semibold text-primary hover:underline">
+                    {region.buttonText}
+                    <ExternalLink className="ml-1.5 h-4 w-4" />
+                </a>
+              </p>
           </div>
         </ScrollArea>
-        <div className="p-4 border-t shrink-0 space-y-3 bg-background">
-            <Button asChild className="w-full">
-              <a href={region.buttonUrl} target="_blank" rel="noopener noreferrer">
-                {region.buttonText} <ExternalLink className="ml-2 h-4 w-4" />
-              </a>
-            </Button>
+        <div className="p-4 border-t shrink-0 bg-background">
             <AdPlaceholder />
         </div>
       </DialogContent>
