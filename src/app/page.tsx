@@ -762,7 +762,7 @@ export default function FeedPage() {
         {loadingReels ? (
             <div className="flex justify-center items-center h-24"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
         ) : reels.length > 0 ? (
-            <div className="flex overflow-x-auto space-x-2 pb-3 -mx-4 px-4 no-scrollbar">
+            <div className="flex overflow-x-auto space-x-2 pb-3 -mx-2 px-2 no-scrollbar">
                 {reels.map((story) => (
                     <StoryCircle key={story.id} {...story} onClick={() => handleStoryClick(story)} />
                 ))}
@@ -788,7 +788,7 @@ export default function FeedPage() {
                 <ArrowRightCircle className="h-4 w-4" />
             </Link>
           </div>
-          <div className="flex overflow-x-auto space-x-4 pb-2 -mx-4 px-4 no-scrollbar snap-x snap-mandatory">
+          <div className="flex overflow-x-auto space-x-4 pb-2 -mx-2 px-2 no-scrollbar snap-x snap-mandatory">
             {displayedAlertsFeed.map((alertData) => (
               <div key={alertData.id} className="snap-start flex-shrink-0">
                 <Link href="/alertas" className="block h-full">
