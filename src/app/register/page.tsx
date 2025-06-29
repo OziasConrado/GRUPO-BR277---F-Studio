@@ -29,7 +29,7 @@ const registerSchema = z
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
-  const { signUpWithEmail, currentUser, loading, isAuthenticating } = useAuth();
+  const { signUpWithEmail, currentUser, loading, authAction } = useAuth();
   const router = useRouter();
 
   const {
@@ -103,8 +103,8 @@ export default function RegisterPage() {
                 <p className="text-sm text-destructive mt-1">{errors.confirmPassword.message}</p>
               )}
             </div>
-            <Button type="submit" className="w-full rounded-full py-3 text-base" disabled={isAuthenticating}>
-              {isAuthenticating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" className="w-full rounded-full py-3 text-base" disabled={authAction !== null}>
+              {authAction === 'signup' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Cadastrar
             </Button>
           </form>

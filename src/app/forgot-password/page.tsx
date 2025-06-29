@@ -20,7 +20,7 @@ const forgotPasswordSchema = z.object({
 type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 
 export default function ForgotPasswordPage() {
-  const { sendPasswordResetEmail, isAuthenticating } = useAuth();
+  const { sendPasswordResetEmail, authAction } = useAuth();
   const { toast } = useToast();
   const [isEmailSent, setIsEmailSent] = useState(false);
 
@@ -71,8 +71,8 @@ export default function ForgotPasswordPage() {
                 />
                 {errors.email && <p className="text-sm text-destructive mt-1">{errors.email.message}</p>}
               </div>
-              <Button type="submit" className="w-full rounded-full py-3 text-base" disabled={isAuthenticating}>
-                {isAuthenticating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Button type="submit" className="w-full rounded-full py-3 text-base" disabled={authAction !== null}>
+                {authAction === 'reset' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Enviar Link de Redefinição
               </Button>
             </form>

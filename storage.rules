@@ -1,16 +1,25 @@
 rules_version = '2';
+
 service firebase.storage {
   match /b/{bucket}/o {
-    // Regra genérica para cobrir todas as pastas de usuário
-    // Ex: /profile_pictures/{userId}/, /images/{userId}/, /videos/{userId}/, etc.
+    // Regra geral para conteúdo de usuário:
+    // Permite que usuários autenticados leiam e escrevam arquivos dentro de uma pasta com seu próprio ID de usuário.
+    // Isso cobre:
+    // - profile_pictures/{userId}/...
+    // - images/{userId}/...
+    // - videos/{userId}/...
+    // - chat_images/{userId}/...
+    // - chat_audio/{userId}/...
+    // - indicated_points_images/{userId}/...
     match /{folder}/{userId}/{allPaths=**} {
-      // Qualquer usuário autenticado pode ler arquivos.
-      // Comum em apps sociais onde o conteúdo é público.
-      allow read: if request.auth != null;
-      
-      // Apenas o proprietário da pasta pode escrever nela.
-      // O {userId} no caminho DEVE corresponder ao UID do usuário logado.
+      allow read;
       allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Regra para recursos estáticos públicos (logos, ícones, etc.)
+    // Permite que qualquer pessoa leia esses arquivos.
+    match /{folder}/{fileName} where folder == 'Concessões de Pedágio' || folder == 'Ícones e Logo do app GRUPO BR277' || folder == 'Turismo-PR' {
+      allow read;
     }
   }
 }

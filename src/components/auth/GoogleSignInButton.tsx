@@ -16,16 +16,16 @@ const GoogleIcon = () => (
 
 
 export default function GoogleSignInButton({ actionText = "Entrar com Google" }: { actionText?: string }) {
-  const { signInWithGoogle, isAuthenticating } = useAuth();
+  const { signInWithGoogle, authAction } = useAuth();
 
   return (
     <Button
       variant="outline"
       className="w-full"
       onClick={signInWithGoogle}
-      disabled={isAuthenticating}
+      disabled={authAction !== null}
     >
-      {isAuthenticating ? (
+      {authAction === 'google' ? (
         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
       ) : (
         <GoogleIcon />

@@ -25,7 +25,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  const { signInWithEmail, currentUser, loading, isAuthenticating } = useAuth();
+  const { signInWithEmail, currentUser, loading, authAction } = useAuth();
 
   const {
     register,
@@ -96,8 +96,8 @@ export default function LoginPage() {
                 </div>
             </div>
             <GoogleSignInButton actionText="Entrar com Google"/>
-            <Button type="submit" className="w-full rounded-full py-3 text-base mt-4" disabled={isAuthenticating}>
-              {isAuthenticating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" className="w-full rounded-full py-3 text-base mt-4" disabled={authAction !== null}>
+              {authAction === 'email' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Entrar com E-mail
             </Button>
           </form>

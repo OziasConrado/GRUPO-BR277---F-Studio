@@ -42,7 +42,7 @@ const profileSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
 export default function EditProfilePage() {
-  const { currentUser, userProfile, updateUserProfile, loading, isAuthenticating, signOutUser } = useAuth();
+  const { currentUser, userProfile, updateUserProfile, loading, authAction, signOutUser } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -212,8 +212,8 @@ export default function EditProfilePage() {
               />
             </div>
 
-            <Button type="submit" className="w-full rounded-full py-3 text-base" disabled={isAuthenticating || !isDirty}>
-              {isAuthenticating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Edit className="mr-2 h-4 w-4" />}
+            <Button type="submit" className="w-full rounded-full py-3 text-base" disabled={authAction !== null || !isDirty}>
+              {authAction === 'update' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Edit className="mr-2 h-4 w-4" />}
               Salvar Alterações
             </Button>
           </form>
@@ -222,7 +222,7 @@ export default function EditProfilePage() {
           <Button variant="outline" onClick={() => router.back()} className="w-full max-w-xs rounded-full">
             <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
           </Button>
-           <Button variant="link" onClick={signOutUser} className="text-destructive hover:text-destructive/80" disabled={isAuthenticating}>
+           <Button variant="link" onClick={signOutUser} className="text-destructive hover:text-destructive/80" disabled={authAction !== null}>
             Sair da Conta
           </Button>
         </CardFooter>

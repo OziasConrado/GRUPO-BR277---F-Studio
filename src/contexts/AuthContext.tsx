@@ -46,7 +46,7 @@ interface AuthContextType {
   sendPasswordResetEmail: (email: string) => Promise<void>;
   updateUserProfile: (data: UpdateUserProfileData) => Promise<void>;
   signOutUser: () => Promise<void>;
-  isAuthenticating: boolean;
+  authAction: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [authAction, setAuthAction] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -146,7 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         toast({ title: "Erro de Inicialização", description: "Serviço de autenticação não disponível.", variant: "destructive" });
         return;
     }
-    setIsAuthenticating(true);
+    setAuthAction('google');
     const provider = new GoogleAuthProvider();
     try {
         const result = await signInWithPopup(auth, provider);
@@ -176,7 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
         handleAuthError(error as AuthError, 'Erro no Login com Google');
     } finally {
-        setIsAuthenticating(false);
+        setAuthAction(null);
     }
   }, [router, toast, handleAuthError]);
 
@@ -186,7 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         toast({ title: "Erro de Inicialização", description: "Serviço de autenticação ou banco de dados não disponível.", variant: "destructive" });
         return;
       }
-      setIsAuthenticating(true);
+      setAuthAction('signup');
       try {
         const newUserCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = newUserCredential.user;
@@ -218,7 +218,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         handleAuthError(error as AuthError);
       } finally {
-        setIsAuthenticating(false);
+        setAuthAction(null);
       }
     },
     [router, toast, handleAuthError]
@@ -230,7 +230,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         toast({ title: "Erro de Inicialização", description: "Serviço de autenticação não disponível.", variant: "destructive" });
         return;
       }
-      setIsAuthenticating(true);
+      setAuthAction('email');
       try {
         await signInWithEmailAndPassword(auth, email, password);
         toast({ title: 'Login bem-sucedido!', description: 'Bem-vindo(a) de volta!' });
@@ -238,7 +238,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         handleAuthError(error as AuthError);
       } finally {
-        setIsAuthenticating(false);
+        setAuthAction(null);
       }
     },
     [router, toast, handleAuthError]
@@ -250,7 +250,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         toast({ title: "Erro de Inicialização", description: "Serviço de autenticação não disponível.", variant: "destructive" });
         return;
       }
-      setIsAuthenticating(true);
+      setAuthAction('reset');
       try {
         await firebaseSendPasswordResetEmail(auth, email);
         toast({
@@ -261,7 +261,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         handleAuthError(error as AuthError, 'Erro ao Enviar E-mail');
         throw error;
       } finally {
-        setIsAuthenticating(false);
+        setAuthAction(null);
       }
     },
     [toast, handleAuthError]
@@ -274,7 +274,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
     }
 
-    setIsAuthenticating(true);
+    setAuthAction('update');
 
     try {
         let newPhotoURL: string | null = null;
@@ -306,7 +306,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (!hasAuthUpdates && !hasFirestoreUpdates) {
             toast({ title: 'Nenhuma Alteração', description: 'Nenhuma informação foi alterada.' });
-            setIsAuthenticating(false);
+            setAuthAction(null);
             return;
         }
 
@@ -337,7 +337,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         toast({ variant: "destructive", title: 'Erro ao Atualizar Perfil', description: 'Não foi possível salvar. Verifique o console para detalhes.'});
         handleAuthError(error as AuthError, 'Erro ao Atualizar Perfil');
     } finally {
-        setIsAuthenticating(false);
+        setAuthAction(null);
     }
   }, [userProfile, handleAuthError, router, toast]);
 
@@ -347,7 +347,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
        toast({ title: "Erro de Inicialização", description: "Serviço de autenticação não disponível.", variant: "destructive" });
       return;
     }
-    setIsAuthenticating(true); 
+    setAuthAction('signout'); 
     try {
       await signOut(auth);
       setUserProfile(null);
@@ -356,7 +356,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       handleAuthError(error as AuthError);
     } finally {
-      setIsAuthenticating(false);
+      setAuthAction(null);
     }
   }, [router, toast, handleAuthError]);
 
@@ -373,7 +373,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     sendPasswordResetEmail,
     updateUserProfile,
     signOutUser,
-    isAuthenticating,
+    authAction,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
