@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { StaticImageData } from 'next/image';
@@ -383,6 +382,7 @@ export default function PostCard({
   const linkRegex = /\(\((https?:\/\/[^\s()]+)\)\)/;
   const linkMatch = text.match(linkRegex);
   const textContent = linkMatch ? text.replace(linkRegex, '').trim() : text;
+  const urlToPreview = linkMatch ? linkMatch[1] : null;
   
   const MAX_CHARS = 130;
   const needsTruncation = textContent.length > MAX_CHARS;
