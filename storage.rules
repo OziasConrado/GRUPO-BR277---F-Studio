@@ -2,24 +2,42 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Regra geral para conteúdo de usuário:
-    // Permite que usuários autenticados leiam e escrevam arquivos dentro de uma pasta com seu próprio ID de usuário.
-    // Isso cobre:
-    // - profile_pictures/{userId}/...
-    // - images/{userId}/...
-    // - videos/{userId}/...
-    // - chat_images/{userId}/...
-    // - chat_audio/{userId}/...
-    // - indicated_points_images/{userId}/...
-    match /{folder}/{userId}/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
+
+    // Regras para conteúdo gerado pelo usuário.
+    // O usuário só pode ler e escrever em seus próprios arquivos.
+    match /profile_pictures/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /images/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /videos/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /chat_images/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /chat_audio/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /indicated_points_images/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
     // Regra para recursos estáticos públicos (logos, ícones, etc.)
     // Permite que qualquer pessoa leia esses arquivos.
-    match /{folder}/{fileName} where folder == 'Concessões de Pedágio' || folder == 'Ícones e Logo do app GRUPO BR277' || folder == 'Turismo-PR' {
+    match /Concessões de Pedágio/{allPaths=**} {
       allow read;
+      allow write: if false; // Ninguém pode escrever
+    }
+    match /Ícones e Logo do app GRUPO BR277/{allPaths=**} {
+      allow read;
+      allow write: if false; // Ninguém pode escrever
+    }
+
+    // Regra padrão para negar acesso a qualquer outro caminho
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }
