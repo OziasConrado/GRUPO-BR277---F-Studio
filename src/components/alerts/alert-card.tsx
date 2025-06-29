@@ -7,6 +7,7 @@ import { UserProfileData, default as UserProfileModal } from '@/components/profi
 import { AlertTriangle, Car, Ambulance, Construction, CloudFog, Clock, UserCircle, Flame, Crane, Droplets, Mountain, Siren, Users, Dog } from "lucide-react";
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 export interface AlertProps {
   id: string;
@@ -26,33 +27,40 @@ interface AlertCardProps {
   alert: AlertProps;
 }
 
+const iconMap: Record<string, React.ElementType> = {
+    'Acidente': Ambulance,
+    'Obras na Pista': Construction,
+    'Congestionamento': Car,
+    'Neblina/Cond. Climática': CloudFog,
+    'Remoção/Veículo Acidentado': Crane,
+    'Óleo na Pista': Droplets,
+    'Queda de Barreira': Mountain,
+    'Animal na Pista': Dog,
+    'Queimada/Fumaça': Flame,
+    'Ocorrência Policial': Siren,
+    'Manifestação Popular': Users,
+};
+
+const colorMap: Record<string, string> = {
+    'Acidente': "text-red-500",
+    'Obras na Pista': "text-yellow-500",
+    'Congestionamento': "text-orange-500",
+    'Neblina/Cond. Climática': "text-blue-500",
+    'Remoção/Veículo Acidentado': "text-blue-500",
+    'Óleo na Pista': "text-slate-600",
+    'Queda de Barreira': "text-gray-500",
+    'Animal na Pista': "text-yellow-600",
+    'Queimada/Fumaça': "text-orange-600",
+    'Ocorrência Policial': "text-red-600",
+    'Manifestação Popular': "text-blue-600",
+};
+
 const getAlertIcon = (type: AlertProps['type']) => {
-  switch (type) {
-    case 'Acidente':
-      return <Ambulance className="h-5 w-5 text-red-500" />;
-    case 'Obras na Pista':
-      return <Construction className="h-5 w-5 text-yellow-500" />;
-    case 'Congestionamento':
-      return <Car className="h-5 w-5 text-orange-500" />;
-    case 'Neblina/Cond. Climática':
-      return <CloudFog className="h-5 w-5 text-blue-500" />;
-    case 'Remoção/Veículo Acidentado':
-        return <Crane className="h-5 w-5 text-blue-500" />;
-    case 'Óleo na Pista':
-        return <Droplets className="h-5 w-5 text-slate-600" />;
-    case 'Queda de Barreira':
-        return <Mountain className="h-5 w-5 text-gray-500" />;
-    case 'Animal na Pista':
-      return <Dog className="h-5 w-5 text-yellow-600" />;
-    case 'Queimada/Fumaça':
-      return <Flame className="h-5 w-5 text-orange-600" />;
-    case 'Ocorrência Policial':
-        return <Siren className="h-5 w-5 text-red-600" />;
-    case 'Manifestação Popular':
-        return <Users className="h-5 w-5 text-blue-600" />;
-    default:
-      return <AlertTriangle className="h-5 w-5 text-primary" />;
-  }
+  const IconComponent = iconMap[type] || AlertTriangle;
+  const colorClass = colorMap[type] || "text-primary";
+  const finalClassName = cn("h-5 w-5", colorClass);
+
+  return <IconComponent className={finalClassName} />;
 };
 
 export default function AlertCard({ alert }: AlertCardProps) {
@@ -100,10 +108,6 @@ export default function AlertCard({ alert }: AlertCardProps) {
           <p className="text-sm leading-relaxed">{alert.description}</p>
         </CardContent>
         <CardFooter className="flex justify-between items-center text-xs text-muted-foreground pt-2 pb-3">
-           <div className="flex items-center">
-            <Clock className="h-3.5 w-3.5 mr-1.5" />
-            <span>{timeAgo}</span>
-          </div>
           {alert.userNameReportedBy && (
             <button
               onClick={handleReporterClick}
@@ -119,6 +123,10 @@ export default function AlertCard({ alert }: AlertCardProps) {
               <span>{alert.userNameReportedBy}</span>
             </button>
           )}
+           <div className="flex items-center">
+            <Clock className="h-3.5 w-3.5 mr-1.5" />
+            <span>{timeAgo}</span>
+          </div>
         </CardFooter>
       </Card>
       <UserProfileModal

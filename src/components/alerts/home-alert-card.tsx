@@ -27,35 +27,42 @@ interface HomeAlertCardProps {
   alert: HomeAlertCardData;
 }
 
+const iconMap: Record<string, React.ElementType> = {
+  'Acidente': Ambulance,
+  'Obras na Pista': Construction,
+  'Obras': Construction,
+  'Congestionamento': Car,
+  'Neblina/Cond. Climática': CloudFog,
+  'Remoção/Veículo Acidentado': Crane,
+  'Óleo na Pista': Droplets,
+  'Queda de Barreira': Mountain,
+  'Animal na Pista': Dog,
+  'Queimada/Fumaça': Flame,
+  'Ocorrência Policial': Siren,
+  'Manifestação Popular': Users,
+};
+
+const colorMap: Record<string, string> = {
+    'Acidente': "text-red-500",
+    'Obras na Pista': "text-yellow-500",
+    'Obras': "text-yellow-500",
+    'Congestionamento': "text-orange-500",
+    'Neblina/Cond. Climática': "text-blue-500",
+    'Remoção/Veículo Acidentado': "text-blue-500",
+    'Óleo na Pista': "text-slate-600",
+    'Queda de Barreira': "text-gray-500",
+    'Animal na Pista': "text-yellow-600",
+    'Queimada/Fumaça': "text-orange-600",
+    'Ocorrência Policial': "text-red-600",
+    'Manifestação Popular': "text-blue-600"
+};
+
 const AlertTypeIcon = ({ type, className }: { type: string, className?: string }) => {
-  const iconProps = { className: cn("h-5 w-5", className) };
-  switch (type) {
-    case 'Acidente':
-      return <Ambulance {...iconProps} className={cn(iconProps.className, "text-red-500")} />;
-    case 'Obras na Pista':
-    case 'Obras':
-      return <Construction {...iconProps} className={cn(iconProps.className, "text-yellow-500")} />;
-    case 'Congestionamento':
-      return <Car {...iconProps} className={cn(iconProps.className, "text-orange-500")} />;
-    case 'Neblina/Cond. Climática':
-      return <CloudFog {...iconProps} className={cn(iconProps.className, "text-blue-500")} />;
-    case 'Remoção/Veículo Acidentado':
-        return <Crane {...iconProps} className={cn(iconProps.className, "text-blue-500")} />;
-    case 'Óleo na Pista':
-        return <Droplets {...iconProps} className={cn(iconProps.className, "text-slate-600")} />;
-    case 'Queda de Barreira':
-        return <Mountain {...iconProps} className={cn(iconProps.className, "text-gray-500")} />;
-    case 'Animal na Pista':
-      return <Dog {...iconProps} className={cn(iconProps.className, "text-yellow-600")} />;
-    case 'Queimada/Fumaça':
-      return <Flame {...iconProps} className={cn(iconProps.className, "text-orange-600")} />;
-    case 'Ocorrência Policial':
-        return <Siren {...iconProps} className={cn(iconProps.className, "text-red-600")} />;
-    case 'Manifestação Popular':
-        return <Users {...iconProps} className={cn(iconProps.className, "text-blue-600")} />;
-    default:
-      return <AlertTriangle {...iconProps} className={cn(iconProps.className, "text-primary")} />;
-  }
+  const IconComponent = iconMap[type] || AlertTriangle;
+  const colorClass = colorMap[type] || "text-primary";
+  const finalClassName = cn("h-5 w-5", className, colorClass);
+
+  return <IconComponent className={finalClassName} />;
 };
 
 
