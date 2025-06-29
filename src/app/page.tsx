@@ -372,7 +372,7 @@ export default function FeedPage() {
         return;
       }
       
-      const MAX_SIZE_MB = isVideo ? 50 : 5; // 50MB for video, 5MB for image
+      const MAX_SIZE_MB = isVideo ? 50 : 10; // 50MB for video, 10MB for image
       if (file.size > MAX_SIZE_MB * 1024 * 1024) {
         toast({ variant: 'destructive', title: 'Arquivo Muito Grande', description: `O tamanho máximo é ${MAX_SIZE_MB}MB.` });
         return;

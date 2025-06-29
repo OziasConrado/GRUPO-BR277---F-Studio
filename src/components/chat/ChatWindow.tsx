@@ -285,7 +285,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
       return;
     }
 
-    const MAX_SIZE_MB = 5;
+    const MAX_SIZE_MB = 10;
     if (file.size > MAX_SIZE_MB * 1024 * 1024) {
         toast({
             variant: "destructive",

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,7 @@ import { useState, type ChangeEvent, useRef } from "react";
 import Image from "next/image";
 import { UploadCloud, X } from "lucide-react";
 
-const MAX_FILE_SIZE_MB = 2;
+const MAX_FILE_SIZE_MB = 5;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 const indicatePointSchema = z.object({
