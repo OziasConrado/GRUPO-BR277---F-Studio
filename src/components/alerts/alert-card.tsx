@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserProfileData, default as UserProfileModal } from '@/components/profile/UserProfileModal';
-import { AlertTriangle, Car, Ambulance, Construction, CloudFog, Clock, UserCircle, Flame, Wrench, Droplets, MountainSnow, Siren, Users } from "lucide-react";
+import { AlertTriangle, Car, Ambulance, Construction, CloudFog, Clock, UserCircle, Flame, Crane, Droplets, MountainSnow, Siren, Users } from "lucide-react";
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -37,7 +38,7 @@ const getAlertIcon = (type: AlertProps['type']) => {
     case 'Neblina/Cond. Climática':
       return <CloudFog className="h-5 w-5 text-blue-500" />;
     case 'Remoção/Veículo Acidentado':
-        return <Wrench className="h-5 w-5 text-blue-500" />;
+        return <Crane className="h-5 w-5 text-blue-500" />;
     case 'Óleo na Pista':
         return <Droplets className="h-5 w-5 text-slate-600" />;
     case 'Queda de Barreira':
