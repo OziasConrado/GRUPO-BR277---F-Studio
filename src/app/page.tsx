@@ -235,6 +235,7 @@ export default function FeedPage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const alertsContainerRef = useRef<HTMLDivElement>(null);
 
   // Real-time Posts Fetch
   useEffect(() => {
@@ -333,6 +334,13 @@ export default function FeedPage() {
     });
     return () => unsubscribe();
   }, [toast]);
+
+  // Scroll alerts to the beginning when they update
+  useEffect(() => {
+    if (alertsContainerRef.current) {
+        alertsContainerRef.current.scrollLeft = 0;
+    }
+  }, [displayedAlertsFeed]);
 
   // Handlers
   const handleInteractionAttempt = (callback: () => void) => {
@@ -788,7 +796,7 @@ export default function FeedPage() {
                 <ArrowRightCircle className="h-4 w-4" />
             </Link>
           </div>
-          <div className="flex overflow-x-auto space-x-4 pb-2 -mx-2 px-2 no-scrollbar snap-x snap-mandatory">
+          <div ref={alertsContainerRef} className="flex overflow-x-auto space-x-4 pb-2 -mx-2 px-2 no-scrollbar snap-x snap-mandatory">
             {displayedAlertsFeed.map((alertData) => (
               <div key={alertData.id} className="snap-start flex-shrink-0">
                 <Link href="/alertas" className="block h-full">
