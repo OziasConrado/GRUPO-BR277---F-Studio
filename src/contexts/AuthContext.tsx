@@ -7,8 +7,7 @@ import {
   onAuthStateChanged,
   signOut,
   GoogleAuthProvider,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendPasswordResetEmail as firebaseSendPasswordResetEmail,
@@ -142,65 +141,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, [toast]);
 
-  useEffect(() => {
-    if (!auth || !firestore) return;
-    if (isAuthenticating || loading) return;
-
-    const processRedirect = async () => {
-        try {
-            const result = await getRedirectResult(auth);
-            if (result) {
-                setIsAuthenticating(true);
-                const user = result.user;
-                const userDocRef = doc(firestore, "Usuarios", user.uid);
-                const userDocSnap = await getDoc(userDocRef);
-
-                if (!userDocSnap.exists()) {
-                    const newProfileData = {
-                        uid: user.uid,
-                        email: user.email,
-                        displayName: user.displayName || user.email?.split('@')[0] || 'Usuário Google',
-                        photoURL: user.photoURL || null,
-                        createdAt: serverTimestamp(),
-                        bio: '',
-                        instagramUsername: '',
-                        location: '',
-                    };
-                    await setDoc(userDocRef, newProfileData);
-                    setUserProfile({
-                      bio: newProfileData.bio,
-                      instagramUsername: newProfileData.instagramUsername,
-                      location: newProfileData.location,
-                    });
-                    toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a)! Seu perfil foi criado.' });
-                } else {
-                    setUserProfile(userDocSnap.data() as UserProfile);
-                    toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a) de volta!' });
-                }
-                router.push('/');
-            }
-        } catch(error) {
-            handleAuthError(error as AuthError, 'Erro no Login com Google');
-        } finally {
-            setIsAuthenticating(false);
-        }
-    }
-    processRedirect();
-  }, [loading, isAuthenticating, router, toast, handleAuthError]);
-
-
   const signInWithGoogle = useCallback(async () => {
-    if (!auth) {
-      toast({ title: "Erro de Inicialização", description: "Serviço de autenticação não disponível.", variant: "destructive" });
-      return;
+    if (!auth || !firestore) {
+        toast({ title: "Erro de Inicialização", description: "Serviço de autenticação não disponível.", variant: "destructive" });
+        return;
     }
     setIsAuthenticating(true);
     const provider = new GoogleAuthProvider();
-    await signInWithRedirect(auth, provider).catch(err => {
-      handleAuthError(err, 'Erro ao Redirecionar para Google');
-      setIsAuthenticating(false);
-    });
-  }, [toast, handleAuthError]);
+    try {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        
+        const userDocRef = doc(firestore, "Usuarios", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (!userDocSnap.exists()) {
+            const newProfileData = {
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName || user.email?.split('@')[0] || 'Usuário Google',
+                photoURL: user.photoURL || null,
+                createdAt: serverTimestamp(),
+                bio: '',
+                instagramUsername: '',
+                location: '',
+            };
+            await setDoc(userDocRef, newProfileData);
+            toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a)! Seu perfil foi criado.' });
+        } else {
+            toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a) de volta!' });
+        }
+        router.push('/');
+
+    } catch (error) {
+        handleAuthError(error as AuthError, 'Erro no Login com Google');
+    } finally {
+        setIsAuthenticating(false);
+    }
+  }, [router, toast, handleAuthError]);
 
   const signUpWithEmail = useCallback(
     async (email: string, password: string) => {
