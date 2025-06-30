@@ -464,6 +464,7 @@ export default function FeedPage() {
           thumbnailUrl: currentUser.photoURL,
           description: newPostText.trim(),
           videoUrl: mediaUrl,
+          reactions: { thumbsUp: 0, thumbsDown: 0 },
           timestamp: serverTimestamp(),
         });
         toast({ title: "Reel Publicado!", description: "Seu vídeo está disponível para a comunidade." });

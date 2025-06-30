@@ -143,23 +143,35 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
 
     try {
       await runTransaction(firestore, async (transaction) => {
+        const storyDoc = await transaction.get(storyRef);
+        if (!storyDoc.exists()) {
+            throw new Error("Este Reel não existe mais.");
+        }
+        
         const reactionDoc = await transaction.get(reactionRef);
         const storedReaction = reactionDoc.exists() ? reactionDoc.data().type : null;
-        
+
+        const newReactions = storyDoc.data().reactions || { thumbsUp: 0, thumbsDown: 0 };
+
         if (storedReaction === reactionType) {
+            // User is un-reacting
+            newReactions[reactionType] = Math.max(0, (newReactions[reactionType] || 0) - 1);
             transaction.delete(reactionRef);
-            transaction.update(storyRef, { [`reactions.${reactionType}`]: increment(-1) });
         } else {
+            // User is adding a new reaction or changing their reaction
             if (storedReaction) {
-                transaction.update(storyRef, { [`reactions.${storedReaction}`]: increment(-1) });
+                newReactions[storedReaction] = Math.max(0, (newReactions[storedReaction] || 0) - 1);
             }
-            transaction.update(storyRef, { [`reactions.${reactionType}`]: increment(1) });
+            newReactions[reactionType] = (newReactions[reactionType] || 0) + 1;
             transaction.set(reactionRef, { type: reactionType, timestamp: serverTimestamp() });
         }
+
+        transaction.update(storyRef, { reactions: newReactions });
       });
-    } catch (error) {
-      console.error("Error handling reaction:", error);
-      toast({ variant: 'destructive', title: 'Erro ao Reagir', description: 'Não foi possível processar sua reação.' });
+      setCurrentUserStoryReaction(prev => prev === reactionType ? null : reactionType);
+    } catch (error: any) {
+      console.error("Error handling story reaction:", error);
+      toast({ variant: 'destructive', title: 'Erro ao Reagir', description: error.message || 'Não foi possível processar sua reação.' });
     }
   };
 

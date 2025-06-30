@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { StaticImageData } from 'next/image';
@@ -388,6 +389,19 @@ export default function PostCard({
   const needsTruncation = textContent.length > MAX_CHARS;
   const textToShow = isTextExpanded ? textContent : textContent.substring(0, MAX_CHARS);
 
+  // Real-time listener for the post document to update reactions
+  useEffect(() => {
+    if (!firestore) return;
+    const postRef = doc(firestore, 'posts', postId);
+    const unsubscribe = onSnapshot(postRef, (doc) => {
+        if (doc.exists()) {
+            const data = doc.data();
+            setLocalPostReactions(data.reactions || { thumbsUp: 0, thumbsDown: 0 });
+        }
+    });
+    return () => unsubscribe();
+  }, [postId]);
+
   // Fetch user's reaction on mount
   useEffect(() => {
     if (!currentUser || !firestore) return;
@@ -450,39 +464,40 @@ export default function PostCard({
 
     const postRef = doc(firestore, 'posts', postId);
     const reactionRef = doc(firestore, 'posts', postId, 'userReactions', currentUser.uid);
-    
-    // Optimistic UI update
-    const oldReaction = currentUserPostReaction;
-    const newReaction = oldReaction === reactionType ? null : reactionType;
-    setCurrentUserPostReaction(newReaction);
-    setLocalPostReactions(prev => {
-        const newCounts = { ...prev };
-        if (oldReaction) newCounts[oldReaction]--;
-        if (newReaction) newCounts[newReaction]++;
-        return newCounts;
-    });
 
     try {
       await runTransaction(firestore, async (transaction) => {
+        const postDoc = await transaction.get(postRef);
+        if (!postDoc.exists()) {
+          throw new Error("O post não existe mais.");
+        }
+
         const reactionDoc = await transaction.get(reactionRef);
         const storedReaction = reactionDoc.exists() ? reactionDoc.data().type : null;
         
+        const newReactions = postDoc.data().reactions || { thumbsUp: 0, thumbsDown: 0 };
+
         if (storedReaction === reactionType) {
-            transaction.delete(reactionRef);
-            transaction.update(postRef, { [`reactions.${reactionType}`]: increment(-1) });
+          // User is un-reacting
+          newReactions[reactionType] = Math.max(0, (newReactions[reactionType] || 0) - 1);
+          transaction.delete(reactionRef);
         } else {
-            if (storedReaction) {
-                transaction.update(postRef, { [`reactions.${storedReaction}`]: increment(-1) });
-            }
-            transaction.update(postRef, { [`reactions.${reactionType}`]: increment(1) });
-            transaction.set(reactionRef, { type: reactionType, timestamp: serverTimestamp() });
+          // User is adding a new reaction or changing their reaction
+          if (storedReaction) {
+            newReactions[storedReaction] = Math.max(0, (newReactions[storedReaction] || 0) - 1);
+          }
+          newReactions[reactionType] = (newReactions[reactionType] || 0) + 1;
+          transaction.set(reactionRef, { type: reactionType, timestamp: serverTimestamp() });
         }
+        
+        transaction.update(postRef, { reactions: newReactions });
       });
-    } catch (error) {
+
+      // Update local state for immediate feedback
+      setCurrentUserPostReaction(prev => prev === reactionType ? null : reactionType);
+    } catch (error: any) {
       console.error("Error handling reaction:", error);
-      toast({ variant: 'destructive', title: 'Erro ao Reagir', description: 'Não foi possível processar sua reação. A página será atualizada.' });
-      setCurrentUserPostReaction(oldReaction);
-      setLocalPostReactions(initialReactions);
+      toast({ variant: 'destructive', title: 'Erro ao Reagir', description: error.message || 'Não foi possível processar sua reação. Tente novamente.' });
     }
   };
   
