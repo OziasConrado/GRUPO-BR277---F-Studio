@@ -26,10 +26,14 @@ function initializeFirebase() {
 // Get the existing app or initialize a new one
 const app = getApps().length ? getApp() : initializeFirebase();
 
+// The correct bucket name, confirmed via gsutil
+const BUCKET_URL = "gs://grupo-br277.firebasestorage.app";
+
 // Conditionally get services
 const auth = app ? getAuth(app) : null;
 const firestore = app ? getFirestore(app) : null;
-const storage = app ? getStorage(app) : null;
+// Explicitly provide the storage bucket URL during initialization
+const storage = app ? getStorage(app, BUCKET_URL) : null;
 let analytics;
 
 // Initialize analytics only on client side if supported
