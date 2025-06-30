@@ -804,7 +804,7 @@ export default function PostCard({
                   <button
                     type="button"
                     onClick={() => handleImageClick(displayImageUrl!)}
-                    className="block w-full relative aspect-square overflow-hidden group focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                    className="block w-full relative aspect-video overflow-hidden group focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                     aria-label="Ampliar imagem"
                   >
                     <Image
