@@ -138,8 +138,12 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
                     (snapshot) => {}, 
                     (error) => {
                         console.error("Upload error in Chat (Image):", error);
-                        console.error(`Error Code: ${error.code}, Message: ${error.message}`);
-                        reject(error)
+                        toast({
+                            variant: "destructive",
+                            title: "Erro ao Enviar Imagem",
+                            description: `Não foi possível enviar a imagem. Erro: ${error.code}`,
+                        });
+                        reject(error);
                     }, 
                     () => {
                         getDownloadURL(uploadTask.snapshot.ref).then(resolve).catch(reject);
@@ -178,7 +182,6 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
         
     } catch (error) {
         console.error("Error sending message:", error);
-        toast({ title: "Erro ao Enviar", description: "Não foi possível enviar sua mensagem. Verifique o console para detalhes.", variant: "destructive" });
     } finally {
         setNewMessage('');
         setReplyingTo(null);
@@ -210,7 +213,11 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
                 (snapshot) => {}, 
                 (error) => {
                   console.error("Upload error in Chat (Audio):", error);
-                  console.error(`Error Code: ${error.code}, Message: ${error.message}`);
+                  toast({
+                      variant: "destructive",
+                      title: "Erro ao Enviar Áudio",
+                      description: `Não foi possível enviar sua mensagem de voz. Erro: ${error.code}`,
+                  });
                   reject(error)
                 }, 
                 () => {
@@ -234,7 +241,6 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
 
     } catch (error) {
         console.error("Error uploading audio or sending message:", error);
-        toast({ variant: "destructive", title: "Erro ao Enviar Áudio", description: "Não foi possível enviar sua mensagem de voz. Verifique o console." });
     }
   };
 

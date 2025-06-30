@@ -95,10 +95,11 @@ export default function TurismoPage() {
                 (snapshot) => {},
                 (error) => {
                     console.error("Upload error on tourism page:", error);
-                    console.error(`Error Code: ${error.code}, Message: ${error.message}`);
-                    if (error.serverResponse) {
-                        console.error('Server Response:', error.serverResponse);
-                    }
+                    toast({
+                        variant: "destructive",
+                        title: "Erro ao Enviar Imagem",
+                        description: `A foto do local não pôde ser enviada. Erro: ${error.code}`,
+                    });
                     reject(error);
                 },
                 () => {
@@ -130,7 +131,6 @@ export default function TurismoPage() {
 
     } catch (error) {
         console.error("Error indicating point: ", error);
-        toast({ variant: "destructive", title: "Erro ao Enviar", description: "Não foi possível salvar sua indicação. Tente novamente." });
     } finally {
         setIsSubmitting(false);
     }

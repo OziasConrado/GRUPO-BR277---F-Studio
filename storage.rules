@@ -1,70 +1,57 @@
-
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
 
-    // REGRA 1: Permite leitura pública de todos os arquivos.
-    // Isso é necessário para que as imagens do feed, avatares, etc.,
-    // possam ser visualizados por todos os usuários.
-    match /{allPaths=**} {
-      allow read;
+    // Função para verificar se o usuário é o proprietário do diretório
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
     }
 
-    // REGRA 2: FOTOS DE PERFIL
-    // Apenas o usuário autenticado pode salvar em sua própria pasta de perfil.
-    // Limita o tamanho para 5MB e o tipo para imagem.
+    // Permitir leitura pública para todos os arquivos por padrão.
+    // Isso é simples e aceitável para um aplicativo social onde o conteúdo é público.
+    allow read;
+
+    // Regra geral para proteger o acesso de escrita
+    match /{path=**} {
+      allow write: if false; // Nega escrita por padrão
+    }
+
+    // Regras específicas de escrita por pasta
     match /profile_pictures/{userId}/{fileName} {
-      allow write: if request.auth != null 
-                    && request.auth.uid == userId
-                    && request.resource.size < 5 * 1024 * 1024
+      allow write: if isOwner(userId)
+                    && request.resource.size < 5 * 1024 * 1024 // Max 5MB
                     && request.resource.contentType.matches('image/.*');
     }
 
-    // REGRA 3: IMAGENS DO FEED E CHAT
-    // Apenas o usuário autenticado pode salvar em sua própria pasta de imagens.
-    // Limita o tamanho para 10MB e o tipo para imagem.
     match /images/{userId}/{fileName} {
-      allow write: if request.auth != null
-                    && request.auth.uid == userId
-                    && request.resource.size < 10 * 1024 * 1024
-                    && request.resource.contentType.matches('image/.*');
-    }
-    match /chat_images/{userId}/{fileName} {
-      allow write: if request.auth != null
-                    && request.auth.uid == userId
-                    && request.resource.size < 10 * 1024 * 1024
-                    && request.resource.contentType.matches('image/.*');
+        allow write: if isOwner(userId)
+                      && request.resource.size < 10 * 1024 * 1024 // Max 10MB
+                      && request.resource.contentType.matches('image/.*');
     }
 
-    // REGRA 4: VÍDEOS (REELS)
-    // Apenas o usuário autenticado pode salvar em sua própria pasta de vídeos.
-    // Limita o tamanho para 50MB e o tipo para vídeo.
     match /videos/{userId}/{fileName} {
-      allow write: if request.auth != null
-                    && request.auth.uid == userId
-                    && request.resource.size < 50 * 1024 * 1024
-                    && request.resource.contentType.matches('video/.*');
+        allow write: if isOwner(userId)
+                      && request.resource.size < 50 * 1024 * 1024 // Max 50MB
+                      && request.resource.contentType.matches('video/.*');
     }
 
-    // REGRA 5: ÁUDIOS DO CHAT
-    // Apenas o usuário autenticado pode salvar em sua própria pasta de áudios.
-    // Limita o tamanho para 10MB e o tipo para áudio.
+    match /chat_images/{userId}/{fileName} {
+         allow write: if isOwner(userId)
+                      && request.resource.size < 10 * 1024 * 1024 // Max 10MB
+                      && request.resource.contentType.matches('image/.*');
+    }
+
     match /chat_audio/{userId}/{fileName} {
-      allow write: if request.auth != null
-                    && request.auth.uid == userId
-                    && request.resource.size < 10 * 1024 * 1024
-                    && request.resource.contentType.matches('audio/.*');
+         allow write: if isOwner(userId)
+                      && request.resource.size < 10 * 1024 * 1024 // Max 10MB
+                      && request.resource.contentType.matches('audio/.*');
     }
-
-    // REGRA 6: IMAGENS INDICADAS (TURISMO)
-    // Apenas o usuário autenticado pode enviar imagens de sugestões.
-    // Limita o tamanho para 5MB e o tipo para imagem.
+    
     match /indicated_points_images/{userId}/{fileName} {
-      allow write: if request.auth != null
-                    && request.auth.uid == userId
-                    && request.resource.size < 5 * 1024 * 1024
-                    && request.resource.contentType.matches('image/.*');
+        allow write: if isOwner(userId)
+                      && request.resource.size < 5 * 1024 * 1024 // Max 5MB
+                      && request.resource.contentType.matches('image/.*');
     }
   }
 }

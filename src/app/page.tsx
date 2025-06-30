@@ -431,10 +431,11 @@ export default function FeedPage() {
                 (snapshot) => { /* Can show progress here if needed */ },
                 (error) => {
                     console.error("Upload error on feed page:", error);
-                    console.error(`Error Code: ${error.code}, Message: ${error.message}`);
-                    if (error.serverResponse) {
-                        console.error('Server Response:', error.serverResponse);
-                    }
+                    toast({
+                        variant: "destructive",
+                        title: "Erro no Upload",
+                        description: `Sua mídia não pôde ser enviada. Erro: ${error.code}`,
+                    });
                     reject(error);
                 },
                 () => {
@@ -505,7 +506,7 @@ export default function FeedPage() {
       resetFormState();
     } catch (error) {
       console.error("Error publishing content:", error);
-      toast({ variant: 'destructive', title: 'Erro ao Publicar', description: 'Não foi possível salvar. Verifique o console para detalhes.' });
+      // Toast for upload error is now handled inside the upload promise
     } finally {
         setIsPublishing(false);
     }

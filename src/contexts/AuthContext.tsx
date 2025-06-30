@@ -287,7 +287,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             const uploadToast = toast({
                 title: "Enviando imagem...",
-                description: "Progresso: 0%",
+                description: "Aguarde, por favor.",
             });
 
             newPhotoURL = await new Promise<string>((resolve, reject) => {
@@ -301,24 +301,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     },
                     (error) => {
                         console.error("Upload error in AuthContext:", error);
-                        console.error(`Error Code: ${error.code}, Message: ${error.message}`);
-                        let description = "Não foi possível enviar a imagem.";
-                        switch (error.code) {
-                            case 'storage/unauthorized':
-                                description = "Você não tem permissão para enviar este arquivo. Verifique as regras de segurança do Storage.";
-                                break;
-                            case 'storage/canceled':
-                                description = "O envio foi cancelado.";
-                                break;
-                            case 'storage/unknown':
-                            default:
-                                description = "Ocorreu um erro desconhecido. Verifique o console para mais detalhes.";
-                                break;
-                        }
                         uploadToast.update({
                             id: uploadToast.id,
-                            title: "Erro no Upload",
-                            description: description,
+                            title: "Erro no Upload da Foto",
+                            description: `Não foi possível salvar sua foto. Erro: ${error.code}`,
                             variant: "destructive",
                         });
                         reject(error);
@@ -382,7 +368,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
         setAuthAction(null);
     }
-  }, [userProfile, router, toast]);
+  }, [userProfile, toast]);
 
 
   const signOutUser = useCallback(async () => {
