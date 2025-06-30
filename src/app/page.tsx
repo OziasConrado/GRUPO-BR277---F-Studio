@@ -431,6 +431,10 @@ export default function FeedPage() {
                 (snapshot) => { /* Can show progress here if needed */ },
                 (error) => {
                     console.error("Upload error on feed page:", error);
+                    console.error(`Error Code: ${error.code}, Message: ${error.message}`);
+                    if (error.serverResponse) {
+                        console.error('Server Response:', error.serverResponse);
+                    }
                     reject(error);
                 },
                 () => {

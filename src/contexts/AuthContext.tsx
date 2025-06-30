@@ -301,6 +301,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     },
                     (error) => {
                         console.error("Upload error in AuthContext:", error);
+                        console.error(`Error Code: ${error.code}, Message: ${error.message}`);
                         let description = "Não foi possível enviar a imagem.";
                         switch (error.code) {
                             case 'storage/unauthorized':
@@ -310,7 +311,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                                 description = "O envio foi cancelado.";
                                 break;
                             case 'storage/unknown':
-                                description = "Ocorreu um erro desconhecido no servidor. Verifique as regras de armazenamento e a configuração de CORS.";
+                            default:
+                                description = "Ocorreu um erro desconhecido. Verifique o console para mais detalhes.";
                                 break;
                         }
                         uploadToast.update({

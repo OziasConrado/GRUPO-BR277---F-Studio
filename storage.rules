@@ -2,18 +2,12 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+    // ATENÇÃO: Regra temporária para diagnóstico.
+    // Permite leitura e escrita pública para isolar o problema de upload.
+    // Esta regra é insegura e deve ser substituída por regras restritivas
+    // assim que o problema de upload for resolvido.
     match /{allPaths=**} {
-      // Public read access for all files to allow images, logos, etc., to be displayed.
-      allow read;
-
-      // Allow write only for authenticated users and add server-side validation.
-      allow write: if request.auth != null &&
-                      // Max file size: 50MB (for large videos)
-                      request.resource.size < 50 * 1024 * 1024 &&
-                      // Allowed content types: image, video, or audio
-                      (request.resource.contentType.matches('image/.*') ||
-                       request.resource.contentType.matches('video/.*') ||
-                       request.resource.contentType.matches('audio/.*'));
+      allow read, write;
     }
   }
 }

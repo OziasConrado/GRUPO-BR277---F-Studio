@@ -95,6 +95,10 @@ export default function TurismoPage() {
                 (snapshot) => {},
                 (error) => {
                     console.error("Upload error on tourism page:", error);
+                    console.error(`Error Code: ${error.code}, Message: ${error.message}`);
+                    if (error.serverResponse) {
+                        console.error('Server Response:', error.serverResponse);
+                    }
                     reject(error);
                 },
                 () => {
