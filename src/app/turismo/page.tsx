@@ -86,7 +86,9 @@ export default function TurismoPage() {
         
         const storagePath = `indicated_points_images/${currentUser.uid}/${Date.now()}_${imageFile.name}`;
         const storageRef = ref(storage, storagePath);
-        const uploadTask = uploadBytesResumable(storageRef, imageFile);
+        
+        const metadata = { contentType: imageFile.type };
+        const uploadTask = uploadBytesResumable(storageRef, imageFile, metadata);
 
         const imageUrl = await new Promise<string>((resolve, reject) => {
             uploadTask.on('state_changed',
@@ -199,8 +201,8 @@ export default function TurismoPage() {
       </div>
       <IndicatePointModal 
         isOpen={isIndicateModalOpen}
-        onClose={() => setIsIndicateModalOpen(false)}
         onSubmit={handleIndicatePoint}
+        onClose={() => setIsIndicateModalOpen(false)}
         isSubmitting={isSubmitting}
       />
     </>

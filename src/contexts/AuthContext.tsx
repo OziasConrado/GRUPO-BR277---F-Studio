@@ -282,7 +282,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const file = data.newPhotoFile;
             const photoRef = ref(storage, `profile_pictures/${userForUpdate.uid}/${Date.now()}_${file.name}`);
             
-            const uploadTask = uploadBytesResumable(photoRef, file);
+            const metadata = { contentType: file.type };
+            const uploadTask = uploadBytesResumable(photoRef, file, metadata);
 
             const uploadToast = toast({
                 title: "Enviando imagem...",

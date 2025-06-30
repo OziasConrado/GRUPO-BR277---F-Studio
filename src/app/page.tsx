@@ -423,7 +423,8 @@ export default function FeedPage() {
         const storagePath = `${mediaType}/${currentUser.uid}/${Date.now()}_${selectedMediaForUpload.name}`;
         const storageRef = ref(storage, storagePath);
         
-        const uploadTask = uploadBytesResumable(storageRef, selectedMediaForUpload);
+        const metadata = { contentType: selectedMediaForUpload.type };
+        const uploadTask = uploadBytesResumable(storageRef, selectedMediaForUpload, metadata);
 
         mediaUrl = await new Promise<string>((resolve, reject) => {
             uploadTask.on('state_changed',

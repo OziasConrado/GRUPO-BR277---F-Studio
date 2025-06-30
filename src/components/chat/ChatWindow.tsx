@@ -130,7 +130,8 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
         if (selectedImageFile) {
             const uniqueId = `image_${Date.now()}_${selectedImageFile.name}`;
             const storageRef = ref(storage, `chat_images/${currentUser.uid}/${uniqueId}`);
-            const uploadTask = uploadBytesResumable(storageRef, selectedImageFile);
+            const metadata = { contentType: selectedImageFile.type };
+            const uploadTask = uploadBytesResumable(storageRef, selectedImageFile, metadata);
 
             imageUrl = await new Promise<string>((resolve, reject) => {
                 uploadTask.on('state_changed', 
@@ -195,9 +196,10 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
 
     const uniqueId = `audio_${Date.now()}.webm`;
     const storageRef = ref(storage, `chat_audio/${currentUser.uid}/${uniqueId}`);
+    const metadata = { contentType: 'audio/webm' };
 
     try {
-        const uploadTask = uploadBytesResumable(storageRef, audioBlob);
+        const uploadTask = uploadBytesResumable(storageRef, audioBlob, metadata);
         
         const downloadURL = await new Promise<string>((resolve, reject) => {
             uploadTask.on('state_changed', 
