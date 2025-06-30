@@ -4,50 +4,21 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     
-    // As regras são aplicadas de cima para baixo.
-    // A primeira regra que corresponde ao caminho é usada.
-
-    // Permite que qualquer pessoa leia arquivos de pastas públicas.
-    match /Concessões de Pedágio/{allPaths=**} {
-      allow read: if true;
-      allow write: if false; // Ninguém pode escrever aqui.
-    }
-    match /Ícones e Logo do app GRUPO BR277/{allPaths=**} {
-      allow read: if true;
+    // Por padrão, permite que qualquer pessoa leia todos os arquivos, 
+    // mas ninguém pode escrever (a menos que seja permitido por uma regra mais específica abaixo).
+    // Isso é necessário para que as imagens de perfil, posts, etc., sejam visíveis para todos no aplicativo.
+    match /{allPaths=**} {
+      allow read;
       allow write: if false;
     }
-    
-    // Usuários autenticados podem escrever em suas próprias pastas.
-    // E qualquer um pode ler (necessário para ver as fotos de perfil e posts de outros).
-    match /profile_pictures/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    match /images/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    match /videos/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    match /chat_images/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    match /chat_audio/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    match /indicated_points_images/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
 
-    // Regra padrão: Nega todas as outras leituras e escritas.
-    // Esta regra não será alcançada se os caminhos acima corresponderem.
-    match /{allPaths=**} {
-      allow read, write: if false;
+    // Esta regra permite que um usuário autenticado escreva em qualquer pasta que esteja
+    // diretamente dentro de uma pasta com seu ID de usuário.
+    // Ex: /profile_pictures/{userId}/minha_foto.jpg
+    // Ex: /images/{userId}/imagem_do_post.png
+    // Isso cobre todos os nossos casos de upload (perfil, feed, chat, etc.).
+    match /{folder}/{userId}/{allPaths=**} {
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
