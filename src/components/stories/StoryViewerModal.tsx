@@ -4,7 +4,10 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogClose, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { X, ThumbsUp, ThumbsDown, MessageSquare, Share2, MoreVertical, Flag } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Textarea } from '@/components/ui/textarea';
+import { X, ThumbsUp, ThumbsDown, MessageSquare, Share2, MoreVertical, Flag, Send } from 'lucide-react';
 import type { StoryCircleProps } from './StoryCircle';
 import Image from 'next/image';
 import {
@@ -25,9 +28,35 @@ import {
 } from '@/components/ui/alert-dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { firestore } from '@/lib/firebase/client';
+import {
+  collection,
+  addDoc,
+  query,
+  orderBy,
+  onSnapshot,
+  serverTimestamp,
+  doc,
+  runTransaction,
+  increment,
+  getDoc,
+  Timestamp,
+} from 'firebase/firestore';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
+// Interfaces
+interface CommentProps {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatarUrl?: string;
+  timestamp: string;
+  text: string;
+}
 
 interface StoryViewerModalProps {
   isOpen: boolean;
@@ -35,6 +64,7 @@ interface StoryViewerModalProps {
   story: StoryCircleProps | null;
 }
 
+// Report Reasons
 const reportReasonsStory = [
   { id: "story_spam", label: "Spam ou irrelevante." },
   { id: "story_hate", label: "Discurso de ódio ou bullying." },
@@ -46,54 +76,115 @@ const reportReasonsStory = [
 
 export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewerModalProps) {
   const { toast } = useToast();
+  const { currentUser } = useAuth();
+  
+  // State for reactions, comments, and modals
   const [storyReactions, setStoryReactions] = useState({ thumbsUp: 0, thumbsDown: 0 });
   const [currentUserStoryReaction, setCurrentUserStoryReaction] = useState<'thumbsUp' | 'thumbsDown' | null>(null);
-
+  const [comments, setComments] = useState<CommentProps[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [isCommentSheetOpen, setIsCommentSheetOpen] = useState(false);
+  
   const [isReportModalOpenStory, setIsReportModalOpenStory] = useState(false);
   const [selectedReportReasonStory, setSelectedReportReasonStory] = useState<string | undefined>(undefined);
   const [otherReportReasonTextStory, setOtherReportReasonTextStory] = useState('');
 
+  // Effect to fetch real-time data for the story
   useEffect(() => {
-    if (isOpen && story) {
-      // Mock initial reactions for demonstration
-      setStoryReactions({ 
-        thumbsUp: Math.floor(Math.random() * 50) + (story.storyType === 'video' ? 10 : 0), 
-        thumbsDown: Math.floor(Math.random() * 5) 
+    if (!isOpen || !story || !firestore) return;
+
+    // Fetch reactions and user's vote
+    const storyRef = doc(firestore, 'reels', story.id);
+    const unsubReactions = onSnapshot(storyRef, (doc) => {
+      const data = doc.data();
+      setStoryReactions(data?.reactions || { thumbsUp: 0, thumbsDown: 0 });
+    });
+
+    let unsubUserReaction: () => void = () => {};
+    if (currentUser) {
+      const reactionRef = doc(firestore, 'reels', story.id, 'userReactions', currentUser.uid);
+      unsubUserReaction = onSnapshot(reactionRef, (doc) => {
+        setCurrentUserStoryReaction(doc.exists() ? doc.data().type : null);
       });
-      setCurrentUserStoryReaction(null);
-      // In a real app, you would fetch reactions for story.id
     }
-  }, [isOpen, story]);
 
-  if (!isOpen || !story) return null;
+    // Fetch comments
+    const commentsQuery = query(collection(firestore, 'reels', story.id, 'comments'), orderBy('timestamp', 'desc'));
+    const unsubComments = onSnapshot(commentsQuery, (snapshot) => {
+      const fetchedComments = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          userId: data.userId,
+          userName: data.userName,
+          userAvatarUrl: data.userAvatarUrl,
+          text: data.text,
+          timestamp: data.timestamp ? formatDistanceToNow(data.timestamp.toDate(), { addSuffix: true, locale: ptBR }) : 'Agora',
+        } as CommentProps;
+      });
+      setComments(fetchedComments);
+    });
 
-  const handleStoryReactionClick = (reactionType: 'thumbsUp' | 'thumbsDown') => {
-    setStoryReactions(prevReactions => {
-      const newReactions = { ...prevReactions };
-      if (currentUserStoryReaction === reactionType) {
-        newReactions[reactionType]--;
-        setCurrentUserStoryReaction(null);
-      } else {
-        if (currentUserStoryReaction) {
-          newReactions[currentUserStoryReaction]--;
+    return () => {
+      unsubReactions();
+      unsubUserReaction();
+      unsubComments();
+    };
+  }, [isOpen, story, currentUser]);
+
+
+  const handleStoryReactionClick = async (reactionType: 'thumbsUp' | 'thumbsDown') => {
+    if (!currentUser || !firestore || !story) {
+        toast({ variant: 'destructive', title: 'Você precisa estar logado para reagir.' });
+        return;
+    }
+    const storyRef = doc(firestore, 'reels', story.id);
+    const reactionRef = doc(firestore, 'reels', story.id, 'userReactions', currentUser.uid);
+
+    try {
+      await runTransaction(firestore, async (transaction) => {
+        const reactionDoc = await transaction.get(reactionRef);
+        const storedReaction = reactionDoc.exists() ? reactionDoc.data().type : null;
+        
+        if (storedReaction === reactionType) {
+            transaction.delete(reactionRef);
+            transaction.update(storyRef, { [`reactions.${reactionType}`]: increment(-1) });
+        } else {
+            if (storedReaction) {
+                transaction.update(storyRef, { [`reactions.${storedReaction}`]: increment(-1) });
+            }
+            transaction.update(storyRef, { [`reactions.${reactionType}`]: increment(1) });
+            transaction.set(reactionRef, { type: reactionType, timestamp: serverTimestamp() });
         }
-        newReactions[reactionType]++;
-        setCurrentUserStoryReaction(reactionType);
-      }
-      return newReactions;
-    });
-    // console.log(`Story ${story.id} reaction: ${reactionType}`);
+      });
+    } catch (error) {
+      console.error("Error handling reaction:", error);
+      toast({ variant: 'destructive', title: 'Erro ao Reagir', description: 'Não foi possível processar sua reação.' });
+    }
   };
 
-  const handleCommentClick = () => {
-    toast({
-      title: "Comentários para Reels",
-      description: "Funcionalidade de comentários para Reels em breve!",
-    });
+  const handlePostComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim() || !currentUser || !firestore || !story) return;
+
+    try {
+      await addDoc(collection(firestore, 'reels', story.id, 'comments'), {
+        userId: currentUser.uid,
+        userName: currentUser.displayName,
+        userAvatarUrl: currentUser.photoURL,
+        text: newComment.trim(),
+        timestamp: serverTimestamp(),
+      });
+      setNewComment('');
+    } catch (error) {
+      console.error("Error posting comment:", error);
+      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível postar o comentário.' });
+    }
   };
+
 
   const handleShareClick = () => {
-    if (navigator.share && story.videoContentUrl) {
+    if (navigator.share && story?.videoContentUrl) {
       navigator.share({
         title: `Confira este Reel: ${story.adminName}`,
         text: `Assista ao Reel "${story.adminName}" no Rota Segura!`,
@@ -129,6 +220,9 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
     setSelectedReportReasonStory(undefined);
     setOtherReportReasonTextStory('');
   };
+
+  if (!isOpen || !story) return null;
+
 
   const AdMobSpace = () => (
     <div className="shrink-0 h-[100px] bg-secondary/20 flex items-center justify-center text-sm text-secondary-foreground">
@@ -177,7 +271,6 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
               )}
             </div>
 
-            {/* Vertical Reaction Bar */}
             <div className="absolute right-2 sm:right-4 bottom-[110px] sm:bottom-1/2 sm:translate-y-1/2 z-[220] flex flex-col items-center space-y-2 bg-black/25 p-2 rounded-full backdrop-blur-sm">
               <Button 
                 variant="ghost" 
@@ -199,12 +292,12 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
               </Button>
               <Button 
                 variant="ghost" 
-                onClick={handleCommentClick} 
+                onClick={() => setIsCommentSheetOpen(true)} 
                 className="text-white hover:bg-white/10 hover:text-white/90 p-1.5 h-auto w-auto flex flex-col items-center"
                 aria-label="Comentários"
               >
                 <MessageSquare size={26} />
-                {/* <span className="text-xs mt-0.5">0</span> */}
+                <span className="text-xs mt-0.5">{comments.length > 0 ? comments.length : ''}</span>
               </Button>
               <Button 
                 variant="ghost" 
@@ -213,7 +306,6 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
                 aria-label="Compartilhar"
               >
                 <Share2 size={26} />
-                {/* <span className="text-xs mt-0.5">Share</span> */}
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -226,7 +318,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" side="left" className="bg-background/80 backdrop-blur-md border-slate-700/50 text-foreground">
-                  <DropdownMenuItem onClick={() => setIsReportModalOpenStory(true)}>
+                  <DropdownMenuItem onClick={() => setIsReportModalOpenStory(true)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
                     <Flag className="mr-2 h-4 w-4" />
                     <span>Reportar Reel</span>
                   </DropdownMenuItem>
@@ -238,8 +330,50 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
           <AdMobSpace />
         </DialogContent>
       </Dialog>
+      
+      <Sheet open={isCommentSheetOpen} onOpenChange={setIsCommentSheetOpen}>
+        <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0 rounded-t-[25px]">
+          <SheetHeader className="p-3 border-b text-center">
+            <SheetTitle>Comentários sobre o Reel</SheetTitle>
+          </SheetHeader>
+          <div className="flex-grow overflow-y-auto p-4 space-y-4">
+            {comments.length > 0 ? (
+              comments.map(comment => (
+                <div key={comment.id} className="flex items-start space-x-2">
+                  <Avatar className="h-8 w-8">
+                    {comment.userAvatarUrl && <AvatarImage src={comment.userAvatarUrl} alt={comment.userName} />}
+                    <AvatarFallback>{comment.userName?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-grow p-3 rounded-lg bg-muted">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold">{comment.userName}</p>
+                      <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
+                    </div>
+                    <p className="text-sm mt-1">{comment.text}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-muted-foreground text-center pt-8">Nenhum comentário ainda.</p>
+            )}
+          </div>
+          <div className="p-3 border-t bg-card sticky bottom-0">
+            <form onSubmit={handlePostComment} className="flex items-center gap-2">
+              <Textarea
+                placeholder="Adicione um comentário..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                className="rounded-lg bg-muted min-h-[44px] max-h-[120px] resize-none"
+                rows={1}
+              />
+              <Button type="submit" size="icon" className="rounded-full" disabled={!newComment.trim()}>
+                <Send className="h-4 w-4" />
+              </Button>
+            </form>
+          </div>
+        </SheetContent>
+      </Sheet>
 
-      {/* Report Story Modal */}
       <AlertDialog open={isReportModalOpenStory} onOpenChange={setIsReportModalOpenStory}>
         <AlertDialogContent>
           <AlertDialogHeader>
