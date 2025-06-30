@@ -1,80 +1,101 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Users can manage their own profile. Anyone can read public info.
+    // Users can read public profiles, and only they can create/update their own.
     match /Usuarios/{userId} {
-      allow read;
-      allow create, update: if request.auth != null && request.auth.uid == userId;
+      allow read: if true;
+      allow create, update, delete: if request.auth != null && request.auth.uid == userId;
 
-      // Notifications: Only the owner can read/update their own notifications.
+      // Notifications are private to the user
       match /notifications/{notificationId} {
-        allow read, update: if request.auth != null && request.auth.uid == userId;
-        // Allow server-side functions to create notifications
-        allow create: if request.auth != null;
+        allow read, create, update, delete: if request.auth != null && request.auth.uid == userId;
       }
     }
 
-    // Posts can be read by anyone. Only authors can update/delete their own posts.
+    // Rules for posts
     match /posts/{postId} {
-      allow read;
+      allow read: if true;
       allow create: if request.auth != null;
-      // The `deleted` flag is an update, so check author
-      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
-      // Disallow full deletes for now to allow soft deletes
-      allow delete: if false;
+      // Author can update/soft-delete their post. Others can only update reactions.
+      allow update: if request.auth != null &&
+                     (request.auth.uid == resource.data.userId ||
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions', 'poll']));
 
       match /comments/{commentId} {
-        allow read;
+        allow read: if true;
         allow create: if request.auth != null;
+        allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
       }
 
       match /userReactions/{userId} {
-        allow read;
+        allow read: if true;
         allow create, delete: if request.auth != null && request.auth.uid == userId;
+        allow update: if false;
       }
 
       match /userVotes/{userId} {
-        allow read;
-        allow create, update: if request.auth != null && request.auth.uid == userId;
+        allow read: if true;
+        allow create: if request.auth != null && request.auth.uid == userId;
+        allow update, delete: if false;
       }
     }
-    
-    // Alerts can be read by anyone and created by any authenticated user.
-    match /alerts/{alertId} {
-        allow read;
-        allow create: if request.auth != null;
-    }
-    
-    // Reels can be read by anyone and created by any authenticated user.
+
+    // Rules for reels
     match /reels/{reelId} {
-        allow read;
+      allow read: if true;
+      allow create: if request.auth != null;
+      // Author can update/delete, others can only update reactions.
+      allow update: if request.auth != null &&
+                     (request.auth.uid == resource.data.userId ||
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions']));
+      allow delete: if request.auth.uid == resource.data.userId;
+
+
+      match /comments/{commentId} {
+        allow read: if true;
         allow create: if request.auth != null;
-    }
-    
-    // SAU reviews can be read by anyone and created by any authenticated user.
-    match /sau_reviews/{reviewId} {
-        allow read;
-        allow create: if request.auth != null;
+      }
+
+      match /userReactions/{userId} {
+        allow read: if true;
+        allow create, delete: if request.auth != null && request.auth.uid == userId;
+        allow update: if false;
+      }
     }
 
-    // Indicated tourist points can be read by anyone and created by any authenticated user.
-    match /tourist_points_indicated/{pointId} {
-        allow read;
-        allow create: if request.auth != null;
+    // Alerts can be read by anyone, created by authenticated users.
+    match /alerts/{alertId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if false;
     }
-    
-    // Chat messages can be read/created by any authenticated user.
-    // Authors can update/delete their own messages.
+
+    // SAU reviews can be read by anyone, created by authenticated users.
+    match /sau_reviews/{reviewId} {
+        allow read: if true;
+        allow create: if request.auth != null;
+        allow update, delete: if request.auth.uid == resource.data.userId;
+    }
+
+    // Indicated tourist points
+    match /tourist_points_indicated/{pointId} {
+        allow read: if true;
+        allow create: if request.auth != null;
+        allow update, delete: if false; // Managed by admin
+    }
+
+    // Chat messages
     match /chatMessages/{messageId} {
-      allow read, create: if request.auth != null;
+      allow read: if true;
+      allow create: if request.auth != null;
       allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
 
       match /userReactions/{userId} {
-        allow read;
+        allow read: if true;
         allow create, delete: if request.auth != null && request.auth.uid == userId;
+        allow update: if false;
       }
     }
   }
