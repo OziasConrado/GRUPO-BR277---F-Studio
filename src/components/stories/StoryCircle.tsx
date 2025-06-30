@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -16,7 +15,7 @@ export interface StoryCircleProps {
   onClick?: () => void;
 }
 
-export default function StoryCircle({ adminName, avatarUrl, dataAIAvatarHint, hasNewStory, storyType, onClick }: StoryCircleProps) {
+export default function StoryCircle({ adminName, avatarUrl, dataAIAvatarHint, hasNewStory, storyType, videoContentUrl, onClick }: StoryCircleProps) {
   return (
     <button
       type="button"
@@ -33,18 +32,31 @@ export default function StoryCircle({ adminName, avatarUrl, dataAIAvatarHint, ha
           "relative w-full h-full bg-card rounded-md overflow-hidden"
         )}
       >
-        <Image
-          src={avatarUrl}
-          alt={adminName}
-          layout="fill"
-          objectFit="cover"
-          className="rounded-sm"
-          data-ai-hint={dataAIAvatarHint || (storyType === 'video' ? 'video story content' : 'image story content')}
-        />
+        {storyType === 'video' && videoContentUrl ? (
+           <video
+              src={videoContentUrl}
+              muted
+              loop
+              autoPlay
+              playsInline
+              className="w-full h-full object-cover rounded-sm"
+              data-ai-hint={dataAIAvatarHint || 'video story content'}
+           />
+        ) : (
+            <Image
+              src={avatarUrl}
+              alt={adminName}
+              layout="fill"
+              objectFit="cover"
+              className="rounded-sm"
+              data-ai-hint={dataAIAvatarHint || (storyType === 'video' ? 'video story content' : 'image story content')}
+            />
+        )}
+
 
         {/* Overlay Icon for Video Type */}
         {storyType === 'video' && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
             <PlayCircle className="w-8 h-8 text-white/80 drop-shadow-lg" />
           </div>
         )}
