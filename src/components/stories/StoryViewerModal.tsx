@@ -254,9 +254,9 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
               {story.storyType === 'video' && story.videoContentUrl ? (
                 <video
                   src={story.videoContentUrl}
-                  controls
                   autoPlay
                   loop
+                  playsInline
                   className="w-full h-full object-contain"
                   data-ai-hint={story.dataAIAvatarHint || "user uploaded video"}
                 />
@@ -271,7 +271,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
               )}
             </div>
 
-            <div className="absolute right-2 sm:right-4 bottom-[110px] sm:bottom-1/2 sm:translate-y-1/2 z-[220] flex flex-col items-center space-y-2 bg-black/25 p-2 rounded-full backdrop-blur-sm">
+            <div className="absolute right-2 sm:right-4 bottom-[110px] sm:bottom-1/2 sm:translate-y-1/2 z-[220] flex flex-col items-center space-y-2 bg-black/25 p-2 rounded-full">
               <Button 
                 variant="ghost" 
                 onClick={() => handleStoryReactionClick('thumbsUp')} 
