@@ -17,7 +17,7 @@ import {
   CopilotOutputSchema,
   type CopilotOutput,
 } from '@/ai/schemas/copilot-schemas';
-import { type MessageData } from '@genkit-ai/ai/model';
+import { type MessageData, type TextData, type MediaData } from '@genkit-ai/ai/model';
 
 export type { CopilotInput, CopilotOutput };
 
@@ -259,9 +259,25 @@ const copilotFlow = ai.defineFlow(
       });
 
       if (llmResponse.message) {
+        // Manually construct a valid MessageData object from the Message object.
+        // The main difference is that `Message.content` is `Part[]` where `text` can be `undefined`,
+        // while `MessageData.content` expects `ContentData` where `text` must be a `string`.
+        const newContent = llmResponse.message.content
+          .map((part) => {
+            if (part.text !== undefined) {
+              return { text: part.text };
+            }
+            if (part.media) {
+              return { media: part.media };
+            }
+            // Filter out other part types like toolRequest/toolResponse for the history
+            return null;
+          })
+          .filter((p): p is TextData | MediaData => p !== null);
+
         const newMessageData: MessageData = {
           role: llmResponse.message.role,
-          content: llmResponse.message.content,
+          content: newContent,
         };
         if (llmResponse.message.metadata) {
           newMessageData.metadata = llmResponse.message.metadata;
