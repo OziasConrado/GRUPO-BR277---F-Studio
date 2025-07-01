@@ -89,13 +89,26 @@ const getTrafficInfo = ai.defineTool(
 
             if (data.routes && data.routes.length > 0) {
                 const route = data.routes[0];
-                const distanceKm = (route.distanceMeters / 1000).toFixed(1);
-                const distance = `${distanceKm} km`;
                 
-                const durationSeconds = parseInt(route.duration.slice(0, -1)); // remove 's'
-                const hours = Math.floor(durationSeconds / 3600);
-                const minutes = Math.floor((durationSeconds % 3600) / 60);
-                const travelTime = `${hours > 0 ? `${hours} hora${hours > 1 ? 's' : ''} e ` : ''}${minutes} minuto${minutes > 1 ? 's' : ''}`;
+                let distance = "desconhecida";
+                if (route.distanceMeters) {
+                    const distanceKm = (route.distanceMeters / 1000).toFixed(1);
+                    distance = `${distanceKm} km`;
+                }
+
+                let travelTime = "desconhecido";
+                if (route.duration) {
+                    const durationSeconds = parseInt(route.duration.replace('s', ''), 10);
+                    if (!isNaN(durationSeconds)) {
+                        const hours = Math.floor(durationSeconds / 3600);
+                        const minutes = Math.floor((durationSeconds % 3600) / 60);
+                        
+                        const timeParts = [];
+                        if (hours > 0) timeParts.push(`${hours} hora${hours > 1 ? 's' : ''}`);
+                        if (minutes > 0) timeParts.push(`${minutes} minuto${minutes > 1 ? 's' : ''}`);
+                        travelTime = timeParts.join(' e ') || 'menos de 1 minuto';
+                    }
+                }
 
                 const summary = route.travelAdvisory?.trafficReport?.summary || "Sem informações detalhadas de tráfego disponíveis.";
                 
