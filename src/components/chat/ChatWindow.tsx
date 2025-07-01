@@ -5,7 +5,6 @@ import { useState, useRef, useEffect, type ChangeEvent, type FormEvent } from 'r
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { X, Send, Paperclip, Mic } from "lucide-react";
 import ChatMessageItem, { type ChatMessageData } from "./ChatMessageItem";
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -105,10 +104,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
 
   useEffect(() => {
     if (scrollAreaRef.current) {
-      const viewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
-      if (viewport) {
-        viewport.scrollTop = viewport.scrollHeight;
-      }
+        scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
   }, [messages, replyingTo]);
 
@@ -453,7 +449,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
           {/* A close button is automatically added by DialogContent */}
         </header>
 
-        <ScrollArea className="flex-grow bg-muted/20 min-h-0" ref={scrollAreaRef}>
+        <div className="overflow-y-auto min-h-0 bg-muted/20" ref={scrollAreaRef}>
           <div className="p-4 space-y-4">
             {messages.map(msg => (
               <ChatMessageItem 
@@ -466,7 +462,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
               />
             ))}
           </div>
-        </ScrollArea>
+        </div>
 
         <footer className="border-t border-border/50 bg-card shrink-0">
           {replyingTo && (
