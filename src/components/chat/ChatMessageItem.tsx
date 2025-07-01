@@ -95,8 +95,8 @@ const ReplyPreview = ({ replyInfo }: { replyInfo: NonNullable<ChatMessageData['r
             onClick={handlePreviewClick} 
             className="block w-full text-left p-2 mb-2 rounded-md bg-black/5 dark:bg-white/5 border-l-2 border-primary/50 hover:bg-black/10 dark:hover:bg-white/10"
         >
-            <p className="text-xs font-semibold text-primary truncate break-all">{replyInfo.userName}</p>
-            <p className="text-sm text-muted-foreground truncate break-all">{replyInfo.messageText}</p>
+            <p className="text-xs font-semibold text-primary truncate">{replyInfo.userName}</p>
+            <p className="text-sm text-muted-foreground truncate">{replyInfo.messageText}</p>
         </button>
     );
 };
@@ -294,7 +294,7 @@ export default function ChatMessageItem({
                 
                 {text && (
                   <div>
-                    <p className="text-sm whitespace-pre-wrap break-all">{displayedText}</p>
+                    <p className="text-sm whitespace-pre-wrap break-words break-all">{displayedText}</p>
                     {isLongMessage && (
                       <Button
                         variant="link"
