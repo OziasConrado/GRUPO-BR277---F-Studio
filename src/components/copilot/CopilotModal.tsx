@@ -94,7 +94,7 @@ export default function CopilotModal({ isOpen, onClose }: CopilotModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none bg-background !p-0 flex flex-col !translate-x-0 !translate-y-0">
+      <DialogContent className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none bg-background !p-0 grid grid-rows-[auto_1fr_auto] !translate-x-0 !translate-y-0">
         <DialogHeader className="p-4 border-b">
           <DialogTitle className="flex items-center gap-2 font-headline text-lg">
             <Sparkles className="w-5 h-5 text-primary" />
@@ -105,7 +105,7 @@ export default function CopilotModal({ isOpen, onClose }: CopilotModalProps) {
           </DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="flex-grow p-4 min-h-0" ref={scrollAreaRef}>
+        <ScrollArea className="p-4 overflow-y-auto" ref={scrollAreaRef}>
           <div className="space-y-6">
             {conversation.map((msg, index) => (
               <div key={index} className={cn("flex items-start gap-3", msg.author === 'user' && "justify-end")}>
