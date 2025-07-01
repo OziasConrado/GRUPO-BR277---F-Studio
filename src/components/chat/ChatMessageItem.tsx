@@ -122,13 +122,8 @@ export default function ChatMessageItem({
   const [isEditing, setIsEditing] = useState(false);
   const [editedText, setEditedText] = useState(text || '');
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedUserProfile, setSelectedUserProfile] = useState<UserProfileData | null>(null);
-
-  const MAX_TEXT_LENGTH = 280;
-  const isLongMessage = text && text.length > MAX_TEXT_LENGTH;
-  const displayedText = isLongMessage && !isExpanded ? `${text.substring(0, MAX_TEXT_LENGTH)}...` : text;
 
   useEffect(() => {
     if (!currentUser || !firestore || !message.id) return;
@@ -294,16 +289,7 @@ export default function ChatMessageItem({
                 
                 {text && (
                   <div className="min-w-0">
-                    <p className="text-sm whitespace-pre-wrap break-all">{displayedText}</p>
-                    {isLongMessage && (
-                      <Button
-                        variant="link"
-                        className="p-0 h-auto text-xs text-primary font-semibold mt-1"
-                        onClick={() => setIsExpanded(!isExpanded)}
-                      >
-                        {isExpanded ? 'Ver menos' : 'Ver mais'}
-                      </Button>
-                    )}
+                    <p className="text-sm break-words whitespace-pre-wrap">{text}</p>
                   </div>
                 )}
 

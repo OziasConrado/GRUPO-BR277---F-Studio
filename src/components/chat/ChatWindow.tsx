@@ -453,7 +453,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
           {/* A close button is automatically added by DialogContent */}
         </header>
 
-        <ScrollArea className="flex-grow bg-muted/20" ref={scrollAreaRef}>
+        <ScrollArea className="flex-grow bg-muted/20 min-h-0" ref={scrollAreaRef}>
           <div className="p-4 space-y-4">
             {messages.map(msg => (
               <ChatMessageItem 
