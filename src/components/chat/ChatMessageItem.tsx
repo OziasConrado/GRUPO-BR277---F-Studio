@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -228,8 +229,8 @@ export default function ChatMessageItem({
         ) : (
             <div
             className={cn(
-                "p-3 rounded-xl shadow overflow-hidden",
-                isCurrentUser ? "bg-primary/5 text-primary border border-primary/10 rounded-br-none" : "bg-card text-card-foreground rounded-bl-none border"
+                "p-3 rounded-xl shadow overflow-hidden min-w-0",
+                isCurrentUser ? "bg-primary/5 border border-primary/10 rounded-br-none" : "bg-card text-card-foreground rounded-bl-none border"
             )}
             >
                 {!isCurrentUser && <p className="text-xs font-semibold mb-1 text-primary break-all">{senderName}</p>}
