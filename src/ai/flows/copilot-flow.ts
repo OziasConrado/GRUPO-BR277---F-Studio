@@ -17,9 +17,13 @@ import {
   CopilotOutputSchema,
   type CopilotOutput,
 } from '@/ai/schemas/copilot-schemas';
-import { type MessageData, type TextData, type MediaData } from '@genkit-ai/ai/model';
+import { type MessageData, type MediaData } from '@genkit-ai/ai/model';
 
 export type { CopilotInput, CopilotOutput };
+
+// Define custom types for the type guard, as they are not exported from Genkit.
+type TextPart = { text: string };
+type MediaPart = { media: MediaData };
 
 // Ferramenta de Informações de Trânsito
 const getTrafficInfo = ai.defineTool(
@@ -262,8 +266,7 @@ const copilotFlow = ai.defineFlow(
 
       if (llmResponse.message) {
         // Manually construct a valid MessageData object from the Message object.
-        // The main difference is that `Message.content` is `Part[]` where `text` can be `undefined`,
-        // while `MessageData.content` expects `ContentData` where `text` must be a `string`.
+        // We filter out tool-related parts to keep the history clean for the next turn.
         const newContent = llmResponse.message.content
           .map((part) => {
             if (part.text !== undefined) {
@@ -275,7 +278,7 @@ const copilotFlow = ai.defineFlow(
             // Filter out other part types like toolRequest/toolResponse for the history
             return null;
           })
-          .filter((p): p is TextData | MediaData => p !== null);
+          .filter((p): p is TextPart | MediaPart => p !== null);
 
         const newMessageData: MessageData = {
           role: llmResponse.message.role,
