@@ -21,11 +21,11 @@ import { type MessageData, type TextData, type MediaData } from '@genkit-ai/ai/m
 
 export type { CopilotInput, CopilotOutput };
 
-// Ferramenta de Informações de Trânsito e Pedágio
+// Ferramenta de Informações de Trânsito
 const getTrafficInfo = ai.defineTool(
     {
         name: 'getTrafficInfo',
-        description: 'Obtém informações de trânsito em tempo real, incluindo tempo de viagem, distância e um resumo das condições, e quantidade de pedágios entre dois locais.',
+        description: 'Obtém informações de trânsito em tempo real, incluindo tempo de viagem, distância e um resumo das condições entre dois locais.',
         inputSchema: z.object({
             origin: z.string().describe('A cidade ou ponto de partida.'),
             destination: z.string().describe('A cidade ou ponto de destino.'),
@@ -34,7 +34,6 @@ const getTrafficInfo = ai.defineTool(
             travelTime: z.string().describe('O tempo estimado de viagem, por exemplo, "1 hora e 30 minutos".'),
             distance: z.string().describe('A distância total da rota, por exemplo, "150 km".'),
             summary: z.string().describe('Um resumo das condições da rota, incluindo acidentes, obras ou congestionamentos.'),
-            tollCount: z.number().describe('O número de praças de pedágio na rota.'),
             routePolyline: z.string().optional().describe('A polilinha codificada da rota para gerar uma imagem de mapa.')
         })
     },
@@ -45,7 +44,6 @@ const getTrafficInfo = ai.defineTool(
                 travelTime: "desconhecido",
                 distance: "desconhecida",
                 summary: "A API do Google Maps não pôde ser contatada. A chave da API (GOOGLE_MAPS_API_KEY) não foi encontrada no ambiente de execução. Para desenvolvimento local, certifique-se de que ela está definida no arquivo .env.",
-                tollCount: 0,
                 routePolyline: undefined,
             };
         }
@@ -73,9 +71,9 @@ const getTrafficInfo = ai.defineTool(
                     const errorBody = await response.json();
                     console.error('Routes API error body:', errorBody);
                     const summary = errorBody?.error?.message || 'Falha na comunicação com a API de rotas.';
-                    return { travelTime: "desconhecido", distance: "desconhecida", summary, tollCount: 0 };
+                    return { travelTime: "desconhecido", distance: "desconhecida", summary };
                 } catch (e) {
-                    return { travelTime: "desconhecido", distance: "desconhecida", summary: 'Falha na comunicação com a API de rotas.', tollCount: 0 };
+                    return { travelTime: "desconhecido", distance: "desconhecida", summary: 'Falha na comunicação com a API de rotas.' };
                 }
             }
 
@@ -85,7 +83,7 @@ const getTrafficInfo = ai.defineTool(
                  console.error('Routes API error:', data.error);
                  return {
                     travelTime: "desconhecido", distance: "desconhecida",
-                    summary: `Erro ao buscar informações de rota: ${data.error.message || 'Erro de comunicação.'}`, tollCount: 0,
+                    summary: `Erro ao buscar informações de rota: ${data.error.message || 'Erro de comunicação.'}`,
                 };
             }
 
@@ -100,23 +98,21 @@ const getTrafficInfo = ai.defineTool(
                 const travelTime = `${hours > 0 ? `${hours} hora${hours > 1 ? 's' : ''} e ` : ''}${minutes} minuto${minutes > 1 ? 's' : ''}`;
 
                 const summary = route.travelAdvisory?.trafficReport?.summary || "Sem informações detalhadas de tráfego disponíveis.";
-
-                const tollCount = 0; // Toll counting removed for stability
                 
                 const routePolyline = route.polyline?.encodedPolyline;
 
-                return { travelTime, distance, summary, tollCount, routePolyline };
+                return { travelTime, distance, summary, routePolyline };
             } else {
                  return {
                     travelTime: "desconhecido", distance: "desconhecida",
-                    summary: `Não foi possível encontrar uma rota entre ${origin} e ${destination}.`, tollCount: 0
+                    summary: `Não foi possível encontrar uma rota entre ${origin} e ${destination}.`
                 };
             }
         } catch (error: any) {
             console.error('Routes API error:', error);
             return {
                 travelTime: "desconhecido", distance: "desconhecida",
-                summary: `Erro ao buscar informações de rota: ${error.message || 'Erro de comunicação.'}`, tollCount: 0
+                summary: `Erro ao buscar informações de rota: ${error.message || 'Erro de comunicação.'}`
             };
         }
     }
@@ -230,10 +226,9 @@ const copilotFlow = ai.defineFlow(
 
 **Estrutura da Resposta (Siga EXATAMENTE este formato):**
 1.  Saudação amigável e confirmação da rota.
-2.  Apresente o **Tempo estimado de viagem** e a **Distância total**. Use negrito.
+2.  Apresente o **Tempo estimado de viagem** e a **Distância total**. Use negrito. Se a informação for "desconhecido" ou "desconhecida", diga "Não disponível no momento".
 3.  Apresente a **Condição do trânsito:** usando o texto EXATO do campo 'summary' retornado pela ferramenta \`getTrafficInfo\`. Se o sumário for "Sem informações detalhadas de tráfego disponíveis.", apenas diga "O caminho parece estar livre, sem alertas de trânsito no momento. ✅".
-4.  Apresente as informações de **Pedágio**: Informe ao usuário que a contagem de pedágios está temporariamente indisponível.
-5.  Finalize com a frase de segurança: "Lembre-se que as condições do trânsito podem mudar rapidamente. Dirija com segurança e boa viagem! 🛣️"
+4.  Finalize com a frase de segurança: "Lembre-se que as condições do trânsito podem mudar rapidamente. Dirija com segurança e boa viagem! 🛣️"
 
 **IMPORTANTE:**
 - **NÃO INVENTE INFORMAÇÕES.** Use apenas os dados das ferramentas. O campo 'summary' da ferramenta 'getTrafficInfo' é sua única fonte para as condições do trânsito.
