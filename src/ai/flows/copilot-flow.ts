@@ -44,7 +44,7 @@ const getTrafficInfo = ai.defineTool(
              return {
                 travelTime: "desconhecido",
                 distance: "desconhecida",
-                summary: "A API do Google Maps não está configurada.",
+                summary: "A API do Google Maps não pôde ser contatada. A chave da API (GOOGLE_MAPS_API_KEY) não foi encontrada no ambiente de execução. Para desenvolvimento local, certifique-se de que ela está definida no arquivo .env.",
                 tollCount: 0,
                 routePolyline: undefined,
             };
