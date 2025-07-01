@@ -56,7 +56,7 @@ const getTrafficInfo = ai.defineTool(
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Goog-Api-Key': apiKey,
-                    'X-Goog-FieldMask': '*'
+                    'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.travelAdvisory,routes.polyline'
                 },
                 body: JSON.stringify({
                     origin: { address: origin },

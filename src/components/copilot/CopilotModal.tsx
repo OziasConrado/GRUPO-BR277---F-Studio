@@ -105,7 +105,7 @@ export default function CopilotModal({ isOpen, onClose }: CopilotModalProps) {
           </DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>
+        <ScrollArea className="flex-grow p-4 min-h-0" ref={scrollAreaRef}>
           <div className="space-y-6">
             {conversation.map((msg, index) => (
               <div key={index} className={cn("flex items-start gap-3", msg.author === 'user' && "justify-end")}>
@@ -115,7 +115,7 @@ export default function CopilotModal({ isOpen, onClose }: CopilotModalProps) {
                   </Avatar>
                 )}
                 <div className={cn(
-                    "max-w-[80%] p-3 rounded-lg text-sm",
+                    "max-w-[80%] p-3 rounded-lg text-sm break-words",
                     msg.author === 'ai' ? "bg-muted text-foreground" : "bg-primary text-primary-foreground"
                 )}>
                   <ReactMarkdown
