@@ -259,7 +259,15 @@ const copilotFlow = ai.defineFlow(
       });
 
       if (llmResponse.message) {
-        messages.push(llmResponse.message);
+        // Manually construct a valid MessageData object from the Message class instance
+        const newMessageData: MessageData = {
+          role: llmResponse.message.role,
+          content: llmResponse.message.content,
+        };
+        if (llmResponse.message.metadata) {
+          newMessageData.metadata = llmResponse.message.metadata;
+        }
+        messages.push(newMessageData);
       }
 
       if (!llmResponse.toolCalls || llmResponse.toolCalls.length === 0) {
