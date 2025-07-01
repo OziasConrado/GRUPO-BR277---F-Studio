@@ -270,7 +270,7 @@ export default function ChatMessageItem({
         ) : (
             <div
             className={cn(
-                "p-3 rounded-xl shadow min-w-0 overflow-hidden break-words",
+                "p-3 rounded-xl shadow min-w-0 overflow-hidden",
                 isCurrentUser ? "bg-primary/5 text-foreground rounded-br-none" : "bg-card text-card-foreground rounded-bl-none border"
             )}
             >
@@ -294,7 +294,7 @@ export default function ChatMessageItem({
                 
                 {text && (
                   <div>
-                    <p className="text-sm whitespace-pre-wrap">{displayedText}</p>
+                    <p className="text-sm whitespace-pre-wrap break-all">{displayedText}</p>
                     {isLongMessage && (
                       <Button
                         variant="link"
@@ -417,3 +417,5 @@ export default function ChatMessageItem({
     </>
   );
 }
+
+    
