@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect, type ChangeEvent, type FormEvent } from 'react';
@@ -437,8 +436,8 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm md:flex md:items-center md:justify-center md:p-4">
-      <div className="bg-background w-full h-full flex flex-col overflow-hidden md:h-auto md:max-w-lg md:max-h-[90vh] md:rounded-xl shadow-2xl">
-        <header className="p-4 border-b border-primary/50 flex items-center justify-between bg-primary text-primary-foreground">
+      <div className="bg-background w-full h-full grid grid-rows-[auto_1fr_auto] overflow-hidden md:h-auto md:max-w-lg md:max-h-[90vh] md:rounded-xl shadow-2xl">
+        <header className="p-4 border-b border-primary/50 flex items-center justify-between bg-primary text-primary-foreground shrink-0">
           <div className="flex items-center gap-3">
             <Avatar>
               <AvatarImage src="https://firebasestorage.googleapis.com/v0/b/grupo-br277.firebasestorage.app/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2Fescudo-com-sombra-vetoriozida-300x300.png?alt=media" alt="Comunidade277" data-ai-hint="group chat icon"/>
@@ -454,7 +453,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
           </Button>
         </header>
 
-        <ScrollArea className="flex-grow bg-muted/20 min-h-0" ref={scrollAreaRef}>
+        <ScrollArea className="overflow-y-auto bg-muted/20" ref={scrollAreaRef}>
           <div className="p-4 space-y-4">
             {messages.map(msg => (
               <ChatMessageItem 
@@ -469,7 +468,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
           </div>
         </ScrollArea>
 
-        <footer className="border-t border-border/50 bg-card">
+        <footer className="border-t border-border/50 bg-card shrink-0">
           {replyingTo && (
             <div className="px-3 pt-2 flex justify-between items-center text-xs text-muted-foreground bg-muted/50 border-b">
                 <div className="py-1 overflow-hidden">
