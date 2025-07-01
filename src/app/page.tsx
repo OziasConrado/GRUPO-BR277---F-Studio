@@ -96,7 +96,7 @@ const backgroundOptions = [
   { name: 'Padrão', bg: 'hsl(var(--card))', text: 'hsl(var(--card-foreground))' },
   { name: 'Azul', bg: '#002776', text: '#FFFFFF' },
   { name: 'Verde', bg: '#009c3b', text: '#FFFFFF' },
-  { name: 'Amarelo', bg: '#ffdf00', text: '#FFFFFF' },
+  { name: 'Amarelo', bg: '#ffdf00', text: '#002776' },
   { name: 'Gradiente', gradient: 'linear-gradient(to right, #002776, #009c3b, #ffdf00)', text: '#FFFFFF' },
 ];
 
