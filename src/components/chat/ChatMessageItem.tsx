@@ -226,7 +226,7 @@ export default function ChatMessageItem({
       {isCurrentUser && (
           <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 self-center rounded-full text-muted-foreground hover:text-primary">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 self-center rounded-full text-muted-foreground hover:text-primary opacity-0 group-hover/message:opacity-100 transition-opacity">
                       <MoreVertical className="h-4 w-4" />
                   </Button>
               </DropdownMenuTrigger>
@@ -274,7 +274,7 @@ export default function ChatMessageItem({
                 isCurrentUser ? "bg-primary/5 text-foreground rounded-br-none" : "bg-card text-card-foreground rounded-bl-none border"
             )}
             >
-                {!isCurrentUser && <p className="text-xs font-semibold mb-1 text-primary break-all cursor-pointer hover:underline" onClick={handleUserClick}>{senderName}</p>}
+                {!isCurrentUser && <p className="text-xs font-semibold mb-1 text-primary break-words cursor-pointer hover:underline" onClick={handleUserClick}>{senderName}</p>}
                 
                 {replyTo && <ReplyPreview replyInfo={replyTo} />}
                 
@@ -294,7 +294,7 @@ export default function ChatMessageItem({
                 
                 {text && (
                   <div>
-                    <p className="text-sm break-all">{displayedText}</p>
+                    <p className="text-sm whitespace-pre-wrap break-words">{displayedText}</p>
                     {isLongMessage && (
                       <Button
                         variant="link"
@@ -366,7 +366,7 @@ export default function ChatMessageItem({
       {!isCurrentUser && (
           <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 self-center rounded-full text-muted-foreground hover:text-primary">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 self-center rounded-full text-muted-foreground hover:text-primary opacity-0 group-hover/message:opacity-100 transition-opacity">
                       <MoreVertical className="h-4 w-4" />
                   </Button>
               </DropdownMenuTrigger>

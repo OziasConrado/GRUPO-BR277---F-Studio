@@ -504,11 +504,6 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
                   onChange={handleTextareaInput}
                   className="rounded-lg bg-background/70 min-h-[44px] max-h-[120px] resize-none text-base p-2.5 pr-20"
                   rows={1}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey && !currentUser?.isAnonymous) {
-                      handleSendMessage(e);
-                    }
-                  }}
                   disabled={currentUser?.isAnonymous || isRecording}
                 />
                 <div className="absolute right-1 bottom-1 flex items-center">
