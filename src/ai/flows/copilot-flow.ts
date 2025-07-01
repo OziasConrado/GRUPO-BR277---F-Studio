@@ -56,7 +56,7 @@ const getTrafficInfo = ai.defineTool(
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Goog-Api-Key': apiKey,
-                    'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline'
+                    'X-Goog-FieldMask': '*'
                 },
                 body: JSON.stringify({
                     origin: { address: origin },
@@ -99,7 +99,7 @@ const getTrafficInfo = ai.defineTool(
                 const minutes = Math.floor((durationSeconds % 3600) / 60);
                 const travelTime = `${hours > 0 ? `${hours} hora${hours > 1 ? 's' : ''} e ` : ''}${minutes} minuto${minutes > 1 ? 's' : ''}`;
 
-                const summary = "Sem informações detalhadas de tráfego disponíveis.";
+                const summary = route.travelAdvisory?.trafficReport?.summary || "Sem informações detalhadas de tráfego disponíveis.";
 
                 const tollCount = 0; // Toll counting removed for stability
                 
