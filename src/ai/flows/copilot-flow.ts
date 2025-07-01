@@ -251,13 +251,9 @@ const copilotFlow = ai.defineFlow(
     let routePolyline: string | undefined;
 
     for (let i = 0; i < 5; i++) {
-      const lastMessage = messages[messages.length - 1];
-      const history = messages.slice(0, -1);
-
       const llmResponse = await ai.generate({
         model: googleAI.model('gemini-1.5-flash-latest'),
-        prompt: lastMessage.content,
-        history: history,
+        messages: messages,
         tools: tools,
         system: systemPrompt,
       });
