@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, type ChangeEvent, type FormEvent } from 'react';
@@ -436,7 +437,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm md:flex md:items-center md:justify-center md:p-4">
-      <div className="bg-background w-full h-full grid grid-rows-[auto_1fr_auto] overflow-hidden md:h-auto md:max-w-lg md:max-h-[90vh] md:rounded-xl shadow-2xl">
+      <div className="bg-background w-full h-full flex flex-col overflow-hidden md:h-auto md:max-w-lg md:max-h-[90vh] md:rounded-xl shadow-2xl">
         <header className="p-4 border-b border-primary/50 flex items-center justify-between bg-primary text-primary-foreground shrink-0">
           <div className="flex items-center gap-3">
             <Avatar>
@@ -453,7 +454,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
           </Button>
         </header>
 
-        <ScrollArea className="overflow-y-auto bg-muted/20" ref={scrollAreaRef}>
+        <ScrollArea className="flex-grow bg-muted/20 min-h-0" ref={scrollAreaRef}>
           <div className="p-4 space-y-4">
             {messages.map(msg => (
               <ChatMessageItem 
