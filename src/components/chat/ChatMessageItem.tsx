@@ -294,7 +294,7 @@ export default function ChatMessageItem({
                 
                 {text && (
                   <div>
-                    <p className="text-sm whitespace-pre-wrap break-all">{displayedText}</p>
+                    <p className="text-sm whitespace-pre-wrap break-words">{displayedText}</p>
                     {isLongMessage && (
                       <Button
                         variant="link"

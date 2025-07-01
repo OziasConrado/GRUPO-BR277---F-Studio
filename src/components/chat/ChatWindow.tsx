@@ -60,12 +60,16 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
 
   useEffect(() => {
     // Lock body scroll when chat window is open
-    const originalOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+    const originalBodyOverflow = document.body.style.overflow;
+
+    document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
 
     // Restore body scroll on cleanup
     return () => {
-      document.body.style.overflow = originalOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+      document.body.style.overflow = originalBodyOverflow;
     };
   }, []);
 
@@ -449,7 +453,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm md:flex md:items-center md:justify-center md:p-4">
-      <div className="bg-background w-full h-screen flex flex-col overflow-hidden md:h-auto md:max-w-lg md:max-h-[90vh] md:rounded-xl shadow-2xl">
+      <div className="bg-background w-full h-full flex flex-col overflow-hidden md:h-auto md:max-w-lg md:max-h-[90vh] md:rounded-xl shadow-2xl">
         <header className="p-4 border-b border-primary/50 flex items-center justify-between bg-primary text-primary-foreground shrink-0">
           <div className="flex items-center gap-3">
             <Avatar>
