@@ -29,6 +29,7 @@ import {
   deleteDoc,
 } from 'firebase/firestore';
 import { ref, getDownloadURL, uploadBytesResumable } from "firebase/storage";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 
 
 interface ChatWindowProps {
@@ -57,22 +58,6 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
 
   const { toast } = useToast();
   const { currentUser } = useAuth(); // Get current user
-
-  useEffect(() => {
-    // Lock body scroll when chat window is open
-    const originalHtmlOverflow = document.documentElement.style.overflow;
-    const originalBodyOverflow = document.body.style.overflow;
-
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.overflow = 'hidden';
-
-    // Restore body scroll on cleanup
-    return () => {
-      document.documentElement.style.overflow = originalHtmlOverflow;
-      document.body.style.overflow = originalBodyOverflow;
-    };
-  }, []);
-
 
   useEffect(() => {
     if (!firestore) {
@@ -452,8 +437,8 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm md:flex md:items-center md:justify-center md:p-4">
-      <div className="bg-background w-full h-full flex flex-col overflow-hidden md:h-auto md:max-w-lg md:max-h-[90vh] md:rounded-xl shadow-2xl">
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none bg-background !p-0 grid grid-rows-[auto_1fr_auto] !translate-x-0 !translate-y-0">
         <header className="p-4 border-b border-primary/50 flex items-center justify-between bg-primary text-primary-foreground shrink-0">
           <div className="flex items-center gap-3">
             <Avatar>
@@ -465,12 +450,10 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
               <p className="text-xs text-primary-foreground/80">Online</p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-primary-foreground/10">
-            <X className="h-5 w-5" />
-          </Button>
+          {/* A close button is automatically added by DialogContent */}
         </header>
 
-        <ScrollArea className="flex-grow bg-muted/20 min-h-0" ref={scrollAreaRef}>
+        <ScrollArea className="flex-grow bg-muted/20" ref={scrollAreaRef}>
           <div className="p-4 space-y-4">
             {messages.map(msg => (
               <ChatMessageItem 
@@ -541,7 +524,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
             </form>
           </div>
         </footer>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
