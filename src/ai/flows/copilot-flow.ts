@@ -258,7 +258,9 @@ const copilotFlow = ai.defineFlow(
         system: systemPrompt,
       });
 
-      messages.push(llmResponse.message);
+      if (llmResponse.message) {
+        messages.push(llmResponse.message);
+      }
 
       if (!llmResponse.toolCalls || llmResponse.toolCalls.length === 0) {
         let mapUrl: string | undefined;
