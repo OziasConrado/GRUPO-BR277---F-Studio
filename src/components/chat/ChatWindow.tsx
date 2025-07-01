@@ -76,6 +76,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
 
         fetchedMessages.push({
           id: doc.id,
+          userId: data.userId,
           senderName: data.senderName,
           avatarUrl: data.avatarUrl,
           dataAIAvatarHint: data.dataAIAvatarHint,

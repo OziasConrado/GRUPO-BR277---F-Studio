@@ -10,7 +10,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { firestore } from "@/lib/firebase/client";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,9 +29,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "../ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import UserProfileModal, { type UserProfileData } from '@/components/profile/UserProfileModal';
 
 export interface ChatMessageData {
   id: string;
+  userId: string;
   senderName: string;
   avatarUrl?: string | StaticImageData;
   dataAIAvatarHint?: string;
@@ -121,6 +123,8 @@ export default function ChatMessageItem({
   const [editedText, setEditedText] = useState(text || '');
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [selectedUserProfile, setSelectedUserProfile] = useState<UserProfileData | null>(null);
 
   const MAX_TEXT_LENGTH = 280;
   const isLongMessage = text && text.length > MAX_TEXT_LENGTH;
@@ -172,11 +176,48 @@ export default function ChatMessageItem({
     return <FileText className="h-5 w-5 mr-2 text-muted-foreground" />;
   };
 
+  const handleUserClick = async () => {
+    if (!firestore || !message.userId) return;
+
+    try {
+        const userDocRef = doc(firestore, "Usuarios", message.userId);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setSelectedUserProfile({
+                id: userDoc.id,
+                name: userData.displayName || 'Usuário',
+                avatarUrl: userData.photoURL,
+                location: userData.location,
+                bio: userData.bio,
+                instagramUsername: userData.instagramUsername,
+            });
+            setIsProfileModalOpen(true);
+        } else {
+            // Fallback if profile doesn't exist for some reason
+            setSelectedUserProfile({
+                id: message.userId,
+                name: message.senderName,
+                avatarUrl: message.avatarUrl,
+            });
+            setIsProfileModalOpen(true);
+        }
+    } catch (error) {
+        console.error("Error fetching user profile:", error);
+        toast({
+            title: "Erro ao carregar perfil",
+            description: "Não foi possível buscar as informações do usuário.",
+            variant: "destructive"
+        });
+    }
+  };
+
   return (
     <>
     <div className={cn("group/message flex items-end gap-2 w-full", isCurrentUser ? "justify-end" : "justify-start")} id={`message-${message.id}`}>
       {!isCurrentUser && (
-        <Avatar className="h-8 w-8 self-start">
+        <Avatar className="h-8 w-8 self-start cursor-pointer" onClick={handleUserClick}>
           {avatarUrl && <AvatarImage src={avatarUrl as string} alt={senderName} data-ai-hint={dataAIAvatarHint} />}
           <AvatarFallback>{senderName.substring(0, 1).toUpperCase()}</AvatarFallback>
         </Avatar>
@@ -229,11 +270,11 @@ export default function ChatMessageItem({
         ) : (
             <div
             className={cn(
-                "p-3 rounded-xl shadow overflow-hidden min-w-0",
-                isCurrentUser ? "bg-primary/5 border border-primary/10 rounded-br-none" : "bg-card text-card-foreground rounded-bl-none border"
+                "p-3 rounded-xl shadow min-w-0 overflow-hidden",
+                isCurrentUser ? "bg-primary/5 text-foreground rounded-br-none" : "bg-card text-card-foreground rounded-bl-none border"
             )}
             >
-                {!isCurrentUser && <p className="text-xs font-semibold mb-1 text-primary break-all">{senderName}</p>}
+                {!isCurrentUser && <p className="text-xs font-semibold mb-1 text-primary break-all cursor-pointer hover:underline" onClick={handleUserClick}>{senderName}</p>}
                 
                 {replyTo && <ReplyPreview replyInfo={replyTo} />}
                 
@@ -253,7 +294,7 @@ export default function ChatMessageItem({
                 
                 {text && (
                   <div>
-                    <p className="text-sm whitespace-pre-wrap break-all">{displayedText}</p>
+                    <p className="text-sm break-all">{displayedText}</p>
                     {isLongMessage && (
                       <Button
                         variant="link"
@@ -368,6 +409,11 @@ export default function ChatMessageItem({
         </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
+    <UserProfileModal
+      isOpen={isProfileModalOpen}
+      onClose={() => setIsProfileModalOpen(false)}
+      user={selectedUserProfile}
+    />
     </>
   );
 }
