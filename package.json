@@ -1,3 +1,4 @@
+
 {
   "name": "nextn",
   "version": "0.1.0",
@@ -7,8 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit",
-    "gcp-build": ""
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@genkit-ai/core": "^1.0.0",
