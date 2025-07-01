@@ -357,7 +357,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   const handleTextareaInput = (event: ChangeEvent<HTMLTextAreaElement>) => {
     setNewMessage(event.target.value);
     const textarea = event.target;
-    textarea.style.height = 'auto';
+    textarea.style.height = 'auto'; // Reset height
     const newScrollHeight = Math.min(textarea.scrollHeight, 120); // Max height 120px
     textarea.style.height = `${newScrollHeight}px`;
   };
@@ -436,8 +436,8 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center md:p-4">
-      <div className="bg-background w-full md:h-auto md:max-w-lg md:max-h-[90vh] md:rounded-xl shadow-2xl flex flex-col overflow-hidden h-full">
+    <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm md:flex md:items-center md:justify-center md:p-4">
+      <div className="bg-background w-full h-full flex flex-col overflow-hidden md:h-auto md:max-w-lg md:max-h-[90vh] md:rounded-xl shadow-2xl">
         <header className="p-4 border-b border-primary/50 flex items-center justify-between bg-primary text-primary-foreground">
           <div className="flex items-center gap-3">
             <Avatar>
