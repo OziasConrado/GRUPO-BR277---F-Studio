@@ -259,7 +259,6 @@ const copilotFlow = ai.defineFlow(
       });
 
       if (llmResponse.message) {
-        // Manually construct a valid MessageData object from the Message class instance
         const newMessageData: MessageData = {
           role: llmResponse.message.role,
           content: llmResponse.message.content,
