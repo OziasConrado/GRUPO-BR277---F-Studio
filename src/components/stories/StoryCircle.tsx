@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -23,7 +24,7 @@ export default function StoryCircle({ adminName, avatarUrl, dataAIAvatarHint, ha
       className={cn(
         'group flex-shrink-0 rounded-lg transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
         'transform-gpu transition-transform group-hover:scale-[1.03]',
-        'w-24 h-[160px]' 
+        'w-[135px] h-[225px]' 
       )}
       aria-label={`Ver story de ${adminName}`}
     >
