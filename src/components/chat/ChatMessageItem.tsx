@@ -61,8 +61,9 @@ const MOCK_USER_NAMES_FOR_MENTIONS = [
 
 const renderTextWithMentions = (text: string, knownUsers: string[]): React.ReactNode[] => {
   if (!text) return [text];
+  // More robust regex to avoid matching inside words
   const escapedUserNames = knownUsers.map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  const mentionRegex = new RegExp(`(@(?:${escapedUserNames.join('|')}))(?=\\s|\\p{P}|$)`, 'gu');
+  const mentionRegex = new RegExp(`(?<=^|\\s)(@(?:${escapedUserNames.join('|')}))(?=\\s|\\p{P}|$)`, 'gu');
 
   const parts = text.split(mentionRegex);
   const elements: React.ReactNode[] = [];
@@ -120,7 +121,6 @@ const ReplyPreview = ({ replyInfo }: { replyInfo: NonNullable<ChatMessageData['r
         const element = document.getElementById(`message-${replyInfo.messageId}`);
         if (element) {
             element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            // Add a temporary highlight effect
             element.classList.add('bg-primary/10', 'ring-2', 'ring-primary/50', 'transition-all', 'duration-1000', 'ease-out', 'rounded-xl');
             setTimeout(() => {
                 element.classList.remove('bg-primary/10', 'ring-2', 'ring-primary/50', 'rounded-xl');
@@ -145,13 +145,15 @@ export default function ChatMessageItem({
   onReply, 
   onReaction,
   onEdit,
-  onDelete
+  onDelete,
+  onImageClick
 }: { 
   message: ChatMessageData, 
   onReply: (message: ChatMessageData) => void, 
   onReaction: (messageId: string) => void,
   onEdit: (messageId: string, newText: string) => Promise<void>,
-  onDelete: (messageId: string) => Promise<void>
+  onDelete: (messageId: string) => Promise<void>,
+  onImageClick: (imageUrl: string | StaticImageData) => void;
 }) {
   const { senderName, avatarUrl, dataAIAvatarHint, text, imageUrl, dataAIImageHint, file, timestamp, isCurrentUser, reactions, replyTo, edited } = message;
   const { currentUser } = useAuth();
@@ -166,8 +168,13 @@ export default function ChatMessageItem({
 
   const MAX_CHARS = 250;
   const needsTruncation = text && text.length > MAX_CHARS;
-  const textToShow = isExpanded ? text : text?.substring(0, MAX_CHARS);
-  const textElements = renderTextWithMentions(textToShow || '', MOCK_USER_NAMES_FOR_MENTIONS);
+  
+  // Use useMemo to avoid re-rendering textElements unnecessarily
+  const textToShow = useMemo(() => {
+    const content = isExpanded ? text : text?.substring(0, MAX_CHARS);
+    return renderTextWithMentions(content || '', MOCK_USER_NAMES_FOR_MENTIONS);
+  }, [text, isExpanded]);
+
 
   useEffect(() => {
     if (!currentUser || !firestore || !message.id) return;
@@ -234,7 +241,6 @@ export default function ChatMessageItem({
             });
             setIsProfileModalOpen(true);
         } else {
-            // Fallback if profile doesn't exist for some reason
             setSelectedUserProfile({
                 id: message.userId,
                 name: message.senderName,
@@ -284,7 +290,7 @@ export default function ChatMessageItem({
           </DropdownMenu>
       )}
 
-      <div className="relative max-w-[85%] min-w-0">
+      <div className={cn("relative max-w-[85%] min-w-0", text && !imageUrl && 'min-w-[100px]')}>
         {isEditing ? (
             <div className="p-3 rounded-xl shadow bg-accent text-accent-foreground">
                 <Textarea
@@ -309,7 +315,7 @@ export default function ChatMessageItem({
         ) : (
             <div
             className={cn(
-                "p-3 rounded-xl shadow min-w-0 overflow-hidden",
+                "p-3 rounded-xl shadow overflow-hidden",
                 isCurrentUser ? "bg-primary/5 text-foreground rounded-br-none" : "bg-card text-card-foreground rounded-bl-none border"
             )}
             >
@@ -318,27 +324,29 @@ export default function ChatMessageItem({
                 {replyTo && <ReplyPreview replyInfo={replyTo} />}
                 
                 {imageUrl && (
-                <div className="mb-1.5 max-w-xs sm:max-w-sm rounded-lg overflow-hidden border">
-                    <Image
-                        src={imageUrl} 
-                        alt={dataAIImageHint || "Imagem enviada"}
-                        width={400} 
-                        height={300} 
-                        layout="responsive"
-                        objectFit="contain" 
-                        data-ai-hint={dataAIImageHint || "chat image"}
-                    />
-                </div>
+                    <button
+                        onClick={() => onImageClick(imageUrl)}
+                        className="mb-1.5 max-w-xs sm:max-w-sm rounded-lg overflow-hidden border block w-full relative aspect-[4/3] group focus:outline-none focus:ring-2 focus:ring-ring"
+                        aria-label="Ampliar imagem"
+                    >
+                        <Image
+                            src={imageUrl}
+                            alt={dataAIImageHint || "Imagem enviada"}
+                            layout="fill"
+                            objectFit="cover"
+                            data-ai-hint={dataAIImageHint || "chat image"}
+                            className="transition-transform duration-300 group-hover:scale-105"
+                        />
+                    </button>
                 )}
                 
                 {text && (
                   <div className="min-w-0">
                     <p className="text-sm break-words whitespace-pre-wrap">
-                      {textElements}
-                      {needsTruncation && !isExpanded && '... '}
+                      {textToShow}
                       {needsTruncation && (
                           <button onClick={() => setIsExpanded(!isExpanded)} className="text-primary text-xs font-semibold ml-1 hover:underline">
-                          {isExpanded ? 'Ver menos' : 'Ver mais'}
+                          {isExpanded ? 'Ver menos' : '...Ver mais'}
                           </button>
                       )}
                     </p>

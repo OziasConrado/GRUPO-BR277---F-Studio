@@ -9,7 +9,7 @@ import { X, Send, Paperclip, Mic, Bell, BellRing, MessageCircle, Loader2 } from 
 import ChatMessageItem, { type ChatMessageData } from "./ChatMessageItem";
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import Image from 'next/image'; // For image preview
+import Image from "next/image"; // For image preview
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
 import { firestore, storage } from '@/lib/firebase/client'; // Import firestore & storage
@@ -23,7 +23,6 @@ import {
   Timestamp,
   doc,
   runTransaction,
-  increment,
   updateDoc,
   deleteDoc,
   writeBatch,
@@ -45,6 +44,7 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Notification } from '@/types/notifications';
+import type { StaticImageData } from 'next/image';
 
 interface ChatWindowProps {
   onClose: () => void;
@@ -121,6 +121,10 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   const { toast } = useToast();
   const { currentUser } = useAuth();
   const { notifications, unreadCount: totalUnreadCount, loading: notificationsLoading } = useNotification();
+  
+  // NEW STATE for image modal
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | StaticImageData | null>(null);
 
 
   const chatNotifications = useMemo(() => {
@@ -181,6 +185,12 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
         scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
   }, [messages, replyingTo]);
+
+  // NEW function to handle image click
+  const handleImageClick = (imageUrl: string | StaticImageData) => {
+    setSelectedImageUrl(imageUrl);
+    setIsImageModalOpen(true);
+  };
 
   const handleSendMessage = async (e?: FormEvent) => {
     if (e) e.preventDefault();
@@ -517,7 +527,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
         }
 
         const reactionDoc = await transaction.get(reactionRef);
-        const newReactions = messageDoc.data().reactions || { heart: 0 };
+        const newReactions = { ... (messageDoc.data().reactions || { heart: 0 }) };
         
         if (reactionDoc.exists()) {
           // User is un-reacting
@@ -595,153 +605,189 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
 
 
   return (
-    <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none bg-background !p-0 grid grid-rows-[auto_1fr_auto] !translate-x-0 !translate-y-0">
-        <header className="p-4 border-b border-primary/50 flex items-center justify-between bg-primary text-primary-foreground shrink-0">
-          <div className="flex items-center gap-3">
-            <Avatar>
-              <AvatarImage src="https://firebasestorage.googleapis.com/v0/b/grupo-br277.firebasestorage.app/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2Fescudo-com-sombra-vetoriozida-300x300.png?alt=media" alt="Comunidade277" data-ai-hint="group chat icon"/>
-              <AvatarFallback>C</AvatarFallback>
-            </Avatar>
-            <div>
-              <h3 className="font-semibold font-headline text-lg">Comunidade277</h3>
-              <p className="text-xs text-primary-foreground/80">Online</p>
+    <>
+      <Dialog open={true} onOpenChange={onClose}>
+        <DialogContent className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none bg-background !p-0 grid grid-rows-[auto_1fr_auto] !translate-x-0 !translate-y-0">
+          <header className="p-4 border-b border-primary/50 flex items-center justify-between bg-primary text-primary-foreground shrink-0">
+            <div className="flex items-center gap-3">
+              <Avatar>
+                <AvatarImage src="https://firebasestorage.googleapis.com/v0/b/grupo-br277.firebasestorage.app/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2Fescudo-com-sombra-vetoriozida-300x300.png?alt=media" alt="Comunidade277" data-ai-hint="group chat icon"/>
+                <AvatarFallback>C</AvatarFallback>
+              </Avatar>
+              <div>
+                <h3 className="font-semibold font-headline text-lg">Comunidade277</h3>
+                <p className="text-xs text-primary-foreground/80">Online</p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <DropdownMenu onOpenChange={(open) => { if(open) handleMarkChatNotificationsAsRead(); }}>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="relative text-primary-foreground hover:bg-white/10">
-                        <Bell className="h-5 w-5"/>
-                         {unreadChatCount > 0 && (
-                            <span className="absolute top-2.5 right-2.5 flex h-3 w-3">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
-                            </span>
-                        )}
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-80 z-[210]">
-                    <DropdownMenuLabel>Menções no Chat</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                     {notificationsLoading ? (
-                        <DropdownMenuItem disabled>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin"/> Carregando...
-                        </DropdownMenuItem>
-                    ) : chatNotifications.length > 0 ? (
-                        chatNotifications.map(n => (
-                            <DropdownMenuItem key={n.id} className={cn("flex items-start gap-2 h-auto whitespace-normal cursor-pointer", !n.read && "bg-primary/10")} onClick={() => handleChatNotificationClick(n)}>
-                                <div className="mt-1">
-                                    <MessageCircle className="h-5 w-5 text-primary"/>
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-sm">
-                                        <span className="font-semibold">{n.fromUserName}</span> mencionou você: <span className="text-muted-foreground italic">"{n.textSnippet}"</span>
-                                    </p>
-                                    <p className="text-xs text-muted-foreground mt-0.5">
-                                    {n.timestamp instanceof Timestamp ? formatDistanceToNow(n.timestamp.toDate(), { addSuffix: true, locale: ptBR }).replace('cerca de ', '') : 'agora'}
-                                    </p>
-                                </div>
-                            </DropdownMenuItem>
-                        ))
-                    ) : (
-                        <DropdownMenuItem disabled className="text-center justify-center">Nenhuma menção nova</DropdownMenuItem>
-                    )}
-                </DropdownMenuContent>
-            </DropdownMenu>
-            <DialogClose asChild>
-                <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10">
-                    <X className="h-5 w-5" />
-                </Button>
-            </DialogClose>
-          </div>
-        </header>
+            <div className="flex items-center gap-2">
+              <DropdownMenu onOpenChange={(open) => { if(open) handleMarkChatNotificationsAsRead(); }}>
+                  <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="relative text-primary-foreground hover:bg-white/10">
+                          <Bell className="h-5 w-5"/>
+                           {unreadChatCount > 0 && (
+                              <span className="absolute top-2.5 right-2.5 flex h-3 w-3">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
+                              </span>
+                          )}
+                      </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-80 z-[210]">
+                      <DropdownMenuLabel>Menções no Chat</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                       {notificationsLoading ? (
+                          <DropdownMenuItem disabled>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin"/> Carregando...
+                          </DropdownMenuItem>
+                      ) : chatNotifications.length > 0 ? (
+                          chatNotifications.map(n => (
+                              <DropdownMenuItem key={n.id} className={cn("flex items-start gap-2 h-auto whitespace-normal cursor-pointer", !n.read && "bg-primary/10")} onClick={() => handleChatNotificationClick(n)}>
+                                  <div className="mt-1">
+                                      <MessageCircle className="h-5 w-5 text-primary"/>
+                                  </div>
+                                  <div className="flex-1">
+                                      <p className="text-sm">
+                                          <span className="font-semibold">{n.fromUserName}</span> mencionou você: <span className="text-muted-foreground italic">"{n.textSnippet}"</span>
+                                      </p>
+                                      <p className="text-xs text-muted-foreground mt-0.5">
+                                      {n.timestamp instanceof Timestamp ? formatDistanceToNow(n.timestamp.toDate(), { addSuffix: true, locale: ptBR }).replace('cerca de ', '') : 'agora'}
+                                      </p>
+                                  </div>
+                              </DropdownMenuItem>
+                          ))
+                      ) : (
+                          <DropdownMenuItem disabled className="text-center justify-center">Nenhuma menção nova</DropdownMenuItem>
+                      )}
+                  </DropdownMenuContent>
+              </DropdownMenu>
+              <DialogClose asChild>
+                  <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10">
+                      <X className="h-5 w-5" />
+                  </Button>
+              </DialogClose>
+            </div>
+          </header>
 
-        <div className="overflow-y-auto min-h-0 bg-muted/20" ref={scrollAreaRef}>
-          <div className="p-4 space-y-4">
-            {messages.map(msg => (
-              <ChatMessageItem 
-                key={msg.id} 
-                message={msg} 
-                onReply={handleReply} 
-                onReaction={handleReactionClick}
-                onEdit={handleEditMessage}
-                onDelete={handleDeleteMessage}
-              />
-            ))}
-          </div>
-        </div>
-
-        <footer className="border-t border-border/50 bg-card shrink-0">
-          {showMentions && filteredMentions.length > 0 && (
-            <div className="max-h-32 overflow-y-auto border-b bg-background p-2 text-sm">
-              {filteredMentions.map(name => (
-                <button 
-                  key={name}
-                  onClick={() => handleMentionClick(name)}
-                  className="block w-full text-left p-2 rounded-md hover:bg-muted"
-                >
-                  {name}
-                </button>
+          <div className="overflow-y-auto min-h-0 bg-muted/20" ref={scrollAreaRef}>
+            <div className="p-4 space-y-4">
+              {messages.map(msg => (
+                <ChatMessageItem 
+                  key={msg.id} 
+                  message={msg} 
+                  onReply={handleReply} 
+                  onReaction={handleReactionClick}
+                  onEdit={handleEditMessage}
+                  onDelete={handleDeleteMessage}
+                  onImageClick={handleImageClick}
+                />
               ))}
             </div>
-          )}
-          {replyingTo && (
-            <div className="px-3 pt-2 flex justify-between items-center text-xs text-muted-foreground bg-muted/50 border-b">
-                <div className="py-1 overflow-hidden">
-                    <p>Respondendo a <strong className="text-primary">{replyingTo.userName}</strong></p>
-                    <p className="italic truncate">"{replyingTo.messageText}"</p>
-                </div>
-                <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={cancelReply}>
-                    <X className="h-4 w-4" />
-                </Button>
-            </div>
-          )}
-          <div className="p-3">
-            {imagePreviewUrl && (
-              <div className="relative mb-2 p-2 border rounded-lg bg-muted/30 w-fit">
-                <Image src={imagePreviewUrl} alt="Preview" width={80} height={80} className="rounded object-cover" />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/80 p-0"
-                  onClick={handleRemoveImagePreview}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+          </div>
+
+          <footer className="border-t border-border/50 bg-card shrink-0">
+            {showMentions && filteredMentions.length > 0 && (
+              <div className="max-h-32 overflow-y-auto border-b bg-background p-2 text-sm">
+                {filteredMentions.map(name => (
+                  <button 
+                    key={name}
+                    onClick={() => handleMentionClick(name)}
+                    className="block w-full text-left p-2 rounded-md hover:bg-muted"
+                  >
+                    {name}
+                  </button>
+                ))}
               </div>
             )}
-            <form onSubmit={handleSendMessage} className="flex items-end gap-2">
-              <div className="relative flex-grow">
-                <Textarea
-                  ref={textareaRef}
-                  placeholder="Digite uma mensagem..."
-                  value={newMessage}
-                  onChange={handleTextareaInput}
-                  className="rounded-lg bg-background/70 min-h-[44px] max-h-[120px] resize-none text-base p-2.5 pr-20"
-                  rows={1}
-                  disabled={currentUser?.isAnonymous || isRecording}
-                />
-                <div className="absolute right-1 bottom-1 flex items-center">
-                  <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/png, image/jpeg, image/webp" className="hidden" />
-                  <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-primary h-9 w-9" onClick={handleAttachmentClick} disabled={currentUser?.isAnonymous || isRecording}>
-                    <Paperclip className="h-5 w-5" />
+            {replyingTo && (
+              <div className="px-3 pt-2 flex justify-between items-center text-xs text-muted-foreground bg-muted/50 border-b">
+                  <div className="py-1 overflow-hidden">
+                      <p>Respondendo a <strong className="text-primary">{replyingTo.userName}</strong></p>
+                      <p className="italic truncate">"{replyingTo.messageText}"</p>
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={cancelReply}>
+                      <X className="h-4 w-4" />
                   </Button>
-                  {(newMessage.trim() === '' && !selectedImageFile) ? (
-                    <Button type="button" variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-primary h-9 w-9", isRecording && "text-destructive bg-destructive/10 animate-pulse")} onClick={toggleRecording} disabled={currentUser?.isAnonymous}>
-                      <Mic className="h-5 w-5" />
-                    </Button>
-                  ) : (
-                    <Button type="submit" variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground h-9 w-9" disabled={currentUser?.isAnonymous || isRecording}>
-                      <Send className="h-5 w-5" />
-                    </Button>
-                  )}
-                </div>
               </div>
-            </form>
-          </div>
-        </footer>
-      </DialogContent>
-    </Dialog>
+            )}
+            <div className="p-3">
+              {imagePreviewUrl && (
+                <div className="relative mb-2 p-2 border rounded-lg bg-muted/30 w-fit">
+                  <Image src={imagePreviewUrl} alt="Preview" width={80} height={80} className="rounded object-cover" />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/80 p-0"
+                    onClick={handleRemoveImagePreview}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+              <form onSubmit={handleSendMessage} className="flex items-end gap-2">
+                <div className="relative flex-grow">
+                  <Textarea
+                    ref={textareaRef}
+                    placeholder="Digite uma mensagem..."
+                    value={newMessage}
+                    onChange={handleTextareaInput}
+                    className="rounded-lg bg-background/70 min-h-[44px] max-h-[120px] resize-none text-base p-2.5 pr-20"
+                    rows={1}
+                    disabled={currentUser?.isAnonymous || isRecording}
+                  />
+                  <div className="absolute right-1 bottom-1 flex items-center">
+                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/png, image/jpeg, image/webp" className="hidden" />
+                    <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-primary h-9 w-9" onClick={handleAttachmentClick} disabled={currentUser?.isAnonymous || isRecording}>
+                      <Paperclip className="h-5 w-5" />
+                    </Button>
+                    {(newMessage.trim() === '' && !selectedImageFile) ? (
+                      <Button type="button" variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-primary h-9 w-9", isRecording && "text-destructive bg-destructive/10 animate-pulse")} onClick={toggleRecording} disabled={currentUser?.isAnonymous}>
+                        <Mic className="h-5 w-5" />
+                      </Button>
+                    ) : (
+                      <Button type="submit" variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground h-9 w-9" disabled={currentUser?.isAnonymous || isRecording}>
+                        <Send className="h-5 w-5" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </form>
+            </div>
+          </footer>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isImageModalOpen} onOpenChange={setIsImageModalOpen}>
+        <DialogContent 
+            className="!fixed !inset-0 !z-[250] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none !bg-black/90 !p-0 flex flex-col !translate-x-0 !translate-y-0"
+            onEscapeKeyDown={() => setIsImageModalOpen(false)}
+        >
+            <DialogHeader className="shrink-0 p-2 sm:p-3 flex flex-row justify-end items-center bg-black/50 !z-[260]">
+                <DialogTitle className="sr-only">Visualização de Imagem</DialogTitle>
+                <DialogDescription className="sr-only">A imagem do chat em tela cheia.</DialogDescription>
+                <DialogClose asChild>
+                    <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full h-9 w-9 sm:h-10 sm:w-10 !z-[260] flex-shrink-0">
+                        <X className="h-5 w-5 sm:h-6 sm:h-6" />
+                    </Button>
+                </DialogClose>
+            </DialogHeader>
+            <div className="flex-grow flex items-center justify-center p-1 sm:p-2 overflow-hidden">
+                {selectedImageUrl && (
+                    <div className="relative w-full h-full max-w-full max-h-full mx-auto">
+                        <Image 
+                            src={selectedImageUrl} 
+                            alt="Imagem do chat ampliada" 
+                            layout="fill" 
+                            objectFit="contain" 
+                            data-ai-hint="zoomed in chat image"
+                        />
+                    </div>
+                )}
+            </div>
+            <div className="shrink-0 h-[60px] bg-black/50 flex items-center justify-center text-sm text-white/80 !z-[260]">
+                Espaço para Anúncio
+            </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
