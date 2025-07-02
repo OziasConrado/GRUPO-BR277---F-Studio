@@ -62,7 +62,7 @@ import { Progress } from '@/components/ui/progress';
 
 async function createMentions(text: string, postId: string, fromUser: { uid: string, displayName: string | null, photoURL: string | null }, type: 'mention_post' | 'mention_comment') {
     if (!firestore) return;
-    const mentionRegex = /@([\p{L}\p{N}_\s.-]+)/gu;
+    const mentionRegex = /@([\p{L}\p{N}.-]+(?:[\s][\p{L}\p{N}.-]+)*)/gu;
     const mentions = text.match(mentionRegex);
     if (!mentions) return;
 
@@ -79,6 +79,8 @@ async function createMentions(text: string, postId: string, fromUser: { uid: str
             if (!querySnapshot.empty) {
                 const userDoc = querySnapshot.docs[0];
                 const mentionedUserId = userDoc.id;
+
+                if (mentionedUserId === fromUser.uid) continue;
 
                 const notificationRef = collection(firestore, 'Usuarios', mentionedUserId, 'notifications');
                 await addDoc(notificationRef, {
@@ -357,6 +359,8 @@ export default function PostCard({
   const [isEditing, setIsEditing] = useState(false);
   const [editedText, setEditedText] = useState(text);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [showMentions, setShowMentions] = useState(false);
   
   // Refs
   const footerTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -388,6 +392,13 @@ export default function PostCard({
   const MAX_CHARS = 130;
   const needsTruncation = textContent.length > MAX_CHARS;
   const textToShow = isTextExpanded ? textContent : textContent.substring(0, MAX_CHARS);
+
+  const filteredMentions = useMemo(() => {
+      if (!mentionQuery) return MOCK_USER_NAMES_FOR_MENTIONS;
+      return MOCK_USER_NAMES_FOR_MENTIONS.filter(name => 
+        name.toLowerCase().includes(mentionQuery.toLowerCase())
+      );
+  }, [mentionQuery]);
 
   // Real-time listener for the post document to update reactions
   useEffect(() => {
@@ -642,11 +653,49 @@ export default function PostCard({
   };
   
   const handleCommentTextareaInput = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    setNewCommentText(event.target.value);
     const textarea = event.target;
+    const value = textarea.value;
+    setNewCommentText(value);
+    
     textarea.style.height = 'auto'; // Reset height
     const newScrollHeight = Math.min(textarea.scrollHeight, 120); // Max height of 120px
     textarea.style.height = `${newScrollHeight}px`;
+
+    // Mention logic
+    const cursorPos = textarea.selectionStart;
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const currentWord = textBeforeCursor.split(/\s+/).pop() || '';
+    
+    if (currentWord.startsWith('@')) {
+        setMentionQuery(currentWord.substring(1));
+        setShowMentions(true);
+    } else {
+        setShowMentions(false);
+    }
+  };
+
+  const handleMentionClick = (name: string) => {
+    const textarea = footerTextareaRef.current;
+    if (!textarea) return;
+
+    const value = textarea.value;
+    const cursorPos = textarea.selectionStart;
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const lastAtPos = textBeforeCursor.lastIndexOf('@');
+    
+    if (lastAtPos !== -1) {
+      const prefix = value.substring(0, lastAtPos);
+      const suffix = value.substring(cursorPos);
+      const newText = `${prefix}@${name} ${suffix}`;
+      setNewCommentText(newText);
+      setShowMentions(false);
+      
+      setTimeout(() => {
+        textarea.focus();
+        const newCursorPos = prefix.length + name.length + 2;
+        textarea.setSelectionRange(newCursorPos, newCursorPos);
+      }, 0);
+    }
   };
 
   const displayImageUrl = cardStyle ? null : (uploadedImageUrl || imageUrl);
@@ -854,6 +903,19 @@ export default function PostCard({
                 )}
               </div>
               <div className="p-3 border-t border-border bg-card sticky bottom-0 space-y-2">
+                  {showMentions && filteredMentions.length > 0 && (
+                    <div className="max-h-32 overflow-y-auto border-b bg-background p-2 text-sm">
+                      {filteredMentions.map(name => (
+                        <button 
+                          key={name}
+                          onClick={() => handleMentionClick(name)}
+                          className="block w-full text-left p-2 rounded-md hover:bg-muted"
+                        >
+                          {name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   {replyingTo && (
                       <div className="flex justify-between items-center text-xs text-muted-foreground px-1">
                           <span>Respondendo a <strong className="text-primary">@{replyingTo.userNameToReply}</strong></span>

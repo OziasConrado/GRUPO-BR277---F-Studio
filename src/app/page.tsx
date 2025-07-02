@@ -55,7 +55,7 @@ import { ToastAction } from '@/components/ui/toast';
 
 async function createMentions(text: string, postId: string, fromUser: { uid: string, displayName: string | null, photoURL: string | null }, type: 'mention_post' | 'mention_comment') {
     if (!firestore) return;
-    const mentionRegex = /@([\p{L}\p{N}_\s.-]+)/gu;
+    const mentionRegex = /@([\p{L}\p{N}.-]+(?:[\s][\p{L}\p{N}.-]+)*)/gu;
     const mentions = text.match(mentionRegex);
     if (!mentions) return;
 
@@ -72,6 +72,8 @@ async function createMentions(text: string, postId: string, fromUser: { uid: str
             if (!querySnapshot.empty) {
                 const userDoc = querySnapshot.docs[0];
                 const mentionedUserId = userDoc.id;
+
+                if (mentionedUserId === fromUser.uid) continue;
 
                 const notificationRef = collection(firestore, 'Usuarios', mentionedUserId, 'notifications');
                 await addDoc(notificationRef, {

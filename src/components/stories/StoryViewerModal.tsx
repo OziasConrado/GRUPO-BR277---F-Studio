@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, type ChangeEvent, useMemo } from 'react';
 import { Dialog, DialogContent, DialogClose, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -74,6 +74,12 @@ const reportReasonsStory = [
   { id: "story_other", label: "Outro motivo..." },
 ];
 
+const MOCK_USER_NAMES_FOR_MENTIONS = [
+    'Carlos Caminhoneiro', 'Ana Viajante', 'Rota Segura Admin', 'Mariana Logística',
+    'Pedro Estradeiro', 'Segurança Rodoviária', 'João Silva', 'Você', 'Ana Souza', 'Carlos Santos', 'Ozias Conrado'
+];
+
+
 export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewerModalProps) {
   const { toast } = useToast();
   const { currentUser } = useAuth();
@@ -88,6 +94,19 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
   const [isReportModalOpenStory, setIsReportModalOpenStory] = useState(false);
   const [selectedReportReasonStory, setSelectedReportReasonStory] = useState<string | undefined>(undefined);
   const [otherReportReasonTextStory, setOtherReportReasonTextStory] = useState('');
+
+  // State for mentions
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [showMentions, setShowMentions] = useState(false);
+  const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const filteredMentions = useMemo(() => {
+    if (!mentionQuery) return MOCK_USER_NAMES_FOR_MENTIONS;
+    return MOCK_USER_NAMES_FOR_MENTIONS.filter(name => 
+      name.toLowerCase().includes(mentionQuery.toLowerCase())
+    );
+  }, [mentionQuery]);
+
 
   // Effect to fetch real-time data for the story
   useEffect(() => {
@@ -188,6 +207,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
         timestamp: serverTimestamp(),
       });
       setNewComment('');
+      setShowMentions(false);
     } catch (error) {
       console.error("Error posting comment:", error);
       toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível postar o comentário.' });
@@ -231,6 +251,47 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
     setIsReportModalOpenStory(false);
     setSelectedReportReasonStory(undefined);
     setOtherReportReasonTextStory('');
+  };
+
+  const handleCommentInputChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    const textarea = e.target;
+    const value = textarea.value;
+    setNewComment(value);
+    
+    const cursorPos = textarea.selectionStart;
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const currentWord = textBeforeCursor.split(/\s+/).pop() || '';
+    
+    if (currentWord.startsWith('@')) {
+        setMentionQuery(currentWord.substring(1));
+        setShowMentions(true);
+    } else {
+        setShowMentions(false);
+    }
+  };
+
+  const handleMentionClick = (name: string) => {
+    const textarea = commentTextareaRef.current;
+    if (!textarea) return;
+
+    const value = textarea.value;
+    const cursorPos = textarea.selectionStart;
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const lastAtPos = textBeforeCursor.lastIndexOf('@');
+    
+    if (lastAtPos !== -1) {
+      const prefix = value.substring(0, lastAtPos);
+      const suffix = value.substring(cursorPos);
+      const newText = `${prefix}@${name} ${suffix}`;
+      setNewComment(newText);
+      setShowMentions(false);
+      
+      setTimeout(() => {
+        textarea.focus();
+        const newCursorPos = prefix.length + name.length + 2;
+        textarea.setSelectionRange(newCursorPos, newCursorPos);
+      }, 0);
+    }
   };
 
   if (!isOpen || !story) return null;
@@ -369,12 +430,26 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
               <p className="text-muted-foreground text-center pt-8">Nenhum comentário ainda.</p>
             )}
           </div>
-          <div className="p-3 border-t bg-card sticky bottom-0">
+          <div className="p-3 border-t bg-card sticky bottom-0 space-y-2">
+            {showMentions && filteredMentions.length > 0 && (
+              <div className="max-h-32 overflow-y-auto border-b bg-background p-2 text-sm">
+                {filteredMentions.map(name => (
+                  <button 
+                    key={name}
+                    onClick={() => handleMentionClick(name)}
+                    className="block w-full text-left p-2 rounded-md hover:bg-muted"
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
+            )}
             <form onSubmit={handlePostComment} className="flex items-center gap-2">
               <Textarea
+                ref={commentTextareaRef}
                 placeholder="Adicione um comentário..."
                 value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
+                onChange={handleCommentInputChange}
                 className="rounded-lg bg-muted min-h-[44px] max-h-[120px] resize-none"
                 rows={1}
               />

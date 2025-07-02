@@ -63,7 +63,7 @@ const MOCK_USER_NAMES_FOR_MENTIONS = [
 
 async function createChatMentions(text: string, messageId: string, fromUser: { uid: string, displayName: string | null, photoURL: string | null }) {
     if (!firestore) return;
-    const mentionRegex = /@([\p{L}\p{N}_\s.-]+)/gu;
+    const mentionRegex = /@([\p{L}\p{N}.-]+(?:[\s][\p{L}\p{N}.-]+)*)/gu;
     const mentions = text.match(mentionRegex);
     if (!mentions) return;
 
@@ -527,15 +527,16 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
         }
 
         const reactionDoc = await transaction.get(reactionRef);
-        const newReactions = { ... (messageDoc.data().reactions || { heart: 0 }) };
+        const currentReactions = messageDoc.data().reactions || { heart: 0 };
+        const newReactions = { ...currentReactions };
         
         if (reactionDoc.exists()) {
           // User is un-reacting
-          newReactions.heart = Math.max(0, (newReactions.heart || 0) - 1);
+          newReactions.heart = Math.max(0, newReactions.heart - 1);
           transaction.delete(reactionRef);
         } else {
           // User is adding a new reaction
-          newReactions.heart = (newReactions.heart || 0) + 1;
+          newReactions.heart = newReactions.heart + 1;
           transaction.set(reactionRef, { type: 'heart', timestamp: serverTimestamp() });
         }
         transaction.update(messageRef, { reactions: newReactions });
