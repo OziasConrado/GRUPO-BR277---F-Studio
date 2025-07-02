@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
-import { X, ThumbsUp, ThumbsDown, MessageSquare, Share2, MoreVertical, Flag, Send } from 'lucide-react';
+import { X, ThumbsUp, ThumbsDown, MessageSquare, Share2, MoreVertical, Flag, Send, Loader2 } from 'lucide-react';
 import type { StoryCircleProps } from './StoryCircle';
 import Image from 'next/image';
 import {
@@ -44,6 +44,9 @@ import {
   increment,
   getDoc,
   Timestamp,
+  where,
+  limit,
+  getDocs,
 } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -74,11 +77,6 @@ const reportReasonsStory = [
   { id: "story_other", label: "Outro motivo..." },
 ];
 
-const MOCK_USER_NAMES_FOR_MENTIONS = [
-    'Carlos Caminhoneiro', 'Ana Viajante', 'Rota Segura Admin', 'Mariana Logística',
-    'Pedro Estradeiro', 'Segurança Rodoviária', 'João Silva', 'Você', 'Ana Souza', 'Carlos Santos', 'Ozias Conrado'
-];
-
 
 export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewerModalProps) {
   const { toast } = useToast();
@@ -98,15 +96,9 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
   // State for mentions
   const [mentionQuery, setMentionQuery] = useState('');
   const [showMentions, setShowMentions] = useState(false);
+  const [mentionSuggestions, setMentionSuggestions] = useState<string[]>([]);
+  const [loadingMentions, setLoadingMentions] = useState(false);
   const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
-
-  const filteredMentions = useMemo(() => {
-    if (!mentionQuery) return MOCK_USER_NAMES_FOR_MENTIONS;
-    return MOCK_USER_NAMES_FOR_MENTIONS.filter(name => 
-      name.toLowerCase().includes(mentionQuery.toLowerCase())
-    );
-  }, [mentionQuery]);
-
 
   // Effect to fetch real-time data for the story
   useEffect(() => {
@@ -150,6 +142,36 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
       unsubComments();
     };
   }, [isOpen, story, currentUser]);
+  
+  useEffect(() => {
+    if (showMentions && mentionQuery.length > 0 && firestore) {
+      setLoadingMentions(true);
+      const fetchUsers = async () => {
+        const usersRef = collection(firestore, "Usuarios");
+        const q = query(
+          usersRef,
+          where("displayName_lowercase", ">=", mentionQuery.toLowerCase()),
+          where("displayName_lowercase", "<=", mentionQuery.toLowerCase() + '\uf8ff'),
+          limit(5)
+        );
+        try {
+          const querySnapshot = await getDocs(q);
+          const users = querySnapshot.docs.map(doc => doc.data().displayName as string);
+          setMentionSuggestions(users.filter(name => name));
+        } catch (error) {
+          console.error("Error fetching mention suggestions:", error);
+          setMentionSuggestions([]);
+        } finally {
+          setLoadingMentions(false);
+        }
+      };
+      
+      const timeoutId = setTimeout(fetchUsers, 300);
+      return () => clearTimeout(timeoutId);
+    } else {
+      setMentionSuggestions([]);
+    }
+  }, [mentionQuery, showMentions]);
 
 
   const handleStoryReactionClick = async (reactionType: 'thumbsUp' | 'thumbsDown') => {
@@ -431,17 +453,23 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
             )}
           </div>
           <div className="p-3 border-t bg-card sticky bottom-0 space-y-2">
-            {showMentions && filteredMentions.length > 0 && (
+            {showMentions && (
               <div className="max-h-32 overflow-y-auto border-b bg-background p-2 text-sm">
-                {filteredMentions.map(name => (
-                  <button 
-                    key={name}
-                    onClick={() => handleMentionClick(name)}
-                    className="block w-full text-left p-2 rounded-md hover:bg-muted"
-                  >
-                    {name}
-                  </button>
-                ))}
+                {loadingMentions ? (
+                  <div className="p-2 text-center text-muted-foreground">Buscando...</div>
+                ) : mentionSuggestions.length > 0 ? (
+                  mentionSuggestions.map(name => (
+                    <button 
+                      key={name}
+                      onClick={() => handleMentionClick(name)}
+                      className="block w-full text-left p-2 rounded-md hover:bg-muted"
+                    >
+                      {name}
+                    </button>
+                  ))
+                ) : (
+                  <div className="p-2 text-center text-muted-foreground">Nenhum usuário encontrado.</div>
+                )}
               </div>
             )}
             <form onSubmit={handlePostComment} className="flex items-center gap-2">

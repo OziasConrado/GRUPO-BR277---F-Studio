@@ -7,7 +7,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle as PostCardTitleUI
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send, MoreVertical, Trash2, Edit3, Flag, X, ListChecks, Check, Link as LinkIcon } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send, MoreVertical, Trash2, Edit3, Flag, X, ListChecks, Check, Link as LinkIcon, Loader2 } from 'lucide-react';
 import { useState, type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
 import {
@@ -62,7 +62,7 @@ import { Progress } from '@/components/ui/progress';
 
 async function createMentions(text: string, postId: string, fromUser: { uid: string, displayName: string | null, photoURL: string | null }, type: 'mention_post' | 'mention_comment') {
     if (!firestore) return;
-    const mentionRegex = /@([\p{L}\p{N}.-]+(?:[\s][\p{L}\p{N}.-]+)*)/gu;
+    const mentionRegex = /(?<!\S)@([\p{L}\p{N}._-]+)/gu;
     const mentions = text.match(mentionRegex);
     if (!mentions) return;
 
@@ -171,41 +171,34 @@ const reportReasons = [
   { id: "other", label: "Outros, informe o motivo..." },
 ];
 
-const MOCK_USER_NAMES_FOR_MENTIONS = [
-    'Carlos Caminhoneiro', 'Ana Viajante', 'Rota Segura Admin', 'Mariana Logística',
-    'Pedro Estradeiro', 'Segurança Rodoviária', 'João Silva', 'Você', 'Ana Souza', 'Carlos Santos', 'Ozias Conrado'
-];
-
-
-const renderTextWithMentions = (text: string, knownUsers: string[]): React.ReactNode[] => {
+const renderTextWithMentions = (text: string): React.ReactNode[] => {
   if (!text) return [text];
-  const escapedUserNames = knownUsers.map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  const mentionRegex = new RegExp(`(@(?:${escapedUserNames.join('|')}))(?=\\s|\\p{P}|$)`, 'gu');
-
-  const parts = text.split(mentionRegex);
+  // Regex to find @mentions (e.g., @user.name, @user_name) but not as part of an email address
+  const mentionRegex = /(?<!\S)@([\p{L}\p{N}._-]+)/gu;
   const elements: React.ReactNode[] = [];
-  let currentString = '';
+  let lastIndex = 0;
 
-  parts.forEach((part, index) => {
-    if (part.startsWith('@')) {
-      const mentionedName = part.substring(1);
-      if (knownUsers.includes(mentionedName)) {
-        if (currentString) {
-          elements.push(currentString);
-          currentString = '';
-        }
-        elements.push(<strong key={`${index}-${part}`} className="text-accent font-semibold cursor-pointer hover:underline">{part}</strong>);
-      } else {
-        currentString += part;
-      }
-    } else {
-      currentString += part;
+  for (const match of text.matchAll(mentionRegex)) {
+    const mention = match[0]; // e.g., "@Ozias.Conrado"
+    const startIndex = match.index!;
+
+    // Add text before the mention
+    if (startIndex > lastIndex) {
+      elements.push(text.substring(lastIndex, startIndex));
     }
-  });
-  if (currentString) {
-    elements.push(currentString);
+    
+    // Add the highlighted mention
+    elements.push(<strong key={startIndex} className="text-accent font-semibold cursor-pointer hover:underline">{mention}</strong>);
+    
+    lastIndex = startIndex + mention.length;
   }
-  return elements;
+
+  // Add any remaining text after the last mention
+  if (lastIndex < text.length) {
+    elements.push(text.substring(lastIndex));
+  }
+
+  return elements.length > 0 ? elements : [text]; // Fallback for no matches
 };
 
 const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData, postId: string }) => {
@@ -361,6 +354,8 @@ export default function PostCard({
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
   const [showMentions, setShowMentions] = useState(false);
+  const [mentionSuggestions, setMentionSuggestions] = useState<string[]>([]);
+  const [loadingMentions, setLoadingMentions] = useState(false);
   
   // Refs
   const footerTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -392,13 +387,6 @@ export default function PostCard({
   const MAX_CHARS = 130;
   const needsTruncation = textContent.length > MAX_CHARS;
   const textToShow = isTextExpanded ? textContent : textContent.substring(0, MAX_CHARS);
-
-  const filteredMentions = useMemo(() => {
-      if (!mentionQuery) return MOCK_USER_NAMES_FOR_MENTIONS;
-      return MOCK_USER_NAMES_FOR_MENTIONS.filter(name => 
-        name.toLowerCase().includes(mentionQuery.toLowerCase())
-      );
-  }, [mentionQuery]);
 
   // Real-time listener for the post document to update reactions
   useEffect(() => {
@@ -443,7 +431,7 @@ export default function PostCard({
           userAvatarUrl: data.userAvatarUrl,
           text: data.text,
           timestamp: commentTimestamp,
-          textElements: renderTextWithMentions(data.text, MOCK_USER_NAMES_FOR_MENTIONS),
+          textElements: renderTextWithMentions(data.text),
         } as CommentProps;
       });
       setComments(fetchedComments);
@@ -452,6 +440,37 @@ export default function PostCard({
 
     return () => unsubscribe();
   }, [postId]);
+
+  useEffect(() => {
+    if (showMentions && mentionQuery.length > 0 && firestore) {
+      setLoadingMentions(true);
+      const fetchUsers = async () => {
+        const usersRef = collection(firestore, "Usuarios");
+        const q = query(
+          usersRef,
+          where("displayName_lowercase", ">=", mentionQuery.toLowerCase()),
+          where("displayName_lowercase", "<=", mentionQuery.toLowerCase() + '\uf8ff'),
+          limit(5)
+        );
+        try {
+          const querySnapshot = await getDocs(q);
+          const users = querySnapshot.docs.map(doc => doc.data().displayName as string);
+          setMentionSuggestions(users.filter(name => name));
+        } catch (error) {
+          console.error("Error fetching mention suggestions:", error);
+          setMentionSuggestions([]);
+        } finally {
+          setLoadingMentions(false);
+        }
+      };
+      
+      const timeoutId = setTimeout(fetchUsers, 300);
+      return () => clearTimeout(timeoutId);
+    } else {
+      setMentionSuggestions([]);
+    }
+  }, [mentionQuery, showMentions]);
+
 
   // Handlers
   const handleInteractionAttempt = (callback: () => void) => {
@@ -805,7 +824,7 @@ export default function PostCard({
             >
               {text && (
                 <p className="text-2xl font-bold leading-tight" style={{ color: cardStyle.text }}>
-                  {renderTextWithMentions(text, MOCK_USER_NAMES_FOR_MENTIONS)}
+                  {renderTextWithMentions(text)}
                 </p>
               )}
             </div>
@@ -813,7 +832,7 @@ export default function PostCard({
             <div className="space-y-3 pb-2 pt-1">
               {textContent && (!poll || textContent !== poll.question) && (
                 <p className="text-base leading-normal whitespace-pre-wrap px-4">
-                  {renderTextWithMentions(textToShow, MOCK_USER_NAMES_FOR_MENTIONS)}
+                  {renderTextWithMentions(textToShow)}
                   {needsTruncation && (
                     <>
                       ...{' '}
@@ -903,17 +922,23 @@ export default function PostCard({
                 )}
               </div>
               <div className="p-3 border-t border-border bg-card sticky bottom-0 space-y-2">
-                  {showMentions && filteredMentions.length > 0 && (
+                  {showMentions && (
                     <div className="max-h-32 overflow-y-auto border-b bg-background p-2 text-sm">
-                      {filteredMentions.map(name => (
-                        <button 
-                          key={name}
-                          onClick={() => handleMentionClick(name)}
-                          className="block w-full text-left p-2 rounded-md hover:bg-muted"
-                        >
-                          {name}
-                        </button>
-                      ))}
+                       {loadingMentions ? (
+                        <div className="p-2 text-center text-muted-foreground">Buscando...</div>
+                      ) : mentionSuggestions.length > 0 ? (
+                        mentionSuggestions.map(name => (
+                          <button 
+                            key={name}
+                            onClick={() => handleMentionClick(name)}
+                            className="block w-full text-left p-2 rounded-md hover:bg-muted"
+                          >
+                            {name}
+                          </button>
+                        ))
+                      ) : (
+                        <div className="p-2 text-center text-muted-foreground">Nenhum usuário encontrado.</div>
+                      )}
                     </div>
                   )}
                   {replyingTo && (

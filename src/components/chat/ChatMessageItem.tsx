@@ -53,42 +53,34 @@ export interface ChatMessageData {
   edited?: boolean;
 }
 
-const MOCK_USER_NAMES_FOR_MENTIONS = [
-    'Carlos Caminhoneiro', 'Ana Viajante', 'Rota Segura Admin', 'Mariana Logística',
-    'Pedro Estradeiro', 'Segurança Rodoviária', 'João Silva', 'Você', 'Ana Souza', 'Carlos Santos', 'Ozias Conrado'
-];
-
-
-const renderTextWithMentions = (text: string, knownUsers: string[]): React.ReactNode[] => {
+const renderTextWithMentions = (text: string): React.ReactNode[] => {
   if (!text) return [text];
-  // More robust regex to avoid matching inside words
-  const escapedUserNames = knownUsers.map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  const mentionRegex = new RegExp(`(?<=^|\\s)(@(?:${escapedUserNames.join('|')}))(?=\\s|\\p{P}|$)`, 'gu');
-
-  const parts = text.split(mentionRegex);
+  // Regex to find @mentions (e.g., @user.name, @user_name) but not as part of an email address
+  const mentionRegex = /(?<!\S)@([\p{L}\p{N}._-]+)/gu;
   const elements: React.ReactNode[] = [];
-  let currentString = '';
+  let lastIndex = 0;
 
-  parts.forEach((part, index) => {
-    if (part && part.startsWith('@')) {
-      const mentionedName = part.substring(1);
-      if (knownUsers.includes(mentionedName)) {
-        if (currentString) {
-          elements.push(currentString);
-          currentString = '';
-        }
-        elements.push(<strong key={`${index}-${part}`} className="text-accent font-semibold cursor-pointer hover:underline">{part}</strong>);
-      } else {
-        currentString += part;
-      }
-    } else {
-      currentString += part;
+  for (const match of text.matchAll(mentionRegex)) {
+    const mention = match[0]; // e.g., "@Ozias.Conrado"
+    const startIndex = match.index!;
+
+    // Add text before the mention
+    if (startIndex > lastIndex) {
+      elements.push(text.substring(lastIndex, startIndex));
     }
-  });
-  if (currentString) {
-    elements.push(currentString);
+    
+    // Add the highlighted mention
+    elements.push(<strong key={startIndex} className="text-accent font-semibold cursor-pointer hover:underline">{mention}</strong>);
+    
+    lastIndex = startIndex + mention.length;
   }
-  return elements;
+
+  // Add any remaining text after the last mention
+  if (lastIndex < text.length) {
+    elements.push(text.substring(lastIndex));
+  }
+
+  return elements.length > 0 ? elements : [text]; // Fallback for no matches
 };
 
 
@@ -164,16 +156,10 @@ export default function ChatMessageItem({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedUserProfile, setSelectedUserProfile] = useState<UserProfileData | null>(null);
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  const MAX_CHARS = 250;
-  const needsTruncation = text && text.length > MAX_CHARS;
   
-  // Use useMemo to avoid re-rendering textElements unnecessarily
   const textToShow = useMemo(() => {
-    const content = isExpanded ? text : text?.substring(0, MAX_CHARS);
-    return renderTextWithMentions(content || '', MOCK_USER_NAMES_FOR_MENTIONS);
-  }, [text, isExpanded]);
+    return renderTextWithMentions(text || '');
+  }, [text]);
 
 
   useEffect(() => {
@@ -344,11 +330,6 @@ export default function ChatMessageItem({
                   <div className="min-w-0">
                     <p className="text-sm break-words whitespace-pre-wrap">
                       {textToShow}
-                      {needsTruncation && (
-                          <button onClick={() => setIsExpanded(!isExpanded)} className="text-primary text-xs font-semibold ml-1 hover:underline">
-                          {isExpanded ? 'Ver menos' : '...Ver mais'}
-                          </button>
-                      )}
                     </p>
                   </div>
                 )}

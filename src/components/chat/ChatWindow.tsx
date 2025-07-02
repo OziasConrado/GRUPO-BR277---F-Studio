@@ -56,21 +56,17 @@ interface ReplyingToInfo {
   messageText: string;
 }
 
-const MOCK_USER_NAMES_FOR_MENTIONS = [
-    'Carlos Caminhoneiro', 'Ana Viajante', 'Rota Segura Admin', 'Mariana Logística',
-    'Pedro Estradeiro', 'Segurança Rodoviária', 'João Silva', 'Você', 'Ana Souza', 'Carlos Santos', 'Ozias Conrado'
-];
-
 async function createChatMentions(text: string, messageId: string, fromUser: { uid: string, displayName: string | null, photoURL: string | null }) {
     if (!firestore) return;
-    const mentionRegex = /@([\p{L}\p{N}.-]+(?:[\s][\p{L}\p{N}.-]+)*)/gu;
+    const mentionRegex = /(?<!\S)@([\p{L}\p{N}._-]+)/gu;
     const mentions = text.match(mentionRegex);
     if (!mentions) return;
 
     const mentionedUsernames = [...new Set(mentions.map(m => m.substring(1).trim()))];
     
     for (const username of mentionedUsernames) {
-
+        if (username.toLowerCase() === (fromUser.displayName || '').toLowerCase()) continue;
+        
         const usersRef = collection(firestore, "Usuarios");
         const q = query(usersRef, where("displayName_lowercase", "==", username.toLowerCase()), limit(1));
         
@@ -111,6 +107,8 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
 
   const [mentionQuery, setMentionQuery] = useState('');
   const [showMentions, setShowMentions] = useState(false);
+  const [mentionSuggestions, setMentionSuggestions] = useState<string[]>([]);
+  const [loadingMentions, setLoadingMentions] = useState(false);
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -122,7 +120,6 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   const { currentUser } = useAuth();
   const { notifications, unreadCount: totalUnreadCount, loading: notificationsLoading } = useNotification();
   
-  // NEW STATE for image modal
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | StaticImageData | null>(null);
 
@@ -186,7 +183,6 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     }
   }, [messages, replyingTo]);
 
-  // NEW function to handle image click
   const handleImageClick = (imageUrl: string | StaticImageData) => {
     setSelectedImageUrl(imageUrl);
     setIsImageModalOpen(true);
@@ -440,6 +436,36 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     fileInputRef.current?.click();
   };
 
+  useEffect(() => {
+    if (mentionQuery.length > 0 && firestore) {
+      setLoadingMentions(true);
+      const fetchUsers = async () => {
+        const usersRef = collection(firestore, "Usuarios");
+        const q = query(
+          usersRef,
+          where("displayName_lowercase", ">=", mentionQuery.toLowerCase()),
+          where("displayName_lowercase", "<=", mentionQuery.toLowerCase() + '\uf8ff'),
+          limit(5)
+        );
+        try {
+          const querySnapshot = await getDocs(q);
+          const users = querySnapshot.docs.map(doc => doc.data().displayName as string);
+          setMentionSuggestions(users.filter(name => name));
+        } catch (error) {
+          console.error("Error fetching mention suggestions:", error);
+          setMentionSuggestions([]);
+        } finally {
+          setLoadingMentions(false);
+        }
+      };
+      
+      const timeoutId = setTimeout(fetchUsers, 300);
+      return () => clearTimeout(timeoutId);
+    } else {
+      setMentionSuggestions([]);
+    }
+  }, [mentionQuery]);
+
   const handleTextareaInput = (event: ChangeEvent<HTMLTextAreaElement>) => {
     const textarea = event.target;
     const value = textarea.value;
@@ -463,13 +489,6 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     }
   };
   
-  const filteredMentions = useMemo(() => {
-    if (!mentionQuery) return MOCK_USER_NAMES_FOR_MENTIONS;
-    return MOCK_USER_NAMES_FOR_MENTIONS.filter(name => 
-      name.toLowerCase().includes(mentionQuery.toLowerCase())
-    );
-  }, [mentionQuery]);
-
   const handleMentionClick = (name: string) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -536,7 +555,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
           transaction.delete(reactionRef);
         } else {
           // User is adding a new reaction
-          newReactions.heart = newReactions.heart + 1;
+          newReactions.heart = (newReactions.heart || 0) + 1;
           transaction.set(reactionRef, { type: 'heart', timestamp: serverTimestamp() });
         }
         transaction.update(messageRef, { reactions: newReactions });
@@ -686,17 +705,23 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
           </div>
 
           <footer className="border-t border-border/50 bg-card shrink-0">
-            {showMentions && filteredMentions.length > 0 && (
+            {showMentions && (
               <div className="max-h-32 overflow-y-auto border-b bg-background p-2 text-sm">
-                {filteredMentions.map(name => (
-                  <button 
-                    key={name}
-                    onClick={() => handleMentionClick(name)}
-                    className="block w-full text-left p-2 rounded-md hover:bg-muted"
-                  >
-                    {name}
-                  </button>
-                ))}
+                 {loadingMentions ? (
+                  <div className="p-2 text-center text-muted-foreground">Buscando...</div>
+                ) : mentionSuggestions.length > 0 ? (
+                  mentionSuggestions.map(name => (
+                    <button 
+                      key={name}
+                      onClick={() => handleMentionClick(name)}
+                      className="block w-full text-left p-2 rounded-md hover:bg-muted"
+                    >
+                      {name}
+                    </button>
+                  ))
+                ) : (
+                  <div className="p-2 text-center text-muted-foreground">Nenhum usuário encontrado.</div>
+                )}
               </div>
             )}
             {replyingTo && (
