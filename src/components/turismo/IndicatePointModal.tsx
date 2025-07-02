@@ -2,7 +2,7 @@
 'use client';
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -38,7 +38,6 @@ const indicatePointSchema = z.object({
 
 type IndicatePointFormValues = z.infer<typeof indicatePointSchema>;
 
-// The data passed to the onSubmit function will not include the raw file
 export type IndicatePointSubmitData = IndicatePointFormValues;
 
 
@@ -107,8 +106,8 @@ export default function IndicatePointModal({ isOpen, onClose, onSubmit, isSubmit
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleCloseDialog(); }}>
-      <DialogContent className="sm:max-w-lg p-0 rounded-xl flex flex-col h-[90vh] max-h-[700px]">
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleCloseDialog(); else form.reset(); }}>
+      <DialogContent className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none bg-background !p-0 grid grid-rows-[auto_1fr_auto] !translate-x-0 !translate-y-0">
         <DialogHeader className="p-4 border-b shrink-0">
           <DialogTitle className="font-headline text-xl">Indicar Ponto Turístico</DialogTitle>
           <DialogDescription>
@@ -158,32 +157,36 @@ export default function IndicatePointModal({ isOpen, onClose, onSubmit, isSubmit
                     className="hidden"
                     onChange={handleImageChange}
                   />
-                <Button 
-                    type="button" 
-                    variant="outline" 
-                    className="w-full mt-1 flex flex-col items-center justify-center h-32 border-dashed hover:border-primary"
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Clique para enviar ou alterar a foto"
                     onClick={() => fileInputRef.current?.click()}
-                >
-                    {imagePreview ? (
-                        <div className="relative w-full h-full">
-                            <Image src={imagePreview} alt="Preview da foto" layout="fill" objectFit="contain" className="rounded"/>
-                            <Button 
-                                type="button" 
-                                variant="destructive" 
-                                size="icon" 
-                                className="absolute top-1 right-1 h-6 w-6 z-10 opacity-70 hover:opacity-100"
-                                onClick={(e) => { e.stopPropagation(); removeImage(); }}
-                            >
-                                <X className="h-4 w-4"/>
-                            </Button>
-                        </div>
-                    ) : (
-                        <>
-                            <UploadCloud className="mr-2 h-8 w-8 text-muted-foreground"/>
-                            <span className="text-muted-foreground text-sm">Clique para enviar imagem</span>
-                        </>
-                    )}
-                </Button>
+                    onKeyDown={(e) => { if (e.key === 'Enter') fileInputRef.current?.click(); }}
+                    className="mt-1 flex flex-col items-center justify-center h-36 rounded-lg border-2 border-dashed border-input hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer transition-colors"
+                  >
+                      {imagePreview ? (
+                          <div className="relative w-full h-full p-1">
+                              <Image src={imagePreview} alt="Preview da foto" layout="fill" objectFit="contain" className="rounded"/>
+                              <div
+                                  role="button"
+                                  tabIndex={0}
+                                  aria-label="Remover foto"
+                                  className="absolute -top-1 -right-1 h-6 w-6 z-10 bg-destructive text-destructive-foreground rounded-full p-1 flex items-center justify-center cursor-pointer opacity-70 hover:opacity-100 transition-opacity"
+                                  onClick={(e) => { e.stopPropagation(); removeImage(); }}
+                                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); removeImage(); }}}
+                              >
+                                  <X className="h-4 w-4"/>
+                              </div>
+                          </div>
+                      ) : (
+                          <>
+                              <UploadCloud className="mx-auto h-8 w-8 text-muted-foreground"/>
+                              <span className="text-muted-foreground text-sm mt-1">Clique para enviar uma foto</span>
+                              <span className="text-xs text-muted-foreground/80 mt-0.5">JPG, PNG, WebP (Máx {MAX_FILE_SIZE_MB}MB)</span>
+                          </>
+                      )}
+                  </div>
                 {form.formState.errors.imageFile && <p className="text-sm text-destructive mt-1">{form.formState.errors.imageFile.message}</p>}
               </div>
               <div>
