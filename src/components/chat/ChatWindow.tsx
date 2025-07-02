@@ -1,11 +1,11 @@
 
 'use client';
 
-import { useState, useRef, useEffect, type ChangeEvent, type FormEvent } from 'react';
+import { useState, useRef, useEffect, type ChangeEvent, type FormEvent, useMemo } from 'react';
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { X, Send, Paperclip, Mic } from "lucide-react";
+import { X, Send, Paperclip, Mic, Bell, BellRing, MessageCircle, Loader2 } from "lucide-react";
 import ChatMessageItem, { type ChatMessageData } from "./ChatMessageItem";
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -26,10 +26,25 @@ import {
   increment,
   updateDoc,
   deleteDoc,
+  writeBatch,
+  where,
+  getDocs,
+  limit,
 } from 'firebase/firestore';
 import { ref, getDownloadURL, uploadBytesResumable } from "firebase/storage";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '../ui/dialog';
+import { useNotification } from '@/contexts/NotificationContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import type { Notification } from '@/types/notifications';
 
 interface ChatWindowProps {
   onClose: () => void;
@@ -41,6 +56,50 @@ interface ReplyingToInfo {
   messageText: string;
 }
 
+const MOCK_USER_NAMES_FOR_MENTIONS = [
+    'Carlos Caminhoneiro', 'Ana Viajante', 'Rota Segura Admin', 'Mariana Logística',
+    'Pedro Estradeiro', 'Segurança Rodoviária', 'João Silva', 'Você', 'Ana Souza', 'Carlos Santos', 'Ozias Conrado'
+];
+
+async function createChatMentions(text: string, messageId: string, fromUser: { uid: string, displayName: string | null, photoURL: string | null }) {
+    if (!firestore) return;
+    const mentionRegex = /@([\p{L}\p{N}_\s.-]+)/gu;
+    const mentions = text.match(mentionRegex);
+    if (!mentions) return;
+
+    const mentionedUsernames = [...new Set(mentions.map(m => m.substring(1).trim()))];
+    
+    for (const username of mentionedUsernames) {
+        if (username === fromUser.displayName) continue;
+
+        const usersRef = collection(firestore, "Usuarios");
+        const q = query(usersRef, where("displayName", "==", username), limit(1));
+        
+        try {
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+                const userDoc = querySnapshot.docs[0];
+                const mentionedUserId = userDoc.id;
+
+                const notificationRef = collection(firestore, 'Usuarios', mentionedUserId, 'notifications');
+                await addDoc(notificationRef, {
+                    type: 'mention_chat',
+                    fromUserId: fromUser.uid,
+                    fromUserName: fromUser.displayName || "Usuário",
+                    fromUserAvatar: fromUser.photoURL || null,
+                    postId: messageId, // Using postId to store the messageId for chat mentions
+                    textSnippet: text.substring(0, 70) + (text.length > 70 ? '...' : ''),
+                    timestamp: serverTimestamp(),
+                    read: false,
+                });
+            }
+        } catch (error) {
+            console.error(`Error creating chat notification for ${username}:`, error);
+        }
+    }
+}
+
+
 export default function ChatWindow({ onClose }: ChatWindowProps) {
   const [messages, setMessages] = useState<ChatMessageData[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -48,6 +107,9 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [replyingTo, setReplyingTo] = useState<ReplyingToInfo | null>(null);
+
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [showMentions, setShowMentions] = useState(false);
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -56,7 +118,18 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   const audioChunksRef = useRef<Blob[]>([]);
 
   const { toast } = useToast();
-  const { currentUser } = useAuth(); // Get current user
+  const { currentUser } = useAuth();
+  const { notifications, unreadCount: totalUnreadCount, loading: notificationsLoading } = useNotification();
+
+
+  const chatNotifications = useMemo(() => {
+    return notifications.filter(n => n.type === 'mention_chat');
+  }, [notifications]);
+
+  const unreadChatCount = useMemo(() => {
+    return chatNotifications.filter(n => !n.read).length;
+  }, [chatNotifications]);
+
 
   useEffect(() => {
     if (!firestore) {
@@ -64,7 +137,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
         return;
     }
     const messagesCollection = collection(firestore, 'chatMessages');
-    const q = query(messagesCollection, orderBy('timestamp', 'asc')); // Fetch in ascending order
+    const q = query(messagesCollection, orderBy('timestamp', 'asc')); 
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedMessages: ChatMessageData[] = [];
@@ -72,7 +145,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
         const data = doc.data();
         const messageTimestamp = data.timestamp instanceof Timestamp
           ? data.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          : 'Agora'; // Fallback for newly sent messages before server timestamp is set
+          : 'Agora'; 
 
         fetchedMessages.push({
           id: doc.id,
@@ -88,7 +161,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
           timestamp: messageTimestamp,
           isCurrentUser: currentUser ? data.userId === currentUser.uid : false,
           reactions: data.reactions,
-          replyTo: data.replyTo, // Add replyTo field
+          replyTo: data.replyTo,
           edited: data.edited || false,
         });
       });
@@ -119,7 +192,8 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
         return;
     }
 
-    if (newMessage.trim() === '' && !selectedImageFile) return;
+    const messageText = newMessage.trim();
+    if (messageText === '' && !selectedImageFile) return;
     
     let imageUrl: string | undefined;
     let fileInfo: { name: string, type: 'image' } | undefined;
@@ -156,7 +230,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
           senderName: currentUser.displayName || 'Usuário Anônimo',
           avatarUrl: currentUser.photoURL || `https://placehold.co/40x40.png?text=${currentUser.displayName ? currentUser.displayName.substring(0,1).toUpperCase() : 'U'}`,
           dataAIAvatarHint: 'user avatar',
-          text: newMessage.trim() || undefined,
+          text: messageText || undefined,
           timestamp: serverTimestamp(),
           reactions: { heart: 0 },
           edited: false,
@@ -176,7 +250,11 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
             };
         }
         
-        await addDoc(collection(firestore, 'chatMessages'), messageData);
+        const docRef = await addDoc(collection(firestore, 'chatMessages'), messageData);
+
+        if (currentUser && messageText) {
+          await createChatMentions(messageText, docRef.id, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL });
+        }
         
     } catch (error) {
         console.error("Error sending message:", error);
@@ -352,12 +430,59 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   };
 
   const handleTextareaInput = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    setNewMessage(event.target.value);
     const textarea = event.target;
-    textarea.style.height = 'auto'; // Reset height
-    const newScrollHeight = Math.min(textarea.scrollHeight, 120); // Max height 120px
+    const value = textarea.value;
+    setNewMessage(value);
+    
+    // Auto-resize textarea
+    textarea.style.height = 'auto'; 
+    const newScrollHeight = Math.min(textarea.scrollHeight, 120);
     textarea.style.height = `${newScrollHeight}px`;
+
+    // Mention logic
+    const cursorPos = textarea.selectionStart;
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const currentWord = textBeforeCursor.split(/\s+/).pop() || '';
+    
+    if (currentWord.startsWith('@')) {
+        setMentionQuery(currentWord.substring(1));
+        setShowMentions(true);
+    } else {
+        setShowMentions(false);
+    }
   };
+  
+  const filteredMentions = useMemo(() => {
+    if (!mentionQuery) return MOCK_USER_NAMES_FOR_MENTIONS;
+    return MOCK_USER_NAMES_FOR_MENTIONS.filter(name => 
+      name.toLowerCase().includes(mentionQuery.toLowerCase())
+    );
+  }, [mentionQuery]);
+
+  const handleMentionClick = (name: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const value = textarea.value;
+    const cursorPos = textarea.selectionStart;
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const lastAtPos = textBeforeCursor.lastIndexOf('@');
+    
+    if (lastAtPos !== -1) {
+      const prefix = value.substring(0, lastAtPos);
+      const suffix = value.substring(cursorPos);
+      const newText = `${prefix}@${name} ${suffix}`;
+      setNewMessage(newText);
+      setShowMentions(false);
+      
+      setTimeout(() => {
+        textarea.focus();
+        const newCursorPos = prefix.length + name.length + 2;
+        textarea.setSelectionRange(newCursorPos, newCursorPos);
+      }, 0);
+    }
+  };
+
 
   const handleReply = (messageToReply: ChatMessageData) => {
     setReplyingTo({ 
@@ -388,13 +513,10 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
         const reactionDoc = await transaction.get(reactionRef);
         
         if (reactionDoc.exists()) {
-          // User has already reacted with a heart, so remove reaction
           transaction.delete(reactionRef);
           transaction.update(messageRef, { 'reactions.heart': increment(-1) });
         } else {
-          // User has not reacted, so add reaction
           transaction.set(reactionRef, { type: 'heart', timestamp: serverTimestamp() });
-          // Use set with merge to ensure the reactions object and heart field are created if they don't exist
           transaction.set(messageRef, { reactions: { heart: increment(1) } }, { merge: true });
         }
       });
@@ -432,6 +554,36 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     }
   };
 
+  const handleMarkChatNotificationsAsRead = async () => {
+    if (!currentUser || !firestore || unreadChatCount === 0) return;
+
+    const batch = writeBatch(firestore);
+    chatNotifications.forEach(n => {
+        if (!n.read) {
+            const notifRef = doc(firestore, 'Usuarios', currentUser.uid, 'notifications', n.id);
+            batch.update(notifRef, { read: true });
+        }
+    });
+
+    try {
+        await batch.commit();
+    } catch (error) {
+        console.error("Error marking chat notifications as read:", error);
+    }
+  };
+
+  const handleChatNotificationClick = (notification: Notification) => {
+    const messageElement = document.getElementById(`message-${notification.postId}`);
+    if (messageElement) {
+        messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        messageElement.classList.add('bg-primary/10', 'ring-2', 'ring-primary/50', 'transition-all', 'duration-1000', 'ease-out', 'rounded-xl');
+        setTimeout(() => {
+            messageElement.classList.remove('bg-primary/10', 'ring-2', 'ring-primary/50', 'rounded-xl');
+        }, 2500);
+    }
+  };
+
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none bg-background !p-0 grid grid-rows-[auto_1fr_auto] !translate-x-0 !translate-y-0">
@@ -446,7 +598,53 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
               <p className="text-xs text-primary-foreground/80">Online</p>
             </div>
           </div>
-          {/* A close button is automatically added by DialogContent */}
+          <div className="flex items-center gap-2">
+            <DropdownMenu onOpenChange={(open) => { if(open) handleMarkChatNotificationsAsRead(); }}>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="relative text-primary-foreground hover:bg-white/10">
+                        <Bell className="h-5 w-5"/>
+                         {unreadChatCount > 0 && (
+                            <span className="absolute top-2.5 right-2.5 flex h-3 w-3">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
+                            </span>
+                        )}
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80 z-[210]">
+                    <DropdownMenuLabel>Menções no Chat</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                     {notificationsLoading ? (
+                        <DropdownMenuItem disabled>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin"/> Carregando...
+                        </DropdownMenuItem>
+                    ) : chatNotifications.length > 0 ? (
+                        chatNotifications.map(n => (
+                            <DropdownMenuItem key={n.id} className={cn("flex items-start gap-2 h-auto whitespace-normal cursor-pointer", !n.read && "bg-primary/10")} onClick={() => handleChatNotificationClick(n)}>
+                                <div className="mt-1">
+                                    <MessageCircle className="h-5 w-5 text-primary"/>
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-sm">
+                                        <span className="font-semibold">{n.fromUserName}</span> mencionou você: <span className="text-muted-foreground italic">"{n.textSnippet}"</span>
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                    {n.timestamp instanceof Timestamp ? formatDistanceToNow(n.timestamp.toDate(), { addSuffix: true, locale: ptBR }).replace('cerca de ', '') : 'agora'}
+                                    </p>
+                                </div>
+                            </DropdownMenuItem>
+                        ))
+                    ) : (
+                        <DropdownMenuItem disabled className="text-center justify-center">Nenhuma menção nova</DropdownMenuItem>
+                    )}
+                </DropdownMenuContent>
+            </DropdownMenu>
+            <DialogClose asChild>
+                <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10">
+                    <X className="h-5 w-5" />
+                </Button>
+            </DialogClose>
+          </div>
         </header>
 
         <div className="overflow-y-auto min-h-0 bg-muted/20" ref={scrollAreaRef}>
@@ -465,6 +663,19 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
         </div>
 
         <footer className="border-t border-border/50 bg-card shrink-0">
+          {showMentions && filteredMentions.length > 0 && (
+            <div className="max-h-32 overflow-y-auto border-b bg-background p-2 text-sm">
+              {filteredMentions.map(name => (
+                <button 
+                  key={name}
+                  onClick={() => handleMentionClick(name)}
+                  className="block w-full text-left p-2 rounded-md hover:bg-muted"
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+          )}
           {replyingTo && (
             <div className="px-3 pt-2 flex justify-between items-center text-xs text-muted-foreground bg-muted/50 border-b">
                 <div className="py-1 overflow-hidden">

@@ -53,6 +53,44 @@ export interface ChatMessageData {
   edited?: boolean;
 }
 
+const MOCK_USER_NAMES_FOR_MENTIONS = [
+    'Carlos Caminhoneiro', 'Ana Viajante', 'Rota Segura Admin', 'Mariana Logística',
+    'Pedro Estradeiro', 'Segurança Rodoviária', 'João Silva', 'Você', 'Ana Souza', 'Carlos Santos', 'Ozias Conrado'
+];
+
+
+const renderTextWithMentions = (text: string, knownUsers: string[]): React.ReactNode[] => {
+  if (!text) return [text];
+  const escapedUserNames = knownUsers.map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const mentionRegex = new RegExp(`(@(?:${escapedUserNames.join('|')}))(?=\\s|\\p{P}|$)`, 'gu');
+
+  const parts = text.split(mentionRegex);
+  const elements: React.ReactNode[] = [];
+  let currentString = '';
+
+  parts.forEach((part, index) => {
+    if (part && part.startsWith('@')) {
+      const mentionedName = part.substring(1);
+      if (knownUsers.includes(mentionedName)) {
+        if (currentString) {
+          elements.push(currentString);
+          currentString = '';
+        }
+        elements.push(<strong key={`${index}-${part}`} className="text-accent font-semibold cursor-pointer hover:underline">{part}</strong>);
+      } else {
+        currentString += part;
+      }
+    } else {
+      currentString += part;
+    }
+  });
+  if (currentString) {
+    elements.push(currentString);
+  }
+  return elements;
+};
+
+
 const SoundWaveIcon = ({ className, width = "72", height = "22" }: { className?: string, width?: string, height?: string }) => (
   <svg width={width} height={height} viewBox="0 0 72 22" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
     <rect x="1" y="9" width="3" height="4" rx="1.5" fill="currentColor"/>
@@ -124,6 +162,12 @@ export default function ChatMessageItem({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedUserProfile, setSelectedUserProfile] = useState<UserProfileData | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const MAX_CHARS = 250;
+  const needsTruncation = text && text.length > MAX_CHARS;
+  const textToShow = isExpanded ? text : text?.substring(0, MAX_CHARS);
+  const textElements = renderTextWithMentions(textToShow || '', MOCK_USER_NAMES_FOR_MENTIONS);
 
   useEffect(() => {
     if (!currentUser || !firestore || !message.id) return;
@@ -225,7 +269,7 @@ export default function ChatMessageItem({
                       <MoreVertical className="h-4 w-4" />
                   </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="z-[90]">
+              <DropdownMenuContent align="end" className="z-[210]">
                   {text && (
                     <DropdownMenuItem onClick={() => setIsEditing(true)}>
                         <Edit className="mr-2 h-4 w-4" />
@@ -289,7 +333,15 @@ export default function ChatMessageItem({
                 
                 {text && (
                   <div className="min-w-0">
-                    <p className="text-sm break-words whitespace-pre-wrap">{text}</p>
+                    <p className="text-sm break-words whitespace-pre-wrap">
+                      {textElements}
+                      {needsTruncation && !isExpanded && '... '}
+                      {needsTruncation && (
+                          <button onClick={() => setIsExpanded(!isExpanded)} className="text-primary text-xs font-semibold ml-1 hover:underline">
+                          {isExpanded ? 'Ver menos' : 'Ver mais'}
+                          </button>
+                      )}
+                    </p>
                   </div>
                 )}
 
@@ -356,7 +408,7 @@ export default function ChatMessageItem({
                       <MoreVertical className="h-4 w-4" />
                   </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="z-[90]">
+              <DropdownMenuContent align="start" className="z-[210]">
                   <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => handleReportMessage(message)}>
                       <Flag className="mr-2 h-4 w-4" />
                       <span>Denunciar para o Administrador</span>
@@ -374,7 +426,7 @@ export default function ChatMessageItem({
     </div>
 
     <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent className="z-[90]">
+        <AlertDialogContent className="z-[210]">
         <AlertDialogHeader>
             <AlertDialogTitle>Excluir Mensagem</AlertDialogTitle>
             <AlertDialogDescription>
