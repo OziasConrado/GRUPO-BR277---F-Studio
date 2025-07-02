@@ -70,7 +70,6 @@ async function createChatMentions(text: string, messageId: string, fromUser: { u
     const mentionedUsernames = [...new Set(mentions.map(m => m.substring(1).trim()))];
     
     for (const username of mentionedUsernames) {
-        if (username.toLowerCase() === (fromUser.displayName || '').toLowerCase()) continue;
 
         const usersRef = collection(firestore, "Usuarios");
         const q = query(usersRef, where("displayName_lowercase", "==", username.toLowerCase()), limit(1));
@@ -80,6 +79,8 @@ async function createChatMentions(text: string, messageId: string, fromUser: { u
             if (!querySnapshot.empty) {
                 const userDoc = querySnapshot.docs[0];
                 const mentionedUserId = userDoc.id;
+
+                if (mentionedUserId === fromUser.uid) continue;
 
                 const notificationRef = collection(firestore, 'Usuarios', mentionedUserId, 'notifications');
                 await addDoc(notificationRef, {
@@ -510,19 +511,28 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
 
     try {
       await runTransaction(firestore, async (transaction) => {
+        const messageDoc = await transaction.get(messageRef);
+        if (!messageDoc.exists()) {
+            throw new Error("A mensagem não existe mais.");
+        }
+
         const reactionDoc = await transaction.get(reactionRef);
+        const newReactions = messageDoc.data().reactions || { heart: 0 };
         
         if (reactionDoc.exists()) {
+          // User is un-reacting
+          newReactions.heart = Math.max(0, (newReactions.heart || 0) - 1);
           transaction.delete(reactionRef);
-          transaction.update(messageRef, { 'reactions.heart': increment(-1) });
         } else {
+          // User is adding a new reaction
+          newReactions.heart = (newReactions.heart || 0) + 1;
           transaction.set(reactionRef, { type: 'heart', timestamp: serverTimestamp() });
-          transaction.set(messageRef, { reactions: { heart: increment(1) } }, { merge: true });
         }
+        transaction.update(messageRef, { reactions: newReactions });
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error handling reaction:", error);
-      toast({ variant: 'destructive', title: 'Erro ao Reagir' });
+      toast({ variant: 'destructive', title: 'Erro ao Reagir', description: error.message || 'Não foi possível processar sua reação.' });
     }
   };
 
