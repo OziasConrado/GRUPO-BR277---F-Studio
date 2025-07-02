@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import type { StaticImageData } from 'next/image';
 import Image from "next/image";
 import { Paperclip, Mic, FileText, PlayCircle, Heart, MoreVertical, Edit, Trash2, Flag } from "lucide-react";
-import React, { useState, useEffect } from "react"; 
+import React, { useState, useEffect, useMemo } from "react"; 
 import { Button } from "../ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { firestore } from "@/lib/firebase/client";
