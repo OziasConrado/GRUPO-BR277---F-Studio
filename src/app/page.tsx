@@ -62,8 +62,10 @@ async function createMentions(text: string, postId: string, fromUser: { uid: str
     const mentionedUsernames = [...new Set(mentions.map(m => m.substring(1).trim()))];
     
     for (const username of mentionedUsernames) {
+        if (username.toLowerCase() === (fromUser.displayName || '').toLowerCase()) continue;
+
         const usersRef = collection(firestore, "Usuarios");
-        const q = query(usersRef, where("displayName", "==", username), limit(1));
+        const q = query(usersRef, where("displayName_lowercase", "==", username.toLowerCase()), limit(1));
         
         try {
             const querySnapshot = await getDocs(q);

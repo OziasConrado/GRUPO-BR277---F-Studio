@@ -156,10 +156,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userDocSnap = await getDoc(userDocRef);
 
         if (!userDocSnap.exists()) {
+            const displayName = user.displayName || user.email?.split('@')[0] || 'Usuário Google';
             const newProfileData = {
                 uid: user.uid,
                 email: user.email,
-                displayName: user.displayName || user.email?.split('@')[0] || 'Usuário Google',
+                displayName: displayName,
+                displayName_lowercase: displayName.toLowerCase(),
                 photoURL: user.photoURL || null,
                 createdAt: serverTimestamp(),
                 bio: '',
@@ -193,10 +195,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (user) {
           const userDocRef = doc(firestore, "Usuarios", user.uid);
           try {
+            const displayName = user.email?.split('@')[0] || 'Usuário';
             const newProfileData = {
               uid: user.uid,
               email: user.email,
-              displayName: user.email?.split('@')[0] || 'Usuário',
+              displayName: displayName,
+              displayName_lowercase: displayName.toLowerCase(),
               photoURL: user.photoURL || null,
               createdAt: serverTimestamp(),
               bio: '',
@@ -326,7 +330,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         const firestoreProfileUpdates: any = {};
-        if (data.displayName && data.displayName !== userForUpdate.displayName) firestoreProfileUpdates.displayName = data.displayName;
+        if (data.displayName && data.displayName !== userForUpdate.displayName) {
+            firestoreProfileUpdates.displayName = data.displayName;
+            firestoreProfileUpdates.displayName_lowercase = data.displayName.toLowerCase();
+        }
         if (newPhotoURL) firestoreProfileUpdates.photoURL = newPhotoURL;
         if (data.bio !== undefined && data.bio !== userProfile?.bio) firestoreProfileUpdates.bio = data.bio;
         if (data.location !== undefined && data.location !== userProfile?.location) firestoreProfileUpdates.location = data.location;

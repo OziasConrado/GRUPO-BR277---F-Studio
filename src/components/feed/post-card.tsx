@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { StaticImageData } from 'next/image';
@@ -68,10 +69,10 @@ async function createMentions(text: string, postId: string, fromUser: { uid: str
     const mentionedUsernames = [...new Set(mentions.map(m => m.substring(1).trim()))];
     
     for (const username of mentionedUsernames) {
-        if (username === fromUser.displayName) continue; // Don't notify self
+        if (username.toLowerCase() === (fromUser.displayName || '').toLowerCase()) continue;
 
         const usersRef = collection(firestore, "Usuarios");
-        const q = query(usersRef, where("displayName", "==", username), limit(1));
+        const q = query(usersRef, where("displayName_lowercase", "==", username.toLowerCase()), limit(1));
         
         try {
             const querySnapshot = await getDocs(q);
@@ -799,7 +800,7 @@ export default function PostCard({
               })()}
               {poll && <PollDisplay pollData={poll} postId={postId} />}
               {displayImageUrl && (
-                <div className="bg-muted/10 dark:bg-muted/20 mt-3">
+                <div className="bg-muted/10 dark:bg-muted/20 mt-3 min-h-[280px]">
                   <button
                     type="button"
                     onClick={() => handleImageClick(displayImageUrl!)}

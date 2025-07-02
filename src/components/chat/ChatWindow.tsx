@@ -70,8 +70,10 @@ async function createChatMentions(text: string, messageId: string, fromUser: { u
     const mentionedUsernames = [...new Set(mentions.map(m => m.substring(1).trim()))];
     
     for (const username of mentionedUsernames) {
+        if (username.toLowerCase() === (fromUser.displayName || '').toLowerCase()) continue;
+
         const usersRef = collection(firestore, "Usuarios");
-        const q = query(usersRef, where("displayName", "==", username), limit(1));
+        const q = query(usersRef, where("displayName_lowercase", "==", username.toLowerCase()), limit(1));
         
         try {
             const querySnapshot = await getDocs(q);
