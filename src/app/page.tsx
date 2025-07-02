@@ -62,8 +62,6 @@ async function createMentions(text: string, postId: string, fromUser: { uid: str
     const mentionedUsernames = [...new Set(mentions.map(m => m.substring(1).trim()))];
     
     for (const username of mentionedUsernames) {
-        if (username === fromUser.displayName) continue; // Don't notify self
-
         const usersRef = collection(firestore, "Usuarios");
         const q = query(usersRef, where("displayName", "==", username), limit(1));
         
