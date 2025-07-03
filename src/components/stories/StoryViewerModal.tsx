@@ -264,22 +264,17 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
             const reactionDoc = await transaction.get(reactionRef);
             const storedReaction = reactionDoc.exists() ? reactionDoc.data().type : null;
 
-            // If the user is clicking the same reaction again, they are un-reacting.
             if (storedReaction === reactionType) {
                 transaction.update(storyRef, { [`reactions.${reactionType}`]: increment(-1) });
                 transaction.delete(reactionRef);
             } else {
-                // If the user had a different reaction, undo it first.
                 if (storedReaction) {
                     transaction.update(storyRef, { [`reactions.${storedReaction}`]: increment(-1) });
                 }
-                // Add the new reaction.
                 transaction.update(storyRef, { [`reactions.${reactionType}`]: increment(1) });
                 transaction.set(reactionRef, { type: reactionType, timestamp: serverTimestamp() });
             }
         });
-        // The onSnapshot listener will update the UI automatically.
-        // Optimistic update for immediate feedback on the button state.
         setCurrentUserStoryReaction(prev => prev === reactionType ? null : reactionType);
     } catch (error: any) {
       console.error("Error handling story reaction:", error);
@@ -301,7 +296,6 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
         timestamp: serverTimestamp(),
       });
 
-      // Pass 'mention_comment' as it's a comment, and story.id as the post ID context
       await createMentions(commentText, story.id, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL }, 'mention_comment');
 
       setNewComment('');
@@ -316,8 +310,8 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
   const handleShareClick = () => {
     if (navigator.share && story?.videoContentUrl) {
       navigator.share({
-        title: `Confira este Reel: ${story.adminName}`,
-        text: `Assista ao Reel "${story.adminName}" no Rota Segura!`,
+        title: `Confira este Reel: ${story.authorName}`,
+        text: `Assista ao Reel "${story.authorName}" no Rota Segura!`,
         url: window.location.href, // Placeholder URL
       }).then(() => {
         toast({ title: "Reel compartilhado!", description: "Conteúdo enviado com sucesso." });
@@ -345,7 +339,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
     }
     const reasonLabel = reportReasonsStory.find(r => r.id === selectedReportReasonStory)?.label;
     const reportDetails = selectedReportReasonStory === "story_other" ? otherReportReasonTextStory : reasonLabel;
-    toast({ title: "Denúncia Enviada", description: `Reel "${story.adminName}" denunciado. Motivo: ${reportDetails}` });
+    toast({ title: "Denúncia Enviada", description: `Reel "${story.authorName}" denunciado. Motivo: ${reportDetails}` });
     setIsReportModalOpenStory(false);
     setSelectedReportReasonStory(undefined);
     setOtherReportReasonTextStory('');
@@ -392,6 +386,12 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
     }
   };
 
+  const formattedTimestamp = useMemo(() => {
+    if (!story?.timestamp) return '';
+    return formatDistanceToNow(new Date(story.timestamp), { addSuffix: true, locale: ptBR })
+      .replace('cerca de ', '');
+  }, [story?.timestamp]);
+
   if (!isOpen || !story) return null;
 
 
@@ -409,10 +409,16 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
           onEscapeKeyDown={onClose}
         >
           <DialogHeader className="shrink-0 p-2 sm:p-3 flex flex-row justify-between items-center bg-black/30 !z-[210] backdrop-blur-sm">
-            <DialogTitle className="text-white text-base font-semibold truncate flex-grow pl-2">
-              {story.adminName}
-            </DialogTitle>
-            <DialogDescription className="sr-only">Visualizador de story de {story.adminName}.</DialogDescription>
+            <div className="flex items-center gap-2 flex-grow min-w-0">
+                <Avatar className="h-9 w-9 border-2 border-white/50">
+                    {story.authorAvatarUrl && <AvatarImage src={story.authorAvatarUrl} alt={story.authorName} />}
+                    <AvatarFallback>{story.authorName.substring(0,1)}</AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                    <DialogTitle className="text-white text-base font-semibold truncate">{story.authorName}</DialogTitle>
+                    <DialogDescription className="text-xs text-white/70 truncate">{formattedTimestamp}</DialogDescription>
+                </div>
+            </div>
             <DialogClose asChild>
               <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full h-9 w-9 sm:h-10 sm:w-10 !z-[210] flex-shrink-0">
                 <X className="h-5 w-5 sm:h-6 sm:h-6" />
@@ -429,15 +435,15 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
                   loop
                   playsInline
                   className="w-full h-full object-contain"
-                  data-ai-hint={story.dataAIAvatarHint || "user uploaded video"}
+                  data-ai-hint={story.dataAIThumbnailHint || "user uploaded video"}
                 />
               ) : (
                 <Image
-                  src={story.avatarUrl} 
-                  alt={`Story de ${story.adminName}`}
+                  src={story.thumbnailUrl} 
+                  alt={`Story de ${story.authorName}`}
                   layout="fill"
                   objectFit="contain"
-                  data-ai-hint={story.dataAIAvatarHint || "story content"}
+                  data-ai-hint={story.dataAIThumbnailHint || "story content"}
                 />
               )}
             </div>
@@ -570,7 +576,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
           <AlertDialogHeader>
             <RadixAlertDialogTitle>Reportar Reel</RadixAlertDialogTitle>
             <RadixAlertDialogDescription>
-              Por favor, selecione o motivo da sua denúncia para o Reel "{story.adminName}".
+              Por favor, selecione o motivo da sua denúncia para o Reel "{story.authorName}".
             </RadixAlertDialogDescription>
           </AlertDialogHeader>
           <RadioGroup value={selectedReportReasonStory} onValueChange={setSelectedReportReasonStory} className="space-y-2 my-4">

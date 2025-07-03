@@ -1,21 +1,51 @@
+
 'use client';
 
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { PlayCircle, Image as ImageIcon } from 'lucide-react';
+import { PlayCircle, UserCircle } from 'lucide-react';
+import { formatDistanceToNow, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export interface StoryCircleProps {
   id: string;
-  adminName: string;
-  avatarUrl: string; // Should always be an image URL (placeholder or actual thumbnail)
-  dataAIAvatarHint?: string;
-  hasNewStory: boolean;
+  authorId: string;
+  authorName: string;
+  authorAvatarUrl?: string;
+  timestamp: string; // ISO String
+  thumbnailUrl: string; // The main image/video thumbnail
+  dataAIThumbnailHint?: string;
   storyType: 'image' | 'video';
-  videoContentUrl?: string; // Optional: URL or Data URI for the actual video content
-  onClick?: () => void;
+  videoContentUrl?: string;
+  onClick: () => void; // To open the story viewer
+  onAuthorClick: () => void; // To open the user profile modal
 }
 
-export default function StoryCircle({ adminName, avatarUrl, dataAIAvatarHint, hasNewStory, storyType, videoContentUrl, onClick }: StoryCircleProps) {
+export default function StoryCircle({ 
+  authorName, 
+  authorAvatarUrl,
+  thumbnailUrl, 
+  dataAIThumbnailHint, 
+  storyType, 
+  videoContentUrl, 
+  timestamp,
+  onClick,
+  onAuthorClick,
+}: StoryCircleProps) {
+  
+  const timeAgo = formatDistanceToNow(parseISO(timestamp), { addSuffix: true, locale: ptBR })
+      .replace('cerca de ', '')
+      .replace(' minuto', ' min')
+      .replace(' minutos', ' min')
+      .replace(' hora', ' h')
+      .replace(' horas', ' h');
+
+  const handleAuthorClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent the main onClick from firing
+    onAuthorClick();
+  };
+
   return (
     <button
       type="button"
@@ -25,51 +55,54 @@ export default function StoryCircle({ adminName, avatarUrl, dataAIAvatarHint, ha
         'transform-gpu transition-transform group-hover:scale-[1.03]',
         'w-[150px] h-[250px]' 
       )}
-      aria-label={`Ver story de ${adminName}`}
+      aria-label={`Ver story de ${authorName}`}
     >
       <div
         className={cn(
-          "relative w-full h-full bg-card rounded-md overflow-hidden"
+          "relative w-full h-full bg-card rounded-md overflow-hidden shadow-md"
         )}
       >
-        {storyType === 'video' && videoContentUrl ? (
-           <video
-              src={videoContentUrl}
-              muted
-              loop
-              autoPlay
-              playsInline
-              className="w-full h-full object-cover rounded-sm"
-              data-ai-hint={dataAIAvatarHint || 'video story content'}
-           />
-        ) : (
-            <Image
-              src={avatarUrl}
-              alt={adminName}
-              layout="fill"
-              objectFit="cover"
-              className="rounded-sm"
-              data-ai-hint={dataAIAvatarHint || (storyType === 'video' ? 'video story content' : 'image story content')}
-            />
-        )}
+        <video
+          src={videoContentUrl || thumbnailUrl}
+          muted
+          loop
+          autoPlay
+          playsInline
+          className="w-full h-full object-cover rounded-sm"
+          data-ai-hint={dataAIThumbnailHint || 'video story content'}
+        />
 
+        {/* Gradient Overlay for better text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent pointer-events-none"></div>
 
-        {/* Overlay Icon for Video Type */}
-        {storyType === 'video' && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
-            <PlayCircle className="w-8 h-8 text-white/80 drop-shadow-lg" />
-          </div>
-        )}
-
-        <div className="absolute bottom-0 left-0 right-0 p-1.5 bg-gradient-to-t from-black/70 via-black/40 to-transparent">
-          <p className="text-xs text-white font-semibold drop-shadow-sm line-clamp-2">{adminName}</p>
+        {/* Play Icon */}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+          <PlayCircle className="w-10 h-10 text-white/80 drop-shadow-lg" />
         </div>
         
-        {storyType === 'image' && hasNewStory && (
-           <div className="absolute top-1.5 right-1.5 bg-black/40 p-0.5 rounded-full backdrop-blur-sm">
-              <ImageIcon className="w-4 h-4 text-white/90" />
-           </div>
-         )}
+        {/* Author Info at top */}
+        <div 
+          onClick={handleAuthorClick} 
+          className="absolute top-2 left-2 flex items-center gap-1.5 p-1 rounded-full bg-black/30 backdrop-blur-sm cursor-pointer"
+          aria-label={`Ver perfil de ${authorName}`}
+        >
+          <Avatar className="h-6 w-6 border-2 border-white/50">
+            {authorAvatarUrl && <AvatarImage src={authorAvatarUrl} alt={authorName}/>}
+            <AvatarFallback className="text-xs bg-primary/70 text-primary-foreground">
+                {authorName ? authorName.substring(0,1).toUpperCase() : <UserCircle className="h-5 w-5"/>}
+            </AvatarFallback>
+          </Avatar>
+        </div>
+
+        {/* Title and Timestamp at bottom */}
+        <div 
+          onClick={handleAuthorClick}
+          className="absolute bottom-0 left-0 right-0 p-2 cursor-pointer"
+        >
+          <p className="text-sm text-white font-semibold drop-shadow-sm line-clamp-2 leading-tight">{authorName}</p>
+          <p className="text-xs text-white/80 drop-shadow-sm">{timeAgo}</p>
+        </div>
       </div>
     </button>
   );

@@ -23,6 +23,7 @@ import {
   Trash2,
   Check,
   Link as LinkIcon,
+  UserCircle,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -51,6 +52,7 @@ import { ref, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ToastAction } from '@/components/ui/toast';
+import UserProfileModal, { type UserProfileData } from '@/components/profile/UserProfileModal';
 
 
 async function createMentions(text: string, postId: string, fromUser: { uid: string, displayName: string | null, photoURL: string | null }, type: 'mention_post' | 'mention_comment') {
@@ -273,6 +275,11 @@ export default function FeedPage() {
   const [mentionSuggestions, setMentionSuggestions] = useState<string[]>([]);
   const [loadingMentions, setLoadingMentions] = useState(false);
 
+  // User Profile Modal State
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [selectedUserProfile, setSelectedUserProfile] = useState<UserProfileData | null>(null);
+
+
   // Hooks
   const { toast } = useToast();
   const { currentUser, userProfile, isProfileComplete } = useAuth();
@@ -329,10 +336,12 @@ export default function FeedPage() {
             const data = doc.data();
             return {
                 id: doc.id,
-                adminName: data.userName,
-                avatarUrl: data.thumbnailUrl || data.userAvatarUrl || 'https://placehold.co/180x320.png',
-                dataAIAvatarHint: 'video story content',
-                hasNewStory: true,
+                authorId: data.userId,
+                authorName: data.userName,
+                authorAvatarUrl: data.userAvatarUrl || undefined,
+                thumbnailUrl: data.thumbnailUrl || data.videoUrl || 'https://placehold.co/180x320.png',
+                dataAIThumbnailHint: 'video story content',
+                timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
                 storyType: 'video',
                 videoContentUrl: data.videoUrl
             } as StoryCircleProps;
@@ -419,6 +428,41 @@ export default function FeedPage() {
 
 
   // Handlers
+  const handleShowUserProfile = useCallback(async (userId?: string, fallbackName?: string, fallbackAvatar?: string) => {
+    if (!userId) return;
+    if (!firestore) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Serviço de banco de dados indisponível.' });
+      return;
+    }
+
+    try {
+      const userDocRef = doc(firestore, 'Usuarios', userId);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        setSelectedUserProfile({
+          id: userDoc.id,
+          name: userData.displayName || 'Usuário',
+          avatarUrl: userData.photoURL,
+          location: userData.location,
+          bio: userData.bio,
+          instagramUsername: userData.instagramUsername,
+        });
+      } else {
+        setSelectedUserProfile({
+          id: userId,
+          name: fallbackName || 'Usuário',
+          avatarUrl: fallbackAvatar,
+        });
+      }
+      setIsProfileModalOpen(true);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar o perfil do usuário.' });
+    }
+  }, [toast]);
+
   const handleInteractionAttempt = (callback: () => void) => {
     if (!isProfileComplete) {
         toast({
@@ -538,7 +582,7 @@ export default function FeedPage() {
           userId: currentUser.uid,
           userName: currentUser.displayName || 'Anônimo',
           userAvatarUrl: currentUser.photoURL,
-          thumbnailUrl: currentUser.photoURL,
+          thumbnailUrl: mediaUrl, // Using uploaded video for thumbnail initially
           description: newPostText.trim(),
           videoUrl: mediaUrl,
           reactions: { thumbsUp: 0, thumbsDown: 0 },
@@ -699,338 +743,350 @@ export default function FeedPage() {
   }
 
   return (
-    <div className="w-full space-y-6">
-      <ProfileCompletionAlert />
-      
-      <div className="flex gap-3 h-20">
-        <Button asChild
-          variant="destructive"
-          className="w-2/3 h-full bg-red-500 hover:bg-red-600 text-white text-lg font-semibold rounded-lg shadow-md"
-        >
-          <Link href="/emergencia">
-              <Phone className="mr-2 h-6 w-6" />
-              EMERGÊNCIA
-          </Link>
-        </Button>
-        <div className="w-1/3 flex flex-col gap-3">
-            <Button asChild variant="outline" className="h-full w-full text-xs rounded-lg hover:bg-primary/10 hover:text-primary">
-              <Link href="/sau" className="flex-col items-center justify-center">
-                <Headset className="h-5 w-5 mb-1" />
-                <span>Concessões/SAU</span>
-              </Link>
-            </Button>
-        </div>
-      </div>
-
-      <Card className="p-4 shadow-sm rounded-xl">
-        <CardHeader className="p-0 pb-3">
-          <CardTitle className="text-lg font-semibold flex items-center">
-            <Edit className="h-5 w-5 mr-2 text-primary" />
-            Criar Publicação
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="relative">
-            <Textarea
-              ref={textareaRef}
-              placeholder={
-                currentPostType === 'alert' ? `ALERTA: ${selectedAlertType || 'Geral'} - Descreva o alerta (máx. 500 caracteres)...` :
-                pollData ? "Adicione um texto para acompanhar sua enquete (opcional)..." :
-                currentPostType === 'video' ? "Adicione uma legenda para seu vídeo..." :
-                currentPostType === 'image' ? "Adicione uma legenda para sua foto..." :
-                "No que você está pensando, viajante?"
-              }
-              className="mb-3 h-24 resize-none rounded-lg"
-              value={newPostText}
-              onChange={handleNewPostTextareaInput}
-              style={
-                showColorPalette
-                  ? {
-                      backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
-                      backgroundImage: selectedPostBackground.gradient,
-                      color: selectedPostBackground.text,
-                    }
-                  : {}
-              }
-              maxLength={currentPostType === 'alert' ? 500 : undefined}
-            />
-            {showMentions && (
-              <Card className="absolute z-10 w-full max-w-sm max-h-40 overflow-y-auto mt-1 shadow-lg border">
-                  <CardContent className="p-1">
-                      {loadingMentions ? (
-                      <div className="p-2 text-center text-sm text-muted-foreground">Buscando...</div>
-                      ) : mentionSuggestions.length > 0 ? (
-                      mentionSuggestions.map(name => (
-                          <button
-                          key={name}
-                          onClick={() => handleMentionClick(name)}
-                          className="block w-full text-left p-2 text-sm rounded-md hover:bg-muted"
-                          >
-                          {name}
-                          </button>
-                      ))
-                      ) : (
-                      <div className="p-2 text-center text-sm text-muted-foreground">Nenhum usuário encontrado.</div>
-                      )}
-                  </CardContent>
-              </Card>
-            )}
+    <>
+      <div className="w-full space-y-6">
+        <ProfileCompletionAlert />
+        
+        <div className="flex gap-3 h-20">
+          <Button asChild
+            variant="destructive"
+            className="w-2/3 h-full bg-red-500 hover:bg-red-600 text-white text-lg font-semibold rounded-lg shadow-md"
+          >
+            <Link href="/emergencia">
+                <Phone className="mr-2 h-6 w-6" />
+                EMERGÊNCIA
+            </Link>
+          </Button>
+          <div className="w-1/3 flex flex-col gap-3">
+              <Button asChild variant="outline" className="h-full w-full text-xs rounded-lg hover:bg-primary/10 hover:text-primary">
+                <Link href="/sau" className="flex-col items-center justify-center">
+                  <Headset className="h-5 w-5 mb-1" />
+                  <span>Concessões/SAU</span>
+                </Link>
+              </Button>
           </div>
+        </div>
 
-          {mediaPreviewUrl && (
-            <div className="relative mb-3 w-32 h-32">
-              {selectedMediaForUpload?.type.startsWith('video/') ? (
-                <video src={mediaPreviewUrl} className="w-full h-full object-cover rounded-md border" data-ai-hint="user uploaded video preview">
-                  <source src={mediaPreviewUrl} type={selectedMediaForUpload.type} />
-                </video>
-              ) : (
-                <img src={mediaPreviewUrl} alt="Prévia da imagem" className="w-full h-full object-cover rounded-md border" data-ai-hint="user uploaded image preview"/>
+        <Card className="p-4 shadow-sm rounded-xl">
+          <CardHeader className="p-0 pb-3">
+            <CardTitle className="text-lg font-semibold flex items-center">
+              <Edit className="h-5 w-5 mr-2 text-primary" />
+              Criar Publicação
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="relative">
+              <Textarea
+                ref={textareaRef}
+                placeholder={
+                  currentPostType === 'alert' ? `ALERTA: ${selectedAlertType || 'Geral'} - Descreva o alerta (máx. 500 caracteres)...` :
+                  pollData ? "Adicione um texto para acompanhar sua enquete (opcional)..." :
+                  currentPostType === 'video' ? "Adicione uma legenda para seu vídeo..." :
+                  currentPostType === 'image' ? "Adicione uma legenda para sua foto..." :
+                  "No que você está pensando, viajante?"
+                }
+                className="mb-3 h-24 resize-none rounded-lg"
+                value={newPostText}
+                onChange={handleNewPostTextareaInput}
+                style={
+                  showColorPalette
+                    ? {
+                        backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
+                        backgroundImage: selectedPostBackground.gradient,
+                        color: selectedPostBackground.text,
+                      }
+                    : {}
+                }
+                maxLength={currentPostType === 'alert' ? 500 : undefined}
+              />
+              {showMentions && (
+                <Card className="absolute z-10 w-full max-w-sm max-h-40 overflow-y-auto mt-1 shadow-lg border">
+                    <CardContent className="p-1">
+                        {loadingMentions ? (
+                        <div className="p-2 text-center text-sm text-muted-foreground">Buscando...</div>
+                        ) : mentionSuggestions.length > 0 ? (
+                        mentionSuggestions.map(name => (
+                            <button
+                            key={name}
+                            onClick={() => handleMentionClick(name)}
+                            className="block w-full text-left p-2 text-sm rounded-md hover:bg-muted"
+                            >
+                            {name}
+                            </button>
+                        ))
+                        ) : (
+                        <div className="p-2 text-center text-sm text-muted-foreground">Nenhum usuário encontrado.</div>
+                        )}
+                    </CardContent>
+                </Card>
               )}
+            </div>
+
+            {mediaPreviewUrl && (
+              <div className="relative mb-3 w-32 h-32">
+                {selectedMediaForUpload?.type.startsWith('video/') ? (
+                  <video src={mediaPreviewUrl} className="w-full h-full object-cover rounded-md border" data-ai-hint="user uploaded video preview">
+                    <source src={mediaPreviewUrl} type={selectedMediaForUpload.type} />
+                  </video>
+                ) : (
+                  <img src={mediaPreviewUrl} alt="Prévia da imagem" className="w-full h-full object-cover rounded-md border" data-ai-hint="user uploaded image preview"/>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute -top-2 -right-2 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/80 h-6 w-6"
+                  onClick={handleRemoveMedia}
+                  aria-label="Remover mídia"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
+            {pollData && (
+                <div className="relative mb-3 p-3 border rounded-lg bg-muted/20">
+                    <p className="font-semibold text-sm text-foreground pr-8">Enquete anexada:</p>
+                    <p className="text-sm text-muted-foreground truncate">{pollData.question}</p>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-1 right-1 h-7 w-7 rounded-full text-muted-foreground hover:text-destructive"
+                        onClick={() => setPollData(null)}
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
+            )}
+
+            {showColorPalette && (
+              <div className="flex space-x-2 mb-3 overflow-x-auto no-scrollbar pb-1">
+                {backgroundOptions.map((option) => (
+                  <div
+                    key={option.name}
+                    onClick={() => setSelectedPostBackground(option)}
+                    title={option.name}
+                    className="w-8 h-8 rounded-full cursor-pointer flex-shrink-0 shadow-inner flex items-center justify-center border border-muted"
+                    style={{
+                      backgroundColor: option.gradient ? undefined : option.bg,
+                      backgroundImage: option.gradient,
+                    }}
+                  >
+                    {selectedPostBackground.name === option.name && (
+                      <Check className={cn(
+                          "h-5 w-5",
+                          option.name === 'Padrão' || option.name === 'Amarelo' ? 'text-foreground' : 'text-white'
+                      )} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex items-center justify-between mt-4">
+              <div className="flex items-center gap-1">
+                {!mediaPreviewUrl && !pollData ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-muted-foreground hover:text-primary rounded-full"
+                          onClick={handleOpenAlertTypeModal}
+                        >
+                          <ShieldAlert className="h-5 w-5" />
+                          <span className="sr-only">Postar Alerta</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent><p>Postar Alerta</p></TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-muted-foreground hover:text-primary rounded-full"
+                          onClick={handleOpenPollModal}
+                        >
+                          <ListChecks className="h-5 w-5" />
+                          <span className="sr-only">Criar Enquete</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent><p>Criar Enquete</p></TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-muted-foreground hover:text-primary rounded-full"
+                          onClick={() => handleOpenMediaSelector('video')}
+                        >
+                          <Video className="h-5 w-5" />
+                          <span className="sr-only">Adicionar Vídeo</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent><p>Adicionar Vídeo</p></TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-muted-foreground hover:text-primary rounded-full"
+                          onClick={() => handleOpenMediaSelector('image')}
+                        >
+                          <ImageIcon className="h-5 w-5" />
+                          <span className="sr-only">Adicionar Foto</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent><p>Adicionar Foto</p></TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : (
+                  <div className="w-1"></div> // Placeholder to keep layout
+                )}
+              </div>
+
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                onChange={handleMediaInputChange}
+              />
               <Button
-                variant="ghost"
-                size="icon"
-                className="absolute -top-2 -right-2 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/80 h-6 w-6"
-                onClick={handleRemoveMedia}
-                aria-label="Remover mídia"
+                onClick={() => handleInteractionAttempt(handlePublish)}
+                className="bg-primary hover:bg-primary/90 text-white rounded-full px-6"
+                disabled={isPublishing || !canPublish}
               >
-                <X className="h-4 w-4" />
+                {isPublishing ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Publicar'}
               </Button>
             </div>
-          )}
+          </CardContent>
+        </Card>
 
-          {pollData && (
-              <div className="relative mb-3 p-3 border rounded-lg bg-muted/20">
-                  <p className="font-semibold text-sm text-foreground pr-8">Enquete anexada:</p>
-                  <p className="text-sm text-muted-foreground truncate">{pollData.question}</p>
-                  <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-1 right-1 h-7 w-7 rounded-full text-muted-foreground hover:text-destructive"
-                      onClick={() => setPollData(null)}
-                  >
-                      <X className="h-4 w-4" />
-                  </Button>
+        <div className="mb-3 mt-4">
+          <div className="px-1">
+              <h2 className="text-xl font-bold font-headline flex items-center mb-3 text-foreground">
+              <PlayCircle className="h-5 w-5 mr-2 text-primary" />
+              Reels
+              </h2>
+          </div>
+          {loadingReels ? (
+              <div className="flex justify-center items-center h-24"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+          ) : reels.length > 0 ? (
+              <div className="flex overflow-x-auto space-x-2 pb-3 -mx-2 px-2 no-scrollbar">
+                  {reels.map((story) => (
+                      <StoryCircle 
+                        key={story.id} 
+                        {...story} 
+                        onClick={() => handleStoryClick(story)} 
+                        onAuthorClick={() => handleShowUserProfile(story.authorId, story.authorName, story.authorAvatarUrl)}
+                      />
+                  ))}
               </div>
+          ) : (
+              <p className="text-muted-foreground text-center py-4 text-sm">Nenhum Reel publicado. Seja o primeiro!</p>
           )}
+        </div>
 
-          {showColorPalette && (
-            <div className="flex space-x-2 mb-3 overflow-x-auto no-scrollbar pb-1">
-              {backgroundOptions.map((option) => (
-                <div
-                  key={option.name}
-                  onClick={() => setSelectedPostBackground(option)}
-                  title={option.name}
-                  className="w-8 h-8 rounded-full cursor-pointer flex-shrink-0 shadow-inner flex items-center justify-center border border-muted"
-                  style={{
-                    backgroundColor: option.gradient ? undefined : option.bg,
-                    backgroundImage: option.gradient,
-                  }}
-                >
-                  {selectedPostBackground.name === option.name && (
-                    <Check className={cn(
-                        "h-5 w-5",
-                        option.name === 'Padrão' || option.name === 'Amarelo' ? 'text-foreground' : 'text-white'
-                    )} />
-                  )}
+        {loadingAlerts ? (
+          <div className="flex justify-center items-center h-24">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : displayedAlertsFeed.length > 0 ? (
+          <div className="pt-4 pb-2">
+            <div className="flex justify-between items-center px-1 mb-3">
+              <h2 className="text-xl font-bold font-headline flex items-center">
+                <ShieldAlert className="h-5 w-5 mr-2 text-primary" />
+                Alertas
+              </h2>
+              <Link href="/alertas" className="text-sm font-medium text-primary hover:underline flex items-center gap-1">
+                  Ver todos
+                  <ArrowRightCircle className="h-4 w-4" />
+              </Link>
+            </div>
+            <div ref={alertsContainerRef} className="flex overflow-x-auto space-x-4 pb-2 -mx-2 px-2 no-scrollbar snap-x snap-mandatory">
+              {displayedAlertsFeed.map((alertData) => (
+                <div key={alertData.id} className="snap-start flex-shrink-0">
+                  <Link href="/alertas" className="block h-full">
+                    <HomeAlertCard alert={alertData} />
+                  </Link>
                 </div>
               ))}
             </div>
-          )}
-
-          <div className="flex items-center justify-between mt-4">
-            <div className="flex items-center gap-1">
-              {!mediaPreviewUrl && !pollData ? (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-primary rounded-full"
-                        onClick={handleOpenAlertTypeModal}
-                      >
-                        <ShieldAlert className="h-5 w-5" />
-                        <span className="sr-only">Postar Alerta</span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent><p>Postar Alerta</p></TooltipContent>
-                  </Tooltip>
-                   <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-primary rounded-full"
-                        onClick={handleOpenPollModal}
-                      >
-                        <ListChecks className="h-5 w-5" />
-                        <span className="sr-only">Criar Enquete</span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent><p>Criar Enquete</p></TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-primary rounded-full"
-                        onClick={() => handleOpenMediaSelector('video')}
-                      >
-                        <Video className="h-5 w-5" />
-                        <span className="sr-only">Adicionar Vídeo</span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent><p>Adicionar Vídeo</p></TooltipContent>
-                  </Tooltip>
-                   <Tooltip>
-                    <TooltipTrigger asChild>
-                       <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-primary rounded-full"
-                        onClick={() => handleOpenMediaSelector('image')}
-                      >
-                        <ImageIcon className="h-5 w-5" />
-                        <span className="sr-only">Adicionar Foto</span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent><p>Adicionar Foto</p></TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              ) : (
-                <div className="w-1"></div> // Placeholder to keep layout
-              )}
-            </div>
-
-            <input
-              type="file"
-              ref={fileInputRef}
-              className="hidden"
-              onChange={handleMediaInputChange}
-            />
-            <Button
-              onClick={handlePublish}
-              className="bg-primary hover:bg-primary/90 text-white rounded-full px-6"
-              disabled={isPublishing || !canPublish}
-            >
-              {isPublishing ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Publicar'}
-            </Button>
           </div>
-        </CardContent>
-      </Card>
+        ) : null}
 
-      <div className="mb-3 mt-4">
-        <div className="px-1">
-            <h2 className="text-xl font-bold font-headline flex items-center mb-3 text-foreground">
-            <PlayCircle className="h-5 w-5 mr-2 text-primary" />
-            Reels
-            </h2>
-        </div>
-        {loadingReels ? (
-            <div className="flex justify-center items-center h-24"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-        ) : reels.length > 0 ? (
-            <div className="flex overflow-x-auto space-x-2 pb-3 -mx-2 px-2 no-scrollbar">
-                {reels.map((story) => (
-                    <StoryCircle key={story.id} {...story} onClick={() => handleStoryClick(story)} />
-                ))}
-            </div>
+        <h2 className="text-xl font-bold pt-2 font-headline text-left">
+          <List className="h-5 w-5 mr-2 text-primary inline-block" />
+          Time Line
+        </h2>
+
+        {loadingPosts ? (
+          <div className="flex justify-center items-center h-40">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          </div>
+        ) : posts.length > 0 ? (
+          <div className="space-y-4">
+            {posts.map((post) => (
+              <PostCard key={post.id} {...post} />
+            ))}
+          </div>
         ) : (
-             <p className="text-muted-foreground text-center py-4 text-sm">Nenhum Reel publicado. Seja o primeiro!</p>
+          <p className="text-muted-foreground text-center py-8">Nenhuma postagem na Time Line ainda. Seja o primeiro a publicar!</p>
         )}
+
+
+        {selectedStory && (
+          <StoryViewerModal
+            isOpen={isStoryModalOpen}
+            onClose={() => setIsStoryModalOpen(false)}
+            story={selectedStory}
+          />
+        )}
+        
+        <PollCreationModal 
+          isOpen={isPollModalOpen}
+          onClose={() => setIsPollModalOpen(false)}
+          onSave={handleSavePoll}
+        />
+
+        <Dialog open={isAlertTypeModalOpen} onOpenChange={setIsAlertTypeModalOpen}>
+          <DialogContent className="sm:max-w-md rounded-xl">
+            <DialogHeader>
+              <DialogTitle className="font-headline text-xl">Selecione o Tipo de Alerta</DialogTitle>
+              <DialogDescription>
+                Escolha a categoria que melhor descreve seu alerta.
+              </DialogDescription>
+            </DialogHeader>
+            <RadioGroup value={selectedAlertType} onValueChange={setSelectedAlertType} className="my-4 space-y-2">
+              {alertTypesForSelection.map((type) => (
+                <div key={type} className="flex items-center space-x-2">
+                  <RadioGroupItem value={type} id={`alert-type-${type}`} />
+                  <Label htmlFor={`alert-type-${type}`} className="font-normal">{type}</Label>
+                </div>
+              ))}
+            </RadioGroup>
+            <DialogFooter className="sm:justify-end gap-2 sm:gap-0">
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  Cancelar
+                </Button>
+              </DialogClose>
+              <Button type="button" onClick={handleConfirmAlertType}>
+                Continuar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {loadingAlerts ? (
-        <div className="flex justify-center items-center h-24">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      ) : displayedAlertsFeed.length > 0 ? (
-        <div className="pt-4 pb-2">
-          <div className="flex justify-between items-center px-1 mb-3">
-            <h2 className="text-xl font-bold font-headline flex items-center">
-              <ShieldAlert className="h-5 w-5 mr-2 text-primary" />
-              Alertas
-            </h2>
-            <Link href="/alertas" className="text-sm font-medium text-primary hover:underline flex items-center gap-1">
-                Ver todos
-                <ArrowRightCircle className="h-4 w-4" />
-            </Link>
-          </div>
-          <div ref={alertsContainerRef} className="flex overflow-x-auto space-x-4 pb-2 -mx-2 px-2 no-scrollbar snap-x snap-mandatory">
-            {displayedAlertsFeed.map((alertData) => (
-              <div key={alertData.id} className="snap-start flex-shrink-0">
-                <Link href="/alertas" className="block h-full">
-                  <HomeAlertCard alert={alertData} />
-                </Link>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      <h2 className="text-xl font-bold pt-2 font-headline text-left">
-        <List className="h-5 w-5 mr-2 text-primary inline-block" />
-        Time Line
-      </h2>
-
-      {loadingPosts ? (
-        <div className="flex justify-center items-center h-40">
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        </div>
-      ) : posts.length > 0 ? (
-        <div className="space-y-4">
-          {posts.map((post) => (
-            <PostCard key={post.id} {...post} />
-          ))}
-        </div>
-      ) : (
-        <p className="text-muted-foreground text-center py-8">Nenhuma postagem na Time Line ainda. Seja o primeiro a publicar!</p>
-      )}
-
-
-      {selectedStory && (
-        <StoryViewerModal
-          isOpen={isStoryModalOpen}
-          onClose={() => setIsStoryModalOpen(false)}
-          story={selectedStory}
-        />
-      )}
-      
-      <PollCreationModal 
-        isOpen={isPollModalOpen}
-        onClose={() => setIsPollModalOpen(false)}
-        onSave={handleSavePoll}
+      <UserProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        user={selectedUserProfile}
       />
-
-      <Dialog open={isAlertTypeModalOpen} onOpenChange={setIsAlertTypeModalOpen}>
-        <DialogContent className="sm:max-w-md rounded-xl">
-          <DialogHeader>
-            <DialogTitle className="font-headline text-xl">Selecione o Tipo de Alerta</DialogTitle>
-            <DialogDescription>
-              Escolha a categoria que melhor descreve seu alerta.
-            </DialogDescription>
-          </DialogHeader>
-          <RadioGroup value={selectedAlertType} onValueChange={setSelectedAlertType} className="my-4 space-y-2">
-            {alertTypesForSelection.map((type) => (
-              <div key={type} className="flex items-center space-x-2">
-                <RadioGroupItem value={type} id={`alert-type-${type}`} />
-                <Label htmlFor={`alert-type-${type}`} className="font-normal">{type}</Label>
-              </div>
-            ))}
-          </RadioGroup>
-          <DialogFooter className="sm:justify-end gap-2 sm:gap-0">
-            <DialogClose asChild>
-              <Button type="button" variant="outline">
-                Cancelar
-              </Button>
-            </DialogClose>
-            <Button type="button" onClick={handleConfirmAlertType}>
-              Continuar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-    </div>
+    </>
   );
 }
