@@ -259,7 +259,7 @@ export default function TurismoPage() {
         </div>
 
         <section>
-          <h2 className="text-2xl font-semibold font-headline mb-4">Pontos Indicados pela Comunidade</h2>
+          <h2 className="text-2xl font-semibold font-headline mb-4">Indicados pela Comunidade</h2>
           
            <div className="mb-6 p-4 rounded-lg bg-card border">
                 <div className="flex items-center mb-2">
