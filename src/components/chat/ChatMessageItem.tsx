@@ -6,11 +6,11 @@ import { cn } from "@/lib/utils";
 import type { StaticImageData } from 'next/image';
 import Image from "next/image";
 import { Paperclip, Mic, FileText, PlayCircle, Heart, MoreVertical, Edit, Trash2, Flag } from "lucide-react";
-import React, { useState, useEffect, useMemo } from "react"; 
+import React, { useState, useEffect, useMemo, useCallback } from "react"; 
 import { Button } from "../ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { firestore } from "@/lib/firebase/client";
-import { doc, getDoc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, getDocs, collection, query, where, limit } from "firebase/firestore";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,6 +38,7 @@ export interface ChatMessageData {
   avatarUrl?: string | StaticImageData;
   dataAIAvatarHint?: string;
   text?: string;
+  textElements?: React.ReactNode[];
   imageUrl?: string | StaticImageData; 
   dataAIImageHint?: string;
   audioUrl?: string; 
@@ -52,37 +53,6 @@ export interface ChatMessageData {
   };
   edited?: boolean;
 }
-
-const renderTextWithMentions = (text: string): React.ReactNode[] => {
-  if (!text) return [text];
-  // Regex to find @mentions but not as part of an email address
-  const mentionRegex = /(?<!\S)@([\p{L}\p{N}._\s'-]+)/gu;
-  const elements: React.ReactNode[] = [];
-  let lastIndex = 0;
-
-  for (const match of text.matchAll(mentionRegex)) {
-    const mention = match[0]; // e.g., "@Ozias Conrado"
-    const startIndex = match.index!;
-
-    // Add text before the mention
-    if (startIndex > lastIndex) {
-      elements.push(text.substring(lastIndex, startIndex));
-    }
-    
-    // Add the highlighted mention
-    elements.push(<strong key={startIndex} className="text-accent font-semibold cursor-pointer hover:underline">{mention}</strong>);
-    
-    lastIndex = startIndex + mention.length;
-  }
-
-  // Add any remaining text after the last mention
-  if (lastIndex < text.length) {
-    elements.push(text.substring(lastIndex));
-  }
-
-  return elements.length > 0 ? elements : [text]; // Fallback for no matches
-};
-
 
 const SoundWaveIcon = ({ className, width = "72", height = "22" }: { className?: string, width?: string, height?: string }) => (
   <svg width={width} height={height} viewBox="0 0 72 22" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
@@ -147,7 +117,7 @@ export default function ChatMessageItem({
   onDelete: (messageId: string) => Promise<void>,
   onImageClick: (imageUrl: string | StaticImageData) => void;
 }) {
-  const { senderName, avatarUrl, dataAIAvatarHint, text, imageUrl, dataAIImageHint, file, timestamp, isCurrentUser, reactions, replyTo, edited } = message;
+  const { senderName, avatarUrl, dataAIAvatarHint, text, textElements, imageUrl, dataAIImageHint, file, timestamp, isCurrentUser, reactions, replyTo, edited } = message;
   const { currentUser } = useAuth();
   const { toast } = useToast();
   const [userHasReacted, setUserHasReacted] = useState(false);
@@ -156,11 +126,6 @@ export default function ChatMessageItem({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedUserProfile, setSelectedUserProfile] = useState<UserProfileData | null>(null);
-  
-  const textToShow = useMemo(() => {
-    return renderTextWithMentions(text || '');
-  }, [text]);
-
 
   useEffect(() => {
     if (!currentUser || !firestore || !message.id) return;
@@ -329,7 +294,7 @@ export default function ChatMessageItem({
                 {text && (
                   <div className="min-w-0">
                     <p className="text-sm break-words whitespace-pre-wrap">
-                      {textToShow}
+                      {textElements || text}
                     </p>
                   </div>
                 )}

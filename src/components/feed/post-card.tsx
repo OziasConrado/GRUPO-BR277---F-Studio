@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send, MoreVertical, Trash2, Edit3, Flag, X, ListChecks, Check, Link as LinkIcon, Loader2 } from 'lucide-react';
-import { useState, type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useState, type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
 import {
   DropdownMenu,
@@ -55,6 +55,7 @@ import {
   getDocs,
   limit,
   writeBatch,
+  DocumentData
 } from 'firebase/firestore';
 import { ToastAction } from '../ui/toast';
 import { useRouter } from 'next/navigation';
@@ -94,7 +95,7 @@ async function createMentions(text: string, postId: string, fromUser: { uid: str
             const displayName = userDoc.data().displayName;
             if (queryableText.toLowerCase().startsWith(displayName.toLowerCase())) {
                 const nextChar = text[atIndex + 1 + displayName.length];
-                if (nextChar === undefined || !/\p{L}|\p{N}/u.test(nextChar)) {
+                if (nextChar === undefined || !/[\p{L}\p{N}]/u.test(nextChar)) {
                     if (!longestMatchUser || displayName.length > longestMatchUser.displayName.length) {
                         longestMatchUser = { id: userDoc.id, displayName };
                     }
@@ -208,35 +209,87 @@ const reportReasons = [
   { id: "other", label: "Outros, informe o motivo..." },
 ];
 
-const renderTextWithMentions = (text: string): React.ReactNode[] => {
-  if (!text) return [text];
-  // Regex to find @mentions (e.g., @user.name, @user_name) but not as part of an email address
-  const mentionRegex = /(?<!\S)@([\p{L}\p{N}._\s'-]+)/gu;
-  const elements: React.ReactNode[] = [];
-  let lastIndex = 0;
+async function findMentions(text: string): Promise<{startIndex: number, length: number}[]> {
+    if (!firestore || !text) return [];
 
-  for (const match of text.matchAll(mentionRegex)) {
-    const mention = match[0]; // e.g., "@Ozias Conrado"
-    const startIndex = match.index!;
+    const mentions: {startIndex: number, length: number}[] = [];
+    const processedIndices = new Set<number>();
+    const matches = [...text.matchAll(/@/g)];
 
-    // Add text before the mention
-    if (startIndex > lastIndex) {
-      elements.push(text.substring(lastIndex, startIndex));
+    for (const match of matches) {
+        const atIndex = match.index!;
+        if (processedIndices.has(atIndex)) continue;
+
+        const queryableText = text.substring(atIndex + 1);
+        const firstWordMatch = queryableText.match(/^([\p{L}\p{N}._'-]+)/u);
+        if (!firstWordMatch) continue;
+        
+        const firstWord = firstWordMatch[1];
+        
+        const usersRef = collection(firestore, "Usuarios");
+        const q = query(
+            usersRef,
+            where("displayName_lowercase", ">=", firstWord.toLowerCase()),
+            where("displayName_lowercase", "<=", firstWord.toLowerCase() + '\uf8ff'),
+            limit(10)
+        );
+
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) continue;
+        
+        let longestMatchUser: { displayName: string } | null = null;
+        
+        querySnapshot.forEach(userDoc => {
+            const displayName = userDoc.data().displayName;
+            if (queryableText.toLowerCase().startsWith(displayName.toLowerCase())) {
+                const nextChar = text[atIndex + 1 + displayName.length];
+                if (nextChar === undefined || !/[\p{L}\p{N}]/u.test(nextChar)) {
+                    if (!longestMatchUser || displayName.length > longestMatchUser.displayName.length) {
+                        longestMatchUser = { displayName };
+                    }
+                }
+            }
+        });
+
+        if (longestMatchUser) {
+            const mentionLength = longestMatchUser.displayName.length + 1; // +1 for '@'
+            mentions.push({
+                startIndex: atIndex,
+                length: mentionLength,
+            });
+            for (let i = 0; i < mentionLength; i++) {
+                processedIndices.add(atIndex + i);
+            }
+        }
+    }
+    return mentions;
+}
+
+function renderTextWithPrecomputedMentions(text: string, mentions: {startIndex: number, length: number}[]): React.ReactNode[] {
+    if (!text) return [];
+    if (!mentions || mentions.length === 0) return [text];
+
+    const elements: React.ReactNode[] = [];
+    let lastIndex = 0;
+
+    const sortedMentions = mentions.sort((a, b) => a.startIndex - b.startIndex);
+
+    sortedMentions.forEach((mention, i) => {
+        if (mention.startIndex > lastIndex) {
+            elements.push(text.substring(lastIndex, mention.startIndex));
+        }
+        const mentionText = text.substring(mention.startIndex, mention.startIndex + mention.length);
+        elements.push(<strong key={`mention-${i}`} className="text-accent font-semibold cursor-pointer hover:underline">{mentionText}</strong>);
+        lastIndex = mention.startIndex + mention.length;
+    });
+
+    if (lastIndex < text.length) {
+        elements.push(text.substring(lastIndex));
     }
     
-    // Add the highlighted mention
-    elements.push(<strong key={startIndex} className="text-accent font-semibold cursor-pointer hover:underline">{mention}</strong>);
-    
-    lastIndex = startIndex + mention.length;
-  }
+    return elements;
+}
 
-  // Add any remaining text after the last mention
-  if (lastIndex < text.length) {
-    elements.push(text.substring(lastIndex));
-  }
-
-  return elements.length > 0 ? elements : [text]; // Fallback for no matches
-};
 
 const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData, postId: string }) => {
     const { currentUser } = useAuth();
@@ -393,6 +446,7 @@ export default function PostCard({
   const [showMentions, setShowMentions] = useState(false);
   const [mentionSuggestions, setMentionSuggestions] = useState<string[]>([]);
   const [loadingMentions, setLoadingMentions] = useState(false);
+  const [postTextElements, setPostTextElements] = useState<React.ReactNode[] | null>(null);
   
   // Refs
   const footerTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -424,6 +478,18 @@ export default function PostCard({
   const MAX_CHARS = 130;
   const needsTruncation = textContent.length > MAX_CHARS;
   const textToShow = isTextExpanded ? textContent : textContent.substring(0, MAX_CHARS);
+
+  // Process main post text for mentions
+  useEffect(() => {
+    if (text) {
+        const processText = async () => {
+            const mentions = await findMentions(text);
+            setPostTextElements(renderTextWithPrecomputedMentions(text, mentions));
+        };
+        processText();
+    }
+  }, [text]);
+
 
   // Real-time listener for the post document to update reactions
   useEffect(() => {
@@ -457,10 +523,14 @@ export default function PostCard({
     const commentsCollection = collection(firestore, 'posts', postId, 'comments');
     const q = query(commentsCollection, orderBy('timestamp', 'desc'));
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedComments = snapshot.docs.map(doc => {
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      const fetchedCommentsPromises = snapshot.docs.map(async (doc) => {
         const data = doc.data();
         const commentTimestamp = data.timestamp instanceof Timestamp ? formatDistanceToNow(data.timestamp.toDate(), { addSuffix: true, locale: ptBR }) : 'Agora';
+        
+        const mentions = await findMentions(data.text);
+        const textElements = renderTextWithPrecomputedMentions(data.text || '', mentions);
+
         return {
           id: doc.id,
           userId: data.userId,
@@ -468,9 +538,10 @@ export default function PostCard({
           userAvatarUrl: data.userAvatarUrl,
           text: data.text,
           timestamp: commentTimestamp,
-          textElements: renderTextWithMentions(data.text),
+          textElements: textElements,
         } as CommentProps;
       });
+      const fetchedComments = await Promise.all(fetchedCommentsPromises);
       setComments(fetchedComments);
       setLoadingComments(false);
     });
@@ -861,7 +932,7 @@ export default function PostCard({
             >
               {text && (
                 <p className="text-2xl font-bold leading-tight" style={{ color: cardStyle.text }}>
-                  {renderTextWithMentions(text)}
+                  {postTextElements || text}
                 </p>
               )}
             </div>
@@ -869,15 +940,23 @@ export default function PostCard({
             <div className="space-y-3 pb-2 pt-1">
               {textContent && (!poll || textContent !== poll.question) && (
                 <p className="text-base leading-normal whitespace-pre-wrap px-4">
-                  {renderTextWithMentions(textToShow)}
-                  {needsTruncation && (
-                    <>
-                      ...{' '}
-                      <Button variant="link" size="sm" className="p-0 h-auto text-xs text-primary inline align-baseline" onClick={(e) => { e.stopPropagation(); setIsTextExpanded(!isTextExpanded); }}>
-                        {isTextExpanded ? "Ver menos" : "Ver mais"}
-                      </Button>
-                    </>
-                  )}
+                    {needsTruncation && !isTextExpanded ? (
+                        <>
+                            {text.substring(0, MAX_CHARS)}...
+                            <Button variant="link" size="sm" className="p-0 h-auto text-xs text-primary inline align-baseline" onClick={(e) => { e.stopPropagation(); setIsTextExpanded(true); }}>
+                                Ver mais
+                            </Button>
+                        </>
+                    ) : (
+                        <>
+                            {postTextElements}
+                            {needsTruncation && isTextExpanded && (
+                                <Button variant="link" size="sm" className="p-0 h-auto text-xs text-primary block" onClick={(e) => { e.stopPropagation(); setIsTextExpanded(false); }}>
+                                    Ver menos
+                                </Button>
+                            )}
+                        </>
+                    )}
                 </p>
               )}
               {urlToPreview && !poll && (() => {

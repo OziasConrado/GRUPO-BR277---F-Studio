@@ -111,7 +111,7 @@ async function createMentions(text: string, postId: string, fromUser: { uid: str
             const displayName = userDoc.data().displayName;
             if (queryableText.toLowerCase().startsWith(displayName.toLowerCase())) {
                 const nextChar = text[atIndex + 1 + displayName.length];
-                if (nextChar === undefined || !/\p{L}|\p{N}/u.test(nextChar)) {
+                if (nextChar === undefined || !/[\p{L}\p{N}]/u.test(nextChar)) {
                     if (!longestMatchUser || displayName.length > longestMatchUser.displayName.length) {
                         longestMatchUser = { id: userDoc.id, displayName };
                     }

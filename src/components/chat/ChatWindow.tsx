@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useEffect, type ChangeEvent, type FormEvent, useMemo } from 'react';
+import { useState, useRef, useEffect, type ChangeEvent, type FormEvent, useMemo, useCallback } from 'react';
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,6 +29,7 @@ import {
   where,
   getDocs,
   limit,
+  DocumentData,
 } from 'firebase/firestore';
 import { ref, getDownloadURL, uploadBytesResumable } from "firebase/storage";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '../ui/dialog';
@@ -89,7 +90,7 @@ async function createChatMentions(text: string, messageId: string, fromUser: { u
             const displayName = userDoc.data().displayName;
             if (queryableText.toLowerCase().startsWith(displayName.toLowerCase())) {
                 const nextChar = text[atIndex + 1 + displayName.length];
-                if (nextChar === undefined || !/\p{L}|\p{N}/u.test(nextChar)) {
+                if (nextChar === undefined || !/[\p{L}\p{N}]/u.test(nextChar)) {
                     if (!longestMatchUser || displayName.length > longestMatchUser.displayName.length) {
                         longestMatchUser = { id: userDoc.id, displayName };
                     }
@@ -130,6 +131,88 @@ async function createChatMentions(text: string, messageId: string, fromUser: { u
     } catch (error) {
         console.error("Error committing mention notifications batch:", error);
     }
+}
+
+async function findMentions(text: string): Promise<{startIndex: number, length: number}[]> {
+    if (!firestore || !text) return [];
+
+    const mentions: {startIndex: number, length: number}[] = [];
+    const processedIndices = new Set<number>();
+    const matches = [...text.matchAll(/@/g)];
+
+    for (const match of matches) {
+        const atIndex = match.index!;
+        if (processedIndices.has(atIndex)) continue;
+
+        const queryableText = text.substring(atIndex + 1);
+        const firstWordMatch = queryableText.match(/^([\p{L}\p{N}._'-]+)/u);
+        if (!firstWordMatch) continue;
+        
+        const firstWord = firstWordMatch[1];
+        
+        const usersRef = collection(firestore, "Usuarios");
+        const q = query(
+            usersRef,
+            where("displayName_lowercase", ">=", firstWord.toLowerCase()),
+            where("displayName_lowercase", "<=", firstWord.toLowerCase() + '\uf8ff'),
+            limit(10)
+        );
+
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) continue;
+        
+        let longestMatchUser: { displayName: string } | null = null;
+        
+        querySnapshot.forEach(userDoc => {
+            const displayName = userDoc.data().displayName;
+            if (queryableText.toLowerCase().startsWith(displayName.toLowerCase())) {
+                const nextChar = text[atIndex + 1 + displayName.length];
+                if (nextChar === undefined || !/[\p{L}\p{N}]/u.test(nextChar)) {
+                    if (!longestMatchUser || displayName.length > longestMatchUser.displayName.length) {
+                        longestMatchUser = { displayName };
+                    }
+                }
+            }
+        });
+
+        if (longestMatchUser) {
+            const mentionLength = longestMatchUser.displayName.length + 1; // +1 for '@'
+            mentions.push({
+                startIndex: atIndex,
+                length: mentionLength,
+            });
+            // Mark all indices within the matched name as processed to avoid sub-matches
+            for (let i = 0; i < mentionLength; i++) {
+                processedIndices.add(atIndex + i);
+            }
+        }
+    }
+    return mentions;
+}
+
+function renderTextWithPrecomputedMentions(text: string, mentions: {startIndex: number, length: number}[]): React.ReactNode[] {
+    if (!text) return [];
+    if (!mentions || mentions.length === 0) return [text];
+
+    const elements: React.ReactNode[] = [];
+    let lastIndex = 0;
+
+    const sortedMentions = mentions.sort((a, b) => a.startIndex - b.startIndex);
+
+    sortedMentions.forEach((mention, i) => {
+        if (mention.startIndex > lastIndex) {
+            elements.push(text.substring(lastIndex, mention.startIndex));
+        }
+        const mentionText = text.substring(mention.startIndex, mention.startIndex + mention.length);
+        elements.push(<strong key={`mention-${i}`} className="text-accent font-semibold cursor-pointer hover:underline">{mentionText}</strong>);
+        lastIndex = mention.startIndex + mention.length;
+    });
+
+    if (lastIndex < text.length) {
+        elements.push(text.substring(lastIndex));
+    }
+    
+    return elements;
 }
 
 
@@ -177,21 +260,24 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     const messagesCollection = collection(firestore, 'chatMessages');
     const q = query(messagesCollection, orderBy('timestamp', 'asc')); 
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const fetchedMessages: ChatMessageData[] = [];
-      querySnapshot.forEach((doc) => {
+    const unsubscribe = onSnapshot(q, async (querySnapshot) => {
+      const fetchedMessagesPromises = querySnapshot.docs.map(async (doc) => {
         const data = doc.data();
         const messageTimestamp = data.timestamp instanceof Timestamp
           ? data.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           : 'Agora'; 
 
-        fetchedMessages.push({
+        const mentions = await findMentions(data.text);
+        const textElements = renderTextWithPrecomputedMentions(data.text || '', mentions);
+
+        return {
           id: doc.id,
           userId: data.userId,
           senderName: data.senderName,
           avatarUrl: data.avatarUrl,
           dataAIAvatarHint: data.dataAIAvatarHint,
           text: data.text,
+          textElements: textElements,
           imageUrl: data.imageUrl,
           dataAIImageHint: data.dataAIImageHint,
           audioUrl: data.audioUrl,
@@ -201,8 +287,9 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
           reactions: data.reactions,
           replyTo: data.replyTo,
           edited: data.edited || false,
-        });
+        };
       });
+      const fetchedMessages = await Promise.all(fetchedMessagesPromises);
       setMessages(fetchedMessages);
     }, (error) => {
       console.error("Error fetching chat messages: ", error);
@@ -583,19 +670,18 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
 
         const reactionDoc = await transaction.get(reactionRef);
         
-        let newReactions = { ...messageDoc.data().reactions };
-        if (!newReactions.heart) newReactions.heart = 0;
+        const currentReactions = messageDoc.data().reactions || { heart: 0 };
+        const newHeartCount = currentReactions.heart || 0;
         
         if (reactionDoc.exists()) {
           // User is un-reacting
-          newReactions.heart = Math.max(0, newReactions.heart - 1);
+          transaction.update(messageRef, { 'reactions.heart': Math.max(0, newHeartCount - 1) });
           transaction.delete(reactionRef);
         } else {
           // User is adding a new reaction
-          newReactions.heart += 1;
+          transaction.update(messageRef, { 'reactions.heart': newHeartCount + 1 });
           transaction.set(reactionRef, { type: 'heart', timestamp: serverTimestamp() });
         }
-        transaction.update(messageRef, { reactions: newReactions });
       });
     } catch (error: any) {
       console.error("Error handling reaction:", error);
