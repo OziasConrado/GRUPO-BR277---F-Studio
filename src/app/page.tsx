@@ -131,7 +131,7 @@ async function createMentions(text: string, postId: string, fromUser: { uid: str
 
 
 const backgroundOptions = [
-  { name: 'Padrão', bg: 'hsl(var(--card))', text: 'hsl(var(--card-foreground))' },
+  { name: 'Padrão', bg: 'hsl(var(--background))', text: 'hsl(var(--foreground))' },
   { name: 'Azul', bg: '#002776', text: '#FFFFFF' },
   { name: 'Verde', bg: '#009c3b', text: '#FFFFFF' },
   { name: 'Amarelo', bg: '#ffdf00', text: '#002776' },
@@ -744,7 +744,7 @@ export default function FeedPage() {
               value={newPostText}
               onChange={handleNewPostTextareaInput}
               style={
-                !mediaPreviewUrl && !pollData && currentPostType === 'text' && selectedPostBackground.name !== 'Padrão'
+                showColorPalette
                   ? {
                       backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
                       backgroundImage: selectedPostBackground.gradient,
