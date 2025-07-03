@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -9,7 +10,7 @@ import { firestore } from '@/lib/firebase/client';
 import type { TouristPointData, TouristPointReview } from '@/types/turismo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowLeft, Loader2, MapPin, Tag, Info, AlertTriangle, ExternalLink, Star, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Loader2, MapPin, Tag, Info, AlertTriangle, ExternalLink, Star, MessageSquare, UserCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
@@ -21,6 +22,7 @@ import { ToastAction } from '@/components/ui/toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import UserProfileModal, { type UserProfileData } from '@/components/profile/UserProfileModal';
 
 const AdPlaceholder = ({ className }: { className?: string }) => (
   <div className={`my-6 p-4 rounded-xl bg-muted/30 border border-dashed h-24 flex items-center justify-center ${className}`}>
@@ -42,6 +44,9 @@ export default function TouristPointDetailPage() {
 
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [selectedUserProfile, setSelectedUserProfile] = useState<UserProfileData | null>(null);
 
   useEffect(() => {
     if (!id || !firestore) return;
@@ -82,7 +87,42 @@ export default function TouristPointDetailPage() {
     };
   }, [id, toast]);
   
-  const handleAddReview = async (reviewData: Omit<TouristPointReview, 'id' | 'timestamp' | 'author' | 'userId' | 'pointId'>) => {
+  const handleShowUserProfile = useCallback(async (userId?: string, fallbackName?: string, fallbackAvatar?: string) => {
+    if (!userId) return;
+    if (!firestore) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Serviço de banco de dados indisponível.' });
+      return;
+    }
+
+    try {
+      const userDocRef = doc(firestore, 'Usuarios', userId);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        setSelectedUserProfile({
+          id: userDoc.id,
+          name: userData.displayName || 'Usuário',
+          avatarUrl: userData.photoURL,
+          location: userData.location,
+          bio: userData.bio,
+          instagramUsername: userData.instagramUsername,
+        });
+      } else {
+        setSelectedUserProfile({
+          id: userId,
+          name: fallbackName || 'Usuário',
+          avatarUrl: fallbackAvatar,
+        });
+      }
+      setIsProfileModalOpen(true);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar o perfil do usuário.' });
+    }
+  }, [toast]);
+  
+  const handleAddReview = async (reviewData: Omit<TouristPointReview, 'id' | 'timestamp' | 'author' | 'userId' | 'pointId' | 'userAvatarUrl'>) => {
     if (!currentUser) {
       toast({ variant: "destructive", title: "Login Necessário", description: "Você precisa estar logado para avaliar." });
       return;
@@ -112,6 +152,7 @@ export default function TouristPointDetailPage() {
           pointId: id,
           userId: currentUser.uid,
           author: currentUser.displayName || "Anônimo",
+          userAvatarUrl: currentUser.photoURL || null,
           timestamp: serverTimestamp(),
         };
         transaction.set(newReviewRef, newReviewPayload);
@@ -213,10 +254,21 @@ export default function TouristPointDetailPage() {
               <p className="text-base text-foreground/90 whitespace-pre-line">
                 {point.description}
               </p>
-               {point.indicatedByUserName && (
-                  <p className="text-sm text-muted-foreground mt-4 pt-4 border-t">
-                      Indicado por: <strong>{point.indicatedByUserName}</strong>
-                  </p>
+               {point.indicatedByUserName && point.indicatedByUserId && (
+                  <div className="text-sm text-muted-foreground mt-4 pt-4 border-t">
+                      <button 
+                        className="flex items-center gap-2 hover:underline" 
+                        onClick={() => handleShowUserProfile(point.indicatedByUserId, point.indicatedByUserName, point.indicatedByUserAvatarUrl)}
+                      >
+                        <Avatar className="h-6 w-6">
+                            {point.indicatedByUserAvatarUrl && <AvatarImage src={point.indicatedByUserAvatarUrl} alt={point.indicatedByUserName}/>}
+                            <AvatarFallback className="text-xs"><UserCircle className="h-5 w-5"/></AvatarFallback>
+                        </Avatar>
+                        <span>
+                            Indicado por: <strong>{point.indicatedByUserName}</strong>
+                        </span>
+                      </button>
+                  </div>
               )}
             </div>
             <Separator />
@@ -241,13 +293,22 @@ export default function TouristPointDetailPage() {
                     reviews.map(review => (
                       <div key={review.id} className="p-3 border rounded-lg bg-muted/30">
                         <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-semibold text-sm">{review.author}</p>
-                            <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(review.timestamp?.toDate() || Date.now()), { locale: ptBR, addSuffix: true })}</p>
-                          </div>
+                           <button 
+                            className="flex items-center gap-2 hover:underline"
+                            onClick={() => handleShowUserProfile(review.userId, review.author, review.userAvatarUrl)}
+                          >
+                            <Avatar className="h-8 w-8">
+                                {review.userAvatarUrl && <AvatarImage src={review.userAvatarUrl} alt={review.author} />}
+                                <AvatarFallback>{review.author.substring(0,1)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <p className="font-semibold text-sm text-left">{review.author}</p>
+                                <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(review.timestamp?.toDate() || Date.now()), { locale: ptBR, addSuffix: true })}</p>
+                            </div>
+                           </button>
                           <StarDisplay rating={review.rating} size={16} />
                         </div>
-                        <p className="text-sm mt-2">{review.comment}</p>
+                        <p className="text-sm mt-2 ml-10">{review.comment}</p>
                       </div>
                     ))
                   ) : (
@@ -267,6 +328,11 @@ export default function TouristPointDetailPage() {
         onSubmit={handleAddReview}
         pointName={point.name}
         isSubmitting={isSubmittingReview}
+      />
+      <UserProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        user={selectedUserProfile}
       />
     </>
   );

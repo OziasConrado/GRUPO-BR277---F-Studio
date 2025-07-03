@@ -9,6 +9,7 @@ export interface TouristPointReview {
   pointId: string;
   userId: string;
   author: string;
+  userAvatarUrl?: string;
   rating: number; // 1-5
   comment: string;
   timestamp: any;
@@ -26,6 +27,7 @@ export interface TouristPointData {
   reviewCount?: number;
   indicatedByUserId?: string;
   indicatedByUserName?: string;
+  indicatedByUserAvatarUrl?: string;
   status?: 'pending' | 'approved';
   createdAt?: any;
 }

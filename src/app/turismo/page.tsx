@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -122,6 +123,7 @@ export default function TurismoPage() {
             dataAIImageHint: `tourist spot ${pointData.category} ${pointData.name}`,
             indicatedByUserId: currentUser.uid,
             indicatedByUserName: currentUser.displayName,
+            indicatedByUserAvatarUrl: currentUser.photoURL || null,
             status: 'pending' as const,
             createdAt: serverTimestamp(),
             averageRating: 0,
@@ -177,6 +179,7 @@ export default function TurismoPage() {
           pointId: pointId,
           userId: currentUser.uid,
           author: currentUser.displayName || "Anônimo",
+          userAvatarUrl: currentUser.photoURL || null,
           timestamp: serverTimestamp(),
         };
         transaction.set(newReviewRef, newReviewPayload);
