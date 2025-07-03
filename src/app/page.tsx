@@ -55,7 +55,7 @@ import { ToastAction } from '@/components/ui/toast';
 
 async function createMentions(text: string, postId: string, fromUser: { uid: string, displayName: string | null, photoURL: string | null }, type: 'mention_post' | 'mention_comment') {
     if (!firestore) return;
-    const mentionRegex = /@([\p{L}\p{N}.-]+(?:[\s][\p{L}\p{N}.-]+)*)/gu;
+    const mentionRegex = /(?<!\S)@([\p{L}\p{N}._-]+)/gu;
     const mentions = text.match(mentionRegex);
     if (!mentions) return;
 
@@ -231,6 +231,12 @@ export default function FeedPage() {
   const [isPollModalOpen, setIsPollModalOpen] = useState(false);
   const [pollData, setPollData] = useState<{ question: string; options: string[] } | null>(null);
 
+  // Mentions State
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [showMentions, setShowMentions] = useState(false);
+  const [mentionSuggestions, setMentionSuggestions] = useState<string[]>([]);
+  const [loadingMentions, setLoadingMentions] = useState(false);
+
   // Hooks
   const { toast } = useToast();
   const { currentUser, userProfile, isProfileComplete } = useAuth();
@@ -344,6 +350,38 @@ export default function FeedPage() {
     }
   }, [displayedAlertsFeed]);
 
+  // Mention Suggestions Fetch
+  useEffect(() => {
+    if (showMentions && mentionQuery.length > 0 && firestore) {
+      setLoadingMentions(true);
+      const fetchUsers = async () => {
+        const usersRef = collection(firestore, "Usuarios");
+        const q = query(
+          usersRef,
+          where("displayName_lowercase", ">=", mentionQuery.toLowerCase()),
+          where("displayName_lowercase", "<=", mentionQuery.toLowerCase() + '\uf8ff'),
+          limit(5)
+        );
+        try {
+          const querySnapshot = await getDocs(q);
+          const users = querySnapshot.docs.map(doc => doc.data().displayName as string);
+          setMentionSuggestions(users.filter(name => name));
+        } catch (error) {
+          console.error("Error fetching mention suggestions:", error);
+          setMentionSuggestions([]);
+        } finally {
+          setLoadingMentions(false);
+        }
+      };
+      
+      const timeoutId = setTimeout(fetchUsers, 300); // Debounce
+      return () => clearTimeout(timeoutId);
+    } else {
+      setMentionSuggestions([]);
+    }
+  }, [mentionQuery, showMentions]);
+
+
   // Handlers
   const handleInteractionAttempt = (callback: () => void) => {
     if (!isProfileComplete) {
@@ -402,6 +440,7 @@ export default function FeedPage() {
     setIsPublishing(false);
     setSelectedAlertType(undefined);
     setPollData(null);
+    setShowMentions(false);
   }
 
   const handlePublish = async () => {
@@ -493,7 +532,7 @@ export default function FeedPage() {
               votes: 0
             }))
           };
-        } else if (currentPostType === 'text' && !selectedMediaForUpload && newPostText.length <= 150 && selectedPostBackground.name !== 'Padrão') {
+        } else if (currentPostType === 'text' && !selectedMediaForUpload && newPostText.length <= 150) {
           postData.cardStyle = selectedPostBackground;
         }
         
@@ -515,6 +554,47 @@ export default function FeedPage() {
     }
   };
 
+  const handleNewPostTextareaInput = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    const textarea = event.target;
+    const value = textarea.value;
+    setNewPostText(value);
+
+    // Mention logic
+    const cursorPos = textarea.selectionStart;
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const currentWord = textBeforeCursor.split(/\s+/).pop() || '';
+    
+    if (currentWord.startsWith('@')) {
+        setMentionQuery(currentWord.substring(1));
+        setShowMentions(true);
+    } else {
+        setShowMentions(false);
+    }
+  };
+
+  const handleMentionClick = (name: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const value = textarea.value;
+    const cursorPos = textarea.selectionStart;
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const lastAtPos = textBeforeCursor.lastIndexOf('@');
+    
+    if (lastAtPos !== -1) {
+      const prefix = value.substring(0, lastAtPos);
+      const suffix = value.substring(cursorPos);
+      const newText = `${prefix}@${name} ${suffix}`;
+      setNewPostText(newText);
+      setShowMentions(false);
+      
+      setTimeout(() => {
+        textarea.focus();
+        const newCursorPos = prefix.length + name.length + 2;
+        textarea.setSelectionRange(newCursorPos, newCursorPos);
+      }, 0);
+    }
+  };
 
   const handleOpenAlertTypeModal = () => {
     handleRemoveMedia(); 
@@ -614,29 +694,52 @@ export default function FeedPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <Textarea
-            ref={textareaRef}
-            placeholder={
-              currentPostType === 'alert' ? `ALERTA: ${selectedAlertType || 'Geral'} - Descreva o alerta (máx. 500 caracteres)...` :
-              pollData ? "Adicione um texto para acompanhar sua enquete (opcional)..." :
-              currentPostType === 'video' ? "Adicione uma legenda para seu vídeo..." :
-              currentPostType === 'image' ? "Adicione uma legenda para sua foto..." :
-              "No que você está pensando, viajante?"
-            }
-            className="mb-3 h-24 resize-none rounded-lg"
-            value={newPostText}
-            onChange={(e) => setNewPostText(e.target.value)}
-            style={
-              !mediaPreviewUrl && !pollData && currentPostType === 'text' && selectedPostBackground.name !== 'Padrão'
-                ? {
-                    backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
-                    backgroundImage: selectedPostBackground.gradient,
-                    color: selectedPostBackground.text,
-                  }
-                : {}
-            }
-            maxLength={currentPostType === 'alert' ? 500 : undefined}
-          />
+          <div className="relative">
+            <Textarea
+              ref={textareaRef}
+              placeholder={
+                currentPostType === 'alert' ? `ALERTA: ${selectedAlertType || 'Geral'} - Descreva o alerta (máx. 500 caracteres)...` :
+                pollData ? "Adicione um texto para acompanhar sua enquete (opcional)..." :
+                currentPostType === 'video' ? "Adicione uma legenda para seu vídeo..." :
+                currentPostType === 'image' ? "Adicione uma legenda para sua foto..." :
+                "No que você está pensando, viajante?"
+              }
+              className="mb-3 h-24 resize-none rounded-lg"
+              value={newPostText}
+              onChange={handleNewPostTextareaInput}
+              style={
+                !mediaPreviewUrl && !pollData && currentPostType === 'text' && selectedPostBackground.name !== 'Padrão'
+                  ? {
+                      backgroundColor: selectedPostBackground.gradient ? undefined : selectedPostBackground.bg,
+                      backgroundImage: selectedPostBackground.gradient,
+                      color: selectedPostBackground.text,
+                    }
+                  : {}
+              }
+              maxLength={currentPostType === 'alert' ? 500 : undefined}
+            />
+            {showMentions && (
+              <Card className="absolute z-10 w-full max-w-sm max-h-40 overflow-y-auto mt-1 shadow-lg border">
+                  <CardContent className="p-1">
+                      {loadingMentions ? (
+                      <div className="p-2 text-center text-sm text-muted-foreground">Buscando...</div>
+                      ) : mentionSuggestions.length > 0 ? (
+                      mentionSuggestions.map(name => (
+                          <button
+                          key={name}
+                          onClick={() => handleMentionClick(name)}
+                          className="block w-full text-left p-2 text-sm rounded-md hover:bg-muted"
+                          >
+                          {name}
+                          </button>
+                      ))
+                      ) : (
+                      <div className="p-2 text-center text-sm text-muted-foreground">Nenhum usuário encontrado.</div>
+                      )}
+                  </CardContent>
+              </Card>
+            )}
+          </div>
 
           {mediaPreviewUrl && (
             <div className="relative mb-3 w-32 h-32">
