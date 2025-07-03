@@ -4,6 +4,16 @@ export const touristCategories = [
 
 export type TouristCategory = typeof touristCategories[number];
 
+export interface TouristPointReview {
+  id: string;
+  pointId: string;
+  userId: string;
+  author: string;
+  rating: number; // 1-5
+  comment: string;
+  timestamp: any;
+}
+
 export interface TouristPointData {
   id: string;
   name: string;
@@ -12,11 +22,12 @@ export interface TouristPointData {
   imageUrl: string;
   dataAIImageHint: string;
   category: TouristCategory;
-  averageRating?: number; // Futuro uso
-  reviewCount?: number; // Futuro uso
+  averageRating?: number;
+  reviewCount?: number;
   indicatedByUserId?: string;
   indicatedByUserName?: string;
   status?: 'pending' | 'approved';
+  createdAt?: any;
 }
 
 export interface IndicatedTouristPointData extends TouristPointData {
