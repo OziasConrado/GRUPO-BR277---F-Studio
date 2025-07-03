@@ -260,33 +260,27 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
     const reactionRef = doc(firestore, 'reels', story.id, 'userReactions', currentUser.uid);
 
     try {
-      await runTransaction(firestore, async (transaction) => {
-        const storyDoc = await transaction.get(storyRef);
-        if (!storyDoc.exists()) {
-            throw new Error("Este Reel não existe mais.");
-        }
-        
-        const reactionDoc = await transaction.get(reactionRef);
-        const storedReaction = reactionDoc.exists() ? reactionDoc.data().type : null;
+        await runTransaction(firestore, async (transaction) => {
+            const reactionDoc = await transaction.get(reactionRef);
+            const storedReaction = reactionDoc.exists() ? reactionDoc.data().type : null;
 
-        const newReactions = storyDoc.data().reactions || { thumbsUp: 0, thumbsDown: 0 };
-
-        if (storedReaction === reactionType) {
-            // User is un-reacting
-            newReactions[reactionType] = Math.max(0, (newReactions[reactionType] || 0) - 1);
-            transaction.delete(reactionRef);
-        } else {
-            // User is adding a new reaction or changing their reaction
-            if (storedReaction) {
-                newReactions[storedReaction] = Math.max(0, (newReactions[storedReaction] || 0) - 1);
+            // If the user is clicking the same reaction again, they are un-reacting.
+            if (storedReaction === reactionType) {
+                transaction.update(storyRef, { [`reactions.${reactionType}`]: increment(-1) });
+                transaction.delete(reactionRef);
+            } else {
+                // If the user had a different reaction, undo it first.
+                if (storedReaction) {
+                    transaction.update(storyRef, { [`reactions.${storedReaction}`]: increment(-1) });
+                }
+                // Add the new reaction.
+                transaction.update(storyRef, { [`reactions.${reactionType}`]: increment(1) });
+                transaction.set(reactionRef, { type: reactionType, timestamp: serverTimestamp() });
             }
-            newReactions[reactionType] = (newReactions[reactionType] || 0) + 1;
-            transaction.set(reactionRef, { type: reactionType, timestamp: serverTimestamp() });
-        }
-
-        transaction.update(storyRef, { reactions: newReactions });
-      });
-      setCurrentUserStoryReaction(prev => prev === reactionType ? null : reactionType);
+        });
+        // The onSnapshot listener will update the UI automatically.
+        // Optimistic update for immediate feedback on the button state.
+        setCurrentUserStoryReaction(prev => prev === reactionType ? null : reactionType);
     } catch (error: any) {
       console.error("Error handling story reaction:", error);
       toast({ variant: 'destructive', title: 'Erro ao Reagir', description: error.message || 'Não foi possível processar sua reação.' });

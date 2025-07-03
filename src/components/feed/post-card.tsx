@@ -393,10 +393,10 @@ const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData
                             ) : (
                                 <Button
                                     variant="outline"
-                                    className="w-full justify-start h-10 py-2 text-base rounded-full"
+                                    className="w-full justify-start h-10 py-2 rounded-full"
                                     onClick={() => handleVote(option.id)}
                                 >
-                                    {option.text}
+                                    <span className="text-base">{option.text}</span>
                                 </Button>
                             )}
                         </div>
@@ -606,48 +606,42 @@ export default function PostCard({
   
   const handlePostReactionClick = async (reactionType: 'thumbsUp' | 'thumbsDown') => {
     if (!currentUser || !firestore) {
-      toast({ variant: 'destructive', title: 'Ação Requer Login', description: 'Faça login para interagir.' });
-      return;
+        toast({ variant: 'destructive', title: 'Ação Requer Login', description: 'Faça login para interagir.' });
+        return;
     }
 
-    const postRef = doc(firestore, 'posts', postId);
-    const reactionRef = doc(firestore, 'posts', postId, 'userReactions', currentUser.uid);
+    handleInteractionAttempt(async () => {
+        const postRef = doc(firestore, 'posts', postId);
+        const reactionRef = doc(firestore, 'posts', postId, 'userReactions', currentUser.uid);
 
-    try {
-      await runTransaction(firestore, async (transaction) => {
-        const postDoc = await transaction.get(postRef);
-        if (!postDoc.exists()) {
-          throw new Error("O post não existe mais.");
+        try {
+            await runTransaction(firestore, async (transaction) => {
+                const reactionDoc = await transaction.get(reactionRef);
+                const storedReaction = reactionDoc.exists() ? reactionDoc.data().type : null;
+
+                // If the user is clicking the same reaction again, they are un-reacting.
+                if (storedReaction === reactionType) {
+                    transaction.update(postRef, { [`reactions.${reactionType}`]: increment(-1) });
+                    transaction.delete(reactionRef);
+                } else {
+                    // If the user had a different reaction, undo it first.
+                    if (storedReaction) {
+                        transaction.update(postRef, { [`reactions.${storedReaction}`]: increment(-1) });
+                    }
+                    // Add the new reaction.
+                    transaction.update(postRef, { [`reactions.${reactionType}`]: increment(1) });
+                    transaction.set(reactionRef, { type: reactionType, timestamp: serverTimestamp() });
+                }
+            });
+
+            // Optimistically update the UI. The onSnapshot listener will correct it if needed.
+            setCurrentUserPostReaction(prev => prev === reactionType ? null : reactionType);
+        } catch (error: any) {
+            console.error("Error handling reaction:", error);
+            toast({ variant: 'destructive', title: 'Erro ao Reagir', description: error.message || 'Não foi possível processar sua reação. Tente novamente.' });
         }
-
-        const reactionDoc = await transaction.get(reactionRef);
-        const storedReaction = reactionDoc.exists() ? reactionDoc.data().type : null;
-        
-        const newReactions = postDoc.data().reactions || { thumbsUp: 0, thumbsDown: 0 };
-
-        if (storedReaction === reactionType) {
-          // User is un-reacting
-          newReactions[reactionType] = Math.max(0, (newReactions[reactionType] || 0) - 1);
-          transaction.delete(reactionRef);
-        } else {
-          // User is adding a new reaction or changing their reaction
-          if (storedReaction) {
-            newReactions[storedReaction] = Math.max(0, (newReactions[storedReaction] || 0) - 1);
-          }
-          newReactions[reactionType] = (newReactions[reactionType] || 0) + 1;
-          transaction.set(reactionRef, { type: reactionType, timestamp: serverTimestamp() });
-        }
-        
-        transaction.update(postRef, { reactions: newReactions });
-      });
-
-      // Update local state for immediate feedback
-      setCurrentUserPostReaction(prev => prev === reactionType ? null : reactionType);
-    } catch (error: any) {
-      console.error("Error handling reaction:", error);
-      toast({ variant: 'destructive', title: 'Erro ao Reagir', description: error.message || 'Não foi possível processar sua reação. Tente novamente.' });
-    }
-  };
+    });
+};
   
   const handleFooterSubmit = async (e: FormEvent) => {
     e.preventDefault();
