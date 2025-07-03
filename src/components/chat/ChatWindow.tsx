@@ -58,41 +58,77 @@ interface ReplyingToInfo {
 
 async function createChatMentions(text: string, messageId: string, fromUser: { uid: string, displayName: string | null, photoURL: string | null }) {
     if (!firestore) return;
-    const mentionRegex = /(?<!\S)@([\p{L}\p{N}._-]+)/gu;
-    const mentions = text.match(mentionRegex);
-    if (!mentions) return;
 
-    const mentionedUsernames = [...new Set(mentions.map(m => m.substring(1).trim()))];
-    
-    for (const username of mentionedUsernames) {
-        if (username.toLowerCase() === (fromUser.displayName || '').toLowerCase()) continue;
+    const foundUsers = new Map<string, { id: string }>();
+    const processedIndices = new Set<number>();
+    const matches = [...text.matchAll(/@/g)];
+
+    for (const match of matches) {
+        const atIndex = match.index!;
+        if (processedIndices.has(atIndex)) continue;
+
+        const queryableText = text.substring(atIndex + 1);
+        const firstWordMatch = queryableText.match(/^([\p{L}\p{N}._'-]+)/u);
+        if (!firstWordMatch) continue;
+        
+        const firstWord = firstWordMatch[1];
         
         const usersRef = collection(firestore, "Usuarios");
-        const q = query(usersRef, where("displayName_lowercase", "==", username.toLowerCase()), limit(1));
+        const q = query(
+            usersRef,
+            where("displayName_lowercase", ">=", firstWord.toLowerCase()),
+            where("displayName_lowercase", "<=", firstWord.toLowerCase() + '\uf8ff')
+        );
+
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) continue;
         
-        try {
-            const querySnapshot = await getDocs(q);
-            if (!querySnapshot.empty) {
-                const userDoc = querySnapshot.docs[0];
-                const mentionedUserId = userDoc.id;
-
-                if (mentionedUserId === fromUser.uid) continue;
-
-                const notificationRef = collection(firestore, 'Usuarios', mentionedUserId, 'notifications');
-                await addDoc(notificationRef, {
-                    type: 'mention_chat',
-                    fromUserId: fromUser.uid,
-                    fromUserName: fromUser.displayName || "Usuário",
-                    fromUserAvatar: fromUser.photoURL || null,
-                    postId: messageId, // Using postId to store the messageId for chat mentions
-                    textSnippet: text.substring(0, 70) + (text.length > 70 ? '...' : ''),
-                    timestamp: serverTimestamp(),
-                    read: false,
-                });
+        let longestMatchUser: { id: string; displayName: string } | null = null;
+        
+        querySnapshot.forEach(userDoc => {
+            const displayName = userDoc.data().displayName;
+            if (queryableText.toLowerCase().startsWith(displayName.toLowerCase())) {
+                const nextChar = text[atIndex + 1 + displayName.length];
+                if (nextChar === undefined || !/\p{L}|\p{N}/u.test(nextChar)) {
+                    if (!longestMatchUser || displayName.length > longestMatchUser.displayName.length) {
+                        longestMatchUser = { id: userDoc.id, displayName };
+                    }
+                }
             }
-        } catch (error) {
-            console.error(`Error creating chat notification for ${username}:`, error);
+        });
+
+        if (longestMatchUser) {
+            if (longestMatchUser.id !== fromUser.uid) {
+                foundUsers.set(longestMatchUser.displayName, { id: longestMatchUser.id });
+            }
+            // Mark all indices within the matched name as processed to avoid sub-matches
+            for (let i = 0; i < longestMatchUser.displayName.length + 1; i++) {
+                processedIndices.add(atIndex + i);
+            }
         }
+    }
+
+    if (foundUsers.size === 0) return;
+
+    const batch = writeBatch(firestore);
+    for (const user of foundUsers.values()) {
+        const notificationRef = doc(collection(firestore, 'Usuarios', user.id, 'notifications'));
+        batch.set(notificationRef, {
+            type: 'mention_chat',
+            fromUserId: fromUser.uid,
+            fromUserName: fromUser.displayName || "Usuário",
+            fromUserAvatar: fromUser.photoURL || null,
+            postId: messageId,
+            textSnippet: text.substring(0, 70) + (text.length > 70 ? '...' : ''),
+            timestamp: serverTimestamp(),
+            read: false,
+        });
+    }
+
+    try {
+        await batch.commit();
+    } catch (error) {
+        console.error("Error committing mention notifications batch:", error);
     }
 }
 
@@ -546,8 +582,9 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
         }
 
         const reactionDoc = await transaction.get(reactionRef);
-        const currentReactions = messageDoc.data().reactions || { heart: 0 };
-        const newReactions = { ...currentReactions };
+        
+        let newReactions = { ...messageDoc.data().reactions };
+        if (!newReactions.heart) newReactions.heart = 0;
         
         if (reactionDoc.exists()) {
           // User is un-reacting
@@ -555,7 +592,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
           transaction.delete(reactionRef);
         } else {
           // User is adding a new reaction
-          newReactions.heart = (newReactions.heart || 0) + 1;
+          newReactions.heart += 1;
           transaction.set(reactionRef, { type: 'heart', timestamp: serverTimestamp() });
         }
         transaction.update(messageRef, { reactions: newReactions });

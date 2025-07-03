@@ -46,7 +46,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useAuth } from '@/contexts/AuthContext';
 import { firestore, storage } from '@/lib/firebase/client';
-import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp, where, getDocs, doc, writeBatch } from 'firebase/firestore';
 import { ref, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -55,41 +55,77 @@ import { ToastAction } from '@/components/ui/toast';
 
 async function createMentions(text: string, postId: string, fromUser: { uid: string, displayName: string | null, photoURL: string | null }, type: 'mention_post' | 'mention_comment') {
     if (!firestore) return;
-    const mentionRegex = /(?<!\S)@([\p{L}\p{N}._-]+)/gu;
-    const mentions = text.match(mentionRegex);
-    if (!mentions) return;
 
-    const mentionedUsernames = [...new Set(mentions.map(m => m.substring(1).trim()))];
-    
-    for (const username of mentionedUsernames) {
-        if (username.toLowerCase() === (fromUser.displayName || '').toLowerCase()) continue;
+    const foundUsers = new Map<string, { id: string }>();
+    const processedIndices = new Set<number>();
+    const matches = [...text.matchAll(/@/g)];
 
-        const usersRef = collection(firestore, "Usuarios");
-        const q = query(usersRef, where("displayName_lowercase", "==", username.toLowerCase()), limit(1));
+    for (const match of matches) {
+        const atIndex = match.index!;
+        if (processedIndices.has(atIndex)) continue;
+
+        const queryableText = text.substring(atIndex + 1);
+        const firstWordMatch = queryableText.match(/^([\p{L}\p{N}._'-]+)/u);
+        if (!firstWordMatch) continue;
         
-        try {
-            const querySnapshot = await getDocs(q);
-            if (!querySnapshot.empty) {
-                const userDoc = querySnapshot.docs[0];
-                const mentionedUserId = userDoc.id;
+        const firstWord = firstWordMatch[1];
+        
+        const usersRef = collection(firestore, "Usuarios");
+        const q = query(
+            usersRef,
+            where("displayName_lowercase", ">=", firstWord.toLowerCase()),
+            where("displayName_lowercase", "<=", firstWord.toLowerCase() + '\uf8ff')
+        );
 
-                if (mentionedUserId === fromUser.uid) continue;
-
-                const notificationRef = collection(firestore, 'Usuarios', mentionedUserId, 'notifications');
-                await addDoc(notificationRef, {
-                    type: type,
-                    fromUserId: fromUser.uid,
-                    fromUserName: fromUser.displayName || "Usuário",
-                    fromUserAvatar: fromUser.photoURL || null,
-                    postId: postId,
-                    textSnippet: text.substring(0, 70) + (text.length > 70 ? '...' : ''), // Snippet of the text
-                    timestamp: serverTimestamp(),
-                    read: false,
-                });
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) continue;
+        
+        let longestMatchUser: { id: string; displayName: string } | null = null;
+        
+        querySnapshot.forEach(userDoc => {
+            const displayName = userDoc.data().displayName;
+            if (queryableText.toLowerCase().startsWith(displayName.toLowerCase())) {
+                const nextChar = text[atIndex + 1 + displayName.length];
+                if (nextChar === undefined || !/\p{L}|\p{N}/u.test(nextChar)) {
+                    if (!longestMatchUser || displayName.length > longestMatchUser.displayName.length) {
+                        longestMatchUser = { id: userDoc.id, displayName };
+                    }
+                }
             }
-        } catch (error) {
-            console.error(`Error creating notification for ${username}:`, error);
+        });
+
+        if (longestMatchUser) {
+            if (longestMatchUser.id !== fromUser.uid) {
+                foundUsers.set(longestMatchUser.displayName, { id: longestMatchUser.id });
+            }
+            // Mark all indices within the matched name as processed to avoid sub-matches
+            for (let i = 0; i < longestMatchUser.displayName.length + 1; i++) {
+                processedIndices.add(atIndex + i);
+            }
         }
+    }
+
+    if (foundUsers.size === 0) return;
+
+    const batch = writeBatch(firestore);
+    for (const user of foundUsers.values()) {
+        const notificationRef = doc(collection(firestore, 'Usuarios', user.id, 'notifications'));
+        batch.set(notificationRef, {
+            type: type,
+            fromUserId: fromUser.uid,
+            fromUserName: fromUser.displayName || "Usuário",
+            fromUserAvatar: fromUser.photoURL || null,
+            postId: postId,
+            textSnippet: text.substring(0, 70) + (text.length > 70 ? '...' : ''),
+            timestamp: serverTimestamp(),
+            read: false,
+        });
+    }
+
+    try {
+        await batch.commit();
+    } catch (error) {
+        console.error("Error committing mention notifications batch:", error);
     }
 }
 

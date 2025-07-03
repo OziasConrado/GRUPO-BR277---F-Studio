@@ -47,6 +47,7 @@ import {
   where,
   limit,
   getDocs,
+  writeBatch,
 } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -76,6 +77,82 @@ const reportReasonsStory = [
   { id: "story_impersonation", label: "Falsidade ideológica." },
   { id: "story_other", label: "Outro motivo..." },
 ];
+
+async function createMentions(text: string, postId: string, fromUser: { uid: string, displayName: string | null, photoURL: string | null }, type: 'mention_comment') {
+    if (!firestore) return;
+
+    const foundUsers = new Map<string, { id: string }>();
+    const processedIndices = new Set<number>();
+    const matches = [...text.matchAll(/@/g)];
+
+    for (const match of matches) {
+        const atIndex = match.index!;
+        if (processedIndices.has(atIndex)) continue;
+
+        const queryableText = text.substring(atIndex + 1);
+        const firstWordMatch = queryableText.match(/^([\p{L}\p{N}._'-]+)/u);
+        if (!firstWordMatch) continue;
+        
+        const firstWord = firstWordMatch[1];
+        
+        const usersRef = collection(firestore, "Usuarios");
+        const q = query(
+            usersRef,
+            where("displayName_lowercase", ">=", firstWord.toLowerCase()),
+            where("displayName_lowercase", "<=", firstWord.toLowerCase() + '\uf8ff')
+        );
+
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) continue;
+        
+        let longestMatchUser: { id: string; displayName: string } | null = null;
+        
+        querySnapshot.forEach(userDoc => {
+            const displayName = userDoc.data().displayName;
+            if (queryableText.toLowerCase().startsWith(displayName.toLowerCase())) {
+                const nextChar = text[atIndex + 1 + displayName.length];
+                if (nextChar === undefined || !/\p{L}|\p{N}/u.test(nextChar)) {
+                    if (!longestMatchUser || displayName.length > longestMatchUser.displayName.length) {
+                        longestMatchUser = { id: userDoc.id, displayName };
+                    }
+                }
+            }
+        });
+
+        if (longestMatchUser) {
+            if (longestMatchUser.id !== fromUser.uid) {
+                foundUsers.set(longestMatchUser.displayName, { id: longestMatchUser.id });
+            }
+            // Mark all indices within the matched name as processed to avoid sub-matches
+            for (let i = 0; i < longestMatchUser.displayName.length + 1; i++) {
+                processedIndices.add(atIndex + i);
+            }
+        }
+    }
+
+    if (foundUsers.size === 0) return;
+
+    const batch = writeBatch(firestore);
+    for (const user of foundUsers.values()) {
+        const notificationRef = doc(collection(firestore, 'Usuarios', user.id, 'notifications'));
+        batch.set(notificationRef, {
+            type: type,
+            fromUserId: fromUser.uid,
+            fromUserName: fromUser.displayName || "Usuário",
+            fromUserAvatar: fromUser.photoURL || null,
+            postId: postId,
+            textSnippet: text.substring(0, 70) + (text.length > 70 ? '...' : ''),
+            timestamp: serverTimestamp(),
+            read: false,
+        });
+    }
+
+    try {
+        await batch.commit();
+    } catch (error) {
+        console.error("Error committing mention notifications batch:", error);
+    }
+}
 
 
 export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewerModalProps) {
@@ -221,13 +298,18 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
     if (!newComment.trim() || !currentUser || !firestore || !story) return;
 
     try {
+      const commentText = newComment.trim();
       await addDoc(collection(firestore, 'reels', story.id, 'comments'), {
         userId: currentUser.uid,
         userName: currentUser.displayName,
         userAvatarUrl: currentUser.photoURL,
-        text: newComment.trim(),
+        text: commentText,
         timestamp: serverTimestamp(),
       });
+
+      // Pass 'mention_comment' as it's a comment, and story.id as the post ID context
+      await createMentions(commentText, story.id, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL }, 'mention_comment');
+
       setNewComment('');
       setShowMentions(false);
     } catch (error) {

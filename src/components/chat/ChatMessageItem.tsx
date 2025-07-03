@@ -55,13 +55,13 @@ export interface ChatMessageData {
 
 const renderTextWithMentions = (text: string): React.ReactNode[] => {
   if (!text) return [text];
-  // Regex to find @mentions (e.g., @user.name, @user_name) but not as part of an email address
-  const mentionRegex = /(?<!\S)@([\p{L}\p{N}._-]+)/gu;
+  // Regex to find @mentions but not as part of an email address
+  const mentionRegex = /(?<!\S)@([\p{L}\p{N}._\s'-]+)/gu;
   const elements: React.ReactNode[] = [];
   let lastIndex = 0;
 
   for (const match of text.matchAll(mentionRegex)) {
-    const mention = match[0]; // e.g., "@Ozias.Conrado"
+    const mention = match[0]; // e.g., "@Ozias Conrado"
     const startIndex = match.index!;
 
     // Add text before the mention
