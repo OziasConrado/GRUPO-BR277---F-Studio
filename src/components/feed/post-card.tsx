@@ -376,7 +376,7 @@ const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData
                                 <div className="relative w-full rounded-full bg-muted text-sm overflow-hidden h-10 flex items-center">
                                     <div
                                         className={cn(
-                                            "absolute top-0 left-0 h-full",
+                                            "absolute top-0 left-0 h-full rounded-full",
                                             userVotedForThis ? "bg-primary" : "bg-primary/20"
                                         )}
                                         style={{ width: `${percentage}%` }}
@@ -1014,11 +1014,11 @@ export default function PostCard({
         <CardFooter className="flex items-center justify-between px-4 py-2 border-t border-border/50">
           <div className="flex items-center gap-1">
               <Button variant="ghost" onClick={() => handleInteractionAttempt(() => handlePostReactionClick('thumbsUp'))} className={cn("p-2 h-auto flex items-center gap-1 text-muted-foreground hover:bg-muted/30", currentUserPostReaction === 'thumbsUp' ? 'text-primary' : 'hover:text-primary')} aria-label="Curtir">
-                  <ThumbsUp className={cn(currentUserPostReaction === 'thumbsUp' && 'fill-primary text-primary-foreground')} />
+                  <ThumbsUp className={cn(currentUserPostReaction === 'thumbsUp' && 'fill-current')} />
                   {localPostReactions.thumbsUp > 0 && <span className="text-xs font-semibold tabular-nums">({localPostReactions.thumbsUp})</span>}
               </Button>
               <Button variant="ghost" onClick={() => handleInteractionAttempt(() => handlePostReactionClick('thumbsDown'))} className={cn("p-2 h-auto flex items-center gap-1 text-muted-foreground hover:bg-muted/30", currentUserPostReaction === 'thumbsDown' ? 'text-destructive' : 'hover:text-destructive')} aria-label="Não curtir">
-                  <ThumbsDown className={cn(currentUserPostReaction === 'thumbsDown' && 'fill-destructive text-destructive-foreground')} />
+                  <ThumbsDown className={cn(currentUserPostReaction === 'thumbsDown' && 'fill-current')} />
                    {localPostReactions.thumbsDown > 0 && <span className="text-xs font-semibold tabular-nums">({localPostReactions.thumbsDown})</span>}
               </Button>
               <Button variant="ghost" onClick={() => handleInteractionAttempt(() => setIsSheetOpen(true))} className={cn("p-2 h-auto flex items-center gap-1 text-muted-foreground hover:text-primary hover:bg-muted/30")} aria-label="Comentários">
