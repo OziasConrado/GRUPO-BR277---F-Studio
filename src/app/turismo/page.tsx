@@ -14,7 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import IndicatePointModal, { type IndicatePointSubmitData } from '@/components/turismo/IndicatePointModal';
 import { ToastAction } from '@/components/ui/toast';
 import { useRouter } from 'next/navigation';
