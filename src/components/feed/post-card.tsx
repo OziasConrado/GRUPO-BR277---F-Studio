@@ -373,17 +373,27 @@ const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData
                     return (
                         <div key={option.id}>
                             {votedOptionId ? (
-                                <div className="relative w-full rounded-md bg-muted p-2 text-sm">
-                                    <Progress value={percentage} className={cn("absolute inset-0 h-full w-full", userVotedForThis && "bg-primary/30")} />
-                                    <div className="relative flex justify-between items-center px-2">
-                                        <span className={cn("font-medium", userVotedForThis && "text-primary-foreground")}>{option.text}</span>
-                                        <span className={cn("font-semibold text-xs", userVotedForThis ? "text-primary-foreground" : "text-muted-foreground")}>{percentage.toFixed(0)}%</span>
+                                <div className="relative w-full rounded-full bg-muted text-sm overflow-hidden h-10 flex items-center">
+                                    <div
+                                        className={cn(
+                                            "absolute top-0 left-0 h-full",
+                                            userVotedForThis ? "bg-primary" : "bg-primary/20"
+                                        )}
+                                        style={{ width: `${percentage}%` }}
+                                    />
+                                    <div className="relative flex justify-between items-center w-full px-4">
+                                        <span className={cn("font-medium", userVotedForThis ? "text-primary-foreground" : "text-foreground")}>
+                                            {option.text}
+                                        </span>
+                                        <span className={cn("font-semibold text-xs", userVotedForThis ? "text-primary-foreground" : "text-foreground")}>
+                                            {percentage.toFixed(0)}%
+                                        </span>
                                     </div>
                                 </div>
                             ) : (
                                 <Button
                                     variant="outline"
-                                    className="w-full justify-start h-auto py-2 text-base"
+                                    className="w-full justify-start h-10 py-2 text-base rounded-full"
                                     onClick={() => handleVote(option.id)}
                                 >
                                     {option.text}
@@ -917,7 +927,7 @@ export default function PostCard({
                 <Button onClick={handleUpdatePost}>Salvar</Button>
               </div>
             </div>
-          ) : (cardStyle && cardStyle.name !== 'Padrão' && !urlToPreview && !uploadedImageUrl) ? (
+          ) : (cardStyle && cardStyle.name !== 'Padrão') ? (
              <div
               className="p-4 flex items-center justify-center text-center min-h-[280px]"
               style={{
