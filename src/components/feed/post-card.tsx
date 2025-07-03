@@ -825,8 +825,8 @@ export default function PostCard({
     }
   };
 
-  const displayImageUrl = cardStyle ? null : (uploadedImageUrl || imageUrl);
-  const displayImageAlt = cardStyle ? '' : (uploadedImageUrl ? (dataAIUploadedImageHint || "Imagem do post") : (dataAIImageHint || "Imagem do post"));
+  const displayImageUrl = (cardStyle && cardStyle.name !== 'Padrão') ? null : (uploadedImageUrl || imageUrl);
+  const displayImageAlt = (cardStyle && cardStyle.name !== 'Padrão') ? '' : (uploadedImageUrl ? (dataAIUploadedImageHint || "Imagem do post") : (dataAIImageHint || "Imagem do post"));
   
   const CommentItem = ({ comment }: { comment: CommentProps }) => (
     <div key={comment.id} className="flex items-start space-x-2">
@@ -903,12 +903,7 @@ export default function PostCard({
           </DropdownMenu>
         </CardHeader>
 
-        <CardContent
-            className={cn(
-            "p-0",
-            cardStyle && text.length > 0 && !poll && !uploadedImageUrl && !urlToPreview && "py-4",
-          )}
-        >
+        <CardContent className="p-0">
           {isEditing ? (
             <div className="space-y-2 w-full p-4">
               <Textarea
@@ -922,7 +917,7 @@ export default function PostCard({
                 <Button onClick={handleUpdatePost}>Salvar</Button>
               </div>
             </div>
-          ) : cardStyle && !urlToPreview && !uploadedImageUrl ? (
+          ) : (cardStyle && cardStyle.name !== 'Padrão' && !urlToPreview && !uploadedImageUrl) ? (
              <div
               className="p-4 flex items-center justify-center text-center min-h-[280px]"
               style={{
