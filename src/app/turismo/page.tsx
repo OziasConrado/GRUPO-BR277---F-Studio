@@ -1,10 +1,10 @@
-
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react'; // Added useMemo
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Loader2 } from "lucide-react";
-import type { TouristPointData } from '@/types/turismo';
+import { PlusCircle, Loader2, ListFilter } from "lucide-react"; // Added ListFilter
+import type { TouristPointData, TouristCategory } from '@/types/turismo'; // Added TouristCategory
+import { touristCategories } from '@/types/turismo'; // Added touristCategories import
 import TouristPointCard from '@/components/turismo/tourist-point-card';
 import { useToast } from '@/hooks/use-toast';
 import React from 'react';
@@ -14,7 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import IndicatePointModal, { type IndicatePointSubmitData } from '@/components/turismo/IndicatePointModal';
 import { ToastAction } from '@/components/ui/toast';
 import { useRouter } from 'next/navigation';
@@ -31,12 +31,14 @@ export default function TurismoPage() {
   const router = useRouter();
   const { currentUser, isProfileComplete } = useAuth();
   
-  const [indicatedPoints, setIndicatedPoints] = useState<TouristPointData[]>([]);
+  const [allIndicatedPoints, setAllIndicatedPoints] = useState<TouristPointData[]>([]);
   const [loadingIndicatedPoints, setLoadingIndicatedPoints] = useState(true);
   
   const [isIndicateModalOpen, setIsIndicateModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  const [activeCategory, setActiveCategory] = useState<TouristCategory | 'Todas'>('Todas');
+
   const fetchIndicatedPoints = useCallback(async () => {
     if (!firestore) return;
     setLoadingIndicatedPoints(true);
@@ -46,7 +48,7 @@ export default function TurismoPage() {
       const q = query(pointsCollection, orderBy('createdAt', 'desc'));
       const querySnapshot = await getDocs(q);
       const fetchedPoints: TouristPointData[] = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TouristPointData));
-      setIndicatedPoints(fetchedPoints);
+      setAllIndicatedPoints(fetchedPoints);
     } catch (error) {
       console.error("Error fetching indicated tourist points: ", error);
       toast({ variant: "destructive", title: "Erro ao Carregar Indicações", description: "Não foi possível buscar os pontos da comunidade." });
@@ -58,6 +60,13 @@ export default function TurismoPage() {
   useEffect(() => {
     fetchIndicatedPoints();
   }, [fetchIndicatedPoints]);
+
+  const filteredPoints = useMemo(() => {
+    if (activeCategory === 'Todas') {
+      return allIndicatedPoints;
+    }
+    return allIndicatedPoints.filter(point => point.category === activeCategory);
+  }, [allIndicatedPoints, activeCategory]);
 
 
   const handleOpenIndicateModal = () => {
@@ -121,7 +130,7 @@ export default function TurismoPage() {
         const docRef = await addDoc(collection(firestore, 'tourist_points_indicated'), docToSave);
         
         const newPoint: TouristPointData = { ...docToSave, id: docRef.id, createdAt: new Date().toISOString() } as TouristPointData;
-        setIndicatedPoints(prev => [newPoint, ...prev]);
+        setAllIndicatedPoints(prev => [newPoint, ...prev]);
 
         toast({
             title: "Indicação Enviada!",
@@ -179,21 +188,51 @@ export default function TurismoPage() {
 
         <section>
           <h2 className="text-2xl font-semibold font-headline mb-4">Pontos Indicados pela Comunidade</h2>
+          
+           <div className="mb-6 p-4 rounded-lg bg-card border">
+                <div className="flex items-center mb-2">
+                    <ListFilter className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <h3 className="text-sm font-medium text-muted-foreground">Filtrar por categoria:</h3>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    <Button
+                        key="Todas"
+                        variant={activeCategory === 'Todas' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setActiveCategory('Todas')}
+                        className="rounded-full text-xs px-3 py-1 h-auto"
+                    >
+                        Todas
+                    </Button>
+                    {touristCategories.map((category) => (
+                        <Button
+                            key={category}
+                            variant={activeCategory === category ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setActiveCategory(category)}
+                            className="rounded-full text-xs px-3 py-1 h-auto"
+                        >
+                            {category}
+                        </Button>
+                    ))}
+                </div>
+            </div>
+
            {loadingIndicatedPoints ? (
              <Alert>
               <Loader2 className="h-5 w-5 animate-spin text-primary" />
               <AlertTitle className="font-headline">Carregando Indicações...</AlertTitle>
             </Alert>
-           ) : indicatedPoints.length > 0 ? (
+           ) : filteredPoints.length > 0 ? (
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {indicatedPoints.map((point) => (
+                {filteredPoints.map((point) => (
                     <TouristPointCard key={point.id} point={point} showIndicatedBy />
                 ))}
              </div>
            ) : (
             <div className="p-6 bg-muted/30 rounded-xl border border-dashed min-h-[100px] flex items-center justify-center">
               <p className="text-muted-foreground text-center">
-                Ainda não há pontos indicados pela comunidade.<br/>
+                Ainda não há pontos indicados para a categoria "{activeCategory}".<br/>
                 Seja o primeiro a indicar um local incrível!
               </p>
             </div>

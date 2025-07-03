@@ -8,6 +8,7 @@ import { MapPin, Info, Star, Eye, UserCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 
 interface TouristPointCardProps {
@@ -18,13 +19,6 @@ interface TouristPointCardProps {
 
 export default function TouristPointCard({ point, showIndicatedBy = false }: TouristPointCardProps) {
   const { toast } = useToast();
-
-  const handleViewDetails = () => {
-    toast({
-      title: `Detalhes de ${point.name}`,
-      description: "Página de detalhes do ponto turístico em breve!",
-    });
-  };
 
   const handleRatePlace = () => {
      toast({
@@ -78,8 +72,10 @@ export default function TouristPointCard({ point, showIndicatedBy = false }: Tou
         <Button variant="outline" size="sm" onClick={handleRatePlace} className="w-full">
           <Star className="mr-1.5 h-4 w-4" /> Avaliar
         </Button>
-        <Button variant="default" size="sm" onClick={handleViewDetails} className="w-full">
-          <Eye className="mr-1.5 h-4 w-4" /> Ver Detalhes
+        <Button asChild variant="default" size="sm" className="w-full">
+            <Link href={`/turismo/${point.id}`}>
+              <Eye className="mr-1.5 h-4 w-4" /> Ver Detalhes
+            </Link>
         </Button>
       </CardFooter>
     </Card>
