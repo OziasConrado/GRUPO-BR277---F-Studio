@@ -14,6 +14,7 @@ export interface StoryCircleProps {
   authorName: string;
   authorAvatarUrl?: string;
   timestamp: string; // ISO String
+  description?: string;
   thumbnailUrl: string; // The main image/video thumbnail
   dataAIThumbnailHint?: string;
   storyType: 'image' | 'video';

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
-import { X, ThumbsUp, ThumbsDown, MessageSquare, Share2, MoreVertical, Flag, Send, Loader2 } from 'lucide-react';
+import { X, ThumbsUp, ThumbsDown, MessageSquare, Share2, MoreVertical, Flag, Send, Loader2, UserCircle } from 'lucide-react';
 import type { StoryCircleProps } from './StoryCircle';
 import Image from 'next/image';
 import {
@@ -176,6 +176,8 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
   const [mentionSuggestions, setMentionSuggestions] = useState<string[]>([]);
   const [loadingMentions, setLoadingMentions] = useState(false);
   const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
   // Effect to fetch real-time data for the story
   useEffect(() => {
@@ -394,6 +396,9 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
 
   if (!isOpen || !story) return null;
 
+  const description = story.description || '';
+  const needsTruncation = description.length > 80;
+
 
   const AdMobSpace = () => (
     <div className="shrink-0 h-[100px] bg-secondary/20 flex items-center justify-center text-sm text-secondary-foreground">
@@ -408,17 +413,11 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
           className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none !bg-black/90 !p-0 flex flex-col !translate-x-0 !translate-y-0"
           onEscapeKeyDown={onClose}
         >
-          <DialogHeader className="shrink-0 p-2 sm:p-3 flex flex-row justify-between items-center bg-black/30 !z-[210] backdrop-blur-sm">
-            <div className="flex items-center gap-2 flex-grow min-w-0">
-                <Avatar className="h-9 w-9 border-2 border-white/50">
-                    {story.authorAvatarUrl && <AvatarImage src={story.authorAvatarUrl} alt={story.authorName} />}
-                    <AvatarFallback>{story.authorName.substring(0,1)}</AvatarFallback>
-                </Avatar>
-                <div className="min-w-0">
-                    <DialogTitle className="text-white text-base font-semibold truncate">{story.authorName}</DialogTitle>
-                    <DialogDescription className="text-xs text-white/70 truncate">{formattedTimestamp}</DialogDescription>
-                </div>
-            </div>
+          <DialogHeader className="absolute top-0 left-0 right-0 shrink-0 p-2 sm:p-3 flex flex-row justify-end items-center bg-gradient-to-b from-black/50 to-transparent !z-[210]">
+            <DialogTitle className="sr-only">
+              Visualizador de Reel: {story.authorName}
+            </DialogTitle>
+            <DialogDescription className="sr-only">Reel de {story.authorName}.</DialogDescription>
             <DialogClose asChild>
               <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full h-9 w-9 sm:h-10 sm:w-10 !z-[210] flex-shrink-0">
                 <X className="h-5 w-5 sm:h-6 sm:h-6" />
@@ -446,6 +445,47 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
                   data-ai-hint={story.dataAIThumbnailHint || "story content"}
                 />
               )}
+            </div>
+
+            {/* Description Overlay */}
+            <div 
+              className={cn(
+                "absolute bottom-[100px] left-0 right-0 z-[215] p-3 text-white transition-all duration-300 ease-in-out",
+                isDescriptionExpanded 
+                  ? "bg-black/60 backdrop-blur-sm max-h-[70vh] overflow-y-auto rounded-t-lg" 
+                  : "bg-gradient-to-t from-black/70 to-transparent max-h-[40vh] pointer-events-none"
+              )}
+            >
+              <div className="pointer-events-auto max-w-md mx-auto">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Avatar className="h-9 w-9 border-2 border-white/50">
+                        {story.authorAvatarUrl && <AvatarImage src={story.authorAvatarUrl} alt={story.authorName} />}
+                        <AvatarFallback>{story.authorName.substring(0,1)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <p className="text-base font-semibold truncate">{story.authorName}</p>
+                        <p className="text-xs text-white/70 truncate">{formattedTimestamp}</p>
+                    </div>
+                  </div>
+
+                  {description && (
+                    <div className="text-sm" onClick={() => !isDescriptionExpanded && needsTruncation && setIsDescriptionExpanded(true)}>
+                      <p className={cn("whitespace-pre-wrap", !isDescriptionExpanded && "line-clamp-2")}>
+                          {description}
+                      </p>
+                      {needsTruncation && !isDescriptionExpanded && (
+                          <button onClick={() => setIsDescriptionExpanded(true)} className="text-sm font-bold mt-1 hover:underline text-white/80">
+                              ...mais
+                          </button>
+                      )}
+                      {isDescriptionExpanded && (
+                          <button onClick={() => setIsDescriptionExpanded(false)} className="text-sm font-bold mt-2 hover:underline text-white/80">
+                              Ver menos
+                          </button>
+                      )}
+                    </div>
+                  )}
+              </div>
             </div>
 
             <div className="absolute right-2 sm:right-4 bottom-[110px] sm:bottom-1/2 sm:translate-y-1/2 z-[220] flex flex-col items-center space-y-2 bg-black/25 p-2 rounded-full">
@@ -576,7 +616,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
           <AlertDialogHeader>
             <RadixAlertDialogTitle>Reportar Reel</RadixAlertDialogTitle>
             <RadixAlertDialogDescription>
-              Por favor, selecione o motivo da sua denúncia para o Reel "{story.authorName}".
+              Por favor, selecione o motivo da sua denúncia para o Reel de "{story.authorName}".
             </RadixAlertDialogDescription>
           </AlertDialogHeader>
           <RadioGroup value={selectedReportReasonStory} onValueChange={setSelectedReportReasonStory} className="space-y-2 my-4">

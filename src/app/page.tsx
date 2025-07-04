@@ -339,6 +339,7 @@ export default function FeedPage() {
                 authorId: data.userId,
                 authorName: data.userName,
                 authorAvatarUrl: data.userAvatarUrl || undefined,
+                description: data.description || '',
                 thumbnailUrl: data.thumbnailUrl || data.videoUrl || 'https://placehold.co/180x320.png',
                 dataAIThumbnailHint: 'video story content',
                 timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
@@ -797,7 +798,7 @@ export default function FeedPage() {
                       }
                     : {}
                 }
-                maxLength={currentPostType === 'alert' ? 500 : undefined}
+                maxLength={currentPostType === 'alert' ? 500 : (currentPostType === 'video' ? 600 : undefined)}
               />
               {showMentions && (
                 <Card className="absolute z-10 w-full max-w-sm max-h-40 overflow-y-auto mt-1 shadow-lg border">
