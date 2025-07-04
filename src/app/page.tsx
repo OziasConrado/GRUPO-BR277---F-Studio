@@ -47,7 +47,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useAuth } from '@/contexts/AuthContext';
 import { firestore, storage } from '@/lib/firebase/client';
-import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp, where, getDocs, doc, writeBatch, getDoc } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp, where, getDocs, doc, writeBatch, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -330,23 +330,25 @@ export default function FeedPage() {
   useEffect(() => {
     if (!firestore) return setLoadingReels(false);
     setLoadingReels(true);
-    const q = query(collection(firestore, 'reels'), where("deleted", "!=", true), orderBy('timestamp', 'desc'), limit(15));
+    const q = query(collection(firestore, 'reels'), orderBy('timestamp', 'desc'), limit(15));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-        const fetchedReels = snapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                authorId: data.userId,
-                authorName: data.userName,
-                authorAvatarUrl: data.userAvatarUrl || undefined,
-                description: data.description || '',
-                thumbnailUrl: data.thumbnailUrl || data.videoUrl || 'https://placehold.co/180x320.png',
-                dataAIThumbnailHint: 'video story content',
-                timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
-                storyType: 'video',
-                videoContentUrl: data.videoUrl
-            } as StoryCircleProps;
-        });
+        const fetchedReels = snapshot.docs
+            .filter(doc => doc.data().deleted !== true)
+            .map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    authorId: data.userId,
+                    authorName: data.userName,
+                    authorAvatarUrl: data.userAvatarUrl || undefined,
+                    description: data.description || '',
+                    thumbnailUrl: data.thumbnailUrl || data.videoUrl || 'https://placehold.co/180x320.png',
+                    dataAIThumbnailHint: 'video story content',
+                    timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
+                    storyType: 'video',
+                    videoContentUrl: data.videoUrl
+                } as StoryCircleProps;
+            });
         setReels(fetchedReels);
         setLoadingReels(false);
     }, (error) => {
