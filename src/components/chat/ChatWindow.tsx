@@ -932,8 +932,10 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
                     </div>
                 )}
             </div>
-            <div className="shrink-0 h-[60px] bg-black/50 flex items-center justify-center text-sm text-white/80 !z-[260]">
-                Espaço para Anúncio
+            <div className="h-[100px] w-full flex shrink-0 items-center justify-center bg-white !z-[260]">
+                <div className="flex h-[60px] w-full max-w-[320px] items-center justify-center rounded-md bg-muted text-sm text-muted-foreground">
+                    Publicidade
+                </div>
             </div>
         </DialogContent>
       </Dialog>

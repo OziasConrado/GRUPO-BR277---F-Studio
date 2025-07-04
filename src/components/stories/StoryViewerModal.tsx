@@ -440,8 +440,10 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
   const needsTruncation = description.length > 80;
 
   const AdMobSpace = () => (
-    <div className="h-[100px] bg-secondary/20 flex items-center justify-center text-sm text-secondary-foreground w-full">
-      Banner AdMob (320x50 ou similar)
+    <div className="h-[100px] w-full bg-white flex items-center justify-center">
+        <div className="flex h-[60px] w-full max-w-[320px] items-center justify-center rounded-md bg-muted text-sm text-muted-foreground">
+            Publicidade
+        </div>
     </div>
   );
 
@@ -491,7 +493,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
             </DialogHeader>
 
             {/* Right-side Reaction Buttons */}
-            <div className="absolute right-2 sm:right-4 bottom-[116px] z-[220] flex flex-col items-center space-y-2 bg-black/25 p-2 rounded-full">
+            <div className="absolute right-2 sm:right-4 bottom-[110px] z-[220] flex flex-col items-center space-y-2 bg-black/25 p-2 rounded-full">
               <Button 
                 variant="ghost" 
                 onClick={() => handleStoryReactionClick('thumbsUp')} 
@@ -548,7 +550,6 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
 
             {/* Bottom overlays container */}
             <div className="absolute bottom-0 left-0 right-0 z-[215] flex flex-col">
-              {/* Translucent Text Overlay */}
               <div
                 className={cn(
                   "pr-[70px] sm:pr-[80px] text-white",
@@ -591,11 +592,9 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
                     )}
                 </div>
               </div>
+              
+              <div className="w-full bg-black h-4 shrink-0"></div>
 
-              {/* Solid Black Bar */}
-              <div className="h-4 w-full bg-black shrink-0"></div>
-
-              {/* Ad Banner */}
               <div className="shrink-0">
                 <AdMobSpace />
               </div>

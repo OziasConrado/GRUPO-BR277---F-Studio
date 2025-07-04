@@ -1144,7 +1144,11 @@ export default function PostCard({
               <div className="flex-grow flex items-center justify-center p-1 sm:p-2 overflow-hidden">
                 {selectedPostImage && <div className="relative w-full h-full max-w-full max-h-full mx-auto"><Image src={selectedPostImage} alt={dataAIImageHint || "Post image ampliada"} fill style={{objectFit: 'contain'}} data-ai-hint={dataAIUploadedImageHint || dataAIImageHint || "social media post zoomed"}/></div>}
               </div>
-              <div className="shrink-0 h-[100px] bg-gray-700/50 flex items-center justify-center text-sm text-white/80 !z-[210]">Espaço para Banner AdMob</div>
+              <div className="h-[100px] w-full flex shrink-0 items-center justify-center bg-white !z-[210]">
+                <div className="flex h-[60px] w-full max-w-[320px] items-center justify-center rounded-md bg-muted text-sm text-muted-foreground">
+                    Publicidade
+                </div>
+              </div>
           </DialogContent>
       </Dialog>
     </>
