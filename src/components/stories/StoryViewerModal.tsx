@@ -450,7 +450,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent
-          className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none !bg-black/90 !p-0 flex flex-col !translate-x-0 !translate-y-0"
+          className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none !bg-black/95 !p-0 flex flex-col !translate-x-0 !translate-y-0"
           onEscapeKeyDown={onClose}
         >
           <DialogHeader className="absolute top-0 left-0 right-0 shrink-0 p-2 sm:p-3 flex flex-row justify-end items-center bg-gradient-to-b from-black/50 to-transparent !z-[210]">
@@ -490,7 +490,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
             {/* Description Overlay */}
             <div 
               className={cn(
-                "absolute bottom-[105px] left-0 right-0 z-[215] p-3 text-white transition-all duration-300 ease-in-out",
+                "absolute bottom-[110px] left-0 right-0 z-[215] p-3 text-white transition-all duration-300 ease-in-out",
                 isDescriptionExpanded 
                   ? "bg-black/60 backdrop-blur-sm max-h-[70vh] overflow-y-auto rounded-t-lg" 
                   : "bg-gradient-to-t from-black/70 to-transparent max-h-[40vh] pointer-events-none"
@@ -533,7 +533,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
             </div>
 
             {/* Reaction Buttons */}
-            <div className="absolute right-2 sm:right-4 bottom-[175px] z-[220] flex flex-col items-center space-y-2 bg-black/25 p-2 rounded-full">
+            <div className="absolute right-2 sm:right-4 bottom-[110px] z-[220] flex flex-col items-center space-y-2 bg-black/25 p-2 rounded-full">
               <Button 
                 variant="ghost" 
                 onClick={() => handleStoryReactionClick('thumbsUp')} 
