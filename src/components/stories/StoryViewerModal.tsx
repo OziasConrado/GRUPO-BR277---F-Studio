@@ -450,13 +450,13 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
             {/* Description Overlay */}
             <div 
               className={cn(
-                "absolute bottom-[100px] left-0 right-0 z-[215] p-3 text-white transition-all duration-300 ease-in-out",
+                "absolute bottom-[110px] left-0 right-0 z-[215] p-3 text-white transition-all duration-300 ease-in-out",
                 isDescriptionExpanded 
                   ? "bg-black/60 backdrop-blur-sm max-h-[70vh] overflow-y-auto rounded-t-lg" 
                   : "bg-gradient-to-t from-black/70 to-transparent max-h-[40vh] pointer-events-none"
               )}
             >
-              <div className="pointer-events-auto max-w-md mx-auto">
+              <div className="pointer-events-auto max-w-md mx-auto pr-14 sm:pr-16">
                   <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-9 w-9 border-2 border-white/50">
                         {story.authorAvatarUrl && <AvatarImage src={story.authorAvatarUrl} alt={story.authorName} />}
