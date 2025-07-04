@@ -439,9 +439,8 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
   const description = story.description || '';
   const needsTruncation = description.length > 80;
 
-
   const AdMobSpace = () => (
-    <div className="shrink-0 h-[100px] bg-secondary/20 flex items-center justify-center text-sm text-secondary-foreground">
+    <div className="h-[100px] bg-secondary/20 flex items-center justify-center text-sm text-secondary-foreground w-full">
       Banner AdMob (320x50 ou similar)
     </div>
   );
@@ -450,23 +449,14 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent
-          className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none !bg-black/95 !p-0 flex flex-col !translate-x-0 !translate-y-0"
+          className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none !bg-black !p-0 !translate-x-0 !translate-y-0"
           onEscapeKeyDown={onClose}
         >
-          <DialogHeader className="absolute top-0 left-0 right-0 shrink-0 p-2 sm:p-3 flex flex-row justify-end items-center bg-gradient-to-b from-black/50 to-transparent !z-[210]">
-            <DialogTitle className="sr-only">
-              Visualizador de Reel: {story.authorName}
-            </DialogTitle>
-            <DialogDescription className="sr-only">Reel de {story.authorName}.</DialogDescription>
-            <DialogClose asChild>
-              <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full h-9 w-9 sm:h-10 sm:w-10 !z-[210] flex-shrink-0">
-                <X className="h-5 w-5 sm:h-6 sm:h-6" />
-              </Button>
-            </DialogClose>
-          </DialogHeader>
-          
-          <div className="flex-grow flex items-center justify-center p-1 sm:p-2 overflow-hidden relative">
-            <div className="relative w-full h-full max-w-md max-h-full mx-auto">
+          {/* Main container for absolute positioning */}
+          <div className="relative w-full h-full">
+
+            {/* Video/Image Background */}
+            <div className="absolute inset-0 z-0 flex items-center justify-center">
               {story.storyType === 'video' && story.videoContentUrl ? (
                 <video
                   src={story.videoContentUrl}
@@ -487,53 +477,21 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
               )}
             </div>
 
-            {/* Description Overlay */}
-            <div 
-              className={cn(
-                "absolute bottom-[110px] left-0 right-0 z-[215] p-3 text-white transition-all duration-300 ease-in-out",
-                isDescriptionExpanded 
-                  ? "bg-black/60 backdrop-blur-sm max-h-[70vh] overflow-y-auto rounded-t-lg" 
-                  : "bg-gradient-to-t from-black/70 to-transparent max-h-[40vh] pointer-events-none"
-              )}
-            >
-              <div className="pointer-events-auto max-w-md mx-auto pr-14 sm:pr-16">
-                  <button
-                    onClick={handleShowUserProfile} 
-                    className="flex items-center gap-2 mb-2 text-left hover:opacity-80 transition-opacity"
-                    aria-label={`Ver perfil de ${story.authorName}`}
-                  >
-                    <Avatar className="h-9 w-9 border-2 border-white/50">
-                        {story.authorAvatarUrl && <AvatarImage src={story.authorAvatarUrl as string} alt={story.authorName} />}
-                        <AvatarFallback>{story.authorName.substring(0,1)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                        <p className="text-base font-semibold truncate">{story.authorName}</p>
-                        <p className="text-xs text-white/70 truncate">{formattedTimestamp}</p>
-                    </div>
-                  </button>
+            {/* Header Overlay */}
+            <DialogHeader className="absolute top-0 left-0 right-0 shrink-0 p-2 sm:p-3 flex flex-row justify-end items-center bg-gradient-to-b from-black/50 to-transparent !z-[220]">
+              <DialogTitle className="sr-only">
+                Visualizador de Reel: {story.authorName}
+              </DialogTitle>
+              <DialogDescription className="sr-only">Reel de {story.authorName}.</DialogDescription>
+              <DialogClose asChild>
+                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full h-9 w-9 sm:h-10 sm:w-10 !z-[220] flex-shrink-0">
+                  <X className="h-5 w-5 sm:h-6 sm:h-6" />
+                </Button>
+              </DialogClose>
+            </DialogHeader>
 
-                  {description && (
-                    <div className="text-sm" onClick={() => !isDescriptionExpanded && needsTruncation && setIsDescriptionExpanded(true)}>
-                      <p className={cn("whitespace-pre-wrap", !isDescriptionExpanded && "line-clamp-2")}>
-                          {description}
-                      </p>
-                      {needsTruncation && !isDescriptionExpanded && (
-                          <button onClick={() => setIsDescriptionExpanded(true)} className="text-sm font-bold mt-1 hover:underline text-white/80">
-                              ...mais
-                          </button>
-                      )}
-                      {isDescriptionExpanded && (
-                          <button onClick={() => setIsDescriptionExpanded(false)} className="text-sm font-bold mt-2 hover:underline text-white/80">
-                              Ver menos
-                          </button>
-                      )}
-                    </div>
-                  )}
-              </div>
-            </div>
-
-            {/* Reaction Buttons */}
-            <div className="absolute right-2 sm:right-4 bottom-[110px] z-[220] flex flex-col items-center space-y-2 bg-black/25 p-2 rounded-full">
+            {/* Right-side Reaction Buttons */}
+            <div className="absolute right-2 sm:right-4 bottom-[116px] z-[220] flex flex-col items-center space-y-2 bg-black/25 p-2 rounded-full">
               <Button 
                 variant="ghost" 
                 onClick={() => handleStoryReactionClick('thumbsUp')} 
@@ -587,9 +545,62 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-          </div>
 
-          <AdMobSpace />
+            {/* Bottom overlays container */}
+            <div className="absolute bottom-0 left-0 right-0 z-[215] flex flex-col">
+              {/* Translucent Text Overlay */}
+              <div
+                className={cn(
+                  "pr-[70px] sm:pr-[80px] text-white",
+                  isDescriptionExpanded 
+                    ? "bg-black/60 backdrop-blur-sm max-h-[50vh] overflow-y-auto" 
+                    : "bg-gradient-to-t from-black/70 to-transparent"
+                )}
+              >
+                <div className="p-3 max-w-full pointer-events-auto">
+                    <button
+                        onClick={handleShowUserProfile} 
+                        className="flex items-center gap-2 mb-2 text-left hover:opacity-80 transition-opacity"
+                        aria-label={`Ver perfil de ${story.authorName}`}
+                    >
+                        <Avatar className="h-9 w-9 border-2 border-white/50">
+                            {story.authorAvatarUrl && <AvatarImage src={story.authorAvatarUrl as string} alt={story.authorName} />}
+                            <AvatarFallback>{story.authorName.substring(0,1)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <p className="text-base font-semibold truncate">{story.authorName}</p>
+                            <p className="text-xs text-white/70 truncate">{formattedTimestamp}</p>
+                        </div>
+                    </button>
+                    {description && (
+                        <div className="text-sm" onClick={() => !isDescriptionExpanded && needsTruncation && setIsDescriptionExpanded(true)}>
+                            <p className={cn("whitespace-pre-wrap", !isDescriptionExpanded && "line-clamp-2")}>
+                                {description}
+                            </p>
+                            {needsTruncation && !isDescriptionExpanded && (
+                                <button onClick={() => setIsDescriptionExpanded(true)} className="text-sm font-bold mt-1 hover:underline text-white/80">
+                                    ...mais
+                                </button>
+                            )}
+                            {isDescriptionExpanded && (
+                                <button onClick={() => setIsDescriptionExpanded(false)} className="text-sm font-bold mt-2 hover:underline text-white/80">
+                                    Ver menos
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </div>
+              </div>
+
+              {/* Solid Black Bar */}
+              <div className="h-4 w-full bg-black shrink-0"></div>
+
+              {/* Ad Banner */}
+              <div className="shrink-0">
+                <AdMobSpace />
+              </div>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
       
