@@ -450,7 +450,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
             {/* Description Overlay */}
             <div 
               className={cn(
-                "absolute bottom-[110px] left-0 right-0 z-[215] p-3 text-white transition-all duration-300 ease-in-out",
+                "absolute bottom-2 left-0 right-0 z-[215] p-3 text-white transition-all duration-300 ease-in-out",
                 isDescriptionExpanded 
                   ? "bg-black/60 backdrop-blur-sm max-h-[70vh] overflow-y-auto rounded-t-lg" 
                   : "bg-gradient-to-t from-black/70 to-transparent max-h-[40vh] pointer-events-none"
@@ -488,7 +488,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
               </div>
             </div>
 
-            <div className="absolute right-2 sm:right-4 bottom-[110px] sm:bottom-1/2 sm:translate-y-1/2 z-[220] flex flex-col items-center space-y-2 bg-black/25 p-2 rounded-full">
+            <div className="absolute right-2 sm:right-4 bottom-28 sm:bottom-1/2 sm:translate-y-1/2 z-[220] flex flex-col items-center space-y-2 bg-black/25 p-2 rounded-full">
               <Button 
                 variant="ghost" 
                 onClick={() => handleStoryReactionClick('thumbsUp')} 
