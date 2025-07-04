@@ -127,6 +127,11 @@ export default function ChatMessageItem({
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedUserProfile, setSelectedUserProfile] = useState<UserProfileData | null>(null);
 
+  const [isTextExpanded, setIsTextExpanded] = useState(false);
+  const MAX_CHARS_CHAT = 250;
+  const needsTruncation = text && text.length > MAX_CHARS_CHAT;
+
+
   useEffect(() => {
     if (!currentUser || !firestore || !message.id) return;
     const reactionRef = doc(firestore, 'chatMessages', message.id, 'userReactions', currentUser.uid);
@@ -292,11 +297,27 @@ export default function ChatMessageItem({
                 )}
                 
                 {text && (
-                  <div className="min-w-0">
-                    <p className="text-sm break-words whitespace-pre-wrap">
-                      {textElements || text}
-                    </p>
-                  </div>
+                    <div className="min-w-0">
+                        <p className="text-sm break-words whitespace-pre-wrap">
+                            {needsTruncation && !isTextExpanded ? (
+                                <>
+                                    {text.substring(0, MAX_CHARS_CHAT)}...
+                                    <Button variant="link" size="sm" className="p-0 h-auto text-xs text-primary inline align-baseline ml-1" onClick={(e) => { e.stopPropagation(); setIsTextExpanded(true); }}>
+                                        Ver mais
+                                    </Button>
+                                </>
+                            ) : (
+                                <>
+                                    {textElements || text}
+                                    {needsTruncation && isTextExpanded && (
+                                        <Button variant="link" size="sm" className="p-0 h-auto text-xs text-primary block mt-1" onClick={(e) => { e.stopPropagation(); setIsTextExpanded(false); }}>
+                                            Ver menos
+                                        </Button>
+                                    )}
+                                </>
+                            )}
+                        </p>
+                    </div>
                 )}
 
                 {file && file.type === 'audio' && (
