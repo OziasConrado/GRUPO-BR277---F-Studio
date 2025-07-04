@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef, type ChangeEvent, useMemo, useCallback } from 'react';
@@ -484,7 +483,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
   const needsTruncation = description.length > 80;
 
   const AdMobSpace = () => (
-    <div className="h-[100px] w-full flex items-center justify-center bg-white">
+    <div className="h-[100px] w-full flex shrink-0 items-center justify-center bg-white !z-[260]">
         <div className="flex h-[60px] w-full max-w-[320px] items-center justify-center rounded-md bg-muted text-sm text-muted-foreground">
             Publicidade
         </div>
@@ -607,13 +606,12 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
 
             {/* Bottom overlays container */}
             <div className="absolute bottom-0 left-0 right-0 z-[215] flex flex-col">
-              <div className="h-4 bg-black w-full shrink-0" />
               <div
                 className={cn(
                   "pr-[70px] sm:pr-[80px] text-white",
                   isDescriptionExpanded || isEditing
                     ? "bg-black/60 backdrop-blur-sm max-h-[50vh] overflow-y-auto" 
-                    : "bg-gradient-to-t from-black/70 to-transparent"
+                    : ""
                 )}
               >
                 <div className="p-3 max-w-full pointer-events-auto">
@@ -663,7 +661,6 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
                     )}
                 </div>
               </div>
-              
               <div className="shrink-0">
                 <AdMobSpace />
               </div>
