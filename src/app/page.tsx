@@ -47,7 +47,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useAuth } from '@/contexts/AuthContext';
 import { firestore, storage } from '@/lib/firebase/client';
-import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp, where, getDocs, doc, writeBatch } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp, where, getDocs, doc, writeBatch, getDoc } from 'firebase/firestore';
 import { ref, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -330,7 +330,7 @@ export default function FeedPage() {
   useEffect(() => {
     if (!firestore) return setLoadingReels(false);
     setLoadingReels(true);
-    const q = query(collection(firestore, 'reels'), orderBy('timestamp', 'desc'), limit(15));
+    const q = query(collection(firestore, 'reels'), where("deleted", "!=", true), orderBy('timestamp', 'desc'), limit(15));
     const unsubscribe = onSnapshot(q, (snapshot) => {
         const fetchedReels = snapshot.docs.map(doc => {
             const data = doc.data();
@@ -588,6 +588,7 @@ export default function FeedPage() {
           videoUrl: mediaUrl,
           reactions: { thumbsUp: 0, thumbsDown: 0 },
           timestamp: serverTimestamp(),
+          deleted: false,
         });
         toast({ title: "Reel Publicado!", description: "Seu vídeo está disponível para a comunidade." });
       } else { // 'image', 'text' or 'poll' post

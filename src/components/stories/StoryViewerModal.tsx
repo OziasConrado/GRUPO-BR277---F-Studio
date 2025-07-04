@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
-import { X, ThumbsUp, ThumbsDown, MessageSquare, Share2, MoreVertical, Flag, Send, Loader2, UserCircle } from 'lucide-react';
+import { X, ThumbsUp, ThumbsDown, MessageSquare, Share2, MoreVertical, Flag, Send, Loader2, UserCircle, Edit3, Trash2 } from 'lucide-react';
 import type { StoryCircleProps } from './StoryCircle';
 import Image from 'next/image';
 import {
@@ -48,6 +48,7 @@ import {
   limit,
   getDocs,
   writeBatch,
+  updateDoc,
 } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -183,6 +184,14 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
   // User Profile Modal State
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedUserProfile, setSelectedUserProfile] = useState<UserProfileData | null>(null);
+
+  // New state for edit/delete
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedDescription, setEditedDescription] = useState(story?.description || '');
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+
+  const isAuthor = currentUser?.uid === story?.authorId;
+
 
   // Effect to fetch real-time data for the story
   useEffect(() => {
@@ -427,6 +436,41 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
       toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar o perfil do usuário.' });
     }
   }, [story, toast]);
+  
+  const handleUpdateReel = async () => {
+    if (!story || !isAuthor || !firestore) return;
+    if (editedDescription.trim() === (story.description || '').trim()) {
+        setIsEditing(false);
+        return;
+    }
+
+    const storyRef = doc(firestore, 'reels', story.id);
+    try {
+        await updateDoc(storyRef, {
+            description: editedDescription.trim(),
+        });
+        toast({ title: 'Reel atualizado com sucesso!' });
+        setIsEditing(false);
+        if (story) story.description = editedDescription.trim(); // Optimistic update
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível atualizar o Reel.' });
+    }
+  };
+
+  const handleDeleteReel = async () => {
+    if (!story || !isAuthor || !firestore) return;
+
+    const storyRef = doc(firestore, 'reels', story.id);
+    try {
+        await updateDoc(storyRef, { deleted: true });
+        toast({ title: 'Reel excluído!' });
+        onClose();
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível excluir o Reel.' });
+    }
+    setIsDeleteAlertOpen(false);
+  };
+
 
   const formattedTimestamp = useMemo(() => {
     if (!story?.timestamp) return '';
@@ -440,7 +484,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
   const needsTruncation = description.length > 80;
 
   const AdMobSpace = () => (
-    <div className="h-[100px] w-full bg-white flex items-center justify-center">
+    <div className="h-[100px] w-full flex items-center justify-center bg-white">
         <div className="flex h-[60px] w-full max-w-[320px] items-center justify-center rounded-md bg-muted text-sm text-muted-foreground">
             Publicidade
         </div>
@@ -540,20 +584,34 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" side="left" className="bg-background/80 backdrop-blur-md border-slate-700/50 text-foreground">
-                  <DropdownMenuItem onClick={() => setIsReportModalOpenStory(true)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
-                    <Flag className="mr-2 h-4 w-4" />
-                    <span>Reportar Reel</span>
-                  </DropdownMenuItem>
+                  {isAuthor ? (
+                      <>
+                        <DropdownMenuItem onClick={() => { setIsEditing(true); setEditedDescription(story?.description || ''); }}>
+                          <Edit3 className="mr-2 h-4 w-4" />
+                          <span>Editar Descrição</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setIsDeleteAlertOpen(true)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          <span>Excluir Reel</span>
+                        </DropdownMenuItem>
+                      </>
+                    ) : (
+                      <DropdownMenuItem onClick={() => setIsReportModalOpenStory(true)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                        <Flag className="mr-2 h-4 w-4" />
+                        <span>Reportar Reel</span>
+                      </DropdownMenuItem>
+                    )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
 
             {/* Bottom overlays container */}
             <div className="absolute bottom-0 left-0 right-0 z-[215] flex flex-col">
+              <div className="h-4 bg-black w-full shrink-0" />
               <div
                 className={cn(
                   "pr-[70px] sm:pr-[80px] text-white",
-                  isDescriptionExpanded 
+                  isDescriptionExpanded || isEditing
                     ? "bg-black/60 backdrop-blur-sm max-h-[50vh] overflow-y-auto" 
                     : "bg-gradient-to-t from-black/70 to-transparent"
                 )}
@@ -573,7 +631,20 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
                             <p className="text-xs text-white/70 truncate">{formattedTimestamp}</p>
                         </div>
                     </button>
-                    {description && (
+                    {isEditing ? (
+                        <div className="text-sm p-1 w-full">
+                            <Textarea
+                                value={editedDescription}
+                                onChange={(e) => setEditedDescription(e.target.value)}
+                                className="w-full bg-black/50 text-white border-white/50 min-h-[80px]"
+                                autoFocus
+                            />
+                            <div className="flex justify-end gap-2 mt-2">
+                                <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>Cancelar</Button>
+                                <Button size="sm" onClick={handleUpdateReel}>Salvar</Button>
+                            </div>
+                        </div>
+                    ) : description && (
                         <div className="text-sm" onClick={() => !isDescriptionExpanded && needsTruncation && setIsDescriptionExpanded(true)}>
                             <p className={cn("whitespace-pre-wrap", !isDescriptionExpanded && "line-clamp-2")}>
                                 {description}
@@ -593,8 +664,6 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
                 </div>
               </div>
               
-              <div className="w-full bg-black h-4 shrink-0"></div>
-
               <div className="shrink-0">
                 <AdMobSpace />
               </div>
@@ -696,6 +765,24 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <RadixAlertDialogTitle>Confirmar Exclusão</RadixAlertDialogTitle>
+            <RadixAlertDialogDescription>
+              Tem certeza que deseja excluir este Reel? Esta ação é irreversível.
+            </RadixAlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteReel} className="bg-destructive hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <UserProfileModal
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
