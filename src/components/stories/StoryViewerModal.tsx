@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef, type ChangeEvent, useMemo } from 'react';
+import React, { useState, useEffect, useRef, type ChangeEvent, useMemo, useCallback } from 'react';
 import { Dialog, DialogContent, DialogClose, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -51,6 +51,7 @@ import {
 } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import UserProfileModal, { type UserProfileData } from '@/components/profile/UserProfileModal';
 
 // Interfaces
 interface CommentProps {
@@ -178,6 +179,10 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
   const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  
+  // User Profile Modal State
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [selectedUserProfile, setSelectedUserProfile] = useState<UserProfileData | null>(null);
 
   // Effect to fetch real-time data for the story
   useEffect(() => {
@@ -388,6 +393,41 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
     }
   };
 
+  const handleShowUserProfile = useCallback(async () => {
+    if (!story?.authorId) return;
+    if (!firestore) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Serviço de banco de dados indisponível.' });
+      return;
+    }
+
+    try {
+      const userDocRef = doc(firestore, 'Usuarios', story.authorId);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        setSelectedUserProfile({
+          id: userDoc.id,
+          name: userData.displayName || 'Usuário',
+          avatarUrl: userData.photoURL,
+          location: userData.location,
+          bio: userData.bio,
+          instagramUsername: userData.instagramUsername,
+        });
+      } else {
+        setSelectedUserProfile({
+          id: story.authorId,
+          name: story.authorName || 'Usuário',
+          avatarUrl: story.authorAvatarUrl,
+        });
+      }
+      setIsProfileModalOpen(true);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar o perfil do usuário.' });
+    }
+  }, [story, toast]);
+
   const formattedTimestamp = useMemo(() => {
     if (!story?.timestamp) return '';
     return formatDistanceToNow(new Date(story.timestamp), { addSuffix: true, locale: ptBR })
@@ -450,23 +490,27 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
             {/* Description Overlay */}
             <div 
               className={cn(
-                "absolute bottom-2 left-0 right-0 z-[215] p-3 text-white transition-all duration-300 ease-in-out",
+                "absolute bottom-[100px] left-0 right-0 z-[215] p-3 text-white transition-all duration-300 ease-in-out",
                 isDescriptionExpanded 
                   ? "bg-black/60 backdrop-blur-sm max-h-[70vh] overflow-y-auto rounded-t-lg" 
                   : "bg-gradient-to-t from-black/70 to-transparent max-h-[40vh] pointer-events-none"
               )}
             >
               <div className="pointer-events-auto max-w-md mx-auto pr-14 sm:pr-16">
-                  <div className="flex items-center gap-2 mb-2">
+                  <button
+                    onClick={handleShowUserProfile} 
+                    className="flex items-center gap-2 mb-2 text-left hover:opacity-80 transition-opacity"
+                    aria-label={`Ver perfil de ${story.authorName}`}
+                  >
                     <Avatar className="h-9 w-9 border-2 border-white/50">
-                        {story.authorAvatarUrl && <AvatarImage src={story.authorAvatarUrl} alt={story.authorName} />}
+                        {story.authorAvatarUrl && <AvatarImage src={story.authorAvatarUrl as string} alt={story.authorName} />}
                         <AvatarFallback>{story.authorName.substring(0,1)}</AvatarFallback>
                     </Avatar>
                     <div>
                         <p className="text-base font-semibold truncate">{story.authorName}</p>
                         <p className="text-xs text-white/70 truncate">{formattedTimestamp}</p>
                     </div>
-                  </div>
+                  </button>
 
                   {description && (
                     <div className="text-sm" onClick={() => !isDescriptionExpanded && needsTruncation && setIsDescriptionExpanded(true)}>
@@ -488,7 +532,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
               </div>
             </div>
 
-            <div className="absolute right-2 sm:right-4 bottom-28 sm:bottom-1/2 sm:translate-y-1/2 z-[220] flex flex-col items-center space-y-2 bg-black/25 p-2 rounded-full">
+            <div className="absolute right-2 sm:right-4 bottom-[120px] sm:bottom-1/2 sm:translate-y-1/2 z-[220] flex flex-col items-center space-y-2 bg-black/25 p-2 rounded-full">
               <Button 
                 variant="ghost" 
                 onClick={() => handleStoryReactionClick('thumbsUp')} 
@@ -641,6 +685,11 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <UserProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        user={selectedUserProfile}
+      />
     </>
   );
 }
