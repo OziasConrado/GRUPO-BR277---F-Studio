@@ -96,7 +96,7 @@ const getTrafficInfo = ai.defineTool(
                 
                 let distance = "desconhecida";
                 if (route.distanceMeters) {
-                    const distanceKm = (route.distanceMeters / 100).toFixed(1);
+                    const distanceKm = (route.distanceMeters / 1000).toFixed(1);
                     distance = `${distanceKm} km`;
                 }
 
