@@ -180,7 +180,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             </TooltipContent>
           </Tooltip>
 
-           <DropdownMenu onOpenChange={(open) => { if(open && unreadCount > 0) handleMarkAsRead(); }}>
+           <DropdownMenu onOpenChange={(open) => { if(!open && unreadCount > 0) handleMarkAsRead(); }}>
             <Tooltip>
                 <TooltipTrigger asChild>
                     <DropdownMenuTrigger asChild>
