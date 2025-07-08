@@ -15,11 +15,9 @@ import {
   Link as LinkIcon, 
   Video, 
   MessageCircle,
-  Sparkles // New icon for Copilot
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useChat } from "@/contexts/ChatContext";
-import CopilotModal from "@/components/copilot/CopilotModal"; // Import the new modal
 
 interface Feature {
   icon: React.ElementType;
@@ -43,11 +41,9 @@ const AdPlaceholder = () => (
 
 const MoreFeaturesSheet: React.FC<MoreFeaturesSheetProps> = ({ children }) => {
   const { openChat } = useChat();
-  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
 
   const mainFeatures: Feature[] = [
     { icon: Video, label: "AO VIVO", href: "/streaming" },
-    { icon: Sparkles, label: "Copiloto (IA)", onClick: () => setIsCopilotOpen(true) },
     { icon: MessageCircle, label: "Comunidade277", onClick: openChat },
   ];
 
@@ -124,7 +120,7 @@ const MoreFeaturesSheet: React.FC<MoreFeaturesSheetProps> = ({ children }) => {
           
           <div className="flex-grow overflow-y-auto p-2 space-y-4">
               {/* Main Features */}
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                   {mainFeatures.map(feature => renderFeature(feature, true))}
               </div>
 
@@ -140,7 +136,6 @@ const MoreFeaturesSheet: React.FC<MoreFeaturesSheetProps> = ({ children }) => {
           <AdPlaceholder />
         </SheetContent>
       </Sheet>
-      <CopilotModal isOpen={isCopilotOpen} onClose={() => setIsCopilotOpen(false)} />
     </>
   );
 };
