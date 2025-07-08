@@ -31,8 +31,8 @@ const getTrafficInfo = ai.defineTool(
         name: 'getTrafficInfo',
         description: 'Obtém informações de trânsito em tempo real, incluindo tempo de viagem, distância e um resumo das condições entre dois locais.',
         inputSchema: z.object({
-            origin: z.string().describe('A cidade ou ponto de partida.'),
-            destination: z.string().describe('A cidade ou ponto de destino.'),
+            origin: z.string().describe('A cidade ou ponto de partida. Para maior precisão, inclua estado e país. Ex: "Curitiba, PR, Brasil".'),
+            destination: z.string().describe('A cidade ou ponto de destino. Para maior precisão, inclua estado e país. Ex: "São Paulo, SP, Brasil".'),
         }),
         outputSchema: z.object({
             travelTime: z.string().describe('O tempo estimado de viagem, por exemplo, "1 hora e 30 minutos".'),
@@ -237,7 +237,7 @@ const copilotFlow = ai.defineFlow(
 - Use uma linguagem simples e direta.
 
 **Funções e Habilidades:**
-- **Consulta de Rota:** Quando o usuário perguntar sobre uma rota (ex: "de Curitiba para São Paulo" ou "qual o trânsito entre Curitiba e Araucária?"), sua primeira ação DEVE ser usar a ferramenta \`getTrafficInfo\` com as localidades fornecidas. Não peça mais detalhes como ruas ou bairros, a ferramenta funciona com nomes de cidades.
+- **Consulta de Rota:** Quando o usuário perguntar sobre uma rota (ex: "de Curitiba para São Paulo" ou "qual o trânsito entre Curitiba e Araucária?"), sua primeira ação DEVE ser usar a ferramenta \`getTrafficInfo\` com as localidades fornecidas. Ao chamar a ferramenta, **sempre adicione o estado e o país para desambiguação (ex: "Curitiba, PR, Brasil")**, a menos que já estejam presentes na pergunta do usuário. Não peça mais detalhes como ruas ou bairros, a ferramenta funciona com nomes de cidades.
 - **Condições de Trânsito:** Baseie sua resposta SOMENTE nas informações retornadas pela ferramenta \`getTrafficInfo\`.
 - **Tratamento de Erros:** Se a ferramenta retornar um 'summary' que indique um erro (como falha na API, chave não encontrada, rota não encontrada, etc.) ou se o tempo de viagem for "desconhecido", sua resposta deve informar o usuário sobre o problema de forma amigável.
 
