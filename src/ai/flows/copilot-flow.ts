@@ -61,8 +61,8 @@ const getTrafficInfo = ai.defineTool(
                     'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.travelAdvisory,routes.polyline'
                 },
                 body: JSON.stringify({
-                    origin: { address: `${origin}, Paraná, Brasil` },
-                    destination: { address: `${destination}, Paraná, Brasil` },
+                    origin: { address: origin },
+                    destination: { address: destination },
                     travelMode: 'DRIVE',
                     computeAlternativeRoutes: false,
                     languageCode: "pt-BR",
