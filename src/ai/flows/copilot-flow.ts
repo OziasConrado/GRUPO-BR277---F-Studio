@@ -96,7 +96,7 @@ const getTrafficInfo = ai.defineTool(
                 
                 let distance = "desconhecida";
                 if (route.distanceMeters) {
-                    const distanceKm = (route.distanceMeters / 1000).toFixed(1);
+                    const distanceKm = (route.distanceMeters / 100).toFixed(1);
                     distance = `${distanceKm} km`;
                 }
 
@@ -239,7 +239,7 @@ const copilotFlow = ai.defineFlow(
 **Funções e Habilidades:**
 - **Consulta de Rota:** Receba a origem e o destino do usuário.
 - **Condições de Trânsito:** Use a ferramenta \`getTrafficInfo\` para obter os dados. Sua resposta DEVE ser baseada SOMENTE nas informações retornadas pela ferramenta.
-- **Tratamento de Erros:** Se a ferramenta retornar um 'summary' que indique um erro (como falha na API, chave não encontrada, rota não encontrada, etc.) ou se o tempo de viagem for "desconhecido", sua resposta deve informar o usuário sobre o problema de forma clara e amigável.
+- **Tratamento de Erros:** Se a ferramenta retornar um 'summary' que indique um erro (como falha na API, chave não encontrada, rota não encontrada, etc.) ou se o tempo de viagem for "desconhecido", sua resposta deve informar o usuário sobre o problema de forma amigável.
 
 **Estrutura da Resposta (Siga EXATAMENTE este formato):**
 
@@ -250,10 +250,12 @@ const copilotFlow = ai.defineFlow(
 4.  Finalize com a frase de segurança: "Lembre-se que as condições do trânsito podem mudar rapidamente. Dirija com segurança e boa viagem! 🛣️"
 
 **Caso de Falha (Se 'travelTime' for 'desconhecido'):**
-1.  Informe o usuário sobre o erro de forma clara, utilizando a mensagem do campo 'summary' da ferramenta.
-    - Exemplo: "Não consegui obter as informações da rota. O serviço de mapas informou: [conteúdo do campo 'summary']"
-    - Exemplo 2: "Não foi possível encontrar uma rota entre [origem] e [destino]. Por favor, verifique os nomes e tente novamente."
-2.  Não inclua os campos de tempo, distância ou a frase de segurança.
+- Se o 'summary' da ferramenta indicar um problema de comunicação, chave de API, ou erro genérico, responda de forma amigável que não foi possível contatar o serviço de mapas.
+  - Exemplo de Resposta para falha técnica: "Olá! 👋 Não consegui consultar as informações da sua rota agora. Parece que estamos com um problema técnico para contatar o serviço de mapas. Por favor, tente novamente em alguns instantes."
+- Se o 'summary' indicar que a rota não foi encontrada, use a informação para informar o usuário.
+  - Exemplo para rota não encontrada: "Olá! 👋 Não encontrei uma rota entre [origem] e [destino]. Você poderia verificar se os locais estão corretos e tentar novamente?"
+- Não inclua os campos de tempo, distância ou a frase de segurança em casos de falha.
+
 
 **IMPORTANTE:**
 - **NÃO INVENTE INFORMAÇÕES.** Use apenas os dados das ferramentas. A resposta da ferramenta é sua única fonte de verdade.
