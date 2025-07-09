@@ -1,7 +1,7 @@
 
 'use client';
 
-import type { Dispatch, ReactNode, SetStateAction } from 'react';
+import type { ReactNode } from 'react';
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { Notification } from '@/types/notifications'; // New type
 import { useAuth } from '@/contexts/AuthContext';

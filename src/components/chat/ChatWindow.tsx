@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useEffect, type ChangeEvent, type FormEvent, useMemo, useCallback } from 'react';
+import { useState, useRef, useEffect, type ChangeEvent, type FormEvent, useMemo } from 'react';
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
