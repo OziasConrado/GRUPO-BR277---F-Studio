@@ -97,11 +97,10 @@ async function createMentions(text: string, postId: string, fromUser: { uid: str
         });
 
         if (longestMatchUser) {
-            const matchedUser = longestMatchUser as { id: string; displayName: string };
-            if (matchedUser.id !== fromUser.uid) {
-                foundUsers.set(matchedUser.displayName, { id: matchedUser.id });
+            if (longestMatchUser.id !== fromUser.uid) {
+                foundUsers.set(longestMatchUser.displayName, { id: longestMatchUser.id });
             }
-            for (let i = 0; i < matchedUser.displayName.length + 1; i++) {
+            for (let i = 0; i < longestMatchUser.displayName.length + 1; i++) {
                 processedIndices.add(atIndex + i);
             }
         }
