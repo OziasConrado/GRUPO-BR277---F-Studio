@@ -118,15 +118,9 @@ export default function GeradorQrCodePage() {
                   value={qrCodeValue}
                   size={200}
                   bgColor={"#ffffff"}
-                  fgColor={"#002776"} // Primary color from theme (example)
-                  level={"H"} // High correction level
+                  fgColor={"#002776"}
+                  level={"H"}
                   includeMargin={true}
-                  imageSettings={{ // Optional: add a small logo in the center
-                    // src: "/logo-rota-segura-icon.png", // Path to your small logo icon
-                    // height: 30,
-                    // width: 30,
-                    // excavate: true,
-                  }}
                 />
               </div>
               <Button onClick={handleDownloadQrCode} className="w-full max-w-xs mx-auto mt-6 rounded-full">
@@ -158,5 +152,3 @@ export default function GeradorQrCodePage() {
     </div>
   );
 }
-
-    
