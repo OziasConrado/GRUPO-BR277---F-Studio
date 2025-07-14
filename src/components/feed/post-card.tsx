@@ -733,7 +733,7 @@ export default function PostCard({
 
   const handleSharePost = async () => {
     const shareData = {
-      title: `Post no Rota Segura por ${userName}`,
+      title: `Post no GRUPO BR277 por ${userName}`,
       text: text,
       url: window.location.href, 
     };
@@ -756,7 +756,7 @@ export default function PostCard({
       }
     } else {
       try {
-        await navigator.clipboard.writeText(`${shareData.text}\n\nVeja no Rota Segura: ${shareData.url}`);
+        await navigator.clipboard.writeText(`${shareData.text}\n\nVeja no GRUPO BR277: ${shareData.url}`);
         toast({
           title: "Link Copiado!",
           description: "O conteúdo do post foi copiado para a área de transferência.",

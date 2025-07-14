@@ -16,7 +16,7 @@ const ptSans = PT_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'Rota Segura',
+  title: 'GRUPO BR277',
   description: 'Aplicativo para caminhoneiros e viajantes.',
 };
 

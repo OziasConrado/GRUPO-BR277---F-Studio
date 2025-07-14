@@ -50,7 +50,7 @@ export default function GeradorQrCodePage() {
     if (canvas) {
       const link = document.createElement('a');
       link.href = canvas.toDataURL("image/png");
-      link.download = "qrcode_rotasegura.png";
+      link.download = "qrcode_grupobr277.png";
       link.click();
       toast({ title: 'Download Iniciado', description: 'O QR Code está sendo baixado.' });
     } else {

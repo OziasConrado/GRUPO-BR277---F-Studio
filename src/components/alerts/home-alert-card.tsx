@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -92,7 +93,7 @@ export default function HomeAlertCard({ alert }: HomeAlertCardProps) {
       avatarUrl: alert.userAvatarUrl,
       dataAIAvatarHint: alert.dataAIAvatarHint,
       location: alert.userLocation,
-      bio: alert.bio || "Usuário da comunidade Rota Segura.",
+      bio: alert.bio || "Usuário da comunidade GRUPO BR277.",
       instagramUsername: alert.instagramUsername,
     });
     setIsProfileModalOpen(true);

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useRef, type ChangeEvent, useMemo, useCallback } from 'react';
@@ -326,7 +327,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
     if (navigator.share && story?.videoContentUrl) {
       navigator.share({
         title: `Confira este Reel: ${story.authorName}`,
-        text: `Assista ao Reel "${story.authorName}" no Rota Segura!`,
+        text: `Assista ao Reel "${story.authorName}" no GRUPO BR277!`,
         url: window.location.href, // Placeholder URL
       }).then(() => {
         toast({ title: "Reel compartilhado!", description: "Conteúdo enviado com sucesso." });

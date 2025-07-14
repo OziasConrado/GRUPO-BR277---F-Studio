@@ -1,17 +1,17 @@
 
 import Image from 'next/image';
 
-interface RotaSeguraLogoProps {
+interface GrupoBR277LogoProps {
   className?: string;
   width?: number;
   height?: number;
 }
 
-export function RotaSeguraLogo({ className, width = 150, height = 40 }: RotaSeguraLogoProps) {
+export function GrupoBR277Logo({ className, width = 150, height = 40 }: GrupoBR277LogoProps) {
   return (
     <Image
       src={`https://placehold.co/${width}x${height}.png`}
-      alt="Rota Segura Logo"
+      alt="GRUPO BR277 Logo"
       width={width}
       height={height}
       className={className}
