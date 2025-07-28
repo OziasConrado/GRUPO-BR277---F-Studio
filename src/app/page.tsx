@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useRef, type ChangeEvent, useCallback, type FormEvent } from 'react';
@@ -60,7 +59,12 @@ interface MentionUser {
   displayName: string;
 }
 
-async function createMentions(text: string, postId: string, fromUser: { uid: string, displayName: string | null, photoURL: string | null }, type: 'mention_post' | 'mention_comment') {
+async function createMentions(
+    text: string, 
+    postId: string, 
+    fromUser: { uid: string, displayName: string | null, photoURL: string | null }, 
+    type: 'mention_post' | 'mention_comment'
+) {
     if (!firestore) return;
 
     const foundUsers = new Map<string, { id: string }>();
@@ -89,11 +93,12 @@ async function createMentions(text: string, postId: string, fromUser: { uid: str
         
         let longestMatchUser: MentionUser | null = null;
         
-        // SUBSTITUA o forEach existente por este bloco de código
-        querySnapshot.forEach(userDoc => {
+        // ---- INÍCIO DA CORREÇÃO PRINCIPAL ----
+        // Trocamos o .forEach por um loop for...of, que é mais claro para o TypeScript
+        for (const userDoc of querySnapshot.docs) {
             const userData = userDoc.data();
 
-            // Adicionamos uma verificação para garantir que 'displayName' existe e é uma string
+            // Garantimos que displayName existe e é uma string
             if (userData && typeof userData.displayName === 'string') {
                 const displayName: string = userData.displayName;
 
@@ -103,17 +108,16 @@ async function createMentions(text: string, postId: string, fromUser: { uid: str
 
                     if (isFullWord) {
                         if (!longestMatchUser || displayName.length > longestMatchUser.displayName.length) {
-                            // Sendo explícitos sobre o tipo do objeto que estamos criando
-                            const newMatch: MentionUser = { id: userDoc.id, displayName: displayName };
-                            longestMatchUser = newMatch;
+                            longestMatchUser = { id: userDoc.id, displayName: displayName };
                         }
                     }
                 }
             }
-        });
-
+        }
+        // ---- FIM DA CORREÇÃO PRINCIPAL ----
 
         if (longestMatchUser) {
+            // Agora, aqui o TypeScript terá certeza do tipo de longestMatchUser
             if (longestMatchUser.id !== fromUser.uid) {
                 foundUsers.set(longestMatchUser.displayName, { id: longestMatchUser.id });
             }
