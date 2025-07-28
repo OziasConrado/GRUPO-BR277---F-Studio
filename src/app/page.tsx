@@ -55,6 +55,11 @@ import { ToastAction } from '@/components/ui/toast';
 import UserProfileModal, { type UserProfileData } from '@/components/profile/UserProfileModal';
 
 
+interface MentionUser {
+  id: string;
+  displayName: string;
+}
+
 async function createMentions(text: string, postId: string, fromUser: { uid: string, displayName: string | null, photoURL: string | null }, type: 'mention_post' | 'mention_comment') {
     if (!firestore) return;
 
@@ -82,7 +87,7 @@ async function createMentions(text: string, postId: string, fromUser: { uid: str
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) continue;
         
-        let longestMatchUser: { id: string; displayName: string } | null = null;
+        let longestMatchUser: MentionUser | null = null;
         
         querySnapshot.forEach(userDoc => {
             const displayName = userDoc.data().displayName;
