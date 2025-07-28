@@ -331,6 +331,7 @@ const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData
 
     // Listen for real-time updates to the poll itself
     useEffect(() => {
+        if (!firestore || !postId) return;
         const postRef = doc(firestore, 'posts', postId);
         const unsub = onSnapshot(postRef, (doc) => {
             if (doc.exists() && doc.data().poll) {
