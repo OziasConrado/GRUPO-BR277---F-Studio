@@ -575,6 +575,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     if (mentionQuery.length > 0 && firestore) {
       setLoadingMentions(true);
       const fetchUsers = async () => {
+        if (!firestore) return;
         const usersRef = collection(firestore, "Usuarios");
         const q = query(
           usersRef,
