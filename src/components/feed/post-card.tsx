@@ -62,7 +62,12 @@ import { useRouter } from 'next/navigation';
 import { Progress } from '@/components/ui/progress';
 
 
-async function createMentions(text: string, postId: string, fromUser: { uid: string, displayName: string | null, photoURL: string | null }, type: 'mention_post' | 'mention_comment') {
+async function createMentions(
+    text: string, 
+    postId: string, 
+    fromUser: { uid: string, displayName: string | null, photoURL: string | null }, 
+    type: 'mention_post' | 'mention_comment'
+) {
     if (!firestore) return;
 
     const foundUsers = new Map<string, { id: string }>();
@@ -91,17 +96,26 @@ async function createMentions(text: string, postId: string, fromUser: { uid: str
         
         let longestMatchUser: { id: string; displayName: string } | null = null;
         
-        querySnapshot.forEach(userDoc => {
-            const displayName = userDoc.data().displayName;
-            if (queryableText.toLowerCase().startsWith(displayName.toLowerCase())) {
-                const nextChar = text[atIndex + 1 + displayName.length];
-                if (nextChar === undefined || !/[\p{L}\p{N}]/u.test(nextChar)) {
-                    if (!longestMatchUser || displayName.length > longestMatchUser.displayName.length) {
-                        longestMatchUser = { id: userDoc.id, displayName };
+        // Trocamos o .forEach por um loop for...of, que é mais claro para o TypeScript
+        for (const userDoc of querySnapshot.docs) {
+            const userData = userDoc.data();
+
+            // Garantimos que displayName existe e é uma string
+            if (userData && typeof userData.displayName === 'string') {
+                const displayName: string = userData.displayName;
+
+                if (queryableText.toLowerCase().startsWith(displayName.toLowerCase())) {
+                    const nextChar = text[atIndex + 1 + displayName.length];
+                    const isFullWord = nextChar === undefined || !/[\p{L}\p{N}]/u.test(nextChar);
+
+                    if (isFullWord) {
+                        if (!longestMatchUser || displayName.length > longestMatchUser.displayName.length) {
+                            longestMatchUser = { id: userDoc.id, displayName: displayName };
+                        }
                     }
                 }
             }
-        });
+        }
 
         if (longestMatchUser) {
             if (longestMatchUser.id !== fromUser.uid) {
@@ -239,17 +253,20 @@ async function findMentions(text: string): Promise<{startIndex: number, length: 
         
         let longestMatchUser: { displayName: string } | null = null;
         
-        querySnapshot.forEach(userDoc => {
-            const displayName = userDoc.data().displayName;
-            if (queryableText.toLowerCase().startsWith(displayName.toLowerCase())) {
-                const nextChar = text[atIndex + 1 + displayName.length];
-                if (nextChar === undefined || !/[\p{L}\p{N}]/u.test(nextChar)) {
-                    if (!longestMatchUser || displayName.length > longestMatchUser.displayName.length) {
-                        longestMatchUser = { displayName };
+        for (const userDoc of querySnapshot.docs) {
+            const userData = userDoc.data();
+            if (userData && typeof userData.displayName === 'string') {
+                const displayName: string = userData.displayName;
+                if (queryableText.toLowerCase().startsWith(displayName.toLowerCase())) {
+                    const nextChar = text[atIndex + 1 + displayName.length];
+                    if (nextChar === undefined || !/[\p{L}\p{N}]/u.test(nextChar)) {
+                        if (!longestMatchUser || displayName.length > longestMatchUser.displayName.length) {
+                            longestMatchUser = { displayName };
+                        }
                     }
                 }
             }
-        });
+        }
 
         if (longestMatchUser) {
             const mentionLength = longestMatchUser.displayName.length + 1; // +1 for '@'
