@@ -136,6 +136,10 @@ export default function TouristPointDetailPage() {
       });
       return;
     }
+    if (!firestore) {
+      toast({ variant: "destructive", title: "Erro de Conexão", description: "Serviço indisponível. Tente novamente mais tarde."});
+      return;
+    }
     
     setIsSubmittingReview(true);
     const pointRef = doc(firestore, 'tourist_points_indicated', id);
