@@ -421,28 +421,29 @@ export default function FeedPage() {
 
   // Mention Suggestions Fetch
   useEffect(() => {
-    if (showMentions && mentionQuery.length > 0 && firestore) {
+    const fetchUsers = async () => {
+      if (!firestore) return; // Guard clause
       setLoadingMentions(true);
-      const fetchUsers = async () => {
-        const usersRef = collection(firestore, "Usuarios");
-        const q = query(
-          usersRef,
-          where("displayName_lowercase", ">=", mentionQuery.toLowerCase()),
-          where("displayName_lowercase", "<=", mentionQuery.toLowerCase() + '\uf8ff'),
-          limit(5)
-        );
-        try {
-          const querySnapshot = await getDocs(q);
-          const users = querySnapshot.docs.map(doc => doc.data().displayName as string);
-          setMentionSuggestions(users.filter(name => name));
-        } catch (error) {
-          console.error("Error fetching mention suggestions:", error);
-          setMentionSuggestions([]);
-        } finally {
-          setLoadingMentions(false);
-        }
-      };
-      
+      const usersRef = collection(firestore, "Usuarios");
+      const q = query(
+        usersRef,
+        where("displayName_lowercase", ">=", mentionQuery.toLowerCase()),
+        where("displayName_lowercase", "<=", mentionQuery.toLowerCase() + '\uf8ff'),
+        limit(5)
+      );
+      try {
+        const querySnapshot = await getDocs(q);
+        const users = querySnapshot.docs.map(doc => doc.data().displayName as string);
+        setMentionSuggestions(users.filter(name => name));
+      } catch (error) {
+        console.error("Error fetching mention suggestions:", error);
+        setMentionSuggestions([]);
+      } finally {
+        setLoadingMentions(false);
+      }
+    };
+
+    if (showMentions && mentionQuery.length > 0 && firestore) {
       const timeoutId = setTimeout(fetchUsers, 300); // Debounce
       return () => clearTimeout(timeoutId);
     } else {
