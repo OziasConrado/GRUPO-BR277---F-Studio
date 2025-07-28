@@ -89,7 +89,7 @@ async function createChatMentions(text: string, messageId: string, fromUser: { u
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) continue;
         
-        let longestMatchUser: MentionUser | null = null;
+        let longestMatchUser: { id: string; displayName: string } | null = null;
         
         for (const userDoc of querySnapshot.docs) {
             const userData = userDoc.data();
@@ -736,15 +736,13 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     if (!currentUser || !firestore || unreadChatCount === 0) {
       return;
     }
-
     const batch = writeBatch(firestore);
-    chatNotifications.forEach(n => {
-        if (!n.read) {
-            const notifRef = doc(firestore, 'Usuarios', currentUser.uid, 'notifications', n.id);
-            batch.update(notifRef, { read: true });
-        }
-    });
-
+    for (const n of chatNotifications) {
+      if (!n.read) {
+        const notifRef = doc(firestore, 'Usuarios', currentUser.uid, 'notifications', n.id);
+        batch.update(notifRef, { read: true });
+      }
+    }
     try {
         await batch.commit();
     } catch (error) {
