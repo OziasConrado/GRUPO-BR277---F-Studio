@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -151,7 +150,7 @@ export default function TurismoPage() {
   const handleAddReview = useCallback(async (pointId: string, reviewData: Omit<TouristPointReview, 'id' | 'timestamp' | 'author' | 'userId' | 'pointId'>) => {
     if (!currentUser || !firestore) {
       toast({ variant: "destructive", title: "Login Necessário", description: "Você precisa estar logado para avaliar." });
-      throw new Error("User not logged in");
+      throw new Error("User not logged in or firestore not available");
     }
     if (!isProfileComplete) {
       toast({
