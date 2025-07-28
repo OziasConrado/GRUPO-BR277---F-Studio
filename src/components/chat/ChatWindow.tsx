@@ -57,6 +57,11 @@ interface ReplyingToInfo {
   messageText: string;
 }
 
+interface MentionUser {
+    id: string;
+    displayName: string;
+}
+
 async function createChatMentions(text: string, messageId: string, fromUser: { uid: string, displayName: string | null, photoURL: string | null }) {
     if (!firestore) return;
 
@@ -84,19 +89,24 @@ async function createChatMentions(text: string, messageId: string, fromUser: { u
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) continue;
         
-        let longestMatchUser: { id: string; displayName: string } | null = null;
+        let longestMatchUser: MentionUser | null = null;
         
-        querySnapshot.forEach(userDoc => {
-            const displayName = userDoc.data().displayName;
-            if (queryableText.toLowerCase().startsWith(displayName.toLowerCase())) {
-                const nextChar = text[atIndex + 1 + displayName.length];
-                if (nextChar === undefined || !/[\p{L}\p{N}]/u.test(nextChar)) {
-                    if (!longestMatchUser || displayName.length > longestMatchUser.displayName.length) {
-                        longestMatchUser = { id: userDoc.id, displayName };
+        for (const userDoc of querySnapshot.docs) {
+            const userData = userDoc.data();
+            if (userData && typeof userData.displayName === 'string') {
+                const displayName: string = userData.displayName;
+
+                if (queryableText.toLowerCase().startsWith(displayName.toLowerCase())) {
+                    const nextChar = text[atIndex + 1 + displayName.length];
+                    if (nextChar === undefined || !/[\p{L}\p{N}]/u.test(nextChar)) {
+                        if (!longestMatchUser || displayName.length > longestMatchUser.displayName.length) {
+                            longestMatchUser = { id: userDoc.id, displayName: displayName };
+                        }
                     }
                 }
             }
-        });
+        }
+
 
         if (longestMatchUser) {
             if (longestMatchUser.id !== fromUser.uid) {
