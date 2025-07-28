@@ -572,7 +572,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   };
 
   useEffect(() => {
-    if (mentionQuery.length > 0 && firestore) {
+    if (mentionQuery.length > 0) {
       setLoadingMentions(true);
       const fetchUsers = async () => {
         if (!firestore) return;
