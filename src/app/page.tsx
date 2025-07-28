@@ -89,17 +89,29 @@ async function createMentions(text: string, postId: string, fromUser: { uid: str
         
         let longestMatchUser: MentionUser | null = null;
         
+        // SUBSTITUA o forEach existente por este bloco de código
         querySnapshot.forEach(userDoc => {
-            const displayName = userDoc.data().displayName;
-            if (queryableText.toLowerCase().startsWith(displayName.toLowerCase())) {
-                const nextChar = text[atIndex + 1 + displayName.length];
-                if (nextChar === undefined || !/[\p{L}\p{N}]/u.test(nextChar)) {
-                    if (!longestMatchUser || displayName.length > longestMatchUser.displayName.length) {
-                        longestMatchUser = { id: userDoc.id, displayName };
+            const userData = userDoc.data();
+
+            // Adicionamos uma verificação para garantir que 'displayName' existe e é uma string
+            if (userData && typeof userData.displayName === 'string') {
+                const displayName: string = userData.displayName;
+
+                if (queryableText.toLowerCase().startsWith(displayName.toLowerCase())) {
+                    const nextChar = text[atIndex + 1 + displayName.length];
+                    const isFullWord = nextChar === undefined || !/[\p{L}\p{N}]/u.test(nextChar);
+
+                    if (isFullWord) {
+                        if (!longestMatchUser || displayName.length > longestMatchUser.displayName.length) {
+                            // Sendo explícitos sobre o tipo do objeto que estamos criando
+                            const newMatch: MentionUser = { id: userDoc.id, displayName: displayName };
+                            longestMatchUser = newMatch;
+                        }
                     }
                 }
             }
         });
+
 
         if (longestMatchUser) {
             if (longestMatchUser.id !== fromUser.uid) {
