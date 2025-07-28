@@ -313,10 +313,17 @@ const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData
     const [votedOptionId, setVotedOptionId] = useState<string | null>(null);
     const [poll, setPoll] = useState(initialPollData);
     const { toast } = useToast();
+    const [totalVotes, setTotalVotes] = useState(0);
 
-    const totalVotes = useMemo(() => {
+    // This useMemo is for the initial render, but the useEffect will keep it updated.
+    const initialTotalVotes = useMemo(() => {
         return poll.options.reduce((sum, option) => sum + option.votes, 0);
-    }, [poll]);
+    }, [poll.options]);
+    
+    useEffect(() => {
+        setTotalVotes(initialTotalVotes);
+    }, [initialTotalVotes]);
+
 
     useEffect(() => {
         if (!currentUser || !firestore) return;
@@ -331,13 +338,20 @@ const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData
 
     // Listen for real-time updates to the poll itself
     useEffect(() => {
-        if (!firestore || !postId) return;
+        if (!firestore || !postId) {
+            return;
+        }
+
         const postRef = doc(firestore, 'posts', postId);
         const unsub = onSnapshot(postRef, (doc) => {
             if (doc.exists() && doc.data().poll) {
-                setPoll(doc.data().poll as PollData);
+                const pollData = doc.data().poll as PollData;
+                setPoll(pollData);
+                const total = pollData.options.reduce((acc: number, opt: { votes: number; }) => acc + opt.votes, 0);
+                setTotalVotes(total);
             }
         });
+
         return () => unsub();
     }, [postId]);
 
@@ -653,7 +667,7 @@ export default function PostCard({
             });
 
             // Optimistically update the UI. The onSnapshot listener will correct it if needed.
-            setCurrentUserPostReaction(prev => prev === reactionType ? null : reactionType);
+            setCurrentUserPostReaction(prev => prev === reactionType ? null : prev);
         } catch (error: any) {
             console.error("Error handling reaction:", error);
             toast({ variant: 'destructive', title: 'Erro ao Reagir', description: error.message || 'Não foi possível processar sua reação. Tente novamente.' });
@@ -1077,7 +1091,7 @@ export default function PostCard({
                   {replyingTo && (
                       <div className="flex justify-between items-center text-xs text-muted-foreground px-1">
                           <span>Respondendo a <strong className="text-primary">@{replyingTo.userNameToReply}</strong></span>
-                          <Button variant="link" size="xs" className="p-0 h-auto text-destructive hover:text-destructive/80" onClick={() => setReplyingTo(null)}>
+                          <Button variant="link" className="p-0 h-auto text-destructive hover:text-destructive/80" onClick={() => setReplyingTo(null)}>
                               Cancelar
                           </Button>
                       </div>
