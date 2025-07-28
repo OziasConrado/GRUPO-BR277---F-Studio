@@ -4086,3 +4086,5 @@ I0728 16:59:07.772115    5513 load.go:115] Finished reloading
  {"metadata":{"emulator":{"name":"dataconnect"},"message":"I0728 16:59:07.825696    5513 dev.go:95] Listening on address (HTTP + gRPC): 127.0.0.1:50002\n"}}
 [debug] [2025-07-28T16:59:08.159Z] I0728 16:59:08.138148    5513 engine.go:174] [/emulator/s 5958] ExecuteGraphqlRead IntrospectionQuery: succeeded. 
  {"metadata":{"emulator":{"name":"dataconnect"},"message":"I0728 16:59:08.138148    5513 engine.go:174] [/emulator/s 5958] ExecuteGraphqlRead IntrospectionQuery: succeeded. \n"}}
+[info] [Firebase Plugin] Stopping Data Connect toolkit
+[warn] ⚠  Data Connect Emulator has exited upon receiving signal: SIGINT 
