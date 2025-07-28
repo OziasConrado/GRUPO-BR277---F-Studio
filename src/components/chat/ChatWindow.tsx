@@ -173,17 +173,20 @@ async function findMentions(text: string): Promise<{startIndex: number, length: 
         
         let longestMatchUser: { displayName: string } | null = null;
         
-        querySnapshot.forEach(userDoc => {
-            const displayName = userDoc.data().displayName;
-            if (queryableText.toLowerCase().startsWith(displayName.toLowerCase())) {
-                const nextChar = text[atIndex + 1 + displayName.length];
-                if (nextChar === undefined || !/[\p{L}\p{N}]/u.test(nextChar)) {
-                    if (!longestMatchUser || displayName.length > longestMatchUser.displayName.length) {
-                        longestMatchUser = { displayName };
+        for (const userDoc of querySnapshot.docs) {
+            const userData = userDoc.data();
+            if (userData && typeof userData.displayName === 'string') {
+                const displayName: string = userData.displayName;
+                if (queryableText.toLowerCase().startsWith(displayName.toLowerCase())) {
+                    const nextChar = text[atIndex + 1 + displayName.length];
+                    if (nextChar === undefined || !/[\p{L}\p{N}]/u.test(nextChar)) {
+                        if (!longestMatchUser || displayName.length > longestMatchUser.displayName.length) {
+                            longestMatchUser = { displayName };
+                        }
                     }
                 }
             }
-        });
+        }
 
         if (longestMatchUser) {
             const mentionLength = longestMatchUser.displayName.length + 1; // +1 for '@'
@@ -191,7 +194,6 @@ async function findMentions(text: string): Promise<{startIndex: number, length: 
                 startIndex: atIndex,
                 length: mentionLength,
             });
-            // Mark all indices within the matched name as processed to avoid sub-matches
             for (let i = 0; i < mentionLength; i++) {
                 processedIndices.add(atIndex + i);
             }
