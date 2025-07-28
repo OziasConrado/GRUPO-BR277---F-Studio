@@ -93,12 +93,15 @@ async function createChatMentions(text: string, messageId: string, fromUser: { u
         
         for (const userDoc of querySnapshot.docs) {
             const userData = userDoc.data();
+
             if (userData && typeof userData.displayName === 'string') {
                 const displayName: string = userData.displayName;
 
                 if (queryableText.toLowerCase().startsWith(displayName.toLowerCase())) {
                     const nextChar = text[atIndex + 1 + displayName.length];
-                    if (nextChar === undefined || !/[\p{L}\p{N}]/u.test(nextChar)) {
+                    const isFullWord = nextChar === undefined || !/[\p{L}\p{N}]/u.test(nextChar);
+
+                    if (isFullWord) {
                         if (!longestMatchUser || displayName.length > longestMatchUser.displayName.length) {
                             longestMatchUser = { id: userDoc.id, displayName: displayName };
                         }
@@ -112,7 +115,6 @@ async function createChatMentions(text: string, messageId: string, fromUser: { u
             if (longestMatchUser.id !== fromUser.uid) {
                 foundUsers.set(longestMatchUser.displayName, { id: longestMatchUser.id });
             }
-            // Mark all indices within the matched name as processed to avoid sub-matches
             for (let i = 0; i < longestMatchUser.displayName.length + 1; i++) {
                 processedIndices.add(atIndex + i);
             }
@@ -572,7 +574,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   };
 
   useEffect(() => {
-    if (mentionQuery.length > 0) {
+    if (mentionQuery.length > 0 && firestore) {
       setLoadingMentions(true);
       const fetchUsers = async () => {
         if (!firestore) return;
@@ -731,7 +733,9 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   };
 
   const handleMarkChatNotificationsAsRead = async () => {
-    if (!currentUser || !firestore || unreadChatCount === 0) return;
+    if (!currentUser || !firestore || unreadChatCount === 0) {
+      return;
+    }
 
     const batch = writeBatch(firestore);
     chatNotifications.forEach(n => {
