@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -33,7 +32,7 @@ const indicatePointSchema = z.object({
     ).refine(
       (file) => ["image/jpeg", "image/png", "image/webp"].includes(file.type),
       "Formato de imagem inválido (aceito: JPG, PNG, WebP)."
-    ),
+    ).optional(),
 });
 
 type IndicatePointFormValues = z.infer<typeof indicatePointSchema>;
