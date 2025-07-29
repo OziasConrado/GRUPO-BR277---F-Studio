@@ -114,8 +114,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   
   useEffect(() => {
     if (!loading && !currentUser && !isAuthPage) {
-      // Temporarily disabled for development. Re-enable for production.
-      // router.push('/login');
+      router.push('/login');
     }
   }, [currentUser, loading, isAuthPage, router, pathname]);
 
