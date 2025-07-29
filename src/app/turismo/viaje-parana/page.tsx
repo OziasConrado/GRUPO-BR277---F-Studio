@@ -6,10 +6,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, ExternalLink, Map, X } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Map, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 interface RegionData {
   imageUrl: string;
@@ -202,79 +201,80 @@ const AdPlaceholder = ({ className }: { className?: string }) => (
 );
 
 const RegionCard = ({ region }: { region: RegionData }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Card className="w-full shadow-lg rounded-xl overflow-hidden bg-white dark:bg-card border cursor-pointer hover:shadow-xl transition-shadow duration-200">
-          <CardContent className="p-4 flex flex-row items-start gap-4">
-            <div className="relative w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 rounded-lg overflow-hidden">
-              <Image
-                src={region.imageUrl}
-                alt={region.title}
-                layout="fill"
-                objectFit="cover"
-                data-ai-hint={region.imageHint}
-              />
-            </div>
-            <div className="flex flex-col flex-grow min-w-0">
-              <h3 className="font-headline text-lg mb-1 line-clamp-1">{region.title}</h3>
-              <p className="text-xs uppercase font-semibold text-muted-foreground mb-2 tracking-wide line-clamp-2">{region.subtitle}</p>
-              
-              <div className="text-sm text-foreground/80 flex-grow">
-                <p className="line-clamp-3">
-                  {region.description}
-                </p>
+      <Card className="w-full shadow-lg rounded-xl overflow-hidden bg-card border transition-all duration-300">
+          <CardContent className="p-4">
+              <div className="flex flex-row items-start gap-4">
+                  <Dialog>
+                      <DialogTrigger asChild>
+                          <button className="relative w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 rounded-lg overflow-hidden cursor-pointer group">
+                              <Image
+                                  src={region.imageUrl}
+                                  alt={region.title}
+                                  layout="fill"
+                                  objectFit="cover"
+                                  className="transition-transform duration-300 group-hover:scale-105"
+                                  data-ai-hint={region.imageHint}
+                              />
+                          </button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-xl p-2">
+                            <DialogHeader>
+                                <DialogTitle>{region.title}</DialogTitle>
+                            </DialogHeader>
+                           <div className="relative w-full aspect-video">
+                                <Image
+                                    src={region.imageUrl}
+                                    alt={region.title}
+                                    layout="fill"
+                                    objectFit="contain"
+                                    data-ai-hint={region.imageHint}
+                                />
+                            </div>
+                      </DialogContent>
+                  </Dialog>
+                  
+                  <div className="flex flex-col flex-grow min-w-0">
+                      <h3 className="font-headline text-lg mb-1 line-clamp-2">{region.title}</h3>
+                      <p className="text-xs uppercase font-semibold text-muted-foreground mb-2 tracking-wide line-clamp-2">{region.subtitle}</p>
+                      
+                      {!isExpanded && (
+                          <p className="text-sm text-foreground/80 flex-grow line-clamp-3">
+                              {region.description}
+                          </p>
+                      )}
+                  </div>
               </div>
 
-              <div className="mt-auto pt-1">
-                <p className="text-xs text-primary font-semibold hover:underline">
-                  Ver detalhes...
-                </p>
+              {isExpanded && (
+                  <div className="mt-4 space-y-3">
+                      <p className="text-base text-foreground/90 whitespace-pre-line">
+                          {region.description}
+                      </p>
+                      <a href={region.buttonUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-sm font-semibold text-primary hover:underline">
+                          {region.buttonText}
+                          <ExternalLink className="ml-1.5 h-4 w-4" />
+                      </a>
+                  </div>
+              )}
+
+              <div className="mt-4 text-left">
+                  <Button variant="link" onClick={() => setIsExpanded(!isExpanded)} className="p-0 h-auto text-primary">
+                      {isExpanded ? 'Ver menos' : 'Ver mais detalhes'}
+                      {isExpanded ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronDown className="ml-1 h-4 w-4" />}
+                  </Button>
               </div>
-            </div>
           </CardContent>
-        </Card>
-      </DialogTrigger>
-      <DialogContent className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none bg-background !p-0 flex flex-col !translate-x-0 !translate-y-0">
-        <DialogHeader className="p-4 border-b shrink-0 flex flex-row items-center justify-between">
-            <div>
-                <DialogTitle className="font-headline text-xl">{region.title}</DialogTitle>
-                <DialogDescription className="text-sm text-muted-foreground pt-1">{region.subtitle}</DialogDescription>
-            </div>
-        </DialogHeader>
-        <ScrollArea className="flex-grow min-h-0">
-          <div className="p-4 pt-2">
-              <div className="relative w-full aspect-video rounded-lg overflow-hidden mb-4">
-                <Image
-                      src={region.imageUrl}
-                      alt={region.title}
-                      layout="fill"
-                      objectFit="contain"
-                      data-ai-hint={region.imageHint}
-                  />
-              </div>
-              <p className="text-base text-foreground/90 whitespace-pre-line">
-                {region.description}
-                {' '}
-                <a href={region.buttonUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center font-semibold text-primary hover:underline">
-                    Ver mais no site oficial
-                    <ExternalLink className="ml-1.5 h-4 w-4" />
-                </a>
-              </p>
-          </div>
-        </ScrollArea>
-        <div className="p-4 border-t shrink-0 bg-background">
-            <AdPlaceholder />
-        </div>
-      </DialogContent>
-    </Dialog>
+      </Card>
   );
 };
 
 
 export default function ViajeParanaPage() {
-    const [isMapOpen, setIsMapOpen] = useState(false);
-    const mapUrl = "https://firebasestorage.googleapis.com/v0/b/grupo-br277.firebasestorage.app/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2FTurismo-PR%2Fmapa-regioes-turisticas-do-parana.jpg?alt=media";
+  const [isMapOpen, setIsMapOpen] = useState(false);
+  const mapUrl = "https://firebasestorage.googleapis.com/v0/b/grupo-br277.firebasestorage.app/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2FTurismo-PR%2Fmapa-regioes-turisticas-do-parana.jpg?alt=media";
 
   return (
     <div className="w-full space-y-8">
