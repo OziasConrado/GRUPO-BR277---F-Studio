@@ -360,6 +360,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
   };
   
   const handleReportStorySubmit = () => {
+    if (!story) return;
     if (!selectedReportReasonStory) {
         toast({ variant: "destructive", title: "Erro", description: "Por favor, selecione um motivo para a denúncia." });
         return;
