@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -86,35 +87,37 @@ export default function TurismoPage() {
   };
 
   const handleIndicatePoint = async (data: IndicatePointSubmitData) => {
-    if (!currentUser || !firestore || !storage) return;
-
+    if (!currentUser || !firestore || !storage) {
+        toast({ title: "Erro", description: "Você precisa estar logado para indicar um ponto.", variant: "destructive" });
+        return;
+    }
     setIsSubmitting(true);
+
     try {
         const { imageFile, ...pointData } = data;
-        
-        const storagePath = `indicated_points_images/${currentUser.uid}/${Date.now()}_${imageFile.name}`;
-        const storageRef = ref(storage, storagePath);
-        
-        const metadata = { contentType: imageFile.type };
-        const uploadTask = uploadBytesResumable(storageRef, imageFile, metadata);
+        let imageUrl: string | null = null; 
 
-        const imageUrl = await new Promise<string>((resolve, reject) => {
-            uploadTask.on('state_changed',
-                (snapshot) => {},
-                (error) => {
-                    console.error("Upload error on tourism page:", error);
-                    toast({
-                        variant: "destructive",
-                        title: "Erro ao Enviar Imagem",
-                        description: `A foto do local não pôde ser enviada. Erro: ${error.code}`,
-                    });
-                    reject(error);
-                },
-                () => {
-                    getDownloadURL(uploadTask.snapshot.ref).then(resolve).catch(reject);
-                }
-            );
-        });
+        if (imageFile) {
+            const storagePath = `indicated_points_images/${currentUser.uid}/${Date.now()}_${imageFile.name}`;
+            const storageRef = ref(storage, storagePath);
+            
+            const metadata = { contentType: imageFile.type };
+            const uploadTask = uploadBytesResumable(storageRef, imageFile, metadata);
+
+            imageUrl = await new Promise<string>((resolve, reject) => {
+                uploadTask.on('state_changed',
+                    () => {},
+                    (error) => reject(error),
+                    () => { getDownloadURL(uploadTask.snapshot.ref).then(resolve).catch(reject); }
+                );
+            });
+        }
+        
+        if (!imageUrl) {
+            toast({ variant: "destructive", title: "Erro de Validação", description: "Por favor, envie uma foto principal para o comércio."});
+            setIsSubmitting(false);
+            return;
+        }
 
         const docToSave = {
             ...pointData,
@@ -141,7 +144,12 @@ export default function TurismoPage() {
         setIsIndicateModalOpen(false);
 
     } catch (error) {
-        console.error("Error indicating point: ", error);
+        console.error("Erro ao indicar ponto turístico:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao Enviar",
+          description: "Não foi possível processar sua indicação. Tente novamente.",
+        });
     } finally {
         setIsSubmitting(false);
     }
