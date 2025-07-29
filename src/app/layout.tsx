@@ -116,6 +116,21 @@ function AppClientLayout({ children }: { children: ReactNode }) {
       }, 300);
   };
 
+  const handleSupportClick = () => {
+    const email = 'oziasconrado@opaatec.com.br';
+    const subject = encodeURIComponent('Suporte GRUPO BR277');
+    const body = encodeURIComponent('Olá,\n\nPreciso de ajuda com o seguinte:\n\n');
+    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+  };
+
+  const handleReportBugClick = () => {
+    const email = 'oziasconrado@opaatec.com.br';
+    const subject = encodeURIComponent('Relatório de Bug - GRUPO BR277');
+    const body = encodeURIComponent('Olá,\n\nEncontrei um bug no aplicativo. Seguem os detalhes:\n\n');
+    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+  };
+
+
   const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/forgot-password';
 
   if (loading) {
@@ -323,7 +338,7 @@ function AppClientLayout({ children }: { children: ReactNode }) {
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuLabel>Menu</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => {}}>
+                    <DropdownMenuItem onClick={handleSupportClick}>
                       <LifeBuoy className="mr-2 h-4 w-4" />
                       <span>Suporte</span>
                     </DropdownMenuItem>
@@ -336,7 +351,7 @@ function AppClientLayout({ children }: { children: ReactNode }) {
                       <span>Termos de Uso</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => {}}>
+                    <DropdownMenuItem onClick={handleReportBugClick}>
                       <Bug className="mr-2 h-4 w-4" />
                       <span>Relatar bugs</span>
                     </DropdownMenuItem>
