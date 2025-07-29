@@ -235,7 +235,7 @@ const RegionCard = ({ region }: { region: RegionData }) => {
           </CardContent>
         </Card>
       </DialogTrigger>
-      <DialogContent className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none bg-background !p-0 grid grid-rows-[auto,1fr,auto] !translate-x-0 !translate-y-0">
+      <DialogContent className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none bg-background !p-0 flex flex-col !translate-x-0 !translate-y-0">
         <DialogHeader className="p-4 border-b shrink-0 flex flex-row items-center justify-between">
             <div>
                 <DialogTitle className="font-headline text-xl">{region.title}</DialogTitle>
@@ -326,4 +326,3 @@ export default function ViajeParanaPage() {
     </div>
   );
 }
-
