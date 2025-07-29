@@ -80,7 +80,16 @@ const reportReasonsStory = [
   { id: "story_other", label: "Outro motivo..." },
 ];
 
-async function createMentions(text: string, postId: string, fromUser: { uid: string, displayName: string | null, photoURL: string | null }, type: 'mention_comment') {
+interface MentionUser {
+  id: string;
+  displayName: string;
+}
+
+async function createStoryCommentMentions(
+    text: string, 
+    storyId: string,
+    fromUser: { uid: string, displayName: string | null, photoURL: string | null }
+) {
     if (!firestore) return;
 
     const foundUsers = new Map<string, { id: string }>();
@@ -107,25 +116,31 @@ async function createMentions(text: string, postId: string, fromUser: { uid: str
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) continue;
         
-        let longestMatchUser: { id: string; displayName: string } | null = null;
+        let longestMatchUser: MentionUser | null = null;
         
-        querySnapshot.forEach(userDoc => {
-            const displayName = userDoc.data().displayName;
-            if (queryableText.toLowerCase().startsWith(displayName.toLowerCase())) {
-                const nextChar = text[atIndex + 1 + displayName.length];
-                if (nextChar === undefined || !/[\p{L}\p{N}]/u.test(nextChar)) {
-                    if (!longestMatchUser || displayName.length > longestMatchUser.displayName.length) {
-                        longestMatchUser = { id: userDoc.id, displayName };
+        for (const userDoc of querySnapshot.docs) {
+            const userData = userDoc.data();
+
+            if (userData && typeof userData.displayName === 'string') {
+                const displayName: string = userData.displayName;
+
+                if (queryableText.toLowerCase().startsWith(displayName.toLowerCase())) {
+                    const nextChar = text[atIndex + 1 + displayName.length];
+                    const isFullWord = nextChar === undefined || !/[\p{L}\p{N}]/u.test(nextChar);
+
+                    if (isFullWord) {
+                        if (!longestMatchUser || displayName.length > longestMatchUser.displayName.length) {
+                            longestMatchUser = { id: userDoc.id, displayName: displayName };
+                        }
                     }
                 }
             }
-        });
+        }
 
         if (longestMatchUser) {
             if (longestMatchUser.id !== fromUser.uid) {
                 foundUsers.set(longestMatchUser.displayName, { id: longestMatchUser.id });
             }
-            // Mark all indices within the matched name as processed to avoid sub-matches
             for (let i = 0; i < longestMatchUser.displayName.length + 1; i++) {
                 processedIndices.add(atIndex + i);
             }
@@ -138,11 +153,11 @@ async function createMentions(text: string, postId: string, fromUser: { uid: str
     for (const user of foundUsers.values()) {
         const notificationRef = doc(collection(firestore, 'Usuarios', user.id, 'notifications'));
         batch.set(notificationRef, {
-            type: type,
+            type: 'mention_story_comment',
             fromUserId: fromUser.uid,
             fromUserName: fromUser.displayName || "Usuário",
             fromUserAvatar: fromUser.photoURL || null,
-            postId: postId,
+            postId: storyId,
             textSnippet: text.substring(0, 70) + (text.length > 70 ? '...' : ''),
             timestamp: serverTimestamp(),
             read: false,
@@ -312,7 +327,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
         timestamp: serverTimestamp(),
       });
 
-      await createMentions(commentText, story.id, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL }, 'mention_comment');
+      await createStoryCommentMentions(commentText, story.id, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL });
 
       setNewComment('');
       setShowMentions(false);
@@ -355,7 +370,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
     }
     const reasonLabel = reportReasonsStory.find(r => r.id === selectedReportReasonStory)?.label;
     const reportDetails = selectedReportReasonStory === "story_other" ? otherReportReasonTextStory : reasonLabel;
-    toast({ title: "Denúncia Enviada", description: `Reel "${story.authorName}" denunciado. Motivo: ${reportDetails}` });
+    toast({ title: "Denúncia Enviada", description: `Reel de "${story.authorName}" denunciado. Motivo: ${reportDetails}` });
     setIsReportModalOpenStory(false);
     setSelectedReportReasonStory(undefined);
     setOtherReportReasonTextStory('');
