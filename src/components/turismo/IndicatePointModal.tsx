@@ -114,7 +114,7 @@ export default function IndicatePointModal({ isOpen, onClose, onSubmit, isSubmit
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(handleFormSubmit)} className="flex-grow flex flex-col overflow-hidden">
-          <ScrollArea className="flex-grow px-4">
+          <ScrollArea className="flex-grow px-4 min-h-0">
             <div className="space-y-4 py-4">
               <div>
                 <Label htmlFor="name-turismo">Nome do Local <span className="text-destructive">*</span></Label>
