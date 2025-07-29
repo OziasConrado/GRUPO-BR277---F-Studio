@@ -18,7 +18,9 @@ const ptSans = PT_Sans({
 export const metadata: Metadata = {
   title: 'GRUPO BR277',
   description: 'Aplicativo para caminhoneiros e viajantes.',
-  icons: 'https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2F512-512-app-web.png?alt=media',
+  icons: {
+    icon: 'https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2F512-512-app-web.png?alt=media',
+  }
 };
 
 export default function RootLayout({
