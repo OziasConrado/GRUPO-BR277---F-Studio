@@ -46,7 +46,7 @@ const registerBusinessSchema = z.object({
     ).refine(
       (file) => ["image/jpeg", "image/png", "image/webp"].includes(file.type),
       "Formato de imagem inválido (aceito: JPG, PNG, WebP)."
-    ),
+    ).optional(),
   servicesOffered: z.string().optional(),
   operatingHours: z.string().max(100).optional(),
   isPremium: z.boolean().default(false),
