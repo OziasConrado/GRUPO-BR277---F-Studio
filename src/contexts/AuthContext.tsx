@@ -47,6 +47,7 @@ interface AuthContextType {
   updateUserProfile: (data: UpdateUserProfileData) => Promise<void>;
   signOutUser: () => Promise<void>;
   authAction: string | null;
+  isAuthenticating: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -397,6 +398,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [router, toast, handleAuthError]);
 
   const isProfileComplete = !!(currentUser?.displayName && userProfile?.location);
+  const isAuthenticating = authAction !== null;
 
   const value = {
     currentUser,
@@ -410,6 +412,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     updateUserProfile,
     signOutUser,
     authAction,
+    isAuthenticating,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
