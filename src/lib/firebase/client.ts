@@ -5,7 +5,16 @@ import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import { getAnalytics, isSupported, type Analytics } from 'firebase/analytics';
 
-const firebaseConfigString = process.env.NEXT_PUBLIC_FIREBASE_CONFIG;
+const firebaseConfig = {
+  "projectId": "grupo-br277",
+  "appId": "1:491779757123:web:f0c1615487eb032c17b0f6",
+  "storageBucket": "grupo-br277.appspot.com",
+  "apiKey": "AIzaSyBkj9LYAUrrdXXb-M80C-q9FMQxGWMWA1A",
+  "authDomain": "grupo-br277.firebaseapp.com",
+  "measurementId": "G-MD0VTEF82W",
+  "messagingSenderId": "491779757123"
+};
+
 
 let app: FirebaseApp;
 let auth: Auth;
@@ -13,8 +22,8 @@ let firestore: Firestore;
 let storage: FirebaseStorage;
 let analytics: Analytics | null = null;
 
-if (!firebaseConfigString) {
-    console.error("Firebase config not found. Make sure NEXT_PUBLIC_FIREBASE_CONFIG is set.");
+if (!firebaseConfig) {
+    console.error("Firebase config not found.");
     // Assign null to exports if config is not available
     app = null as any;
     auth = null as any;
@@ -22,7 +31,6 @@ if (!firebaseConfigString) {
     storage = null as any;
 } else {
     try {
-        const firebaseConfig = JSON.parse(firebaseConfigString);
         if (!getApps().length) {
             app = initializeApp(firebaseConfig);
         } else {
