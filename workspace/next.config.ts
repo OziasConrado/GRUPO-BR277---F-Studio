@@ -1,4 +1,3 @@
-
 import type {Config} from 'next';
 
 const nextConfig = {

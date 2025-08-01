@@ -1,167 +1,95 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper function to check if a user is authenticated
+    
+    // Function to check if a user is authenticated
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Helper function to check if a user profile is complete
-    function isProfileComplete(userId) {
-      let userProfile = get(/databases/$(database)/documents/Usuarios/$(userId)).data;
-      return userProfile.displayName != null && userProfile.displayName != '' &&
-             userProfile.location != null && userProfile.location != '';
+    // Function to check if the user is the owner of the document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // === USERS (Usuarios) ===
-    match /Usuarios/{userId} {
-      // Any authenticated user can read public profile info
-      allow read: if isAuthenticated();
-
-      // A user can create their own profile document
-      allow create: if request.auth.uid == userId;
-
-      // A user can only update their own profile with specific fields
-      allow update: if request.auth.uid == userId
-                      && request.resource.data.keys().hasOnly([
-                          'displayName', 'displayName_lowercase', 'photoURL', 'location',
-                          'bio', 'instagramUsername', 'updatedAt',
-                          // Fields that shouldn't change
-                          'uid', 'email', 'createdAt'
-                        ])
-                      && request.resource.data.displayName is string
-                      && request.resource.data.displayName.size() > 2
-                      && request.resource.data.location is string
-                      && request.resource.data.location.size() > 2;
-
-      // Users cannot delete their profiles through the app
-      allow delete: if false;
-
-      // Notifications subcollection
-      match /notifications/{notificationId} {
-        // A user can only access their own notifications
-        allow read, write, delete: if request.auth.uid == userId;
-      }
-    }
-
-    // === POSTS ===
+    // --- Public Collections ---
     match /posts/{postId} {
-      // Anyone can read a post that is not deleted
-      allow read: if isAuthenticated();
-
-      // Only authenticated users with a complete profile can create posts
-      allow create: if isAuthenticated() && isProfileComplete(request.auth.uid);
-
-      // Only the author can update (edit) or "delete" (mark as deleted) their own post
-      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
-
-      // Disallow direct deletion from clients
-      allow delete: if false;
-
-      // --- Comments Subcollection ---
-      match /comments/{commentId} {
-        allow read: if isAuthenticated();
-        // Only authenticated users with a complete profile can comment
-        allow create: if isAuthenticated() && isProfileComplete(request.auth.uid);
-        // Only the author of the comment can update/delete it (future feature)
-        allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      }
-
-      // --- Reactions Subcollection ---
-      match /userReactions/{userId} {
-        // A user can only create, update, or delete their own reaction
-        allow write: if isAuthenticated() && request.auth.uid == userId;
-        allow read: if isAuthenticated();
-      }
-       // --- Votes Subcollection for Polls ---
-      match /userVotes/{userId} {
-        // A user can only create/update/delete their own vote
-        allow write: if isAuthenticated() && request.auth.uid == userId;
-        allow read: if isAuthenticated();
-      }
-    }
-
-    // === REELS ===
-    match /reels/{reelId} {
-      // Anyone can read a reel that is not deleted
-      allow read: if isAuthenticated();
-
-      // Only authenticated users with a complete profile can create reels
-      allow create: if isAuthenticated() && isProfileComplete(request.auth.uid);
-
-      // Only the author can update or "delete" (mark as deleted) their own reel
-      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow delete: if false; // Disallow direct deletion
-
-       // --- Comments Subcollection ---
-      match /comments/{commentId} {
-        allow read: if isAuthenticated();
-        allow create: if isAuthenticated() && isProfileComplete(request.auth.uid);
-        allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      }
-
-      // --- Reactions Subcollection ---
-      match /userReactions/{userId} {
-        allow write: if isAuthenticated() && request.auth.uid == userId;
-        allow read: if isAuthenticated();
-      }
-    }
-    
-    // === CHAT MESSAGES ===
-     match /chatMessages/{messageId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isProfileComplete(request.auth.uid);
-      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-
-      // Chat reactions
-      match /userReactions/{userId} {
-        allow write: if isAuthenticated() && request.auth.uid == userId;
-        allow read: if isAuthenticated();
-      }
-     }
-
-
-    // === ALERTS ===
-    match /alerts/{alertId} {
-      allow read: if isAuthenticated();
-      // Only authenticated users with a complete profile can create alerts
-      allow create: if isAuthenticated() && isProfileComplete(request.auth.uid);
-      // No updates or deletes from the client side
-      allow update, delete: if false;
-    }
-    
-    // === SAU REVIEWS ===
-    match /sau_reviews/{reviewId} {
-      allow read: if isAuthenticated();
-      // Only authenticated users with a complete profile can create reviews
-      allow create: if isAuthenticated() && isProfileComplete(request.auth.uid);
-       // No updates or deletes from the client side
-      allow update, delete: if false;
-    }
-    
-    // === TOURIST POINTS INDICATED ===
-    match /tourist_points_indicated/{pointId} {
-      allow read: if isAuthenticated();
-      // Only authenticated users with a complete profile can indicate a point
-      allow create: if isAuthenticated() && isProfileComplete(request.auth.uid);
+      allow read: if true;
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+      allow update: if isOwner(resource.data.userId); // Allow owner to edit
+      allow delete: if isOwner(resource.data.userId); // Allow owner to delete (soft delete)
       
-      // Update is tricky. A user can't change their indication, but we need to allow updating the rating via transaction.
-      // This rule allows an update only if the reviewCount is being incremented by 1.
-      // This is a common pattern to allow transaction-based updates.
-      allow update: if isAuthenticated() &&
-                     request.resource.data.reviewCount == resource.data.reviewCount + 1;
+      // Reactions and Polls subcollections
+      match /userReactions/{userId} {
+        allow read: if true;
+        allow create, delete: if isOwner(userId);
+      }
+      match /userVotes/{userId} {
+        allow read: if true;
+        allow create: if isOwner(userId);
+      }
+       match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isAuthenticated();
+      }
+    }
 
-      allow delete: if false;
+    match /reels/{reelId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+      allow update: if isOwner(resource.data.userId);
+      allow delete: if isOwner(resource.data.userId);
+
+      // Subcollections for reels
+      match /userReactions/{userId} {
+        allow read: if true;
+        allow create, delete: if isOwner(userId);
+      }
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isAuthenticated();
+      }
+    }
+
+    match /alerts/{alertId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+    }
+
+    match /tourist_points_indicated/{pointId} {
+      allow read: if true;
+      allow create, update: if isAuthenticated(); // Allow logged-in users to suggest and admins to update
+    }
+
+    match /tourist_point_reviews/{reviewId} {
+        allow read: if true;
+        allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
     }
     
-    // === TOURIST POINT REVIEWS (top level collection) ===
-    match /tourist_point_reviews/{reviewId} {
-       allow read: if isAuthenticated();
-       allow create: if isAuthenticated() && isProfileComplete(request.auth.uid);
-       allow update, delete: if false; // Users cannot edit/delete reviews for now
+    match /sau_reviews/{reviewId} {
+        allow read: if true;
+        allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+    }
+    
+    // --- User-specific data ---
+    // User profile and private notifications
+    match /Usuarios/{userId}/{document=**} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // --- Chat ---
+    match /chatMessages/{messageId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+      // Only owner can edit (text, edited flag) or delete
+      allow update, delete: if isOwner(resource.data.userId);
+
+      // Reactions subcollection for chat
+       match /userReactions/{reactionUserId} {
+        allow read: if isAuthenticated();
+        allow create, delete: if isOwner(reactionUserId);
+      }
     }
   }
 }
