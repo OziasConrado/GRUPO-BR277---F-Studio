@@ -43,7 +43,7 @@ const mockStreamsData: StreamCardProps[] = [
     dataAIThumbnailHint: 'city road',
     category: 'Curitiba-PR',
     isLive: true,
-    streamUrl: 'https://rtsp.me/embed/QtFANhNy/',
+    streamUrl: 'https://cloud.fullcam.me/#/cembed/440357609a40573a6ffbfb02b3204d9a8cc6ab0953d79fd1f0d5c1eff8e48073aa8288b30e551a81893e6454730b',
   },
   // Campo Largo-PR
   {
@@ -115,7 +115,7 @@ const mockStreamsData: StreamCardProps[] = [
     dataAIThumbnailHint: 'scenic mountain road',
     category: 'Morretes-PR',
     isLive: true,
-    streamUrl: 'https://rtsp.me/embed/BEFd9GF6/',
+    streamUrl: 'https://cloud.fullcam.me/#/cembed/6f4754d21c28be320bf30f026d392ba0386fb2c67518aaef07aa54b93b9e7b726eca833bc90805c274cf16132606',
   },
   // Ponta Grossa-PR
   {
