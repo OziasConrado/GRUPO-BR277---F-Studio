@@ -1,3 +1,4 @@
+
 // src/lib/firebase/client.ts
 import { initializeApp, getApp, getApps, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
