@@ -96,11 +96,9 @@ async function createMentions(
         
         let longestMatchUser: { id: string; displayName: string } | null = null;
         
-        // Trocamos o .forEach por um loop for...of, que é mais claro para o TypeScript
         for (const userDoc of querySnapshot.docs) {
             const userData = userDoc.data();
 
-            // Garantimos que displayName existe e é uma string
             if (userData && typeof userData.displayName === 'string') {
                 const displayName: string = userData.displayName;
 

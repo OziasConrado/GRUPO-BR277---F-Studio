@@ -94,12 +94,9 @@ async function createMentions(
         
         let longestMatchUser: MentionUser | null = null;
         
-        // ---- INÍCIO DA CORREÇÃO PRINCIPAL ----
-        // Trocamos o .forEach por um loop for...of, que é mais claro para o TypeScript
         for (const userDoc of querySnapshot.docs) {
             const userData = userDoc.data();
 
-            // Garantimos que displayName existe e é uma string
             if (userData && typeof userData.displayName === 'string') {
                 const displayName: string = userData.displayName;
 
@@ -115,10 +112,8 @@ async function createMentions(
                 }
             }
         }
-        // ---- FIM DA CORREÇÃO PRINCIPAL ----
 
         if (longestMatchUser) {
-            // Agora, aqui o TypeScript terá certeza do tipo de longestMatchUser
             if (longestMatchUser.id !== fromUser.uid) {
                 foundUsers.set(longestMatchUser.displayName, { id: longestMatchUser.id });
             }
@@ -621,7 +616,7 @@ export default function FeedPage() {
           userName: currentUser.displayName || 'Anônimo',
           userAvatarUrl: currentUser.photoURL,
           userLocation: userProfile?.location || 'Localização Desconhecida',
-          text: newPostText,
+          text: newPostText.trim(),
           reactions: { thumbsUp: 0, thumbsDown: 0 },
           edited: false,
           deleted: false,
