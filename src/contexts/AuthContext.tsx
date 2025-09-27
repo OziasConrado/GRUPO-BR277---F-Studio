@@ -15,9 +15,9 @@ import {
   type User as FirebaseUser,
   type AuthError,
 } from 'firebase/auth';
-import { auth, app, firestore } from '@/lib/firebase/client'; 
+import { auth, app, firestore, storage } from '@/lib/firebase/client'; 
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'; 
-import { getSignedUploadUrl } from '@/app/actions';
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -99,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             message = 'O método de login por e-mail e senha não está ativado para este aplicativo. Por favor, contate o suporte.';
             break;
         default:
-            message = `Ocorreu um problema (${error.code}). Por favor, tente novamente ou contate o suporte se o problema persistir.`;
+            message = `Ocorreu um problema (${error.message || error.code}). Por favor, tente novamente ou contate o suporte se o problema persistir.`;
             break;
     }
     toast({
@@ -274,7 +274,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUserProfile = useCallback(async (data: UpdateUserProfileData) => {
     const userForUpdate = auth.currentUser;
-    if (!userForUpdate || !firestore) {
+    if (!userForUpdate || !firestore || !storage) {
         toast({ title: "Erro", description: "Usuário não autenticado ou serviço indisponível.", variant: "destructive" });
         return;
     }
@@ -283,34 +283,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     toast({ title: "Atualizando perfil...", description: "Por favor, aguarde." });
 
     try {
-        let newPhotoStoragePath: string | null = null;
+        let newPhotoURL: string | null = null;
         if (data.newPhotoFile) {
             const file = data.newPhotoFile;
-            const signedUrlResponse = await getSignedUploadUrl({
-                file: { name: file.name, type: file.type, size: file.size },
-                userId: userForUpdate.uid,
-                path: 'profile'
-            });
+            const filePath = `profile_pictures/${userForUpdate.uid}/${file.name}`;
+            const storageRef = ref(storage, filePath);
 
-            if (!signedUrlResponse.success || !signedUrlResponse.url) {
-                throw new Error(signedUrlResponse.error || 'Falha ao obter URL de upload segura.');
-            }
-
-            const uploadResponse = await fetch(signedUrlResponse.url, {
-                method: 'PUT',
-                body: file,
-                headers: { 'Content-Type': file.type },
-            });
-
-            if (!uploadResponse.ok) {
-                throw new Error('Falha no upload do arquivo.');
-            }
-            newPhotoStoragePath = signedUrlResponse.filePath!;
+            await uploadBytes(storageRef, file);
+            newPhotoURL = await getDownloadURL(storageRef);
         }
-        
-        const bucketDomain = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-        const newPhotoURL = newPhotoStoragePath ? `https://storage.googleapis.com/${bucketDomain}/${newPhotoStoragePath}` : null;
-
 
         const authProfileUpdates: { displayName?: string; photoURL?: string } = {};
         if (data.displayName && data.displayName !== userForUpdate.displayName) {

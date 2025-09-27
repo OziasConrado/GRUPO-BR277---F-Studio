@@ -1,54 +1,43 @@
+
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
     
-    // Allow public read on most assets
-    match /{allPaths=**} {
+    // As imagens de perfil, posts e reels são públicas para leitura.
+    match /profile_pictures/{userId}/{allPaths=**} {
       allow read;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /posts/{userId}/{allPaths=**} {
+      allow read;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Allow authenticated users to write to their own folders, with size/type constraints
-    match /profile_pictures/{userId}/{fileName} {
-      allow write: if request.auth != null 
-                    && request.auth.uid == userId
-                    && request.resource.size < 5 * 1024 * 1024 // 5MB
-                    && request.resource.contentType.matches('image/.*');
+    match /reels/{userId}/{allPaths=**} {
+      allow read;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    match /images/{userId}/{fileName} {
-      allow write: if request.auth != null 
-                    && request.auth.uid == userId
-                    && request.resource.size < 10 * 1024 * 1024 // 10MB
-                    && request.resource.contentType.matches('image/.*');
+    match /chat_images/{userId}/{allPaths=**} {
+      allow read;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    match /videos/{userId}/{fileName} {
-      allow write: if request.auth != null 
-                    && request.auth.uid == userId
-                    && request.resource.size < 50 * 1024 * 1024 // 50MB
-                    && request.resource.contentType.matches('video/.*');
+    match /chat_audio/{userId}/{allPaths=**} {
+      allow read;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    match /chat_audio/{userId}/{fileName} {
-      allow write: if request.auth != null 
-                    && request.auth.uid == userId
-                    && request.resource.size < 10 * 1024 * 1024 // 10MB
-                    && request.resource.contentType.matches('audio/.*');
+    match /indicated_points_images/{userId}/{allPaths=**} {
+      allow read;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    match /chat_images/{userId}/{fileName} {
-      allow write: if request.auth != null 
-                    && request.auth.uid == userId
-                    && request.resource.size < 10 * 1024 * 1024 // 10MB
-                    && request.resource.contentType.matches('image/.*');
-    }
-
-    match /indicated_points_images/{userId}/{fileName} {
-      allow write: if request.auth != null 
-                    && request.auth.uid == userId
-                    && request.resource.size < 5 * 1024 * 1024 // 5MB
-                    && request.resource.contentType.matches('image/.*');
+    // Regra geral mais restritiva
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }

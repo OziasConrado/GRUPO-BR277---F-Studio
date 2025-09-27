@@ -46,13 +46,13 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useAuth } from '@/contexts/AuthContext';
-import { firestore } from '@/lib/firebase/client';
+import { firestore, storage } from '@/lib/firebase/client';
 import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp, where, getDocs, doc, writeBatch, getDoc, updateDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ToastAction } from '@/components/ui/toast';
 import UserProfileModal, { type UserProfileData } from '@/components/profile/UserProfileModal';
-import { getSignedUploadUrl } from '@/app/actions';
 
 
 interface MentionUser {
@@ -346,10 +346,9 @@ export default function FeedPage() {
   useEffect(() => {
     if (!firestore) return setLoadingReels(false);
     setLoadingReels(true);
-    const q = query(collection(firestore, 'reels'), orderBy('timestamp', 'desc'), limit(15));
+    const q = query(collection(firestore, 'reels'), where("deleted", "==", false), orderBy('timestamp', 'desc'), limit(15));
     const unsubscribe = onSnapshot(q, (snapshot) => {
         const fetchedReels = snapshot.docs
-            .filter(doc => doc.data().deleted !== true)
             .map(doc => {
                 const data = doc.data();
                 return {
@@ -362,7 +361,7 @@ export default function FeedPage() {
                     dataAIThumbnailHint: 'video story content',
                     timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
                     storyType: 'video',
-                    videoContentUrl: data.videoUrl
+                    videoUrl: data.videoUrl
                 } as StoryCircleProps;
             });
         setReels(fetchedReels);
@@ -544,7 +543,7 @@ export default function FeedPage() {
   }
 
   const handlePublish = async () => {
-    if (!currentUser || !firestore) {
+    if (!currentUser || !firestore || !storage) {
       toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado ou o serviço está indisponível.' });
       return;
     }
@@ -557,35 +556,17 @@ export default function FeedPage() {
     setIsPublishing(true);
 
     try {
-        let mediaStoragePath: string | undefined;
+        let mediaUrl: string | undefined;
 
         if (selectedMediaForUpload) {
             const file = selectedMediaForUpload;
-            const signedUrlResponse = await getSignedUploadUrl({
-                file: { name: file.name, type: file.type, size: file.size },
-                userId: currentUser.uid,
-                path: 'post'
-            });
+            const folder = currentPostType === 'video' ? 'reels' : 'posts';
+            const filePath = `${folder}/${currentUser.uid}/${Date.now()}_${file.name}`;
+            const storageRef = ref(storage, filePath);
 
-            if (!signedUrlResponse.success || !signedUrlResponse.url) {
-                throw new Error(signedUrlResponse.error || 'Falha ao obter URL de upload segura.');
-            }
-
-            const uploadResponse = await fetch(signedUrlResponse.url, {
-                method: 'PUT',
-                body: file,
-                headers: { 'Content-Type': file.type },
-            });
-
-            if (!uploadResponse.ok) {
-                throw new Error('Falha no upload do arquivo para o Storage.');
-            }
-            mediaStoragePath = signedUrlResponse.filePath!;
+            await uploadBytes(storageRef, file);
+            mediaUrl = await getDownloadURL(storageRef);
         }
-        
-        const bucketDomain = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-        const mediaUrl = mediaStoragePath ? `https://storage.googleapis.com/${bucketDomain}/${mediaStoragePath}` : undefined;
-
 
       if (currentPostType === 'alert') {
         await addDoc(collection(firestore, 'alerts'), {
@@ -603,7 +584,6 @@ export default function FeedPage() {
           userId: currentUser.uid,
           userName: currentUser.displayName || 'Anônimo',
           userAvatarUrl: currentUser.photoURL,
-          thumbnailUrl: mediaUrl, 
           description: newPostText.trim(),
           videoUrl: mediaUrl,
           reactions: { thumbsUp: 0, thumbsDown: 0 },
