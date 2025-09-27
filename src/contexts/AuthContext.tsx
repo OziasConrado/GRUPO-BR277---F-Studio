@@ -15,9 +15,9 @@ import {
   type User as FirebaseUser,
   type AuthError,
 } from 'firebase/auth';
-import { auth, app, firestore, storage } from '@/lib/firebase/client'; 
+import { auth, app, firestore } from '@/lib/firebase/client'; 
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'; 
-import { ref, getDownloadURL, uploadBytes, uploadBytesResumable } from "firebase/storage";
+import { getSignedUploadUrl } from '@/app/actions';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -274,7 +274,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUserProfile = useCallback(async (data: UpdateUserProfileData) => {
     const userForUpdate = auth.currentUser;
-    if (!userForUpdate || !firestore || !storage) {
+    if (!userForUpdate || !firestore) {
         toast({ title: "Erro", description: "Usuário não autenticado ou serviço indisponível.", variant: "destructive" });
         return;
     }
@@ -283,13 +283,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     toast({ title: "Atualizando perfil...", description: "Por favor, aguarde." });
 
     try {
-        let newPhotoURL: string | null = null;
+        let newPhotoStoragePath: string | null = null;
         if (data.newPhotoFile) {
             const file = data.newPhotoFile;
-            const photoRef = ref(storage, `profile_pictures/${userForUpdate.uid}/${Date.now()}_${file.name}`);
-            const snapshot = await uploadBytes(photoRef, file);
-            newPhotoURL = await getDownloadURL(snapshot.ref);
+            const signedUrlResponse = await getSignedUploadUrl({
+                file: { name: file.name, type: file.type, size: file.size },
+                userId: userForUpdate.uid,
+                path: 'profile'
+            });
+
+            if (!signedUrlResponse.success || !signedUrlResponse.url) {
+                throw new Error(signedUrlResponse.error || 'Falha ao obter URL de upload segura.');
+            }
+
+            const uploadResponse = await fetch(signedUrlResponse.url, {
+                method: 'PUT',
+                body: file,
+                headers: { 'Content-Type': file.type },
+            });
+
+            if (!uploadResponse.ok) {
+                throw new Error('Falha no upload do arquivo.');
+            }
+            newPhotoStoragePath = signedUrlResponse.filePath!;
         }
+        
+        const bucketDomain = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+        const newPhotoURL = newPhotoStoragePath ? `https://storage.googleapis.com/${bucketDomain}/${newPhotoStoragePath}` : null;
+
 
         const authProfileUpdates: { displayName?: string; photoURL?: string } = {};
         if (data.displayName && data.displayName !== userForUpdate.displayName) {

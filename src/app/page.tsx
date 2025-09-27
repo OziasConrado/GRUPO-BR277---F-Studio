@@ -46,13 +46,13 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useAuth } from '@/contexts/AuthContext';
-import { firestore, storage } from '@/lib/firebase/client';
+import { firestore } from '@/lib/firebase/client';
 import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp, where, getDocs, doc, writeBatch, getDoc, updateDoc } from 'firebase/firestore';
-import { ref, getDownloadURL, uploadBytes } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ToastAction } from '@/components/ui/toast';
 import UserProfileModal, { type UserProfileData } from '@/components/profile/UserProfileModal';
+import { getSignedUploadUrl } from '@/app/actions';
 
 
 interface MentionUser {
@@ -544,7 +544,7 @@ export default function FeedPage() {
   }
 
   const handlePublish = async () => {
-    if (!currentUser || !firestore || !storage) {
+    if (!currentUser || !firestore) {
       toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado ou o serviço está indisponível.' });
       return;
     }
@@ -557,17 +557,35 @@ export default function FeedPage() {
     setIsPublishing(true);
 
     try {
-      let mediaUrl: string | undefined;
+        let mediaStoragePath: string | undefined;
 
-      if (selectedMediaForUpload) {
-        const mediaType = selectedMediaForUpload.type.startsWith('image/') ? 'images' : 'videos';
-        const storagePath = `${mediaType}/${currentUser.uid}/${Date.now()}_${selectedMediaForUpload.name}`;
-        const storageRef = ref(storage, storagePath);
+        if (selectedMediaForUpload) {
+            const file = selectedMediaForUpload;
+            const signedUrlResponse = await getSignedUploadUrl({
+                file: { name: file.name, type: file.type, size: file.size },
+                userId: currentUser.uid,
+                path: 'post'
+            });
+
+            if (!signedUrlResponse.success || !signedUrlResponse.url) {
+                throw new Error(signedUrlResponse.error || 'Falha ao obter URL de upload segura.');
+            }
+
+            const uploadResponse = await fetch(signedUrlResponse.url, {
+                method: 'PUT',
+                body: file,
+                headers: { 'Content-Type': file.type },
+            });
+
+            if (!uploadResponse.ok) {
+                throw new Error('Falha no upload do arquivo para o Storage.');
+            }
+            mediaStoragePath = signedUrlResponse.filePath!;
+        }
         
-        // Use uploadBytes for a simpler, direct upload
-        const uploadResult = await uploadBytes(storageRef, selectedMediaForUpload);
-        mediaUrl = await getDownloadURL(uploadResult.ref);
-      }
+        const bucketDomain = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+        const mediaUrl = mediaStoragePath ? `https://storage.googleapis.com/${bucketDomain}/${mediaStoragePath}` : undefined;
+
 
       if (currentPostType === 'alert') {
         await addDoc(collection(firestore, 'alerts'), {
@@ -585,7 +603,7 @@ export default function FeedPage() {
           userId: currentUser.uid,
           userName: currentUser.displayName || 'Anônimo',
           userAvatarUrl: currentUser.photoURL,
-          thumbnailUrl: mediaUrl, // Using uploaded video for thumbnail initially
+          thumbnailUrl: mediaUrl, 
           description: newPostText.trim(),
           videoUrl: mediaUrl,
           reactions: { thumbsUp: 0, thumbsDown: 0 },
@@ -630,12 +648,12 @@ export default function FeedPage() {
       }
 
       resetFormState();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error publishing content:", error);
       toast({
           variant: "destructive",
-          title: "Erro no Upload",
-          description: "Sua mídia não pôde ser enviada. Verifique sua conexão ou tente novamente.",
+          title: "Erro na Publicação",
+          description: error.message || "Sua mídia não pôde ser enviada. Verifique sua conexão ou tente novamente.",
       });
     } finally {
         setIsPublishing(false);

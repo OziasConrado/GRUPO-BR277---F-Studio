@@ -14,6 +14,7 @@ runConfig:
   memoryMiB: 2048
 environmentVariables:
   GOOGLE_MAPS_API_KEY: {secret: GOOGLE_MAPS_API_KEY}
-
+  FIREBASE_SERVICE_ACCOUNT: {secret: FIREBASE_SERVICE_ACCOUNT}
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: "grupo-br277.appspot.com"
 # A variável NEXT_PUBLIC_FIREBASE_CONFIG é injetada automaticamente pelo App Hosting.
 # Não é necessário (e não é seguro) defini-la aqui.
