@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
@@ -17,9 +16,9 @@ import {
 } from 'firebase/auth';
 import { auth, app, firestore, storage } from '@/lib/firebase/client'; 
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'; 
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { uploadFileAndGetURL } from '@/app/actions';
 
 interface UserProfile {
     bio?: string;
@@ -274,7 +273,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUserProfile = useCallback(async (data: UpdateUserProfileData) => {
     const userForUpdate = auth.currentUser;
-    if (!userForUpdate || !firestore || !storage) {
+    if (!userForUpdate || !firestore) {
         toast({ title: "Erro", description: "Usuário não autenticado ou serviço indisponível.", variant: "destructive" });
         return;
     }
@@ -285,12 +284,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
         let newPhotoURL: string | null = null;
         if (data.newPhotoFile) {
-            const file = data.newPhotoFile;
-            const filePath = `profile_pictures/${userForUpdate.uid}/${file.name}`;
-            const storageRef = ref(storage, filePath);
-
-            await uploadBytes(storageRef, file);
-            newPhotoURL = await getDownloadURL(storageRef);
+            const formData = new FormData();
+            formData.append('file', data.newPhotoFile);
+            formData.append('folder', 'profile_pictures');
+            formData.append('userId', userForUpdate.uid);
+            
+            newPhotoURL = await uploadFileAndGetURL(formData);
+            if (!newPhotoURL) {
+              throw new Error("O upload da foto de perfil falhou.");
+            }
         }
 
         const authProfileUpdates: { displayName?: string; photoURL?: string } = {};
