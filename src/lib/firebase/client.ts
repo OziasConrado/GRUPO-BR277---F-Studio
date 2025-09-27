@@ -32,10 +32,7 @@ if (getApps().length === 0) {
 
 auth = getAuth(app);
 firestore = getFirestore(app);
-
-// Explicitly provide the storage bucket URL during initialization
-const BUCKET_URL = "gs://grupo-br277.appspot.com";
-storage = getStorage(app, BUCKET_URL);
+storage = getStorage(app);
 
 if (typeof window !== 'undefined') {
   isSupported().then((supported) => {
