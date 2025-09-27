@@ -17,7 +17,7 @@ import {
 } from 'firebase/auth';
 import { auth, app, firestore, storage } from '@/lib/firebase/client'; 
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'; 
-import { ref, getDownloadURL, uploadBytesResumable } from "firebase/storage";
+import { ref, getDownloadURL, uploadBytes, uploadBytesResumable } from "firebase/storage";
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -280,46 +280,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     setAuthAction('update');
+    toast({ title: "Atualizando perfil...", description: "Por favor, aguarde." });
 
     try {
         let newPhotoURL: string | null = null;
         if (data.newPhotoFile) {
             const file = data.newPhotoFile;
             const photoRef = ref(storage, `profile_pictures/${userForUpdate.uid}/${Date.now()}_${file.name}`);
-            
-            const metadata = { contentType: file.type };
-            const uploadTask = uploadBytesResumable(photoRef, file, metadata);
-
-            const uploadToast = toast({
-                title: "Enviando imagem...",
-                description: "Aguarde, por favor.",
-            });
-
-            newPhotoURL = await new Promise<string>((resolve, reject) => {
-                uploadTask.on('state_changed',
-                    (snapshot) => {
-                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                        uploadToast.update({
-                            id: uploadToast.id,
-                            description: `Progresso: ${Math.round(progress)}%`,
-                        });
-                    },
-                    (error) => {
-                        console.error("Upload error in AuthContext:", error);
-                        uploadToast.update({
-                            id: uploadToast.id,
-                            title: "Erro no Upload da Foto",
-                            description: `Não foi possível salvar sua foto. Erro: ${error.code}`,
-                            variant: "destructive",
-                        });
-                        reject(error);
-                    },
-                    () => {
-                        uploadToast.dismiss();
-                        getDownloadURL(uploadTask.snapshot.ref).then(resolve).catch(reject);
-                    }
-                );
-            });
+            const snapshot = await uploadBytes(photoRef, file);
+            newPhotoURL = await getDownloadURL(snapshot.ref);
         }
 
         const authProfileUpdates: { displayName?: string; photoURL?: string } = {};
@@ -373,10 +342,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
     } catch (error) {
         console.error("Error updating profile:", error);
+        handleAuthError(error as AuthError, 'Erro ao Atualizar Perfil');
     } finally {
         setAuthAction(null);
     }
-  }, [userProfile, toast]);
+  }, [userProfile, toast, handleAuthError]);
 
 
   const signOutUser = useCallback(async () => {
@@ -397,7 +367,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [router, toast, handleAuthError]);
 
-  const isProfileComplete = !!(currentUser?.displayName && userProfile?.location);
+  const isProfileComplete = !!(currentUser && currentUser.displayName && userProfile?.location);
   const isAuthenticating = authAction !== null;
 
   const value = {
