@@ -48,7 +48,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from '@/contexts/AuthContext';
 import { firestore, storage } from '@/lib/firebase/client';
 import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp, where, getDocs, doc, writeBatch, getDoc, updateDoc } from 'firebase/firestore';
-import { ref, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
+import { ref, getDownloadURL, uploadBytes } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ToastAction } from '@/components/ui/toast';
@@ -564,26 +564,9 @@ export default function FeedPage() {
         const storagePath = `${mediaType}/${currentUser.uid}/${Date.now()}_${selectedMediaForUpload.name}`;
         const storageRef = ref(storage, storagePath);
         
-        const metadata = { contentType: selectedMediaForUpload.type };
-        const uploadTask = uploadBytesResumable(storageRef, selectedMediaForUpload, metadata);
-
-        mediaUrl = await new Promise<string>((resolve, reject) => {
-            uploadTask.on('state_changed',
-                (snapshot) => { /* Can show progress here if needed */ },
-                (error) => {
-                    console.error("Upload error on feed page:", error);
-                    toast({
-                        variant: "destructive",
-                        title: "Erro no Upload",
-                        description: `Sua mídia não pôde ser enviada. Erro: ${error.code}`,
-                    });
-                    reject(error);
-                },
-                () => {
-                    getDownloadURL(uploadTask.snapshot.ref).then(resolve).catch(reject);
-                }
-            );
-        });
+        // Use uploadBytes for a simpler, direct upload
+        const uploadResult = await uploadBytes(storageRef, selectedMediaForUpload);
+        mediaUrl = await getDownloadURL(uploadResult.ref);
       }
 
       if (currentPostType === 'alert') {
@@ -649,7 +632,11 @@ export default function FeedPage() {
       resetFormState();
     } catch (error) {
       console.error("Error publishing content:", error);
-      // Toast for upload error is now handled inside the upload promise
+      toast({
+          variant: "destructive",
+          title: "Erro no Upload",
+          description: "Sua mídia não pôde ser enviada. Verifique sua conexão ou tente novamente.",
+      });
     } finally {
         setIsPublishing(false);
     }
