@@ -5626,3 +5626,5 @@ I0801 02:40:03.584066   30268 load.go:115] Finished reloading
 [debug] [2025-08-01T02:40:03.635Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
 [debug] [2025-08-01T02:40:03.904Z] I0801 02:40:03.902088   30268 engine.go:174] [/emulator/s 0322] ExecuteGraphqlRead IntrospectionQuery: succeeded. 
  {"metadata":{"emulator":{"name":"dataconnect"},"message":"I0801 02:40:03.902088   30268 engine.go:174] [/emulator/s 0322] ExecuteGraphqlRead IntrospectionQuery: succeeded. \n"}}
+[info] [Firebase Plugin] Stopping Data Connect toolkit
+[warn] ⚠  Data Connect Emulator has exited upon receiving signal: SIGINT 

@@ -2,42 +2,17 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    
-    // As imagens de perfil podem ser lidas por todos, mas apenas o próprio usuário pode escrever.
-    match /profile_pictures/{userId}/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // As mídias do chat (imagens, áudios) seguem uma regra similar.
-    match /chat_images/{userId}/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-     match /chat_audio/{userId}/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Mídia de posts (imagens e vídeos)
-    match /images/{userId}/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-     match /videos/{userId}/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Imagens para pontos turísticos indicados
-    match /indicated_points_images/{userId}/{allPaths=**} {
-       allow read;
-       allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Regra geral de fallback: nega tudo por padrão para segurança.
+    // Permite que todos leiam qualquer arquivo. 
+    // Essencial para que as imagens e vídeos apareçam no app para todos os usuários.
     match /{allPaths=**} {
-      allow read, write: if false;
+      allow read;
+    }
+
+    // Permite que qualquer usuário autenticado escreva (crie, atualize, delete)
+    // em qualquer local. Isso simplifica a gestão, mas em produção, você
+    // pode querer regras mais específicas por pasta (ex: um usuário só pode mudar a própria foto).
+    match /{allPaths=**} {
+      allow write: if request.auth != null;
     }
   }
 }
