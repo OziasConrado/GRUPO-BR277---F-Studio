@@ -105,7 +105,7 @@ export default function StoryCircle({
           className="absolute top-2 left-2 flex items-center gap-1.5 p-1 rounded-full bg-black/30 backdrop-blur-sm cursor-pointer"
           aria-label={`Ver perfil de ${authorName}`}
         >
-          <Avatar className="h-6 w-6 border-2 border-white/50">
+          <Avatar className="h-6 w-6 border-2 border-white border-opacity-50">
             {authorAvatarUrl && <AvatarImage src={authorAvatarUrl} alt={authorName}/>}
             <AvatarFallback className="text-xs bg-primary/70 text-primary-foreground">
                 {authorName ? authorName.substring(0,1).toUpperCase() : <UserCircle className="h-5 w-5"/>}
