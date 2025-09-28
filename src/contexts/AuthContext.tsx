@@ -18,7 +18,7 @@ import { auth, app, firestore, storage } from '@/lib/firebase/client';
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'; 
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { uploadFileAndGetURL } from '@/app/actions';
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
 interface UserProfile {
     bio?: string;
@@ -284,15 +284,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
         let newPhotoURL: string | null = null;
         if (data.newPhotoFile) {
-            const formData = new FormData();
-            formData.append('file', data.newPhotoFile);
-            formData.append('folder', 'profile_pictures');
-            formData.append('userId', userForUpdate.uid);
+            const folder = 'profile_pictures';
+            const storagePath = `${folder}/${userForUpdate.uid}/${Date.now()}_${data.newPhotoFile.name}`;
+            const storageRef = ref(storage, storagePath);
+            const metadata = { contentType: data.newPhotoFile.type };
+            const uploadTask = uploadBytesResumable(storageRef, data.newPhotoFile, metadata);
             
-            newPhotoURL = await uploadFileAndGetURL(formData);
-            if (!newPhotoURL) {
-              throw new Error("O upload da foto de perfil falhou.");
-            }
+            newPhotoURL = await new Promise<string>((resolve, reject) => {
+                uploadTask.on('state_changed',
+                    (snapshot) => {}, // Progress can be handled here
+                    (error) => {
+                        console.error("Profile photo upload error:", error);
+                        reject(new Error("O upload da foto de perfil falhou."));
+                    },
+                    () => {
+                        getDownloadURL(uploadTask.snapshot.ref).then(resolve).catch(reject);
+                    }
+                );
+            });
         }
 
         const authProfileUpdates: { displayName?: string; photoURL?: string } = {};

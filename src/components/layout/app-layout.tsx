@@ -88,7 +88,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       if (!notification.read) {
           await handleMarkAsRead(notification.id);
       }
-      router.push(`/#post-${notification.postId}`);
+      let targetPath = '/';
+      if (notification.type === 'mention_post') {
+        targetPath = `/#post-${notification.postId}`;
+      }
+      
+      router.push(targetPath);
+
       setTimeout(() => {
           const element = document.getElementById(`post-${notification.postId}`);
           if (element) {
