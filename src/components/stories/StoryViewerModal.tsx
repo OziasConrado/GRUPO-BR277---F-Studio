@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef, type ChangeEvent, useMemo, useCallback } from 'react';
@@ -62,6 +61,7 @@ interface CommentProps {
   userAvatarUrl?: string;
   timestamp: string;
   text: string;
+  parentCommentId?: string | null;
 }
 
 interface StoryViewerModalProps {
@@ -171,6 +171,10 @@ async function createStoryCommentMentions(
     }
 }
 
+interface ReplyingToInfo {
+  userNameToReply: string;
+  commentId: string | null;
+}
 
 export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewerModalProps) {
   const { toast } = useToast();
@@ -179,9 +183,10 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
   // State for reactions, comments, and modals
   const [storyReactions, setStoryReactions] = useState({ thumbsUp: 0, thumbsDown: 0 });
   const [currentUserStoryReaction, setCurrentUserStoryReaction] = useState<'thumbsUp' | 'thumbsDown' | null>(null);
-  const [comments, setComments] = useState<CommentProps[]>([]);
+  const [allComments, setAllComments] = useState<CommentProps[]>([]);
   const [newComment, setNewComment] = useState('');
   const [isCommentSheetOpen, setIsCommentSheetOpen] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<ReplyingToInfo | null>(null);
   
   const [isReportModalOpenStory, setIsReportModalOpenStory] = useState(false);
   const [selectedReportReasonStory, setSelectedReportReasonStory] = useState<string | undefined>(undefined);
@@ -228,7 +233,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
     }
 
     // Fetch comments
-    const commentsQuery = query(collection(firestore, 'reels', story.id, 'comments'), orderBy('timestamp', 'desc'));
+    const commentsQuery = query(collection(firestore, 'reels', story.id, 'comments'), orderBy('timestamp', 'asc'));
     const unsubComments = onSnapshot(commentsQuery, (snapshot) => {
       const fetchedComments = snapshot.docs.map(doc => {
         const data = doc.data();
@@ -239,9 +244,10 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
           userAvatarUrl: data.userAvatarUrl,
           text: data.text,
           timestamp: data.timestamp ? formatDistanceToNow(data.timestamp.toDate(), { addSuffix: true, locale: ptBR }) : 'Agora',
+          parentCommentId: data.parentCommentId || null,
         } as CommentProps;
       });
-      setComments(fetchedComments);
+      setAllComments(fetchedComments);
     });
 
     return () => {
@@ -325,11 +331,13 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
         userAvatarUrl: currentUser.photoURL,
         text: commentText,
         timestamp: serverTimestamp(),
+        parentCommentId: replyingTo?.commentId || null,
       });
 
       await createStoryCommentMentions(commentText, story.id, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL });
 
       setNewComment('');
+      setReplyingTo(null);
       setShowMentions(false);
     } catch (error) {
       console.error("Error posting comment:", error);
@@ -494,6 +502,54 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
       .replace('cerca de ', '');
   }, [story?.timestamp]);
 
+  const CommentItem = ({ comment, allComments, level = 0, onReply }: { comment: CommentProps; allComments: CommentProps[]; level?: number; onReply: (comment: CommentProps) => void; }) => {
+    const childComments = allComments.filter(c => c.parentCommentId === comment.id);
+    return (
+      <div className="relative">
+        {level > 0 && <div className="absolute left-4 -top-3 bottom-0 w-0.5 bg-border -z-10" />}
+        <div key={comment.id} className="flex items-start" style={{ marginLeft: `${level * 1}rem` }}>
+           {level > 0 && <div className="absolute left-4 top-6 w-5 h-0.5 bg-border -z-10" />}
+          <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
+            {comment.userAvatarUrl && <AvatarImage src={comment.userAvatarUrl} alt={comment.userName} />}
+            <AvatarFallback>{comment.userName?.substring(0, 2).toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <div className="ml-2 flex-grow p-3 rounded-lg bg-muted/60 dark:bg-muted/30">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold font-headline">{comment.userName}</p>
+              <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
+            </div>
+            <p className="text-sm mt-1 whitespace-pre-wrap">{comment.text}</p>
+            <div className="flex items-center mt-1.5 space-x-0.5">
+              <Button variant="link" size="sm" className="p-0 h-auto text-xs text-primary ml-1" onClick={() => onReply(comment)}>
+                Responder
+              </Button>
+            </div>
+          </div>
+        </div>
+        {childComments.length > 0 && (
+          <div className="mt-2">
+            {childComments.map(child => <CommentItem key={child.id} comment={child} allComments={allComments} level={level + 1} onReply={onReply} />)}
+          </div>
+        )}
+      </div>
+    );
+  };
+  
+  const threadedComments = useMemo(() => {
+    const commentMap = new Map(allComments.map(c => [c.id, {...c, children: [] as CommentProps[]}]));
+    const rootComments: CommentProps[] = [];
+
+    allComments.forEach(comment => {
+      if (comment.parentCommentId && commentMap.has(comment.parentCommentId)) {
+        commentMap.get(comment.parentCommentId)?.children.push(comment as any);
+      } else {
+        rootComments.push(comment);
+      }
+    });
+
+    return rootComments;
+  }, [allComments]);
+  
   if (!isOpen || !story) return null;
 
   const description = story.description || '';
@@ -579,7 +635,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
                 aria-label="Comentários"
               >
                 <MessageSquare size={26} />
-                <span className="text-xs mt-0.5">{comments.length > 0 ? comments.length : ''}</span>
+                <span className="text-xs mt-0.5">{allComments.length > 0 ? allComments.length : ''}</span>
               </Button>
               <Button 
                 variant="ghost" 
@@ -686,28 +742,14 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
         </DialogContent>
       </Dialog>
       
-      <Sheet open={isCommentSheetOpen} onOpenChange={setIsCommentSheetOpen}>
+      <Sheet open={isCommentSheetOpen} onOpenChange={(open) => { setIsCommentSheetOpen(open); if(!open) setReplyingTo(null); }}>
         <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0 rounded-t-[25px]">
           <SheetHeader className="p-3 border-b text-center">
             <SheetTitle>Comentários sobre o Reel</SheetTitle>
           </SheetHeader>
           <div className="flex-grow overflow-y-auto p-4 space-y-4">
-            {comments.length > 0 ? (
-              comments.map(comment => (
-                <div key={comment.id} className="flex items-start space-x-2">
-                  <Avatar className="h-8 w-8">
-                    {comment.userAvatarUrl && <AvatarImage src={comment.userAvatarUrl} alt={comment.userName} />}
-                    <AvatarFallback>{comment.userName?.substring(0, 2).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-grow p-3 rounded-lg bg-muted">
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs font-semibold">{comment.userName}</p>
-                      <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
-                    </div>
-                    <p className="text-sm mt-1">{comment.text}</p>
-                  </div>
-                </div>
-              ))
+            {threadedComments.length > 0 ? (
+              threadedComments.map(comment => <CommentItem key={comment.id} comment={comment} allComments={allComments} onReply={(c) => { setReplyingTo({ userNameToReply: c.userName, commentId: c.id }); setNewComment(`@${c.userName} `); commentTextareaRef.current?.focus(); }} />)
             ) : (
               <p className="text-muted-foreground text-center pt-8">Nenhum comentário ainda.</p>
             )}
@@ -730,6 +772,14 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
                 ) : (
                   <div className="p-2 text-center text-muted-foreground">Nenhum usuário encontrado.</div>
                 )}
+              </div>
+            )}
+            {replyingTo && (
+              <div className="flex justify-between items-center text-xs text-muted-foreground px-1">
+                  <span>Respondendo a <strong className="text-primary">@{replyingTo.userNameToReply}</strong></span>
+                  <Button variant="link" className="p-0 h-auto text-destructive hover:text-destructive/80" onClick={() => setReplyingTo(null)}>
+                      Cancelar
+                  </Button>
               </div>
             )}
             <form onSubmit={handlePostComment} className="flex items-center gap-2">

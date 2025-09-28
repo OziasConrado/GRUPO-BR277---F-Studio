@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { StaticImageData } from 'next/image';
@@ -160,6 +159,7 @@ export interface CommentProps {
   timestamp: string; // This will be the relative time string
   text: string;
   textElements?: React.ReactNode[];
+  parentCommentId?: string | null;
 }
 
 export interface PostReactions {
@@ -208,6 +208,7 @@ export interface PostCardProps {
 
 interface ReplyingToInfo {
   userNameToReply: string;
+  commentId: string | null;
 }
 
 const reportReasons = [
@@ -466,7 +467,7 @@ export default function PostCard({
   // State
   const [localPostReactions, setLocalPostReactions] = useState(initialReactions);
   const [currentUserPostReaction, setCurrentUserPostReaction] = useState<'thumbsUp' | 'thumbsDown' | null>(null);
-  const [comments, setComments] = useState<CommentProps[]>([]);
+  const [allComments, setAllComments] = useState<CommentProps[]>([]);
   const [loadingComments, setLoadingComments] = useState(true);
   const [isTextExpanded, setIsTextExpanded] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -561,7 +562,7 @@ export default function PostCard({
   useEffect(() => {
     if (!firestore) return;
     const commentsCollection = collection(firestore, 'posts', postId, 'comments');
-    const q = query(commentsCollection, orderBy('timestamp', 'desc'));
+    const q = query(commentsCollection, orderBy('timestamp', 'asc')); // Order by asc to build the tree correctly
 
     const unsubscribe = onSnapshot(q, async (snapshot) => {
       const fetchedCommentsPromises = snapshot.docs.map(async (doc) => {
@@ -579,10 +580,11 @@ export default function PostCard({
           text: data.text,
           timestamp: commentTimestamp,
           textElements: textElements,
+          parentCommentId: data.parentCommentId || null,
         } as CommentProps;
       });
       const fetchedComments = await Promise.all(fetchedCommentsPromises);
-      setComments(fetchedComments);
+      setAllComments(fetchedComments);
       setLoadingComments(false);
     });
 
@@ -685,6 +687,7 @@ export default function PostCard({
             userAvatarUrl: currentUser.photoURL,
             text: commentText,
             timestamp: serverTimestamp(),
+            parentCommentId: replyingTo?.commentId || null,
         });
 
         if (currentUser) {
@@ -862,26 +865,54 @@ export default function PostCard({
   const displayImageUrl = (cardStyle && cardStyle.name !== 'Padrão') ? null : (uploadedImageUrl || imageUrl);
   const displayImageAlt = (cardStyle && cardStyle.name !== 'Padrão') ? '' : (uploadedImageUrl ? (dataAIUploadedImageHint || "Imagem do post") : (dataAIImageHint || "Imagem do post"));
   
-  const CommentItem = ({ comment }: { comment: CommentProps }) => (
-    <div key={comment.id} className="flex items-start space-x-2">
-      <Avatar className="h-8 w-8">
-        {comment.userAvatarUrl && <AvatarImage src={comment.userAvatarUrl as string} alt={comment.userName} />}
-        <AvatarFallback>{comment.userName?.substring(0, 2).toUpperCase()}</AvatarFallback>
-      </Avatar>
-      <div className="flex-grow p-3 rounded-lg bg-muted/60 dark:bg-muted/30">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold font-headline">{comment.userName}</p>
-          <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
+  const CommentItem = ({ comment, allComments, level = 0, onReply }: { comment: CommentProps; allComments: CommentProps[]; level?: number; onReply: (comment: CommentProps) => void; }) => {
+    const childComments = allComments.filter(c => c.parentCommentId === comment.id);
+  
+    return (
+      <div className="relative">
+        {level > 0 && <div className="absolute left-4 -top-3 bottom-0 w-0.5 bg-border -z-10" />}
+        <div key={comment.id} className="flex items-start" style={{ marginLeft: `${level * 1}rem` }}>
+           {level > 0 && <div className="absolute left-4 top-6 w-5 h-0.5 bg-border -z-10" />}
+          <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
+            {comment.userAvatarUrl && <AvatarImage src={comment.userAvatarUrl as string} alt={comment.userName} />}
+            <AvatarFallback>{comment.userName?.substring(0, 2).toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <div className="ml-2 flex-grow p-3 rounded-lg bg-muted/60 dark:bg-muted/30">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold font-headline">{comment.userName}</p>
+              <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
+            </div>
+            <p className="text-sm mt-1 whitespace-pre-wrap">{comment.textElements || comment.text}</p>
+            <div className="flex items-center mt-1.5 space-x-0.5">
+              <Button variant="link" size="sm" className="p-0 h-auto text-xs text-primary ml-1" onClick={() => handleInteractionAttempt(() => onReply(comment))}>
+                Responder
+              </Button>
+            </div>
+          </div>
         </div>
-        <p className="text-sm mt-1 whitespace-pre-wrap">{comment.textElements || comment.text}</p>
-        <div className="flex items-center mt-1.5 space-x-0.5">
-          <Button variant="link" size="sm" className="p-0 h-auto text-xs text-primary ml-1" onClick={() => { handleInteractionAttempt(() => { setReplyingTo({ userNameToReply: comment.userName }); setNewCommentText(`@${comment.userName} `); footerTextareaRef.current?.focus(); }); }}>
-            Responder
-          </Button>
-        </div>
+        {childComments.length > 0 && (
+          <div className="mt-2">
+            {childComments.map(child => <CommentItem key={child.id} comment={child} allComments={allComments} level={level + 1} onReply={onReply} />)}
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
+  
+  const threadedComments = useMemo(() => {
+    const commentMap = new Map(allComments.map(c => [c.id, {...c, children: [] as CommentProps[]}]));
+    const rootComments: CommentProps[] = [];
+
+    allComments.forEach(comment => {
+      if (comment.parentCommentId && commentMap.has(comment.parentCommentId)) {
+        commentMap.get(comment.parentCommentId)?.children.push(comment as any);
+      } else {
+        rootComments.push(comment);
+      }
+    });
+
+    return rootComments;
+  }, [allComments]);
 
   return (
     <>
@@ -1047,7 +1078,7 @@ export default function PostCard({
               </Button>
               <Button variant="ghost" onClick={() => handleInteractionAttempt(() => setIsSheetOpen(true))} className={cn("p-2 h-auto flex items-center gap-1 text-muted-foreground hover:text-primary hover:bg-muted/30")} aria-label="Comentários">
                   <MessageSquare />
-                  {comments.length > 0 && <span className="text-xs font-semibold tabular-nums">({comments.length})</span>}
+                  {allComments.length > 0 && <span className="text-xs font-semibold tabular-nums">({allComments.length})</span>}
               </Button>
                <Button variant="ghost" onClick={handleSharePost} className={cn("p-2 h-auto text-muted-foreground hover:text-primary hover:bg-muted/30")}>
                   <Share2 />
@@ -1060,8 +1091,12 @@ export default function PostCard({
           <SheetContent side="bottom" className="h-[95vh] flex flex-col p-0 rounded-t-[25px]">
               <SheetHeader className="p-3 border-b border-border text-center"><SheetTitle>Comentários</SheetTitle></SheetHeader>
               <div className="flex-grow overflow-y-auto p-4 space-y-4">
-                {comments.length > 0 ? (
-                  comments.map(comment => <CommentItem key={comment.id} comment={comment} />)
+                {loadingComments ? (
+                    <div className="flex justify-center items-center h-full">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                ) : threadedComments.length > 0 ? (
+                  threadedComments.map(comment => <CommentItem key={comment.id} comment={comment} allComments={allComments} onReply={(c) => { setReplyingTo({ userNameToReply: c.userName, commentId: c.id }); setNewCommentText(`@${c.userName} `); footerTextareaRef.current?.focus(); }} />)
                 ) : (
                   <p className="text-muted-foreground text-center pt-8">Nenhum comentário ainda. Seja o primeiro a comentar!</p>
                 )}
