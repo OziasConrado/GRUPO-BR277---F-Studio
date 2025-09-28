@@ -46,8 +46,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useAuth } from '@/contexts/AuthContext';
-import { firestore, uploadFile } from '@/lib/firebase/client';
+import { firestore, storage } from '@/lib/firebase/client';
 import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp, where, getDocs, doc, writeBatch, getDoc, updateDoc } from 'firebase/firestore';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ToastAction } from '@/components/ui/toast';
@@ -540,29 +541,62 @@ export default function FeedPage() {
     setShowMentions(false);
   }
 
+  // Substitua sua função handlePublish por esta versão com logs de depuração
   const handlePublish = async () => {
-    if (!currentUser) {
-      toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado para publicar.' });
+    console.log("--- DEBUG: 1. Função handlePublish iniciada. ---");
+
+    if (!currentUser || !firestore || !storage) {
+      console.error("--- DEBUG: ERRO CRÍTICO - Usuário ou Firebase não inicializado. ---");
+      toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado ou o serviço está indisponível.' });
       return;
     }
-  
+
     if (!isProfileComplete) {
-      handleInteractionAttempt(() => {}); // This will show the toast to complete profile
+      console.log("--- DEBUG: Perfil incompleto, mostrando aviso. ---");
+      handleInteractionAttempt(() => {});
       return;
     }
-  
+
+    console.log("--- DEBUG: 2. Verificações iniciais OK. ---");
     setIsPublishing(true);
-  
+
     try {
+      console.log("--- DEBUG: 3. Entrou no bloco try. ---");
       let mediaUrl: string | undefined;
+
       if (selectedMediaForUpload) {
-        const folder = currentPostType === 'video' ? 'reels' : 'posts';
-        const filePath = `${folder}/${currentUser.uid}/${Date.now()}_${selectedMediaForUpload.name}`;
-        mediaUrl = await uploadFile(selectedMediaForUpload, filePath);
+        console.log("--- DEBUG: 4. Arquivo de mídia encontrado:", selectedMediaForUpload);
+
+        const mediaType = currentPostType === 'video' ? 'reels' : 'posts';
+        const storagePath = `${mediaType}/${currentUser.uid}/${Date.now()}_${selectedMediaForUpload.name}`;
+        const storageRef = ref(storage, storagePath);
+        
+        console.log(`--- DEBUG: 5. Prestes a iniciar o upload para o caminho: ${storagePath} ---`);
+
+        const uploadTask = uploadBytesResumable(storageRef, selectedMediaForUpload);
+
+        mediaUrl = await new Promise<string>((resolve, reject) => {
+            uploadTask.on('state_changed',
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    console.log('--- DEBUG: Upload em progresso: ' + progress + '%');
+                },
+                (error) => {
+                    console.error("--- DEBUG: ERRO DENTRO DA PROMISE DE UPLOAD:", error);
+                    reject(new Error("O upload da mídia falhou."));
+                },
+                () => {
+                    console.log("--- DEBUG: Upload concluído, obtendo URL... ---");
+                    getDownloadURL(uploadTask.snapshot.ref).then(resolve).catch(reject);
+                }
+            );
+        });
+        console.log("--- DEBUG: 6. URL da mídia obtida:", mediaUrl);
       }
-  
-      if (currentPostType === 'alert') {
-        if (!firestore) throw new Error("Firestore not available");
+
+      console.log("--- DEBUG: 7. Prestes a salvar os dados no Firestore. ---");
+      // Conditionally handle based on post type
+      if (currentPostType === 'alert' && selectedAlertType) {
         await addDoc(collection(firestore, 'alerts'), {
           type: selectedAlertType,
           description: newPostText.trim(),
@@ -572,9 +606,7 @@ export default function FeedPage() {
           userLocation: userProfile?.location || 'Localização Desconhecida',
           timestamp: serverTimestamp(),
         });
-        toast({ title: "Alerta Publicado!", description: "Seu alerta foi adicionado ao mural." });
       } else if (currentPostType === 'video' && mediaUrl) {
-        if (!firestore) throw new Error("Firestore not available");
         await addDoc(collection(firestore, 'reels'), {
           userId: currentUser.uid,
           userName: currentUser.displayName || 'Anônimo',
@@ -585,9 +617,7 @@ export default function FeedPage() {
           reactions: { thumbsUp: 0, thumbsDown: 0 },
           timestamp: serverTimestamp(),
         });
-        toast({ title: "Reel Publicado!", description: "Seu vídeo está disponível para a comunidade." });
       } else { // 'image', 'text' or 'poll' post
-        if (!firestore) throw new Error("Firestore not available");
         const postData: any = {
           userId: currentUser.uid,
           userName: currentUser.displayName || 'Anônimo',
@@ -600,7 +630,7 @@ export default function FeedPage() {
           timestamp: serverTimestamp(),
         };
         if (mediaUrl) postData.uploadedImageUrl = mediaUrl;
-  
+        
         if (pollData) {
           postData.poll = {
             question: pollData.question,
@@ -615,26 +645,26 @@ export default function FeedPage() {
         }
         
         const docRef = await addDoc(collection(firestore, 'posts'), postData);
-        
-        if (currentUser && newPostText.trim()) {
+        if (newPostText.trim()) {
             await createMentions(newPostText.trim(), docRef.id, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL }, 'mention_post');
         }
-  
-        toast({ title: "Publicado!", description: "Sua postagem está na Time Line." });
       }
-  
+
+      toast({ title: "Publicado!", description: "Sua postagem está na Time Line." });
       resetFormState();
-    } catch (error: any) {
-      console.error("Error publishing content:", error);
+    } catch (error) {
+      console.error("--- DEBUG: ERRO CAPTURADO PELO CATCH PRINCIPAL:", error);
       toast({
-          variant: "destructive",
-          title: "Erro na Publicação",
-          description: error.message || "Sua mídia não pôde ser enviada. Verifique sua conexão ou tente novamente.",
+        variant: "destructive",
+        title: "Erro na Publicação",
+        description: (error as Error).message || "Ocorreu um erro desconhecido.",
       });
     } finally {
-        setIsPublishing(false);
+      console.log("--- DEBUG: 8. Executando o bloco finally. ---");
+      setIsPublishing(false);
     }
   };
+
 
   const handleNewPostTextareaInput = (event: ChangeEvent<HTMLTextAreaElement>) => {
     const textarea = event.target;
