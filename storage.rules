@@ -2,43 +2,40 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Regra geral de leitura: qualquer um pode ler qualquer arquivo.
-    // Isso é necessário para que as imagens/vídeos postados sejam visíveis para todos.
+
+    // Regra geral: Leitura pública para todos os arquivos
     match /{allPaths=**} {
       allow read;
     }
 
-    // Regras de escrita: Apenas usuários autenticados podem escrever, e apenas nos seus próprios diretórios.
-    // O {userId} na regra garante que um usuário só pode escrever em uma pasta com o seu próprio ID.
-
-    // Permite upload de fotos de perfil
-    match /profile_pictures/{userId}/{allPaths=**} {
+    // Regras de escrita por pasta:
+    
+    // Usuários autenticados podem escrever em suas próprias pastas de perfil
+    match /profile_pictures/{userId}/{fileName} {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Permite upload de imagens para posts no feed
-    match /images/{userId}/{allPaths=**} {
+    // Usuários autenticados podem escrever posts em suas próprias pastas
+    match /posts/{userId}/{fileName} {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Permite upload de vídeos para Reels
-    match /videos/{userId}/{allPaths=**} {
+    // Usuários autenticados podem escrever reels em suas próprias pastas
+    match /reels/{userId}/{fileName} {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Permite upload de imagens no chat
-    match /chat_images/{userId}/{allPaths=**} {
+    // Usuários autenticados podem enviar imagens e áudios no chat
+    match /chat_images/{userId}/{fileName} {
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /chat_audio/{userId}/{fileName} {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Permite upload de áudio no chat
-    match /chat_audio/{userId}/{allPaths=**} {
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Permite upload de imagens para indicações de pontos turísticos
-    match /indicated_points_images/{userId}/{allPaths=**} {
-      allow write: if request.auth != null && request.auth.uid == userId;
+    // Usuários autenticados podem indicar pontos turísticos
+    match /indicated_points_images/{userId}/{fileName} {
+        allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
