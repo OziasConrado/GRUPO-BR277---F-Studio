@@ -1,4 +1,3 @@
-
 // src/lib/firebase/client.ts
 import { initializeApp, getApp, getApps, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
@@ -16,24 +15,20 @@ const firebaseConfig = {
   "messagingSenderId": "491779757123"
 };
 
-
-let app: FirebaseApp;
-let auth: Auth;
-let firestore: Firestore;
-let storage: FirebaseStorage;
-let analytics: Analytics | null = null;
-
-// Initialize Firebase
-if (getApps().length === 0) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApp();
+// Singleton pattern to initialize Firebase app
+function getFirebaseApp(): FirebaseApp {
+  if (!getApps().length) {
+    return initializeApp(firebaseConfig);
+  }
+  return getApp();
 }
 
-auth = getAuth(app);
-firestore = getFirestore(app);
-storage = getStorage(app);
+const app: FirebaseApp = getFirebaseApp();
+const auth: Auth = getAuth(app);
+const firestore: Firestore = getFirestore(app);
+const storage: FirebaseStorage = getStorage(app);
 
+let analytics: Analytics | null = null;
 if (typeof window !== 'undefined') {
   isSupported().then((supported) => {
     if (supported) {
@@ -92,6 +87,5 @@ export function uploadFile(
     );
   });
 }
-
 
 export { app, auth, firestore, storage, analytics };
