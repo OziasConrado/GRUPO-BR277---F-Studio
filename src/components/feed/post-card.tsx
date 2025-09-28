@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { StaticImageData } from 'next/image';
@@ -7,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send, MoreVertical, Trash2, Edit3, Flag, X, ListChecks, Check, Link as LinkIcon, Loader2 } from 'lucide-react';
-import React, { useState, type ChangeEvent, type FormEvent, useEffect, useMemo, useRef } from 'react';
+import React, { useState, type ChangeEvent, type FormEvent, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
 import {
   DropdownMenu,
@@ -222,10 +223,17 @@ const reportReasons = [
   { id: "other", label: "Outros, informe o motivo..." },
 ];
 
-async function findMentions(text: string): Promise<{startIndex: number, length: number}[]> {
+interface Mention {
+    startIndex: number;
+    length: number;
+    userId: string;
+}
+
+
+async function findMentions(text: string): Promise<Mention[]> {
     if (!firestore || !text) return [];
 
-    const mentions: {startIndex: number, length: number}[] = [];
+    const mentions: Mention[] = [];
     const processedIndices = new Set<number>();
     const matches = [...text.matchAll(/@/g)];
 
@@ -250,7 +258,7 @@ async function findMentions(text: string): Promise<{startIndex: number, length: 
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) continue;
         
-        let longestMatchUser: { displayName: string } | null = null;
+        let longestMatchUser: { id: string, displayName: string } | null = null;
         
         for (const userDoc of querySnapshot.docs) {
             const userData = userDoc.data();
@@ -260,7 +268,7 @@ async function findMentions(text: string): Promise<{startIndex: number, length: 
                     const nextChar = text[atIndex + 1 + displayName.length];
                     if (nextChar === undefined || !/[\p{L}\p{N}]/u.test(nextChar)) {
                         if (!longestMatchUser || displayName.length > longestMatchUser.displayName.length) {
-                            longestMatchUser = { displayName };
+                            longestMatchUser = { id: userDoc.id, displayName };
                         }
                     }
                 }
@@ -272,6 +280,7 @@ async function findMentions(text: string): Promise<{startIndex: number, length: 
             mentions.push({
                 startIndex: atIndex,
                 length: mentionLength,
+                userId: longestMatchUser.id,
             });
             for (let i = 0; i < mentionLength; i++) {
                 processedIndices.add(atIndex + i);
@@ -281,7 +290,7 @@ async function findMentions(text: string): Promise<{startIndex: number, length: 
     return mentions;
 }
 
-function renderTextWithPrecomputedMentions(text: string, mentions: {startIndex: number, length: number}[]): React.ReactNode[] {
+function renderTextWithClickableMentions(text: string, mentions: Mention[], onMentionClick: (userId: string) => void): React.ReactNode[] {
     if (!text) return [];
     if (!mentions || mentions.length === 0) return [text];
 
@@ -295,7 +304,11 @@ function renderTextWithPrecomputedMentions(text: string, mentions: {startIndex: 
             elements.push(text.substring(lastIndex, mention.startIndex));
         }
         const mentionText = text.substring(mention.startIndex, mention.startIndex + mention.length);
-        elements.push(<strong key={`mention-${i}`} className="text-accent font-semibold cursor-pointer hover:underline">{mentionText}</strong>);
+        elements.push(
+            <button key={`mention-${i}`} className="text-accent font-semibold hover:underline focus:outline-none" onClick={() => onMentionClick(mention.userId)}>
+                {mentionText}
+            </button>
+        );
         lastIndex = mention.startIndex + mention.length;
     });
 
@@ -520,16 +533,38 @@ export default function PostCard({
   const needsTruncation = textContent.length > MAX_CHARS;
   const textToShow = isTextExpanded ? textContent : textContent.substring(0, MAX_CHARS);
 
+    const handleShowUserProfile = useCallback(async (userIdToShow: string) => {
+        if (!firestore) return;
+        try {
+            const userDoc = await getDoc(doc(firestore, "Usuarios", userIdToShow));
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                setSelectedUserProfile({
+                    id: userDoc.id,
+                    name: userData.displayName || 'Usuário',
+                    avatarUrl: userData.photoURL,
+                    location: userData.location,
+                    bio: userData.bio,
+                    instagramUsername: userData.instagramUsername,
+                });
+                setIsProfileModalOpen(true);
+            }
+        } catch (error) {
+            console.error("Error fetching user profile for modal:", error);
+            toast({ variant: "destructive", title: "Erro ao carregar perfil." });
+        }
+    }, [toast]);
+
   // Process main post text for mentions
   useEffect(() => {
     if (text) {
         const processText = async () => {
             const mentions = await findMentions(text);
-            setPostTextElements(renderTextWithPrecomputedMentions(text, mentions));
+            setPostTextElements(renderTextWithClickableMentions(text, mentions, handleShowUserProfile));
         };
         processText();
     }
-  }, [text]);
+  }, [text, handleShowUserProfile]);
 
 
   // Real-time listener for the post document to update reactions
@@ -570,7 +605,7 @@ export default function PostCard({
         const commentTimestamp = data.timestamp instanceof Timestamp ? formatDistanceToNow(data.timestamp.toDate(), { addSuffix: true, locale: ptBR }) : 'Agora';
         
         const mentions = await findMentions(data.text);
-        const textElements = renderTextWithPrecomputedMentions(data.text || '', mentions);
+        const textElements = renderTextWithClickableMentions(data.text || '', mentions, handleShowUserProfile);
 
         return {
           id: doc.id,
@@ -589,7 +624,7 @@ export default function PostCard({
     });
 
     return () => unsubscribe();
-  }, [postId]);
+  }, [postId, handleShowUserProfile]);
 
   useEffect(() => {
     if (showMentions && mentionQuery.length > 0 && firestore) {
@@ -753,10 +788,7 @@ export default function PostCard({
   };
 
   const handleAvatarOrNameClick = () => {
-    setSelectedUserProfile({
-      id: postId, name: userName, avatarUrl: userAvatarUrl, dataAIAvatarHint, location: userLocation, bio, instagramUsername,
-    });
-    setIsProfileModalOpen(true);
+    handleShowUserProfile(userId);
   };
   
   const handleImageClick = (imgUrl: string | StaticImageData) => {
@@ -873,13 +905,15 @@ export default function PostCard({
         {level > 0 && <div className="absolute left-4 -top-3 bottom-0 w-0.5 bg-border -z-10" />}
         <div key={comment.id} className="flex items-start" style={{ marginLeft: `${level * 1}rem` }}>
            {level > 0 && <div className="absolute left-4 top-6 w-5 h-0.5 bg-border -z-10" />}
-          <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
-            {comment.userAvatarUrl && <AvatarImage src={comment.userAvatarUrl as string} alt={comment.userName} />}
-            <AvatarFallback>{comment.userName?.substring(0, 2).toUpperCase()}</AvatarFallback>
-          </Avatar>
+          <button className="flex-shrink-0" onClick={() => handleShowUserProfile(comment.userId)}>
+            <Avatar className="h-8 w-8 mt-1">
+              {comment.userAvatarUrl && <AvatarImage src={comment.userAvatarUrl as string} alt={comment.userName} />}
+              <AvatarFallback>{comment.userName?.substring(0, 2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+          </button>
           <div className="ml-2 flex-grow p-3 rounded-lg bg-muted/60 dark:bg-muted/30">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold font-headline">{comment.userName}</p>
+              <button className="text-xs font-semibold font-headline hover:underline" onClick={() => handleShowUserProfile(comment.userId)}>{comment.userName}</button>
               <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
             </div>
             <p className="text-sm mt-1 whitespace-pre-wrap">{comment.textElements || comment.text}</p>
@@ -918,14 +952,18 @@ export default function PostCard({
     <>
       <Card id={`post-${postId}`} className="w-full max-w-2xl mx-auto mb-6 shadow-lg rounded-xl overflow-hidden">
         <CardHeader className="flex flex-row items-start space-x-3 p-4">
-          <Avatar className="h-10 w-10 cursor-pointer" onClick={handleAvatarOrNameClick}>
-            {userAvatarUrl ? <AvatarImage src={userAvatarUrl as string} alt={userName} data-ai-hint={dataAIAvatarHint} /> : null}
-            <AvatarFallback>{userName ? userName.substring(0,2).toUpperCase() : <UserCircle className="h-10 w-10" />}</AvatarFallback>
-          </Avatar>
-          <div className="flex-grow cursor-pointer" onClick={handleAvatarOrNameClick}>
-            <PostCardTitleUI className="text-base font-headline text-foreground">
-              {userName}
-            </PostCardTitleUI>
+          <button onClick={handleAvatarOrNameClick} aria-label={`Ver perfil de ${userName}`}>
+            <Avatar className="h-10 w-10">
+              {userAvatarUrl ? <AvatarImage src={userAvatarUrl as string} alt={userName} data-ai-hint={dataAIAvatarHint} /> : null}
+              <AvatarFallback>{userName ? userName.substring(0,2).toUpperCase() : <UserCircle className="h-10 w-10" />}</AvatarFallback>
+            </Avatar>
+          </button>
+          <div className="flex-grow">
+            <button onClick={handleAvatarOrNameClick} className="w-full text-left" aria-label={`Ver perfil de ${userName}`}>
+              <PostCardTitleUI className="text-base font-headline text-foreground hover:underline">
+                {userName}
+              </PostCardTitleUI>
+            </button>
             <div className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
               {userLocation && <p>{userLocation}</p>}
               {userLocation && <span>&middot;</span>}

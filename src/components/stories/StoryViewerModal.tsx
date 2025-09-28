@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useRef, type ChangeEvent, useMemo, useCallback } from 'react';
@@ -213,6 +214,29 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
   const isAuthor = currentUser?.uid === story?.authorId;
 
 
+  const handleShowUserProfile = useCallback(async (userIdToShow: string) => {
+    if (!firestore) return;
+    try {
+        const userDoc = await getDoc(doc(firestore, "Usuarios", userIdToShow));
+        if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setSelectedUserProfile({
+                id: userDoc.id,
+                name: userData.displayName || 'Usuário',
+                avatarUrl: userData.photoURL,
+                location: userData.location,
+                bio: userData.bio,
+                instagramUsername: userData.instagramUsername,
+            });
+            setIsProfileModalOpen(true);
+        }
+    } catch (error) {
+        console.error("Error fetching user profile for modal:", error);
+        toast({ variant: "destructive", title: "Erro ao carregar perfil." });
+    }
+  }, [toast]);
+
+
   // Effect to fetch real-time data for the story
   useEffect(() => {
     if (!isOpen || !story || !firestore) return;
@@ -426,41 +450,6 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
     }
   };
 
-  const handleShowUserProfile = useCallback(async () => {
-    if (!story?.authorId) return;
-    if (!firestore) {
-      toast({ variant: 'destructive', title: 'Erro', description: 'Serviço de banco de dados indisponível.' });
-      return;
-    }
-
-    try {
-      const userDocRef = doc(firestore, 'Usuarios', story.authorId);
-      const userDoc = await getDoc(userDocRef);
-
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        setSelectedUserProfile({
-          id: userDoc.id,
-          name: userData.displayName || 'Usuário',
-          avatarUrl: userData.photoURL,
-          location: userData.location,
-          bio: userData.bio,
-          instagramUsername: userData.instagramUsername,
-        });
-      } else {
-        setSelectedUserProfile({
-          id: story.authorId,
-          name: story.authorName || 'Usuário',
-          avatarUrl: story.authorAvatarUrl,
-        });
-      }
-      setIsProfileModalOpen(true);
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar o perfil do usuário.' });
-    }
-  }, [story, toast]);
-  
   const handleUpdateReel = async () => {
     if (!story || !isAuthor || !firestore) return;
     if (editedDescription.trim() === (story.description || '').trim()) {
@@ -509,13 +498,15 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
         {level > 0 && <div className="absolute left-4 -top-3 bottom-0 w-0.5 bg-border -z-10" />}
         <div key={comment.id} className="flex items-start" style={{ marginLeft: `${level * 1}rem` }}>
            {level > 0 && <div className="absolute left-4 top-6 w-5 h-0.5 bg-border -z-10" />}
-          <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
-            {comment.userAvatarUrl && <AvatarImage src={comment.userAvatarUrl} alt={comment.userName} />}
-            <AvatarFallback>{comment.userName?.substring(0, 2).toUpperCase()}</AvatarFallback>
-          </Avatar>
+          <button className="flex-shrink-0" onClick={() => handleShowUserProfile(comment.userId)}>
+            <Avatar className="h-8 w-8 mt-1">
+              {comment.userAvatarUrl && <AvatarImage src={comment.userAvatarUrl} alt={comment.userName} />}
+              <AvatarFallback>{comment.userName?.substring(0, 2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+          </button>
           <div className="ml-2 flex-grow p-3 rounded-lg bg-muted/60 dark:bg-muted/30">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold font-headline">{comment.userName}</p>
+              <button className="text-xs font-semibold font-headline hover:underline" onClick={() => handleShowUserProfile(comment.userId)}>{comment.userName}</button>
               <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
             </div>
             <p className="text-sm mt-1 whitespace-pre-wrap">{comment.text}</p>
@@ -689,7 +680,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
               >
                 <div className="p-3 max-w-full pointer-events-auto">
                     <button
-                        onClick={handleShowUserProfile} 
+                        onClick={() => handleShowUserProfile(story.authorId)} 
                         className="flex items-center gap-2 mb-2 text-left hover:opacity-80 transition-opacity"
                         aria-label={`Ver perfil de ${story.authorName}`}
                     >
