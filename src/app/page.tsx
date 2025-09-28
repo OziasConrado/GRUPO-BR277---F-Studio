@@ -541,61 +541,46 @@ export default function FeedPage() {
     setShowMentions(false);
   }
 
-  // Substitua sua função handlePublish por esta versão com logs de depuração
   const handlePublish = async () => {
-    console.log("--- DEBUG: 1. Função handlePublish iniciada. ---");
-
     if (!currentUser || !firestore || !storage) {
-      console.error("--- DEBUG: ERRO CRÍTICO - Usuário ou Firebase não inicializado. ---");
       toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado ou o serviço está indisponível.' });
       return;
     }
 
     if (!isProfileComplete) {
-      console.log("--- DEBUG: Perfil incompleto, mostrando aviso. ---");
       handleInteractionAttempt(() => {});
       return;
     }
 
-    console.log("--- DEBUG: 2. Verificações iniciais OK. ---");
     setIsPublishing(true);
 
     try {
-      console.log("--- DEBUG: 3. Entrou no bloco try. ---");
       let mediaUrl: string | undefined;
 
       if (selectedMediaForUpload) {
-        console.log("--- DEBUG: 4. Arquivo de mídia encontrado:", selectedMediaForUpload);
-
         const mediaType = currentPostType === 'video' ? 'reels' : 'posts';
         const storagePath = `${mediaType}/${currentUser.uid}/${Date.now()}_${selectedMediaForUpload.name}`;
         const storageRef = ref(storage, storagePath);
         
-        console.log(`--- DEBUG: 5. Prestes a iniciar o upload para o caminho: ${storagePath} ---`);
-
         const uploadTask = uploadBytesResumable(storageRef, selectedMediaForUpload);
 
         mediaUrl = await new Promise<string>((resolve, reject) => {
             uploadTask.on('state_changed',
                 (snapshot) => {
                     const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    console.log('--- DEBUG: Upload em progresso: ' + progress + '%');
+                    console.log('Upload em progresso: ' + progress + '%');
                 },
                 (error) => {
-                    console.error("--- DEBUG: ERRO DENTRO DA PROMISE DE UPLOAD:", error);
-                    reject(new Error("O upload da mídia falhou."));
+                    console.error("Erro no upload da mídia:", error);
+                    reject(new Error("O upload da mídia falhou. Verifique as permissões do Storage."));
                 },
                 () => {
-                    console.log("--- DEBUG: Upload concluído, obtendo URL... ---");
                     getDownloadURL(uploadTask.snapshot.ref).then(resolve).catch(reject);
                 }
             );
         });
-        console.log("--- DEBUG: 6. URL da mídia obtida:", mediaUrl);
       }
 
-      console.log("--- DEBUG: 7. Prestes a salvar os dados no Firestore. ---");
-      // Conditionally handle based on post type
       if (currentPostType === 'alert' && selectedAlertType) {
         await addDoc(collection(firestore, 'alerts'), {
           type: selectedAlertType,
@@ -653,14 +638,13 @@ export default function FeedPage() {
       toast({ title: "Publicado!", description: "Sua postagem está na Time Line." });
       resetFormState();
     } catch (error) {
-      console.error("--- DEBUG: ERRO CAPTURADO PELO CATCH PRINCIPAL:", error);
+      console.error("Erro na Publicação:", error);
       toast({
         variant: "destructive",
         title: "Erro na Publicação",
         description: (error as Error).message || "Ocorreu um erro desconhecido.",
       });
     } finally {
-      console.log("--- DEBUG: 8. Executando o bloco finally. ---");
       setIsPublishing(false);
     }
   };
