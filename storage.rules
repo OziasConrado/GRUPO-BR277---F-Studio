@@ -1,16 +1,40 @@
 rules_version = '2';
 
-// Regras para o Firebase Storage
 service firebase.storage {
   match /b/{bucket}/o {
 
-    // Regra geral:
-    // 1. Permite que qualquer pessoa leia os arquivos (necessário para exibir imagens públicas).
-    // 2. Permite que QUALQUER USUÁRIO AUTENTICADO escreva (faça upload, atualize ou delete) arquivos.
-    // A segurança de quem pode deletar o quê é controlada pela lógica do aplicativo e regras do Firestore,
-    // esta regra foca apenas em permitir o upload inicial.
+    // Regra geral: permite leitura pública de todos os arquivos.
+    // Isso é necessário para que as imagens e vídeos possam ser exibidos no feed.
     match /{allPaths=**} {
       allow read;
+    }
+
+    // Regras específicas de escrita para cada pasta do aplicativo.
+    // Permite que qualquer usuário autenticado (`request.auth != null`)
+    // crie, atualize ou delete arquivos dentro dessas pastas.
+
+    // Para imagens de posts no feed
+    match /posts/{userId}/{allPaths=**} {
+      allow write: if request.auth != null;
+    }
+
+    // Para vídeos (reels)
+    match /reels/{userId}/{allPaths=**} {
+      allow write: if request.auth != null;
+    }
+
+    // Para fotos de perfil
+    match /profile_pictures/{userId}/{allPaths=**} {
+      allow write: if request.auth != null;
+    }
+
+    // Para imagens enviadas no chat
+    match /chat_images/{userId}/{allPaths=**} {
+      allow write: if request.auth != null;
+    }
+
+    // Para áudios enviados no chat
+    match /chat_audio/{userId}/{allPaths=**} {
       allow write: if request.auth != null;
     }
   }
