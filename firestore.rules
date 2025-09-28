@@ -1,115 +1,94 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- Helper Functions ---
-    function isSignedIn() {
-      return request.auth != null;
+    // Regra geral de acesso para a coleção "Usuarios"
+    match /Usuarios/{userId} {
+      // Qualquer um pode ler perfis de usuário (para ver nomes, fotos, etc.)
+      allow read: if true;
+      // Apenas o próprio usuário pode escrever/atualizar seu perfil
+      allow write: if request.auth != null && request.auth.uid == userId;
+
+      // Permissões para a subcoleção de notificações
+      match /notifications/{notificationId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
 
-    function isOwner(resource) {
-      return isSignedIn() && request.auth.uid == resource.data.userId;
-    }
-
-    // --- Default Rule (Deny All) ---
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // --- Collections Rules ---
+    // Regras para a coleção "posts"
     match /posts/{postId} {
-      allow read: if true;
-      allow create: if isSignedIn();
-      allow update: if isOwner(resource); // Only owner can edit the post text
-      allow delete: if isOwner(resource); // Soft delete
+      // Permite leitura pública de posts, a menos que estejam marcados como deletados
+      allow read: if resource.data.deleted == false;
+      // Permite criar um post se o usuário estiver logado
+      allow create: if request.auth != null;
+      // Permite atualizar (editar, deletar) apenas se o usuário for o autor
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
 
-      // Sub-collection for comments
+      // Subcoleção de comentários
       match /comments/{commentId} {
-        allow read: if true;
-        allow create: if isSignedIn();
-        allow update, delete: if isOwner(resource);
-      }
-
-      // Sub-collection for user reactions
-      match /userReactions/{userId} {
-        allow read: if true;
-        // Allow a user to create/delete their own reaction document
-        allow create, delete: if isSignedIn() && request.auth.uid == userId;
+        allow read, create: if request.auth != null;
+        allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
       }
       
-      // Sub-collection for poll votes
-      match /userVotes/{userId} {
-        allow read: if true;
-        // Allow a user to create their vote document once
-        allow create: if isSignedIn() && request.auth.uid == userId && !existsAfter(/databases/$(database)/documents/posts/$(postId)/userVotes/$(userId));
+      // Subcoleção de reações (CORREÇÃO PRINCIPAL)
+      match /userReactions/{userId} {
+        // Permite que o usuário autenticado crie, atualize ou delete sua própria reação
+        allow read, write, delete: if request.auth != null && request.auth.uid == userId;
       }
     }
-    
+
+    // Regras para a coleção "reels"
     match /reels/{reelId} {
-      allow read: if true;
-      allow create: if isSignedIn();
-      allow update, delete: if isOwner(resource);
+      allow read: if resource.data.deleted == false;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
 
-      // Sub-collection for comments on reels
+      // Subcoleção de comentários dos reels
       match /comments/{commentId} {
-        allow read: if true;
-        allow create: if isSignedIn();
-        allow update, delete: if isOwner(resource);
+        allow read, create: if request.auth != null;
+        allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
       }
-      
-      // Sub-collection for user reactions on reels
+
+      // Subcoleção de reações dos reels
       match /userReactions/{userId} {
-        allow read: if true;
-        allow create, delete: if isSignedIn() && request.auth.uid == userId;
+        allow read, write, delete: if request.auth != null && request.auth.uid == userId;
       }
     }
-
+    
+    // Regras para a coleção "chatMessages" (Comunidade277)
     match /chatMessages/{messageId} {
-      allow read: if true;
-      allow create: if isSignedIn();
-      allow update: if isOwner(resource) && request.resource.data.keys().hasOnly(['text', 'edited', 'editedAt']); // Only allow editing these fields
-      allow delete: if isOwner(resource);
-
-      // Reactions on chat messages
+      allow read, create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      
+      // Subcoleção de reações das mensagens do chat
       match /userReactions/{userId} {
-          allow read: if true;
-          allow create, delete: if isSignedIn() && request.auth.uid == userId;
+         allow read, write, delete: if request.auth != null && request.auth.uid == userId;
       }
     }
-    
-    match /alerts/{alertId} {
-      allow read: if true;
-      allow create: if isSignedIn();
-      allow update, delete: if isOwner(resource);
-    }
 
-    match /sau_reviews/{reviewId} {
-        allow read: if true;
-        allow create: if isSignedIn();
+    // Regras para a coleção de "alerts"
+    match /alerts/{alertId} {
+      // Permite a leitura por qualquer usuário e a criação por usuários autenticados
+      allow read, create: if request.auth != null;
     }
     
+    // Regras para as coleções de turismo e SAU
     match /tourist_points_indicated/{pointId} {
         allow read: if true;
-        allow create: if isSignedIn();
-        // Allow updates only for rating and review count by any signed-in user
-        allow update: if isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['averageRating', 'reviewCount']);
+        allow create: if request.auth != null;
+        allow update: if request.auth != null && request.auth.uid == resource.data.indicatedByUserId;
     }
     
     match /tourist_point_reviews/{reviewId} {
         allow read: if true;
-        allow create: if isSignedIn();
+        allow create: if request.auth != null;
+    }
+    
+     match /sau_reviews/{reviewId} {
+        allow read: if true;
+        allow create: if request.auth != null;
     }
 
-    match /Usuarios/{userId} {
-      allow read: if true; // Public read of profiles
-      allow write: if request.auth.uid == userId; // User can only write to their own profile
-      
-      // Notifications are private to the user
-      match /notifications/{notificationId} {
-          allow read, write: if request.auth.uid == userId;
-      }
-    }
   }
 }
