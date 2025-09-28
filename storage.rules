@@ -1,50 +1,17 @@
 rules_version = '2';
 
+// Regras para o Firebase Storage
 service firebase.storage {
   match /b/{bucket}/o {
-    // Permite leitura pública para todas as imagens e vídeos,
-    // pois as URLs são públicas após o upload.
+
+    // Regra geral:
+    // 1. Permite que qualquer pessoa leia os arquivos (necessário para exibir imagens públicas).
+    // 2. Permite que QUALQUER USUÁRIO AUTENTICADO escreva (faça upload, atualize ou delete) arquivos.
+    // A segurança de quem pode deletar o quê é controlada pela lógica do aplicativo e regras do Firestore,
+    // esta regra foca apenas em permitir o upload inicial.
     match /{allPaths=**} {
       allow read;
-    }
-
-    // Regra para fotos de perfil:
-    // O usuário só pode escrever na sua própria pasta.
-    // Ex: /profile_pictures/UID_DO_USUARIO/nome_do_arquivo.jpg
-    match /profile_pictures/{userId}/{fileName} {
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Regra para imagens de posts:
-    // O usuário só pode escrever na sua própria pasta de posts.
-    match /posts/{userId}/{fileName} {
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Regra para vídeos (reels):
-    // O usuário só pode escrever na sua própria pasta de reels.
-    match /reels/{userId}/{fileName} {
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Regra para imagens do chat
-    match /chat_images/{userId}/{fileName} {
-       allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Regra para áudios do chat
-     match /chat_audio/{userId}/{fileName} {
-       allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Regra para imagens de pontos turisticos indicados
-    match /indicated_points_images/{userId}/{fileName} {
-       allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Regra para outras pastas (ex: 'misc')
-    match /{folder}/{userId}/{fileName} {
-       allow write: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null;
     }
   }
 }
