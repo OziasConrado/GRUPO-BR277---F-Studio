@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef, type ChangeEvent, useCallback, type FormEvent } from 'react';
@@ -32,7 +33,7 @@ import {
 } from '@/components/ui/tooltip';
 
 import PostCard, { type PostCardProps, type PollData } from '@/components/feed/post-card';
-import StoryCircle, { type StoryCircleProps } from '@/components/stories/StoryCircle';
+import StoryCircle, { type StoryData } from '@/components/stories/StoryCircle';
 import StoryViewerModal from '@/components/stories/StoryViewerModal';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -263,11 +264,11 @@ const PollCreationModal = ({ isOpen, onClose, onSave }: { isOpen: boolean, onClo
 export default function FeedPage() {
   // State
   const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
-  const [selectedStory, setSelectedStory] = useState<StoryCircleProps | null>(null);
+  const [selectedStory, setSelectedStory] = useState<StoryData | null>(null);
   const [newPostText, setNewPostText] = useState('');
   
   const [posts, setPosts] = useState<PostCardProps[]>([]);
-  const [reels, setReels] = useState<StoryCircleProps[]>([]);
+  const [reels, setReels] = useState<StoryData[]>([]);
   const [displayedAlertsFeed, setDisplayedAlertsFeed] = useState<HomeAlertCardData[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [loadingAlerts, setLoadingAlerts] = useState(true);
@@ -359,8 +360,8 @@ export default function FeedPage() {
                     dataAIThumbnailHint: 'video story content',
                     timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
                     storyType: 'video',
-                    videoUrl: data.videoUrl
-                } as StoryCircleProps;
+                    videoContentUrl: data.videoUrl
+                } as StoryData;
             });
         setReels(fetchedReels);
         setLoadingReels(false);
@@ -493,7 +494,7 @@ export default function FeedPage() {
     callback();
   };
   
-  const handleStoryClick = (story: StoryCircleProps) => {
+  const handleStoryClick = (story: StoryData) => {
     setSelectedStory(story);
     setIsStoryModalOpen(true);
   };
@@ -557,9 +558,8 @@ export default function FeedPage() {
           let mediaUrl: string | undefined;
           if (selectedMediaForUpload) {
               const formData = new FormData();
-              formData.append('file', selectedMediaForUpload);
-              // Determine the correct folder based on the post type
               const folder = currentPostType === 'video' ? 'reels' : 'posts';
+              formData.append('file', selectedMediaForUpload);
               formData.append('folder', folder);
               formData.append('userId', currentUser.uid);
               
@@ -986,7 +986,7 @@ export default function FeedPage() {
                   {reels.map((story) => (
                       <StoryCircle 
                         key={story.id} 
-                        {...story} 
+                        {...story}
                         onClick={() => handleStoryClick(story)} 
                         onAuthorClick={() => handleShowUserProfile(story.authorId, story.authorName, story.authorAvatarUrl)}
                       />

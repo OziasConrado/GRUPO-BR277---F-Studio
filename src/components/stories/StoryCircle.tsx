@@ -8,7 +8,8 @@ import { formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-export interface StoryCircleProps {
+// 1. Tipo para os DADOS vindos do Firestore
+export interface StoryData {
   id: string;
   authorId: string;
   authorName: string;
@@ -19,17 +20,23 @@ export interface StoryCircleProps {
   dataAIThumbnailHint?: string;
   storyType: 'image' | 'video';
   videoContentUrl?: string;
-  onClick: () => void; // To open the story viewer
-  onAuthorClick: () => void; // To open the user profile modal
 }
 
-export default function StoryCircle({ 
-  authorName, 
+// 2. Tipo para as PROPRIEDADES do componente, que inclui os dados e as funções
+export interface StoryCircleProps extends StoryData {
+  onClick: (story: StoryData) => void; // To open the story viewer
+  onAuthorClick: (authorId: string, authorName: string, authorAvatarUrl?: string) => void; // To open the user profile modal
+}
+
+export default function StoryCircle({
+  id,
+  authorId,
+  authorName,
   authorAvatarUrl,
-  thumbnailUrl, 
-  dataAIThumbnailHint, 
-  storyType, 
-  videoContentUrl, 
+  thumbnailUrl,
+  dataAIThumbnailHint,
+  storyType,
+  videoContentUrl,
   timestamp,
   onClick,
   onAuthorClick,
@@ -44,17 +51,27 @@ export default function StoryCircle({
 
   const handleAuthorClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent the main onClick from firing
-    onAuthorClick();
+    onAuthorClick(authorId, authorName, authorAvatarUrl);
   };
+
+  const handleStoryClick = () => {
+    // Passamos o objeto de dados para o handler
+    onClick({
+      id, authorId, authorName, authorAvatarUrl, timestamp, description: story.description,
+      thumbnailUrl, dataAIThumbnailHint, storyType, videoContentUrl
+    });
+  };
+
+  const story = { id, authorId, authorName, authorAvatarUrl, timestamp, description: '', thumbnailUrl, dataAIThumbnailHint, storyType, videoContentUrl };
 
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={handleStoryClick}
       className={cn(
         'group flex-shrink-0 rounded-lg transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
         'transform-gpu transition-transform group-hover:scale-[1.03]',
-        'w-[150px] h-[250px]' 
+        'w-[150px] h-[250px]'
       )}
       aria-label={`Ver story de ${authorName}`}
     >

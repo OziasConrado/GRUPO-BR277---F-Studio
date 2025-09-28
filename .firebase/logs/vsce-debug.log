@@ -5692,3 +5692,32 @@ Generated sources: prelude.gql [73251B]
 [debug] [2025-09-28T03:16:53.248Z] I0928 03:16:53.246980    3362 engine.go:169] [/emulator/s deac] ExecuteGraphqlRead IntrospectionQuery: succeeded. 
  {"metadata":{"emulator":{"name":"dataconnect"},"message":"I0928 03:16:53.246980    3362 engine.go:169] [/emulator/s deac] ExecuteGraphqlRead IntrospectionQuery: succeeded. \n"}}
 [error] [Firebase Plugin] requireAuth error: Could not refresh access token: Unsuccessful response status code. Request failed with status code 500
+[info] [Firebase Plugin] Stopping Data Connect toolkit
+[warn] ⚠  Data Connect Emulator has exited upon receiving signal: SIGINT 
+[debug] [2025-09-28T16:56:18.412Z] [Firebase Plugin] Activating Firebase extension.
+[debug] [2025-09-28T16:56:28.280Z] [Firebase Plugin] requireAuthWrapper
+[debug] [2025-09-28T16:56:28.282Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-09-28T16:56:28.309Z] [Firebase Plugin] VSCode notification server listening on port 40001
+[info] [Firebase Plugin] Starting Data Connect toolkit (version 2.13.0) on port 50001
+[debug] [2025-09-28T16:56:33.988Z] I0928 16:56:33.958621     735 control.go:94] [/emulator/s e4fe] UpdateResources(): done
+Schema: sources: schema/schema.gql [2088B] 
+Connector "default": sources: connector/mutations.gql [1233B] connector/queries.gql [1802B] 
+ {"metadata":{"emulator":{"name":"dataconnect"},"message":"I0928 16:56:33.958621     735 control.go:94] [/emulator/s e4fe] UpdateResources(): done\nSchema: sources: schema/schema.gql [2088B] \nConnector \"default\": sources: connector/mutations.gql [1233B] connector/queries.gql [1802B] \n"}}
+[debug] [2025-09-28T16:56:33.991Z] Ignoring unsupported arg: auto_download {"metadata":{"emulator":{"name":"dataconnect"},"message":"Ignoring unsupported arg: auto_download"}}
+[debug] [2025-09-28T16:56:33.991Z] Ignoring unsupported arg: port {"metadata":{"emulator":{"name":"dataconnect"},"message":"Ignoring unsupported arg: port"}}
+[debug] [2025-09-28T16:56:33.992Z] Starting Data Connect Emulator with command {"binary":"/home/user/.cache/firebase/emulators/dataconnect-emulator-2.13.0","args":["--logtostderr","-v=2","dev","--listen=localhost:50001","--config_dir=/home/user/studio/dataconnect","--enable_output_schema_extensions=true","--enable_output_generated_sdk=true"],"optionalArgs":["listen","config_dir","enable_output_schema_extensions","enable_output_generated_sdk"],"joinArgs":true,"shell":false,"port":9399} {"metadata":{"emulator":{"name":"dataconnect"},"message":"Starting Data Connect Emulator with command {\"binary\":\"/home/user/.cache/firebase/emulators/dataconnect-emulator-2.13.0\",\"args\":[\"--logtostderr\",\"-v=2\",\"dev\",\"--listen=localhost:50001\",\"--config_dir=/home/user/studio/dataconnect\",\"--enable_output_schema_extensions=true\",\"--enable_output_generated_sdk=true\"],\"optionalArgs\":[\"listen\",\"config_dir\",\"enable_output_schema_extensions\",\"enable_output_generated_sdk\"],\"joinArgs\":true,\"shell\":false,\"port\":9399}"}}
+[info] i  dataconnect: Data Connect Emulator logging to dataconnect-debug.log {"metadata":{"emulator":{"name":"dataconnect"},"message":"Data Connect Emulator logging to dataconnect-debug.log"}}
+[debug] [2025-09-28T16:56:34.122Z] I0928 16:56:34.069288     740 load.go:31] Reloading schema and connectors...
+ {"metadata":{"emulator":{"name":"dataconnect"},"message":"I0928 16:56:34.069288     740 load.go:31] Reloading schema and connectors...\n"}}
+[debug] [2025-09-28T16:56:34.472Z] I0928 16:56:34.328883     740 control.go:94] [/emulator/s f30a] UpdateResources(): done
+Schema: sources: schema/schema.gql [2088B] 
+Connector "default": sources: connector/mutations.gql [1233B] connector/queries.gql [1802B] 
+ {"metadata":{"emulator":{"name":"dataconnect"},"message":"I0928 16:56:34.328883     740 control.go:94] [/emulator/s f30a] UpdateResources(): done\nSchema: sources: schema/schema.gql [2088B] \nConnector \"default\": sources: connector/mutations.gql [1233B] connector/queries.gql [1802B] \n"}}
+[debug] [2025-09-28T16:56:34.561Z] I0928 16:56:34.502359     740 collector.go:107] schema extensions wrote into "/home/user/studio/dataconnect/.dataconnect/schema"
+Generated sources: prelude.gql [73251B] 
+I0928 16:56:34.504293     740 load.go:109] Finished reloading
+I0928 16:56:34.522209     740 dev.go:102] Listening on address (HTTP + gRPC): 127.0.0.1:50001
+ {"metadata":{"emulator":{"name":"dataconnect"},"message":"I0928 16:56:34.502359     740 collector.go:107] schema extensions wrote into \"/home/user/studio/dataconnect/.dataconnect/schema\"\nGenerated sources: prelude.gql [73251B] \nI0928 16:56:34.504293     740 load.go:109] Finished reloading\nI0928 16:56:34.522209     740 dev.go:102] Listening on address (HTTP + gRPC): 127.0.0.1:50001\n"}}
+[debug] [2025-09-28T16:56:34.814Z] I0928 16:56:34.813663     740 engine.go:169] [/emulator/s f30a] ExecuteGraphqlRead IntrospectionQuery: succeeded. 
+ {"metadata":{"emulator":{"name":"dataconnect"},"message":"I0928 16:56:34.813663     740 engine.go:169] [/emulator/s f30a] ExecuteGraphqlRead IntrospectionQuery: succeeded. \n"}}
+[error] [Firebase Plugin] requireAuth error: Could not refresh access token: Unsuccessful response status code. Request failed with status code 500

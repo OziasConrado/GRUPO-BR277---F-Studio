@@ -8,7 +8,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { X, ThumbsUp, ThumbsDown, MessageSquare, Share2, MoreVertical, Flag, Send, Loader2, UserCircle, Edit3, Trash2 } from 'lucide-react';
-import type { StoryCircleProps } from './StoryCircle';
+import type { StoryData } from './StoryCircle';
 import Image from 'next/image';
 import {
   DropdownMenu,
@@ -68,7 +68,7 @@ interface CommentProps {
 interface StoryViewerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  story: StoryCircleProps | null;
+  story: StoryData | null;
 }
 
 // Report Reasons
