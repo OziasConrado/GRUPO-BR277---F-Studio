@@ -542,41 +542,44 @@ export default function FeedPage() {
   }
 
   const handlePublish = async () => {
-    if (!currentUser) {
-        toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado para publicar.' });
-        return;
+    if (!currentUser || !storage || !firestore) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado para publicar.' });
+      return;
     }
-
+  
     if (!isProfileComplete) {
       handleInteractionAttempt(() => {}); // This will show the toast to complete profile
       return;
     }
-
+  
     setIsPublishing(true);
-
+  
     try {
-        let mediaUrl: string | undefined;
-        if (selectedMediaForUpload) {
-          const folder = currentPostType === 'video' ? 'reels' : 'posts';
-          const storagePath = `${folder}/${currentUser.uid}/${Date.now()}_${selectedMediaForUpload.name}`;
-          const storageRef = ref(storage, storagePath);
-          const metadata = { contentType: selectedMediaForUpload.type };
-          const uploadTask = uploadBytesResumable(storageRef, selectedMediaForUpload, metadata);
-
-          mediaUrl = await new Promise<string>((resolve, reject) => {
-            uploadTask.on('state_changed',
-              (snapshot) => {}, // Progress can be handled here
-              (error) => {
-                console.error("Upload error:", error);
-                reject(new Error("O upload da mídia falhou."));
-              },
-              () => {
-                getDownloadURL(uploadTask.snapshot.ref).then(resolve).catch(reject);
-              }
-            );
-          });
-        }
-
+      let mediaUrl: string | undefined;
+      if (selectedMediaForUpload) {
+        const folder = currentPostType === 'video' ? 'reels' : 'posts';
+        const storagePath = `${folder}/${currentUser.uid}/${Date.now()}_${selectedMediaForUpload.name}`;
+        const storageRef = ref(storage, storagePath);
+        const metadata = { contentType: selectedMediaForUpload.type };
+  
+        const uploadTask = uploadBytesResumable(storageRef, selectedMediaForUpload, metadata);
+  
+        mediaUrl = await new Promise<string>((resolve, reject) => {
+          uploadTask.on('state_changed',
+            (snapshot) => {
+              // Can use this to show upload progress
+            },
+            (error) => {
+              console.error("Upload error:", error);
+              reject(new Error("O upload da mídia falhou. Verifique suas permissões de armazenamento (storage.rules)."));
+            },
+            () => {
+              getDownloadURL(uploadTask.snapshot.ref).then(resolve).catch(reject);
+            }
+          );
+        });
+      }
+  
       if (currentPostType === 'alert') {
         await addDoc(collection(firestore, 'alerts'), {
           type: selectedAlertType,
@@ -588,7 +591,7 @@ export default function FeedPage() {
           timestamp: serverTimestamp(),
         });
         toast({ title: "Alerta Publicado!", description: "Seu alerta foi adicionado ao mural." });
-      } else if (currentPostType === 'video') {
+      } else if (currentPostType === 'video' && mediaUrl) {
         await addDoc(collection(firestore, 'reels'), {
           userId: currentUser.uid,
           userName: currentUser.displayName || 'Anônimo',
@@ -613,7 +616,7 @@ export default function FeedPage() {
           timestamp: serverTimestamp(),
         };
         if (mediaUrl) postData.uploadedImageUrl = mediaUrl;
-
+  
         if (pollData) {
           postData.poll = {
             question: pollData.question,
@@ -632,10 +635,10 @@ export default function FeedPage() {
         if (currentUser && newPostText.trim()) {
             await createMentions(newPostText.trim(), docRef.id, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL }, 'mention_post');
         }
-
+  
         toast({ title: "Publicado!", description: "Sua postagem está na Time Line." });
       }
-
+  
       resetFormState();
     } catch (error: any) {
       console.error("Error publishing content:", error);

@@ -292,7 +292,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     () => {}, // Progress can be handled here
                     (error) => {
                         console.error("Upload error:", error);
-                        reject(new Error("O upload da foto de perfil falhou."));
+                        reject(new Error("O upload da foto de perfil falhou. Verifique as regras de armazenamento."));
                     },
                     () => {
                         getDownloadURL(uploadTask.snapshot.ref).then(resolve).catch(reject);
