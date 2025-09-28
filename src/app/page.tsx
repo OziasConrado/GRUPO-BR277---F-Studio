@@ -47,12 +47,11 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from '@/contexts/AuthContext';
 import { firestore, storage } from '@/lib/firebase/client';
 import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp, where, getDocs, doc, writeBatch, getDoc, updateDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ToastAction } from '@/components/ui/toast';
 import UserProfileModal, { type UserProfileData } from '@/components/profile/UserProfileModal';
-import { uploadFileAndGetURL } from '@/app/actions';
-
 
 interface MentionUser {
   id: string;
@@ -542,9 +541,9 @@ export default function FeedPage() {
   }
 
   const handlePublish = async () => {
-    if (!currentUser || !firestore) {
-      toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado ou o serviço está indisponível.' });
-      return;
+    if (!currentUser || !firestore || !storage) {
+        toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado ou o serviço está indisponível.' });
+        return;
     }
 
     if (!isProfileComplete) {
@@ -557,18 +556,18 @@ export default function FeedPage() {
     try {
         let mediaUrl: string | undefined;
         if (selectedMediaForUpload) {
+            // Corrected Path Logic
             const folder = currentPostType === 'video' ? 'reels' : 'posts';
-            const formData = new FormData();
-            formData.append('file', selectedMediaForUpload);
-            formData.append('folder', folder);
-            formData.append('userId', currentUser.uid);
+            const storagePath = `${folder}/${currentUser.uid}/${Date.now()}_${selectedMediaForUpload.name}`;
+            const storageRef = ref(storage, storagePath);
 
-            mediaUrl = await uploadFileAndGetURL(formData);
+            const uploadResult = await uploadBytes(storageRef, selectedMediaForUpload);
+            mediaUrl = await getDownloadURL(uploadResult.ref);
+            
             if (!mediaUrl) {
                 throw new Error("O upload da mídia falhou.");
             }
         }
-
 
       if (currentPostType === 'alert') {
         await addDoc(collection(firestore, 'alerts'), {
