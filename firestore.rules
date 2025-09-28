@@ -3,92 +3,100 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Regra geral de acesso para a coleção "Usuarios"
-    match /Usuarios/{userId} {
-      // Qualquer um pode ler perfis de usuário (para ver nomes, fotos, etc.)
-      allow read: if true;
-      // Apenas o próprio usuário pode escrever/atualizar seu perfil
-      allow write: if request.auth != null && request.auth.uid == userId;
-
-      // Permissões para a subcoleção de notificações
-      match /notifications/{notificationId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
+    // Regra geral de leitura: A maioria dos dados pode ser lida por qualquer pessoa
+    // para permitir visualização de posts, perfis, comentários, etc.
+    match /{document=**} {
+      allow read;
     }
 
-    // Regras para a coleção "posts"
+    // Regras para a coleção 'Usuarios'
+    match /Usuarios/{userId} {
+      allow read;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      
+      // Qualquer usuário autenticado pode criar notificações para outro usuário (menções)
+      match /notifications/{notificationId} {
+        allow write: if request.auth != null;
+      }
+    }
+    
+    // Regras para a coleção 'posts'
     match /posts/{postId} {
-      // Permite leitura pública de posts, a menos que estejam marcados como deletados
-      allow read: if resource.data.deleted == false;
+      allow read;
       // Permite criar um post se o usuário estiver logado
       allow create: if request.auth != null;
-      // Permite atualizar (editar, deletar) apenas se o usuário for o autor
-      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
-
-      // Subcoleção de comentários
+      // Permite atualizar (editar) ou deletar (soft delete) apenas se o usuário for o autor
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      
+      // Regras para comentários em posts
       match /comments/{commentId} {
         allow read, create: if request.auth != null;
-        allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+        allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
       }
       
-      // Subcoleção de reações (CORREÇÃO PRINCIPAL)
+      // Regras para reações em posts
       match /userReactions/{userId} {
-        // Permite que o usuário autenticado crie, atualize ou delete sua própria reação
-        allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+        allow read;
+        // Permite que um usuário crie/delete sua própria reação
+        allow create, delete: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // Regras para votos em enquetes
+      match /userVotes/{userId} {
+        allow read, create: if request.auth != null && request.auth.uid == userId;
       }
     }
 
-    // Regras para a coleção "reels"
+    // Regras para a coleção 'reels'
     match /reels/{reelId} {
-      allow read: if resource.data.deleted == false;
+      allow read;
       allow create: if request.auth != null;
-      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
 
-      // Subcoleção de comentários dos reels
+      // Regras para comentários em reels
       match /comments/{commentId} {
         allow read, create: if request.auth != null;
-        allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+        allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
       }
 
-      // Subcoleção de reações dos reels
+      // Regras para reações em reels
       match /userReactions/{userId} {
-        allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+        allow read;
+        allow create, delete: if request.auth != null && request.auth.uid == userId;
       }
     }
-    
-    // Regras para a coleção "chatMessages" (Comunidade277)
+
+    // Regras para o chat
     match /chatMessages/{messageId} {
       allow read, create: if request.auth != null;
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-      
-      // Subcoleção de reações das mensagens do chat
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+
+      // Regras para reações em mensagens do chat
       match /userReactions/{userId} {
-         allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+        allow read;
+        allow create, delete: if request.auth != null && request.auth.uid == userId;
       }
     }
 
-    // Regras para a coleção de "alerts"
-    match /alerts/{alertId} {
-      // Permite a leitura por qualquer usuário e a criação por usuários autenticados
+    // Regras para SAUs e avaliações
+    match /sau_reviews/{reviewId} {
       allow read, create: if request.auth != null;
     }
-    
-    // Regras para as coleções de turismo e SAU
+
+    // Regras para pontos turísticos e avaliações
     match /tourist_points_indicated/{pointId} {
-        allow read: if true;
-        allow create: if request.auth != null;
-        allow update: if request.auth != null && request.auth.uid == resource.data.indicatedByUserId;
+      allow read, create: if request.auth != null;
+      // Apenas o autor da indicação pode atualizar (se necessário no futuro)
+      allow update: if request.auth != null && resource.data.indicatedByUserId == request.auth.uid;
     }
-    
     match /tourist_point_reviews/{reviewId} {
-        allow read: if true;
-        allow create: if request.auth != null;
-    }
-    
-     match /sau_reviews/{reviewId} {
-        allow read: if true;
-        allow create: if request.auth != null;
+      allow read, create: if request.auth != null;
     }
 
+    // Regras para alertas
+    match /alerts/{alertId} {
+      allow read, create: if request.auth != null;
+    }
   }
 }

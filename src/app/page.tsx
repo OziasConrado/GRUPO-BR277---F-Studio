@@ -558,6 +558,7 @@ export default function FeedPage() {
           if (selectedMediaForUpload) {
               const formData = new FormData();
               formData.append('file', selectedMediaForUpload);
+              // Determine the correct folder based on the post type
               const folder = currentPostType === 'video' ? 'reels' : 'posts';
               formData.append('folder', folder);
               formData.append('userId', currentUser.uid);
