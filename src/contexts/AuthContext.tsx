@@ -1,7 +1,8 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import {
   onAuthStateChanged,
   signOut,
@@ -15,7 +16,7 @@ import {
   type AuthError,
 } from 'firebase/auth';
 import { auth, app, firestore, storage } from '@/lib/firebase/client'; 
-import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'; 
+import { doc, setDoc, getDoc, updateDoc, serverTimestamp, onSnapshot } from 'firebase/firestore'; 
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
@@ -107,39 +108,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       variant: 'destructive',
     });
   }, [toast]);
+  
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, user => {
+      setCurrentUser(user);
+    });
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
-    if (!auth) {
-      console.error("AuthContext: Firebase Auth não está inicializado.");
-      setLoading(false);
-      toast({
-        title: "Erro de Configuração",
-        description: "Não foi possível inicializar a autenticação.",
-        variant: "destructive",
-        duration: Infinity, 
-      });
-      return;
-    }
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setCurrentUser(user);
-        if (firestore) {
-            const userDocRef = doc(firestore, "Usuarios", user.uid);
-            const docSnap = await getDoc(userDocRef);
-            if (docSnap.exists()) {
-                setUserProfile(docSnap.data() as UserProfile);
-            } else {
-                setUserProfile(null);
-            }
-        }
-      } else {
-        setCurrentUser(null);
-        setUserProfile(null);
+    if (currentUser) {
+      if (!firestore) {
+        setLoading(false);
+        return;
       }
+      const userDocRef = doc(firestore, 'Usuarios', currentUser.uid);
+      const unsubscribe = onSnapshot(userDocRef, (doc) => {
+        if (doc.exists()) {
+          setUserProfile(doc.data() as UserProfile);
+        } else {
+          setUserProfile(null);
+        }
+        setLoading(false);
+      });
+      return () => unsubscribe();
+    } else {
+      setUserProfile(null);
       setLoading(false);
-    });
-    return () => unsubscribe();
-  }, [toast]);
+    }
+  }, [currentUser]);
 
   const signInWithGoogle = useCallback(async () => {
     if (!auth || !firestore) {
@@ -273,7 +270,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUserProfile = useCallback(async (data: UpdateUserProfileData) => {
     const userForUpdate = auth.currentUser;
-    if (!userForUpdate || !firestore) {
+    if (!userForUpdate || !firestore || !storage) {
         toast({ title: "Erro", description: "Usuário não autenticado ou serviço indisponível.", variant: "destructive" });
         return;
     }
@@ -284,17 +281,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
         let newPhotoURL: string | null = null;
         if (data.newPhotoFile) {
-            const folder = 'profile_pictures';
-            const storagePath = `${folder}/${userForUpdate.uid}/${Date.now()}_${data.newPhotoFile.name}`;
+            const storagePath = `profile_pictures/${userForUpdate.uid}/${Date.now()}_${data.newPhotoFile.name}`;
             const storageRef = ref(storage, storagePath);
             const metadata = { contentType: data.newPhotoFile.type };
+
             const uploadTask = uploadBytesResumable(storageRef, data.newPhotoFile, metadata);
-            
+
             newPhotoURL = await new Promise<string>((resolve, reject) => {
                 uploadTask.on('state_changed',
-                    (snapshot) => {}, // Progress can be handled here
+                    () => {}, // Progress can be handled here
                     (error) => {
-                        console.error("Profile photo upload error:", error);
+                        console.error("Upload error:", error);
                         reject(new Error("O upload da foto de perfil falhou."));
                     },
                     () => {
@@ -344,12 +341,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         
         await userForUpdate.reload();
-        const updatedDocSnap = await getDoc(userDocRef);
-
-        setCurrentUser(auth.currentUser);
-        if (updatedDocSnap.exists()) {
-            setUserProfile(updatedDocSnap.data() as UserProfile);
-        }
         
         toast({ title: 'Perfil Atualizado!', description: 'Suas informações foram salvas com sucesso.' });
         
@@ -370,7 +361,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthAction('signout'); 
     try {
       await signOut(auth);
-      setUserProfile(null);
       toast({ title: 'Logout realizado', description: 'Você saiu da sua conta.' });
       router.push('/login'); 
     } catch (error) {
@@ -380,7 +370,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [router, toast, handleAuthError]);
 
-  const isProfileComplete = !!(currentUser && currentUser.displayName && userProfile?.location);
+  const isProfileComplete = useMemo(() => !!(currentUser && currentUser.displayName && userProfile?.location), [currentUser, userProfile]);
   const isAuthenticating = authAction !== null;
 
   const value = {
