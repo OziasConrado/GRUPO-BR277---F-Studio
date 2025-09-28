@@ -6,13 +6,7 @@
       "Content-Type",
       "Content-Length",
       "Authorization",
-      "X-Goog-Resumable",
-      "X-Goog-Upload-Command",
-      "X-Goog-Upload-Content-Type",
-      "X-Goog-Upload-File-Name",
-      "X-Goog-Upload-Offset",
-      "X-Goog-Upload-Protocol",
-      "X-Goog-Upload-Status"
+      "X-Goog-Resumable"
     ],
     "maxAgeSeconds": 3600
   }
