@@ -9,7 +9,7 @@ import { touristCategories } from '@/types/turismo';
 import TouristPointCard from '@/components/turismo/tourist-point-card';
 import { useToast } from '@/hooks/use-toast';
 import React from 'react';
-import { firestore, storage } from '@/lib/firebase/client';
+import { firestore, uploadFile } from '@/lib/firebase/client';
 import { collection, getDocs, query, orderBy, addDoc, serverTimestamp, doc, runTransaction } from 'firebase/firestore';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from '@/lib/utils';
@@ -19,7 +19,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import IndicatePointModal, { type IndicatePointSubmitData } from '@/components/turismo/IndicatePointModal';
 import { ToastAction } from '@/components/ui/toast';
 import { useRouter } from 'next/navigation';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 const AdPlaceholder = ({ className }: { className?: string }) => (
   <div className={cn("my-4 p-4 rounded-xl bg-muted/30 border border-dashed h-24 flex items-center justify-center col-span-1 md:col-span-2 lg:col-span-3", className)}>
@@ -87,7 +86,7 @@ export default function TurismoPage() {
   };
 
   const handleIndicatePoint = async (data: IndicatePointSubmitData) => {
-    if (!currentUser || !firestore || !storage) {
+    if (!currentUser || !firestore) {
         toast({ title: "Erro", description: "Você precisa estar logado para indicar um ponto.", variant: "destructive" });
         return;
     }
@@ -98,19 +97,8 @@ export default function TurismoPage() {
         let imageUrl: string | null = null; 
 
         if (imageFile) {
-            const storagePath = `indicated_points_images/${currentUser.uid}/${Date.now()}_${imageFile.name}`;
-            const storageRef = ref(storage, storagePath);
-            
-            const metadata = { contentType: imageFile.type };
-            const uploadTask = uploadBytesResumable(storageRef, imageFile, metadata);
-
-            imageUrl = await new Promise<string>((resolve, reject) => {
-                uploadTask.on('state_changed',
-                    () => {},
-                    (error) => reject(error),
-                    () => { getDownloadURL(uploadTask.snapshot.ref).then(resolve).catch(reject); }
-                );
-            });
+            const filePath = `indicated_points_images/${currentUser.uid}/${Date.now()}_${imageFile.name}`;
+            imageUrl = await uploadFile(imageFile, filePath);
         }
         
         if (!imageUrl) {
@@ -143,12 +131,12 @@ export default function TurismoPage() {
         });
         setIsIndicateModalOpen(false);
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Erro ao indicar ponto turístico:", error);
         toast({
           variant: "destructive",
           title: "Erro ao Enviar",
-          description: "Não foi possível processar sua indicação. Tente novamente.",
+          description: error.message || "Não foi possível processar sua indicação. Tente novamente.",
         });
     } finally {
         setIsSubmitting(false);

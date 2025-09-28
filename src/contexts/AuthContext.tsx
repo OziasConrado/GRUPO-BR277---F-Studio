@@ -15,11 +15,10 @@ import {
   type User as FirebaseUser,
   type AuthError,
 } from 'firebase/auth';
-import { auth, app, firestore, storage } from '@/lib/firebase/client'; 
+import { auth, app, firestore, uploadFile } from '@/lib/firebase/client'; 
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp, onSnapshot } from 'firebase/firestore'; 
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
 interface UserProfile {
     bio?: string;
@@ -110,14 +109,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [toast]);
   
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
     });
     return unsubscribe;
   }, []);
 
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser?.uid) {
       if (!firestore) {
         setLoading(false);
         return;
@@ -136,7 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUserProfile(null);
       setLoading(false);
     }
-  }, [currentUser]);
+  }, [currentUser?.uid]);
 
   const signInWithGoogle = useCallback(async () => {
     if (!auth || !firestore) {
@@ -270,7 +269,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUserProfile = useCallback(async (data: UpdateUserProfileData) => {
     const userForUpdate = auth.currentUser;
-    if (!userForUpdate || !firestore || !storage) {
+    if (!userForUpdate || !firestore) {
         toast({ title: "Erro", description: "Usuário não autenticado ou serviço indisponível.", variant: "destructive" });
         return;
     }
@@ -279,33 +278,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     toast({ title: "Atualizando perfil...", description: "Por favor, aguarde." });
 
     try {
-        let newPhotoURL: string | null = null;
+        let newPhotoURL: string | null = userForUpdate.photoURL;
         if (data.newPhotoFile) {
-            const storagePath = `profile_pictures/${userForUpdate.uid}/${Date.now()}_${data.newPhotoFile.name}`;
-            const storageRef = ref(storage, storagePath);
-            const metadata = { contentType: data.newPhotoFile.type };
-
-            const uploadTask = uploadBytesResumable(storageRef, data.newPhotoFile, metadata);
-
-            newPhotoURL = await new Promise<string>((resolve, reject) => {
-                uploadTask.on('state_changed',
-                    () => {}, // Progress can be handled here
-                    (error) => {
-                        console.error("Upload error:", error);
-                        reject(new Error("O upload da foto de perfil falhou. Verifique as regras de armazenamento."));
-                    },
-                    () => {
-                        getDownloadURL(uploadTask.snapshot.ref).then(resolve).catch(reject);
-                    }
-                );
-            });
+            const filePath = `profile_pictures/${userForUpdate.uid}/${Date.now()}_${data.newPhotoFile.name}`;
+            newPhotoURL = await uploadFile(data.newPhotoFile, filePath);
         }
 
         const authProfileUpdates: { displayName?: string; photoURL?: string } = {};
         if (data.displayName && data.displayName !== userForUpdate.displayName) {
             authProfileUpdates.displayName = data.displayName;
         }
-        if (newPhotoURL) {
+        if (newPhotoURL && newPhotoURL !== userForUpdate.photoURL) {
             authProfileUpdates.photoURL = newPhotoURL;
         }
 
@@ -314,7 +297,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             firestoreProfileUpdates.displayName = data.displayName;
             firestoreProfileUpdates.displayName_lowercase = data.displayName.toLowerCase();
         }
-        if (newPhotoURL) firestoreProfileUpdates.photoURL = newPhotoURL;
+        if (newPhotoURL && newPhotoURL !== userForUpdate.photoURL) firestoreProfileUpdates.photoURL = newPhotoURL;
         if (data.bio !== undefined && data.bio !== userProfile?.bio) firestoreProfileUpdates.bio = data.bio;
         if (data.location !== undefined && data.location !== userProfile?.location) firestoreProfileUpdates.location = data.location;
         if (data.instagramUsername !== undefined && data.instagramUsername !== userProfile?.instagramUsername) {

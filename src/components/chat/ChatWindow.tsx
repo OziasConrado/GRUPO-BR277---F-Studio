@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import Image from "next/image"; // For image preview
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
-import { firestore, storage } from '@/lib/firebase/client'; // Import firestore & storage
+import { firestore, uploadFile } from '@/lib/firebase/client'; // Import firestore & storage
 import {
   collection,
   addDoc,
@@ -31,7 +31,6 @@ import {
   limit,
   DocumentData,
 } from 'firebase/firestore';
-import { ref, getDownloadURL, uploadBytesResumable } from "firebase/storage";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '../ui/dialog';
 import { useNotification } from '@/contexts/NotificationContext';
 import {
@@ -327,7 +326,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
 
   const handleSendMessage = async (e?: FormEvent) => {
     if (e) e.preventDefault();
-    if (!currentUser || !storage || !firestore) {
+    if (!currentUser || !firestore) {
       toast({ title: "Não Autenticado", description: "Você precisa estar logado para enviar mensagens.", variant: "destructive" });
       return;
     }
@@ -340,26 +339,8 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
       let fileInfo: { name: string, type: 'image' } | undefined;
   
       if (selectedImageFile) {
-        const uniqueId = `image_${Date.now()}_${selectedImageFile.name}`;
-        const storageRef = ref(storage, `chat_images/${currentUser.uid}/${uniqueId}`);
-        const metadata = { contentType: selectedImageFile.type };
-        const uploadTask = uploadBytesResumable(storageRef, selectedImageFile, metadata);
-  
-        imageUrl = await new Promise<string>((resolve, reject) => {
-          uploadTask.on('state_changed',
-            () => {}, // Progress
-            (error) => {
-              console.error("Upload error in Chat (Image):", error);
-              toast({
-                variant: "destructive",
-                title: "Erro ao Enviar Imagem",
-                description: "Não foi possível enviar a imagem.",
-              });
-              reject(error);
-            },
-            () => getDownloadURL(uploadTask.snapshot.ref).then(resolve).catch(reject)
-          );
-        });
+        const filePath = `chat_images/${currentUser.uid}/${Date.now()}_${selectedImageFile.name}`;
+        imageUrl = await uploadFile(selectedImageFile, filePath);
         fileInfo = { name: selectedImageFile.name, type: 'image' };
       }
   
@@ -392,8 +373,13 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
         await createChatMentions(messageText, docRef.id, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL });
       }
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending message:", error);
+       toast({
+          variant: "destructive",
+          title: "Erro ao Enviar Mensagem",
+          description: error.message || "Não foi possível enviar sua mensagem. Tente novamente.",
+      });
     } finally {
       setNewMessage('');
       setReplyingTo(null);
@@ -408,33 +394,14 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   };
 
   const uploadAudioAndSendMessage = async (audioBlob: Blob) => {
-    if (!currentUser || !firestore || !storage) {
+    if (!currentUser || !firestore) {
         toast({ title: "Erro", description: "Não foi possível conectar para enviar o áudio.", variant: "destructive"});
         return;
     }
-
-    const uniqueId = `audio_${Date.now()}.webm`;
-    const storageRef = ref(storage, `chat_audio/${currentUser.uid}/${uniqueId}`);
-    const metadata = { contentType: 'audio/webm' };
-
+    
     try {
-        const uploadTask = uploadBytesResumable(storageRef, audioBlob, metadata);
-        
-        const downloadURL = await new Promise<string>((resolve, reject) => {
-            uploadTask.on('state_changed', 
-                () => {}, // Progress
-                (error) => {
-                  console.error("Upload error in Chat (Audio):", error);
-                  toast({
-                      variant: "destructive",
-                      title: "Erro ao Enviar Áudio",
-                      description: `Não foi possível enviar sua mensagem de voz.`,
-                  });
-                  reject(error)
-                }, 
-                () => getDownloadURL(uploadTask.snapshot.ref).then(resolve).catch(reject)
-            );
-        });
+        const filePath = `chat_audio/${currentUser.uid}/${Date.now()}.webm`;
+        const downloadURL = await uploadFile(audioBlob as File, filePath);
 
         const messageData = {
             userId: currentUser.uid,
@@ -448,8 +415,13 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
 
         await addDoc(collection(firestore, 'chatMessages'), messageData);
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error uploading audio or sending message:", error);
+         toast({
+          variant: "destructive",
+          title: "Erro ao Enviar Áudio",
+          description: error.message || "Não foi possível enviar sua mensagem de voz.",
+      });
     }
   };
 

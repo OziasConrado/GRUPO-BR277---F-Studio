@@ -46,13 +46,12 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useAuth } from '@/contexts/AuthContext';
-import { firestore, storage } from '@/lib/firebase/client';
+import { firestore, uploadFile } from '@/lib/firebase/client';
 import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp, where, getDocs, doc, writeBatch, getDoc, updateDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ToastAction } from '@/components/ui/toast';
 import UserProfileModal, { type UserProfileData } from '@/components/profile/UserProfileModal';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 interface MentionUser {
   id: string;
@@ -542,7 +541,7 @@ export default function FeedPage() {
   }
 
   const handlePublish = async () => {
-    if (!currentUser || !storage || !firestore) {
+    if (!currentUser) {
       toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado para publicar.' });
       return;
     }
@@ -558,29 +557,12 @@ export default function FeedPage() {
       let mediaUrl: string | undefined;
       if (selectedMediaForUpload) {
         const folder = currentPostType === 'video' ? 'reels' : 'posts';
-        const storagePath = `${folder}/${currentUser.uid}/${Date.now()}_${selectedMediaForUpload.name}`;
-        const storageRef = ref(storage, storagePath);
-        const metadata = { contentType: selectedMediaForUpload.type };
-  
-        const uploadTask = uploadBytesResumable(storageRef, selectedMediaForUpload, metadata);
-  
-        mediaUrl = await new Promise<string>((resolve, reject) => {
-          uploadTask.on('state_changed',
-            (snapshot) => {
-              // Can use this to show upload progress
-            },
-            (error) => {
-              console.error("Upload error:", error);
-              reject(new Error("O upload da mídia falhou. Verifique suas permissões de armazenamento (storage.rules)."));
-            },
-            () => {
-              getDownloadURL(uploadTask.snapshot.ref).then(resolve).catch(reject);
-            }
-          );
-        });
+        const filePath = `${folder}/${currentUser.uid}/${Date.now()}_${selectedMediaForUpload.name}`;
+        mediaUrl = await uploadFile(selectedMediaForUpload, filePath);
       }
   
       if (currentPostType === 'alert') {
+        if (!firestore) throw new Error("Firestore not available");
         await addDoc(collection(firestore, 'alerts'), {
           type: selectedAlertType,
           description: newPostText.trim(),
@@ -592,18 +574,20 @@ export default function FeedPage() {
         });
         toast({ title: "Alerta Publicado!", description: "Seu alerta foi adicionado ao mural." });
       } else if (currentPostType === 'video' && mediaUrl) {
+        if (!firestore) throw new Error("Firestore not available");
         await addDoc(collection(firestore, 'reels'), {
           userId: currentUser.uid,
           userName: currentUser.displayName || 'Anônimo',
           userAvatarUrl: currentUser.photoURL,
           description: newPostText.trim(),
           videoUrl: mediaUrl,
+          deleted: false,
           reactions: { thumbsUp: 0, thumbsDown: 0 },
           timestamp: serverTimestamp(),
-          deleted: false,
         });
         toast({ title: "Reel Publicado!", description: "Seu vídeo está disponível para a comunidade." });
       } else { // 'image', 'text' or 'poll' post
+        if (!firestore) throw new Error("Firestore not available");
         const postData: any = {
           userId: currentUser.uid,
           userName: currentUser.displayName || 'Anônimo',
@@ -998,7 +982,7 @@ export default function FeedPage() {
                       <StoryCircle 
                         key={story.id} 
                         {...story}
-                        onClick={() => handleStoryClick(story)} 
+                        onClick={handleStoryClick} 
                         onAuthorClick={() => handleShowUserProfile(story.authorId, story.authorName, story.authorAvatarUrl)}
                       />
                   ))}
