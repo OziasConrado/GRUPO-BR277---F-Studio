@@ -561,24 +561,9 @@ export default function FeedPage() {
         const mediaType = currentPostType === 'video' ? 'reels' : 'posts';
         const storagePath = `${mediaType}/${currentUser.uid}/${Date.now()}_${selectedMediaForUpload.name}`;
         const storageRef = ref(storage, storagePath);
-        
-        const uploadTask = uploadBytesResumable(storageRef, selectedMediaForUpload);
 
-        mediaUrl = await new Promise<string>((resolve, reject) => {
-            uploadTask.on('state_changed',
-                (snapshot) => {
-                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    console.log('Upload em progresso: ' + progress + '%');
-                },
-                (error) => {
-                    console.error("Erro no upload da mídia:", error);
-                    reject(new Error("O upload da mídia falhou. Verifique as permissões do Storage."));
-                },
-                () => {
-                    getDownloadURL(uploadTask.snapshot.ref).then(resolve).catch(reject);
-                }
-            );
-        });
+        const uploadTask = await uploadBytesResumable(storageRef, selectedMediaForUpload);
+        mediaUrl = await getDownloadURL(uploadTask.ref);
       }
 
       if (currentPostType === 'alert' && selectedAlertType) {
