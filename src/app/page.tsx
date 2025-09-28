@@ -45,13 +45,13 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useAuth } from '@/contexts/AuthContext';
-import { firestore, storage } from '@/lib/firebase/client';
+import { firestore } from '@/lib/firebase/client';
 import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp, where, getDocs, doc, writeBatch, getDoc, updateDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ToastAction } from '@/components/ui/toast';
 import UserProfileModal, { type UserProfileData } from '@/components/profile/UserProfileModal';
+import { uploadFileAndGetURL } from '@/app/actions';
 
 interface MentionUser {
   id: string;
@@ -541,105 +541,104 @@ export default function FeedPage() {
   }
 
   const handlePublish = async () => {
-    if (!currentUser || !firestore || !storage) {
-        toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado ou o serviço está indisponível.' });
-        return;
-    }
-
-    if (!isProfileComplete) {
-      handleInteractionAttempt(() => {}); // This will show the toast to complete profile
-      return;
-    }
-
-    setIsPublishing(true);
-
-    try {
-        let mediaUrl: string | undefined;
-        if (selectedMediaForUpload) {
-            // Corrected Path Logic
-            const folder = currentPostType === 'video' ? 'reels' : 'posts';
-            const storagePath = `${folder}/${currentUser.uid}/${Date.now()}_${selectedMediaForUpload.name}`;
-            const storageRef = ref(storage, storagePath);
-
-            const uploadResult = await uploadBytes(storageRef, selectedMediaForUpload);
-            mediaUrl = await getDownloadURL(uploadResult.ref);
-            
-            if (!mediaUrl) {
-                throw new Error("O upload da mídia falhou.");
-            }
-        }
-
-      if (currentPostType === 'alert') {
-        await addDoc(collection(firestore, 'alerts'), {
-          type: selectedAlertType,
-          description: newPostText.trim(),
-          userId: currentUser.uid,
-          userNameReportedBy: currentUser.displayName || 'Anônimo',
-          userAvatarUrl: currentUser.photoURL,
-          userLocation: userProfile?.location || 'Localização Desconhecida',
-          timestamp: serverTimestamp(),
-        });
-        toast({ title: "Alerta Publicado!", description: "Seu alerta foi adicionado ao mural." });
-      } else if (currentPostType === 'video') {
-        await addDoc(collection(firestore, 'reels'), {
-          userId: currentUser.uid,
-          userName: currentUser.displayName || 'Anônimo',
-          userAvatarUrl: currentUser.photoURL,
-          description: newPostText.trim(),
-          videoUrl: mediaUrl,
-          reactions: { thumbsUp: 0, thumbsDown: 0 },
-          timestamp: serverTimestamp(),
-          deleted: false,
-        });
-        toast({ title: "Reel Publicado!", description: "Seu vídeo está disponível para a comunidade." });
-      } else { // 'image', 'text' or 'poll' post
-        const postData: any = {
-          userId: currentUser.uid,
-          userName: currentUser.displayName || 'Anônimo',
-          userAvatarUrl: currentUser.photoURL,
-          userLocation: userProfile?.location || 'Localização Desconhecida',
-          text: newPostText.trim(),
-          reactions: { thumbsUp: 0, thumbsDown: 0 },
-          edited: false,
-          deleted: false,
-          timestamp: serverTimestamp(),
-        };
-        if (mediaUrl) postData.uploadedImageUrl = mediaUrl;
-
-        if (pollData) {
-          postData.poll = {
-            question: pollData.question,
-            options: pollData.options.map((opt, index) => ({
-              id: `option_${index + 1}`,
-              text: opt,
-              votes: 0
-            }))
-          };
-        } else if (currentPostType === 'text' && !selectedMediaForUpload && newPostText.length <= 150) {
-          postData.cardStyle = selectedPostBackground;
-        }
-        
-        const docRef = await addDoc(collection(firestore, 'posts'), postData);
-        
-        if (currentUser && newPostText.trim()) {
-            await createMentions(newPostText.trim(), docRef.id, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL }, 'mention_post');
-        }
-
-        toast({ title: "Publicado!", description: "Sua postagem está na Time Line." });
+      if (!currentUser) {
+          toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado para publicar.' });
+          return;
       }
-
-      resetFormState();
-    } catch (error: any) {
-      console.error("Error publishing content:", error);
-      toast({
-          variant: "destructive",
-          title: "Erro na Publicação",
-          description: error.message || "Sua mídia não pôde ser enviada. Verifique sua conexão ou tente novamente.",
-      });
-    } finally {
-        setIsPublishing(false);
-    }
-  };
+  
+      if (!isProfileComplete) {
+        handleInteractionAttempt(() => {}); // This will show the toast to complete profile
+        return;
+      }
+  
+      setIsPublishing(true);
+  
+      try {
+          let mediaUrl: string | undefined;
+          if (selectedMediaForUpload) {
+              const formData = new FormData();
+              formData.append('file', selectedMediaForUpload);
+              const folder = currentPostType === 'video' ? 'reels' : 'posts';
+              formData.append('folder', folder);
+              formData.append('userId', currentUser.uid);
+              
+              mediaUrl = await uploadFileAndGetURL(formData);
+              if (!mediaUrl) {
+                  throw new Error("O upload da mídia falhou.");
+              }
+          }
+  
+        if (currentPostType === 'alert') {
+          await addDoc(collection(firestore, 'alerts'), {
+            type: selectedAlertType,
+            description: newPostText.trim(),
+            userId: currentUser.uid,
+            userNameReportedBy: currentUser.displayName || 'Anônimo',
+            userAvatarUrl: currentUser.photoURL,
+            userLocation: userProfile?.location || 'Localização Desconhecida',
+            timestamp: serverTimestamp(),
+          });
+          toast({ title: "Alerta Publicado!", description: "Seu alerta foi adicionado ao mural." });
+        } else if (currentPostType === 'video') {
+          await addDoc(collection(firestore, 'reels'), {
+            userId: currentUser.uid,
+            userName: currentUser.displayName || 'Anônimo',
+            userAvatarUrl: currentUser.photoURL,
+            description: newPostText.trim(),
+            videoUrl: mediaUrl,
+            reactions: { thumbsUp: 0, thumbsDown: 0 },
+            timestamp: serverTimestamp(),
+            deleted: false,
+          });
+          toast({ title: "Reel Publicado!", description: "Seu vídeo está disponível para a comunidade." });
+        } else { // 'image', 'text' or 'poll' post
+          const postData: any = {
+            userId: currentUser.uid,
+            userName: currentUser.displayName || 'Anônimo',
+            userAvatarUrl: currentUser.photoURL,
+            userLocation: userProfile?.location || 'Localização Desconhecida',
+            text: newPostText.trim(),
+            reactions: { thumbsUp: 0, thumbsDown: 0 },
+            edited: false,
+            deleted: false,
+            timestamp: serverTimestamp(),
+          };
+          if (mediaUrl) postData.uploadedImageUrl = mediaUrl;
+  
+          if (pollData) {
+            postData.poll = {
+              question: pollData.question,
+              options: pollData.options.map((opt, index) => ({
+                id: `option_${index + 1}`,
+                text: opt,
+                votes: 0
+              }))
+            };
+          } else if (currentPostType === 'text' && !selectedMediaForUpload && newPostText.length <= 150) {
+            postData.cardStyle = selectedPostBackground;
+          }
+          
+          const docRef = await addDoc(collection(firestore, 'posts'), postData);
+          
+          if (currentUser && newPostText.trim()) {
+              await createMentions(newPostText.trim(), docRef.id, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL }, 'mention_post');
+          }
+  
+          toast({ title: "Publicado!", description: "Sua postagem está na Time Line." });
+        }
+  
+        resetFormState();
+      } catch (error: any) {
+        console.error("Error publishing content:", error);
+        toast({
+            variant: "destructive",
+            title: "Erro na Publicação",
+            description: error.message || "Sua mídia não pôde ser enviada. Verifique sua conexão ou tente novamente.",
+        });
+      } finally {
+          setIsPublishing(false);
+      }
+    };
 
   const handleNewPostTextareaInput = (event: ChangeEvent<HTMLTextAreaElement>) => {
     const textarea = event.target;
