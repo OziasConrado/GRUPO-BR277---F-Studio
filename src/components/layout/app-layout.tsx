@@ -333,10 +333,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                       <LifeBuoy className="mr-2 h-4 w-4" />
                       <span>Suporte</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => {}}>
-                      <FileText className="mr-2 h-4 w-4" />
-                      <span>Política de Privacidade</span>
-                    </DropdownMenuItem>
+                    <Link href="/politica-privacidade" passHref>
+                      <DropdownMenuItem>
+                        <FileText className="mr-2 h-4 w-4" />
+                        <span>Política de Privacidade</span>
+                      </DropdownMenuItem>
+                    </Link>
                     <DropdownMenuItem onClick={() => {}}>
                       <Shield className="mr-2 h-4 w-4" />
                       <span>Termos de Uso</span>
