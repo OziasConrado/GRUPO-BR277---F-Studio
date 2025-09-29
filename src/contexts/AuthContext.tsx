@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import {
   onAuthStateChanged,
   signOut,
@@ -14,12 +14,11 @@ import {
   type User as FirebaseUser,
   type AuthError,
 } from 'firebase/auth';
-import { auth, app, firestore, uploadFile, storage } from '@/lib/firebase/client'; 
-import { doc, setDoc, getDoc, updateDoc, serverTimestamp, onSnapshot } from 'firebase/firestore'; 
+import { auth, firestore, storage } from '@/lib/firebase/client';
+import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-
 
 export interface UserProfile {
     uid: string;
@@ -32,10 +31,9 @@ export interface UserProfile {
     lastLogin?: any;
 }
 
-
 interface UpdateUserProfileData {
   displayName?: string;
-  newPhotoFile?: File; // Changed from imageFile to be more specific
+  newPhotoFile?: File;
   bio?: string;
   instagramUsername?: string;
   location?: string;
@@ -45,9 +43,9 @@ interface AuthContextType {
   currentUser: FirebaseUser | null;
   userProfile: UserProfile | null;
   isProfileComplete: boolean;
-  loading: boolean; // General loading for profile updates etc.
-  authAction: string | null; // Tracks current auth operation
-  isAuthenticating: boolean; // Tracks initial auth state loading
+  isAuthenticating: boolean;
+  loading: boolean;
+  authAction: string | null;
   signInWithGoogle: () => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
@@ -61,8 +59,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [isAuthenticating, setIsAuthenticating] = useState(true); // Start as true
-  const [loading, setLoading] = useState(false); // For specific actions like profile update
+  const [isAuthenticating, setIsAuthenticating] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [authAction, setAuthAction] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
@@ -96,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         case 'auth/too-many-requests':
             message = 'Muitas tentativas. Por favor, tente novamente mais tarde.';
             break;
-         case 'auth/network-request-failed':
+        case 'auth/network-request-failed':
             message = 'Erro de rede. Verifique sua conexão com a internet e tente novamente.';
             break;
         default:
@@ -109,32 +107,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       variant: 'destructive',
     });
   }, [toast]);
-  
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            setCurrentUser(user);
-            const userDocRef = doc(firestore, 'Usuarios', user.uid);
-            const userDoc = await getDoc(userDocRef);
-            if (userDoc.exists()) {
-                setUserProfile(userDoc.data() as UserProfile);
-            } else {
-                 const displayName = user.displayName || user.email?.split('@')[0] || 'Usuário';
-                 const newUserProfile: UserProfile = {
-                    uid: user.uid,
-                    email: user.email,
-                    displayName: displayName,
-                    photoURL: user.photoURL,
-                    lastLogin: serverTimestamp()
-                };
-                await setDoc(userDocRef, newUserProfile, { merge: true });
-                setUserProfile(newUserProfile);
-            }
+      if (user) {
+        setCurrentUser(user);
+        const userDocRef = doc(firestore, 'Usuarios', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          setUserProfile(userDoc.data() as UserProfile);
         } else {
-            setCurrentUser(null);
-            setUserProfile(null);
+          const displayName = user.displayName || user.email?.split('@')[0] || 'Usuário';
+          const newUserProfile: UserProfile = {
+            uid: user.uid,
+            email: user.email,
+            displayName: displayName,
+            photoURL: user.photoURL,
+            lastLogin: serverTimestamp()
+          };
+          await setDoc(userDocRef, newUserProfile, { merge: true });
+          setUserProfile(newUserProfile);
         }
-        setIsAuthenticating(false); // Finish authenticating once user state is determined
+      } else {
+        setCurrentUser(null);
+        setUserProfile(null);
+      }
+      setIsAuthenticating(false);
     });
     return () => unsubscribe();
   }, []);
@@ -143,67 +141,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthAction('google');
     const provider = new GoogleAuthProvider();
     try {
-        const result = await signInWithPopup(auth, provider);
-        toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a) de volta!' });
-        router.push('/');
+      await signInWithPopup(auth, provider);
+      toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a) de volta!' });
+      router.push('/');
     } catch (error) {
-        handleAuthError(error as AuthError, 'Erro no Login com Google');
+      handleAuthError(error as AuthError, 'Erro no Login com Google');
     } finally {
-        setAuthAction(null);
+      setAuthAction(null);
     }
-  }, [router, toast, handleAuthError]);
+  }, [router, handleAuthError, toast]);
 
-  const signUpWithEmail = useCallback(
-    async (email: string, password: string) => {
-      setAuthAction('signup');
-      try {
-        await createUserWithEmailAndPassword(auth, email, password);
-        // The onAuthStateChanged listener will handle profile creation
-        toast({ title: 'Cadastro bem-sucedido!', description: 'Sua conta foi criada.' });
-        router.push('/');
-      } catch (error) {
-        handleAuthError(error as AuthError);
-      } finally {
-        setAuthAction(null);
-      }
-    },
-    [router, toast, handleAuthError]
-  );
+  const signUpWithEmail = useCallback(async (email: string, password: string) => {
+    setAuthAction('signup');
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      toast({ title: 'Cadastro bem-sucedido!', description: 'Sua conta foi criada.' });
+      router.push('/');
+    } catch (error) {
+      handleAuthError(error as AuthError);
+    } finally {
+      setAuthAction(null);
+    }
+  }, [router, handleAuthError, toast]);
 
-  const signInWithEmail = useCallback(
-    async (email: string, password: string) => {
-      setAuthAction('email');
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-        toast({ title: 'Login bem-sucedido!', description: 'Bem-vindo(a) de volta!' });
-        router.push('/');
-      } catch (error) {
-        handleAuthError(error as AuthError);
-      } finally {
-        setAuthAction(null);
-      }
-    },
-    [router, toast, handleAuthError]
-  );
+  const signInWithEmail = useCallback(async (email: string, password: string) => {
+    setAuthAction('email');
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      toast({ title: 'Login bem-sucedido!', description: 'Bem-vindo(a) de volta!' });
+      router.push('/');
+    } catch (error) {
+      handleAuthError(error as AuthError);
+    } finally {
+      setAuthAction(null);
+    }
+  }, [router, handleAuthError, toast]);
 
-  const sendPasswordResetEmail = useCallback(
-    async (email: string) => {
-      setAuthAction('reset');
-      try {
-        await firebaseSendPasswordResetEmail(auth, email);
-        toast({
-          title: 'Link de Redefinição Enviado',
-          description: 'Verifique seu e-mail para as instruções.',
-        });
-      } catch (error) {
-        handleAuthError(error as AuthError, 'Erro ao Enviar E-mail');
-        throw error;
-      } finally {
-        setAuthAction(null);
-      }
-    },
-    [toast, handleAuthError]
-  );
+  const sendPasswordResetEmail = useCallback(async (email: string) => {
+    setAuthAction('reset');
+    try {
+      await firebaseSendPasswordResetEmail(auth, email);
+      toast({
+        title: 'Link de Redefinição Enviado',
+        description: 'Verifique seu e-mail para as instruções.',
+      });
+    } catch (error) {
+      handleAuthError(error as AuthError, 'Erro ao Enviar E-mail');
+      throw error;
+    } finally {
+      setAuthAction(null);
+    }
+  }, [handleAuthError, toast]);
 
   const updateUserProfile = useCallback(async (data: UpdateUserProfileData) => {
     if (!currentUser) return;
@@ -240,8 +228,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
         await updateDoc(userDocRef, firestoreUpdates);
 
-        // Optimistically update local state
-        setUserProfile(prev => ({...prev, ...firestoreUpdates}));
+        setUserProfile(prev => prev ? { ...prev, ...firestoreUpdates } : firestoreUpdates as UserProfile);
         
         toast({ title: "Sucesso!", description: "Seu perfil foi atualizado." });
 
@@ -252,8 +239,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAuthAction(null);
         setLoading(false);
     }
-  }, [currentUser, toast, handleAuthError]);
-
+  }, [currentUser, handleAuthError, toast]);
 
   const signOutUser = useCallback(async () => {
     setAuthAction('signout');
@@ -266,9 +252,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setAuthAction(null);
     }
-  }, [router, toast, handleAuthError]);
+  }, [router, handleAuthError, toast]);
 
-  const isProfileComplete = useMemo(() => !!(userProfile?.displayName && userProfile?.location), [userProfile]);
+  const isProfileComplete = !!(userProfile?.displayName && userProfile?.location);
 
   const value = {
     currentUser,
@@ -277,16 +263,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticating,
     loading: loading || authAction !== null,
     authAction,
-    signOutUser,
-    updateUserProfile,
     signInWithGoogle,
     signUpWithEmail,
     signInWithEmail,
     sendPasswordResetEmail,
+    updateUserProfile,
+    signOutUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
+}
 
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);

@@ -326,7 +326,6 @@ const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData
     const { toast } = useToast();
     const [totalVotes, setTotalVotes] = useState(0);
 
-    // This useMemo is for the initial render, but the useEffect will keep it updated.
     const initialTotalVotes = useMemo(() => {
         return poll.options.reduce((sum, option) => sum + option.votes, 0);
     }, [poll.options]);
@@ -347,11 +346,8 @@ const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData
         return () => unsub();
     }, [postId, currentUser]);
 
-    // Listen for real-time updates to the poll itself
     useEffect(() => {
-        if (!firestore || !postId) {
-            return;
-        }
+        if (!firestore || !postId) return;
 
         const postRef = doc(firestore, 'posts', postId);
         const unsub = onSnapshot(postRef, (doc) => {
@@ -394,7 +390,6 @@ const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData
                 const optionIndex = currentPollData.options.findIndex(opt => opt.id === optionId);
                 if (optionIndex === -1) throw "Option not found!";
 
-                // Use dot notation for nested field updates
                 transaction.update(postRef, {
                     [`poll.options.${optionIndex}.votes`]: increment(1)
                 });
@@ -525,9 +520,8 @@ export default function PostCard({
   const isAuthor = currentUser?.uid === userId;
   
   const linkRegex = /\(\((https?:\/\/[^\s()]+)\)\)/;
-  const linkMatch = text.match(linkRegex);
-  const textContent = linkMatch ? text.replace(linkRegex, '').trim() : text;
-  const urlToPreview = linkMatch ? linkMatch[1] : null;
+  const textContent = text.replace(linkRegex, "").trim();
+  const urlToPreview = text.match(linkRegex)?.[1] || null;
   
   const MAX_CHARS = 130;
   const needsTruncation = textContent.length > MAX_CHARS;
@@ -557,7 +551,7 @@ export default function PostCard({
 
   // Process main post text for mentions
   useEffect(() => {
-    const fullText = linkMatch ? text.replace(linkRegex, '').trim() : text;
+    const fullText = text.replace(linkRegex, "").trim();
     if (fullText) {
         const processText = async () => {
             const mentions = await findMentions(fullText);
@@ -565,7 +559,7 @@ export default function PostCard({
         };
         processText();
     }
-  }, [text, linkMatch, handleShowUserProfile]);
+  }, [text, handleShowUserProfile]);
 
 
   // Real-time listener for the post document to update reactions
