@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useRef, type ChangeEvent, useCallback, type FormEvent } from 'react';
@@ -48,7 +47,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from '@/contexts/AuthContext';
 import { firestore, storage } from '@/lib/firebase/client';
 import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp, where, getDocs, doc, writeBatch, getDoc, updateDoc } from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ToastAction } from '@/components/ui/toast';
@@ -625,7 +624,7 @@ export default function FeedPage() {
       toast({ title: "Publicado!", description: "Sua postagem está na Time Line." });
       resetFormState();
     } catch (error) {
-      console.error("--- DEBUG: ERRO CAPTURADO PELO CATCH PRINCIPAL:", error);
+      console.error("--- ERRO NA PUBLICAÇÃO:", error);
       toast({
         variant: "destructive",
         title: "Erro na Publicação",
