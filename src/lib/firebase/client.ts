@@ -1,3 +1,5 @@
+'use client';
+
 // src/lib/firebase/client.ts
 import { initializeApp, getApp, getApps, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
@@ -15,18 +17,20 @@ const firebaseConfig = {
   "messagingSenderId": "491779757123"
 };
 
-// Singleton pattern to initialize Firebase app
-function getFirebaseApp(): FirebaseApp {
-  if (!getApps().length) {
-    return initializeApp(firebaseConfig);
-  }
-  return getApp();
+// Singleton pattern to initialize and get Firebase services
+const app: FirebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+
+function getFirebaseAuth(): Auth {
+  return getAuth(app);
 }
 
-const app: FirebaseApp = getFirebaseApp();
-const auth: Auth = getAuth(app);
-const firestore: Firestore = getFirestore(app);
-const storage: FirebaseStorage = getStorage(app);
+function getFirebaseFirestore(): Firestore {
+  return getFirestore(app);
+}
+
+function getFirebaseStorage(): FirebaseStorage {
+  return getStorage(app);
+}
 
 let analytics: Analytics | null = null;
 if (typeof window !== 'undefined') {
@@ -36,6 +40,10 @@ if (typeof window !== 'undefined') {
     }
   });
 }
+
+const auth: Auth = getFirebaseAuth();
+const firestore: Firestore = getFirebaseFirestore();
+const storage: FirebaseStorage = getFirebaseStorage();
 
 /**
  * Uploads a file to Firebase Storage and returns the download URL.
