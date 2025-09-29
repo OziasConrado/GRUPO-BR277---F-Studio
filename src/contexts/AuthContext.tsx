@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
@@ -15,20 +14,28 @@ import {
   type User as FirebaseUser,
   type AuthError,
 } from 'firebase/auth';
-import { auth, app, firestore, uploadFile } from '@/lib/firebase/client'; 
+import { auth, app, firestore, uploadFile, storage } from '@/lib/firebase/client'; 
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp, onSnapshot } from 'firebase/firestore'; 
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
-interface UserProfile {
+
+export interface UserProfile {
+    uid: string;
+    email: string | null;
+    displayName: string | null;
+    photoURL: string | null;
+    location?: string;
     bio?: string;
     instagramUsername?: string;
-    location?: string;
+    lastLogin?: any;
 }
+
 
 interface UpdateUserProfileData {
   displayName?: string;
-  newPhotoFile?: File;
+  newPhotoFile?: File; // Changed from imageFile to be more specific
   bio?: string;
   instagramUsername?: string;
   location?: string;
@@ -38,15 +45,15 @@ interface AuthContextType {
   currentUser: FirebaseUser | null;
   userProfile: UserProfile | null;
   isProfileComplete: boolean;
-  loading: boolean;
+  loading: boolean; // General loading for profile updates etc.
+  authAction: string | null; // Tracks current auth operation
+  isAuthenticating: boolean; // Tracks initial auth state loading
   signInWithGoogle: () => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   sendPasswordResetEmail: (email: string) => Promise<void>;
   updateUserProfile: (data: UpdateUserProfileData) => Promise<void>;
   signOutUser: () => Promise<void>;
-  authAction: string | null;
-  isAuthenticating: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -54,7 +61,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isAuthenticating, setIsAuthenticating] = useState(true); // Start as true
+  const [loading, setLoading] = useState(false); // For specific actions like profile update
   const [authAction, setAuthAction] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
@@ -91,14 +99,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
          case 'auth/network-request-failed':
             message = 'Erro de rede. Verifique sua conexão com a internet e tente novamente.';
             break;
-        case 'auth/unauthorized-domain':
-            message = 'Este domínio não está autorizado para operações de login. Verifique a configuração do Firebase.';
-            break;
-        case 'auth/operation-not-allowed':
-            message = 'O método de login por e-mail e senha não está ativado para este aplicativo. Por favor, contate o suporte.';
-            break;
         default:
-            message = `Ocorreu um problema (${error.message || error.code}). Por favor, tente novamente ou contate o suporte se o problema persistir.`;
+            message = `Ocorreu um problema (${error.code}). Por favor, tente novamente.`;
             break;
     }
     toast({
@@ -109,68 +111,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [toast]);
   
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            setCurrentUser(user);
+            const userDocRef = doc(firestore, 'Usuarios', user.uid);
+            const userDoc = await getDoc(userDocRef);
+            if (userDoc.exists()) {
+                setUserProfile(userDoc.data() as UserProfile);
+            } else {
+                 const displayName = user.displayName || user.email?.split('@')[0] || 'Usuário';
+                 const newUserProfile: UserProfile = {
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: displayName,
+                    photoURL: user.photoURL,
+                    lastLogin: serverTimestamp()
+                };
+                await setDoc(userDocRef, newUserProfile, { merge: true });
+                setUserProfile(newUserProfile);
+            }
+        } else {
+            setCurrentUser(null);
+            setUserProfile(null);
+        }
+        setIsAuthenticating(false); // Finish authenticating once user state is determined
     });
-    return unsubscribe;
+    return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (currentUser?.uid) {
-      if (!firestore) {
-        setLoading(false);
-        return;
-      }
-      const userDocRef = doc(firestore, 'Usuarios', currentUser.uid);
-      const unsubscribe = onSnapshot(userDocRef, (doc) => {
-        if (doc.exists()) {
-          setUserProfile(doc.data() as UserProfile);
-        } else {
-          setUserProfile(null);
-        }
-        setLoading(false);
-      });
-      return () => unsubscribe();
-    } else {
-      setUserProfile(null);
-      setLoading(false);
-    }
-  }, [currentUser?.uid]);
-
   const signInWithGoogle = useCallback(async () => {
-    if (!auth || !firestore) {
-        toast({ title: "Erro de Inicialização", description: "Serviço de autenticação não disponível.", variant: "destructive" });
-        return;
-    }
     setAuthAction('google');
     const provider = new GoogleAuthProvider();
     try {
         const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-        
-        const userDocRef = doc(firestore, "Usuarios", user.uid);
-        const userDocSnap = await getDoc(userDocRef);
-
-        if (!userDocSnap.exists()) {
-            const displayName = user.displayName || user.email?.split('@')[0] || 'Usuário Google';
-            const newProfileData = {
-                uid: user.uid,
-                email: user.email,
-                displayName: displayName,
-                displayName_lowercase: displayName.toLowerCase(),
-                photoURL: user.photoURL || null,
-                createdAt: serverTimestamp(),
-                bio: '',
-                instagramUsername: '',
-                location: '',
-            };
-            await setDoc(userDocRef, newProfileData);
-            toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a)! Seu perfil foi criado.' });
-        } else {
-            toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a) de volta!' });
-        }
+        toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a) de volta!' });
         router.push('/');
-
     } catch (error) {
         handleAuthError(error as AuthError, 'Erro no Login com Google');
     } finally {
@@ -180,41 +155,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUpWithEmail = useCallback(
     async (email: string, password: string) => {
-      if (!auth || !firestore) {
-        toast({ title: "Erro de Inicialização", description: "Serviço de autenticação ou banco de dados não disponível.", variant: "destructive" });
-        return;
-      }
       setAuthAction('signup');
       try {
-        const newUserCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = newUserCredential.user;
-        if (user) {
-          const userDocRef = doc(firestore, "Usuarios", user.uid);
-          try {
-            const displayName = user.email?.split('@')[0] || 'Usuário';
-            const newProfileData = {
-              uid: user.uid,
-              email: user.email,
-              displayName: displayName,
-              displayName_lowercase: displayName.toLowerCase(),
-              photoURL: user.photoURL || null,
-              createdAt: serverTimestamp(),
-              bio: '',
-              instagramUsername: '',
-              location: '',
-            };
-            await setDoc(userDocRef, newProfileData);
-            setUserProfile({
-              bio: newProfileData.bio,
-              instagramUsername: newProfileData.instagramUsername,
-              location: newProfileData.location,
-            });
-            toast({ title: 'Cadastro bem-sucedido!', description: 'Sua conta e perfil foram criados.' });
-            router.push('/');
-          } catch (profileError) {
-            handleAuthError(profileError as AuthError, 'Erro ao Criar Perfil');
-          }
-        }
+        await createUserWithEmailAndPassword(auth, email, password);
+        // The onAuthStateChanged listener will handle profile creation
+        toast({ title: 'Cadastro bem-sucedido!', description: 'Sua conta foi criada.' });
+        router.push('/');
       } catch (error) {
         handleAuthError(error as AuthError);
       } finally {
@@ -226,10 +172,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithEmail = useCallback(
     async (email: string, password: string) => {
-      if (!auth) {
-        toast({ title: "Erro de Inicialização", description: "Serviço de autenticação não disponível.", variant: "destructive" });
-        return;
-      }
       setAuthAction('email');
       try {
         await signInWithEmailAndPassword(auth, email, password);
@@ -246,16 +188,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const sendPasswordResetEmail = useCallback(
     async (email: string) => {
-      if (!auth) {
-        toast({ title: "Erro de Inicialização", description: "Serviço de autenticação não disponível.", variant: "destructive" });
-        return;
-      }
       setAuthAction('reset');
       try {
         await firebaseSendPasswordResetEmail(auth, email);
         toast({
           title: 'Link de Redefinição Enviado',
-          description: 'Verifique seu e-mail para as instruções de redefinição de senha.',
+          description: 'Verifique seu e-mail para as instruções.',
         });
       } catch (error) {
         handleAuthError(error as AuthError, 'Erro ao Enviar E-mail');
@@ -268,84 +206,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const updateUserProfile = useCallback(async (data: UpdateUserProfileData) => {
-    const userForUpdate = auth.currentUser;
-    if (!userForUpdate || !firestore) {
-        toast({ title: "Erro", description: "Usuário não autenticado ou serviço indisponível.", variant: "destructive" });
-        return;
-    }
-
+    if (!currentUser) return;
     setAuthAction('update');
-    toast({ title: "Atualizando perfil...", description: "Por favor, aguarde." });
-
+    setLoading(true);
     try {
-        let newPhotoURL: string | null = userForUpdate.photoURL;
+        let photoURL = currentUser.photoURL;
         if (data.newPhotoFile) {
-            const filePath = `profile_pictures/${userForUpdate.uid}/${Date.now()}_${data.newPhotoFile.name}`;
-            newPhotoURL = await uploadFile(data.newPhotoFile, filePath);
+            const storagePath = `profile_pictures/${currentUser.uid}/${Date.now()}_${data.newPhotoFile.name}`;
+            const storageRef = ref(storage, storagePath);
+            const uploadResult = await uploadBytes(storageRef, data.newPhotoFile);
+            photoURL = await getDownloadURL(uploadResult.ref);
         }
 
-        const authProfileUpdates: { displayName?: string; photoURL?: string } = {};
-        if (data.displayName && data.displayName !== userForUpdate.displayName) {
-            authProfileUpdates.displayName = data.displayName;
+        const authUpdates: { displayName?: string, photoURL?: string } = {};
+        if (data.displayName && data.displayName !== currentUser.displayName) {
+            authUpdates.displayName = data.displayName;
         }
-        if (newPhotoURL && newPhotoURL !== userForUpdate.photoURL) {
-            authProfileUpdates.photoURL = newPhotoURL;
+        if (photoURL && photoURL !== currentUser.photoURL) {
+            authUpdates.photoURL = photoURL;
         }
-
-        const firestoreProfileUpdates: any = {};
-        if (data.displayName && data.displayName !== userForUpdate.displayName) {
-            firestoreProfileUpdates.displayName = data.displayName;
-            firestoreProfileUpdates.displayName_lowercase = data.displayName.toLowerCase();
-        }
-        if (newPhotoURL && newPhotoURL !== userForUpdate.photoURL) firestoreProfileUpdates.photoURL = newPhotoURL;
-        if (data.bio !== undefined && data.bio !== userProfile?.bio) firestoreProfileUpdates.bio = data.bio;
-        if (data.location !== undefined && data.location !== userProfile?.location) firestoreProfileUpdates.location = data.location;
-        if (data.instagramUsername !== undefined && data.instagramUsername !== userProfile?.instagramUsername) {
-            firestoreProfileUpdates.instagramUsername = data.instagramUsername.replace('@','');
-        }
-
-        const hasAuthUpdates = Object.keys(authProfileUpdates).length > 0;
-        const hasFirestoreUpdates = Object.keys(firestoreProfileUpdates).length > 0;
-
-        if (!hasAuthUpdates && !hasFirestoreUpdates) {
-            toast({ title: 'Nenhuma Alteração', description: 'Nenhuma informação foi alterada.' });
-            setAuthAction(null);
-            return;
-        }
-
-        if (hasAuthUpdates) {
-            await firebaseUpdateProfile(userForUpdate, authProfileUpdates);
-        }
-
-        const userDocRef = doc(firestore, "Usuarios", userForUpdate.uid);
-        if (hasFirestoreUpdates) {
-            firestoreProfileUpdates.updatedAt = serverTimestamp();
-            await setDoc(userDocRef, firestoreProfileUpdates, { merge: true });
+        if (Object.keys(authUpdates).length > 0) {
+            await firebaseUpdateProfile(currentUser, authUpdates);
         }
         
-        await userForUpdate.reload();
+        const userDocRef = doc(firestore, 'Usuarios', currentUser.uid);
+        const firestoreUpdates: any = {
+          displayName_lowercase: data.displayName?.toLowerCase(),
+          bio: data.bio,
+          location: data.location,
+          instagramUsername: data.instagramUsername,
+          photoURL: photoURL,
+          displayName: data.displayName,
+        };
+        await updateDoc(userDocRef, firestoreUpdates);
+
+        // Optimistically update local state
+        setUserProfile(prev => ({...prev, ...firestoreUpdates}));
         
-        toast({ title: 'Perfil Atualizado!', description: 'Suas informações foram salvas com sucesso.' });
-        
+        toast({ title: "Sucesso!", description: "Seu perfil foi atualizado." });
+
     } catch (error) {
         console.error("Error updating profile:", error);
         handleAuthError(error as AuthError, 'Erro ao Atualizar Perfil');
     } finally {
         setAuthAction(null);
+        setLoading(false);
     }
-  }, [userProfile, toast, handleAuthError]);
+  }, [currentUser, toast, handleAuthError]);
 
 
   const signOutUser = useCallback(async () => {
-    if (!auth) {
-       toast({ title: "Erro de Inicialização", description: "Serviço de autenticação não disponível.", variant: "destructive" });
-      return;
-    }
-    setAuthAction('signout'); 
+    setAuthAction('signout');
     try {
       await signOut(auth);
-      toast({ title: 'Logout realizado', description: 'Você saiu da sua conta.' });
-      router.push('/login'); 
+      router.push('/login');
+      toast({ title: 'Logout realizado com sucesso.' });
     } catch (error) {
       handleAuthError(error as AuthError);
     } finally {
@@ -353,31 +268,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [router, toast, handleAuthError]);
 
-  const isProfileComplete = useMemo(() => !!(currentUser && currentUser.displayName && userProfile?.location), [currentUser, userProfile]);
-  const isAuthenticating = authAction !== null;
+  const isProfileComplete = useMemo(() => !!(userProfile?.displayName && userProfile?.location), [userProfile]);
 
   const value = {
     currentUser,
     userProfile,
     isProfileComplete,
-    loading,
+    isAuthenticating,
+    loading: loading || authAction !== null,
+    authAction,
+    signOutUser,
+    updateUserProfile,
     signInWithGoogle,
     signUpWithEmail,
     signInWithEmail,
     sendPasswordResetEmail,
-    updateUserProfile,
-    signOutUser,
-    authAction,
-    isAuthenticating,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
+};
 
-export function useAuth() {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
+};

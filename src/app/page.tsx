@@ -45,9 +45,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useAuth } from '@/contexts/AuthContext';
-import { firestore, storage, uploadFile } from '@/lib/firebase/client';
+import { firestore, storage } from '@/lib/firebase/client';
 import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp, where, getDocs, doc, writeBatch, getDoc, updateDoc } from 'firebase/firestore';
-import { ref } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ToastAction } from '@/components/ui/toast';
@@ -296,7 +296,7 @@ export default function FeedPage() {
 
   // Hooks
   const { toast } = useToast();
-  const { currentUser, userProfile, isProfileComplete } = useAuth();
+  const { currentUser, userProfile, isProfileComplete, isAuthenticating } = useAuth();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -542,92 +542,95 @@ export default function FeedPage() {
 
   const handlePublish = async () => {
     if (!currentUser || !firestore || !storage) {
-      toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado ou o serviço está indisponível.' });
-      return;
+        toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado ou o serviço está indisponível.' });
+        return;
     }
-  
+
     if (!isProfileComplete) {
-      handleInteractionAttempt(() => {});
-      return;
+        handleInteractionAttempt(() => {});
+        return;
     }
-  
+
     setIsPublishing(true);
-  
+
     try {
-      let mediaUrl: string | undefined;
-  
-      if (selectedMediaForUpload) {
-        const mediaType = currentPostType === 'video' ? 'reels' : 'posts';
-        const storagePath = `${mediaType}/${currentUser.uid}/${Date.now()}_${selectedMediaForUpload.name}`;
-        mediaUrl = await uploadFile(selectedMediaForUpload, storagePath);
-      }
-  
-      if (currentPostType === 'alert' && selectedAlertType) {
-        await addDoc(collection(firestore, 'alerts'), {
-          type: selectedAlertType,
-          description: newPostText.trim(),
-          userId: currentUser.uid,
-          userNameReportedBy: currentUser.displayName || 'Anônimo',
-          userAvatarUrl: currentUser.photoURL,
-          userLocation: userProfile?.location || 'Localização Desconhecida',
-          timestamp: serverTimestamp(),
-        });
-      } else if (currentPostType === 'video' && mediaUrl) {
-        await addDoc(collection(firestore, 'reels'), {
-          userId: currentUser.uid,
-          userName: currentUser.displayName || 'Anônimo',
-          userAvatarUrl: currentUser.photoURL,
-          description: newPostText.trim(),
-          videoUrl: mediaUrl,
-          deleted: false,
-          reactions: { thumbsUp: 0, thumbsDown: 0 },
-          timestamp: serverTimestamp(),
-        });
-      } else {
-        const postData: any = {
-          userId: currentUser.uid,
-          userName: currentUser.displayName || 'Anônimo',
-          userAvatarUrl: currentUser.photoURL,
-          userLocation: userProfile?.location || 'Localização Desconhecida',
-          text: newPostText.trim(),
-          reactions: { thumbsUp: 0, thumbsDown: 0 },
-          edited: false,
-          deleted: false,
-          timestamp: serverTimestamp(),
-        };
-        if (mediaUrl) {
-          postData.uploadedImageUrl = mediaUrl;
+        let mediaUrl: string | undefined;
+
+        if (selectedMediaForUpload) {
+            const mediaType = currentPostType === 'video' ? 'reels' : 'posts';
+            const storagePath = `${mediaType}/${currentUser.uid}/${Date.now()}_${selectedMediaForUpload.name}`;
+            const storageRef = ref(storage, storagePath);
+            
+            const uploadResult = await uploadBytes(storageRef, selectedMediaForUpload);
+            mediaUrl = await getDownloadURL(uploadResult.ref);
         }
-        if (pollData) {
-          postData.poll = {
-            question: pollData.question,
-            options: pollData.options.map((opt, index) => ({
-              id: `option_${index + 1}`,
-              text: opt,
-              votes: 0
-            }))
-          };
-        } else if (currentPostType === 'text' && !selectedMediaForUpload && newPostText.length <= 150) {
-          postData.cardStyle = selectedPostBackground;
+
+        if (currentPostType === 'alert' && selectedAlertType) {
+            await addDoc(collection(firestore, 'alerts'), {
+                type: selectedAlertType,
+                description: newPostText.trim(),
+                userId: currentUser.uid,
+                userNameReportedBy: currentUser.displayName || 'Anônimo',
+                userAvatarUrl: currentUser.photoURL,
+                userLocation: userProfile?.location || 'Localização Desconhecida',
+                timestamp: serverTimestamp(),
+            });
+        } else if (currentPostType === 'video' && mediaUrl) {
+            await addDoc(collection(firestore, 'reels'), {
+                userId: currentUser.uid,
+                userName: currentUser.displayName || 'Anônimo',
+                userAvatarUrl: currentUser.photoURL,
+                description: newPostText.trim(),
+                videoUrl: mediaUrl,
+                deleted: false,
+                reactions: { thumbsUp: 0, thumbsDown: 0 },
+                timestamp: serverTimestamp(),
+            });
+        } else {
+            const postData: any = {
+                userId: currentUser.uid,
+                userName: currentUser.displayName || 'Anônimo',
+                userAvatarUrl: currentUser.photoURL,
+                userLocation: userProfile?.location || 'Localização Desconhecida',
+                text: newPostText.trim(),
+                reactions: { thumbsUp: 0, thumbsDown: 0 },
+                edited: false,
+                deleted: false,
+                timestamp: serverTimestamp(),
+            };
+            if (mediaUrl) {
+                postData.uploadedImageUrl = mediaUrl;
+            }
+            if (pollData) {
+                postData.poll = {
+                    question: pollData.question,
+                    options: pollData.options.map((opt, index) => ({
+                        id: `option_${index + 1}`,
+                        text: opt,
+                        votes: 0
+                    }))
+                };
+            } else if (currentPostType === 'text' && !selectedMediaForUpload && newPostText.length <= 150) {
+                postData.cardStyle = selectedPostBackground;
+            }
+            const docRef = await addDoc(collection(firestore, 'posts'), postData);
+            if (newPostText.trim()) {
+                await createMentions(newPostText.trim(), docRef.id, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL }, 'mention_post');
+            }
         }
-        const docRef = await addDoc(collection(firestore, 'posts'), postData);
-        if (newPostText.trim()) {
-          await createMentions(newPostText.trim(), docRef.id, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL }, 'mention_post');
-        }
-      }
-  
-      toast({ title: "Publicado!", description: "Sua postagem está na Time Line." });
-      resetFormState();
-  
+
+        toast({ title: "Publicado!", description: "Sua postagem está na Time Line." });
+        resetFormState();
+
     } catch (error) {
-      console.error("--- ERRO NA PUBLICAÇÃO (MÉTODO DIRETO):", error);
-      toast({
-        variant: "destructive",
-        title: "Erro na Publicação",
-        description: "Não foi possível enviar sua mídia. Por favor, verifique sua conexão.",
-      });
+        console.error("--- ERRO NA PUBLICAÇÃO (MÉTODO DIRETO):", error);
+        toast({
+            variant: "destructive",
+            title: "Erro na Publicação",
+            description: "Não foi possível enviar sua mídia. Por favor, verifique sua conexão.",
+        });
     } finally {
-      setIsPublishing(false);
+        setIsPublishing(false);
     }
   };
 
@@ -739,6 +742,14 @@ export default function FeedPage() {
         </Alert>
     )
   }
+  
+    if (isAuthenticating) {
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            </div>
+        );
+    }
 
   return (
     <>
