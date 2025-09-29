@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Instagram, MapPin } from 'lucide-react'; // Added MapPin, X removido pois DialogContent já tem
+import { Instagram, MapPin } from 'lucide-react';
 
 export interface UserProfileData {
   id: string;

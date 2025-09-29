@@ -561,7 +561,7 @@ export default function FeedPage() {
         const mediaType = currentPostType === 'video' ? 'reels' : 'posts';
         const storagePath = `${mediaType}/${currentUser.uid}/${Date.now()}_${selectedMediaForUpload.name}`;
         const storageRef = ref(storage, storagePath);
-
+        
         const uploadTask = await uploadBytesResumable(storageRef, selectedMediaForUpload);
         mediaUrl = await getDownloadURL(uploadTask.ref);
       }
@@ -599,7 +599,9 @@ export default function FeedPage() {
           deleted: false,
           timestamp: serverTimestamp(),
         };
-        if (mediaUrl) postData.uploadedImageUrl = mediaUrl;
+        if (mediaUrl) {
+          postData.uploadedImageUrl = mediaUrl;
+        }
         
         if (pollData) {
           postData.poll = {
@@ -623,7 +625,7 @@ export default function FeedPage() {
       toast({ title: "Publicado!", description: "Sua postagem está na Time Line." });
       resetFormState();
     } catch (error) {
-      console.error("Erro na Publicação:", error);
+      console.error("--- DEBUG: ERRO CAPTURADO PELO CATCH PRINCIPAL:", error);
       toast({
         variant: "destructive",
         title: "Erro na Publicação",
