@@ -1,102 +1,92 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Regra geral de leitura: A maioria dos dados pode ser lida por qualquer pessoa
-    // para permitir visualização de posts, perfis, comentários, etc.
-    match /{document=**} {
-      allow read;
-    }
-
-    // Regras para a coleção 'Usuarios'
+    // Usuários podem ler perfis públicos, mas só podem editar o seu próprio.
     match /Usuarios/{userId} {
       allow read;
-      allow create: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && request.auth.uid == userId;
-      
-      // Qualquer usuário autenticado pode criar notificações para outro usuário (menções)
+      allow create, update: if request.auth != null && request.auth.uid == userId;
+
+      // Notificações: apenas o dono pode ler/apagar, mas outros podem criar (enviar).
       match /notifications/{notificationId} {
-        allow write: if request.auth != null;
+        allow read, update, delete: if request.auth != null && request.auth.uid == userId;
+        allow create: if request.auth != null;
+      }
+    }
+
+    // Posts: Leitura pública, escrita apenas para autenticados, edição/deleção apenas para o autor.
+    match /posts/{postId} {
+      allow read;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && resource.data.userId == request.auth.uid;
+      
+      // Comentários: Leitura pública, escrita apenas para autenticados.
+      match /comments/{commentId} {
+        allow read;
+        allow create: if request.auth != null;
+      }
+
+      // Reações e Votos: Autenticados podem criar/deletar suas próprias reações/votos.
+      match /userReactions/{userId} {
+        allow read, create, delete: if request.auth != null && request.auth.uid == userId;
+      }
+      match /userVotes/{userId} {
+        allow read, create, delete: if request.auth != null && request.auth.uid == userId;
       }
     }
     
-    // Regras para a coleção 'posts'
-    match /posts/{postId} {
-      allow read;
-      // Permite criar um post se o usuário estiver logado
-      allow create: if request.auth != null;
-      // Permite atualizar (editar) ou deletar (soft delete) apenas se o usuário for o autor
-      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
-      
-      // Regras para comentários em posts
-      match /comments/{commentId} {
-        allow read, create: if request.auth != null;
-        allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
-      }
-      
-      // Regras para reações em posts
-      match /userReactions/{userId} {
-        allow read;
-        // Permite que um usuário crie/delete sua própria reação
-        allow create, delete: if request.auth != null && request.auth.uid == userId;
-      }
-
-      // Regras para votos em enquetes
-      match /userVotes/{userId} {
-        allow read, create: if request.auth != null && request.auth.uid == userId;
-      }
-    }
-
-    // Regras para a coleção 'reels'
+    // Reels: Leitura pública, escrita autenticada, deleção/edição apenas para autor.
     match /reels/{reelId} {
       allow read;
       allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null && resource.data.userId == request.auth.uid;
 
-      // Regras para comentários em reels
+      // Comentários em Reels
       match /comments/{commentId} {
-        allow read, create: if request.auth != null;
-        allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
-      }
-
-      // Regras para reações em reels
-      match /userReactions/{userId} {
         allow read;
-        allow create, delete: if request.auth != null && request.auth.uid == userId;
+        allow create: if request.auth != null;
+      }
+      // Reações em Reels
+      match /userReactions/{userId} {
+         allow read, create, delete: if request.auth != null && request.auth.uid == userId;
       }
     }
 
-    // Regras para o chat
-    match /chatMessages/{messageId} {
-      allow read, create: if request.auth != null;
-      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
-
-      // Regras para reações em mensagens do chat
-      match /userReactions/{userId} {
-        allow read;
-        allow create, delete: if request.auth != null && request.auth.uid == userId;
-      }
+    // Alertas: Leitura pública, criação autenticada.
+    match /alerts/{alertId} {
+      allow read;
+      allow create: if request.auth != null;
     }
-
-    // Regras para SAUs e avaliações
+    
+    // Avaliações de SAU: Leitura pública, criação autenticada.
     match /sau_reviews/{reviewId} {
-      allow read, create: if request.auth != null;
+        allow read, create: if request.auth != null;
     }
 
-    // Regras para pontos turísticos e avaliações
-    match /tourist_points_indicated/{pointId} {
-      allow read, create: if request.auth != null;
-      // Apenas o autor da indicação pode atualizar (se necessário no futuro)
-      allow update: if request.auth != null && resource.data.indicatedByUserId == request.auth.uid;
-    }
+    // Avaliações de Pontos Turísticos: Leitura pública, criação autenticada.
     match /tourist_point_reviews/{reviewId} {
       allow read, create: if request.auth != null;
     }
 
-    // Regras para alertas
-    match /alerts/{alertId} {
+    // Indicações de Pontos Turísticos: Leitura pública, criação autenticada.
+    match /tourist_points_indicated/{pointId} {
+      allow read;
+      allow create: if request.auth != null;
+      // Permite que o autor atualize ou um admin (futuro)
+      allow update: if request.auth != null && request.resource.data.indicatedByUserId == request.auth.uid;
+    }
+
+    // Mensagens do Chat: Leitura e escrita autenticada.
+    match /chatMessages/{messageId} {
       allow read, create: if request.auth != null;
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      
+      // Reações em Mensagens do Chat
+      match /userReactions/{userId} {
+         allow read, create, delete: if request.auth != null && request.auth.uid == userId;
+      }
     }
   }
 }
