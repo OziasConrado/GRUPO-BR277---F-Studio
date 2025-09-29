@@ -339,10 +339,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                         <span>Política de Privacidade</span>
                       </DropdownMenuItem>
                     </Link>
-                    <DropdownMenuItem onClick={() => {}}>
-                      <Shield className="mr-2 h-4 w-4" />
-                      <span>Termos de Uso</span>
-                    </DropdownMenuItem>
+                    <Link href="/termos-de-uso" passHref>
+                      <DropdownMenuItem>
+                        <Shield className="mr-2 h-4 w-4" />
+                        <span>Termos de Uso</span>
+                      </DropdownMenuItem>
+                    </Link>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleReportBugClick}>
                       <Bug className="mr-2 h-4 w-4" />
