@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { StaticImageData } from 'next/image';
@@ -387,17 +386,18 @@ const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData
                 
                 const userVoteDoc = await transaction.get(voteRef);
                 if (userVoteDoc.exists()) {
-                    // This check prevents race conditions if the useEffect hasn't updated the state yet
                     toast({ title: 'Você já votou nesta enquete.' });
                     return;
                 }
 
                 const currentPollData = postDoc.data().poll as PollData;
-                const newOptions = currentPollData.options.map(option => 
-                    option.id === optionId ? { ...option, votes: option.votes + 1 } : option
-                );
+                const optionIndex = currentPollData.options.findIndex(opt => opt.id === optionId);
+                if (optionIndex === -1) throw "Option not found!";
 
-                transaction.update(postRef, { poll: { ...currentPollData, options: newOptions } });
+                // Use dot notation for nested field updates
+                transaction.update(postRef, {
+                    [`poll.options.${optionIndex}.votes`]: increment(1)
+                });
                 transaction.set(voteRef, { optionId, timestamp: serverTimestamp() });
             });
         } catch (e) {
@@ -685,24 +685,22 @@ export default function PostCard({
             await runTransaction(firestore, async (transaction) => {
                 const reactionDoc = await transaction.get(reactionRef);
                 const storedReaction = reactionDoc.exists() ? reactionDoc.data().type : null;
+                const updates: { [key: string]: any } = {};
 
-                // If the user is clicking the same reaction again, they are un-reacting.
                 if (storedReaction === reactionType) {
-                    transaction.update(postRef, { [`reactions.${reactionType}`]: increment(-1) });
+                    updates[`reactions.${reactionType}`] = increment(-1);
                     transaction.delete(reactionRef);
+                    setCurrentUserPostReaction(null);
                 } else {
-                    // If the user had a different reaction, undo it first.
                     if (storedReaction) {
-                        transaction.update(postRef, { [`reactions.${storedReaction}`]: increment(-1) });
+                        updates[`reactions.${storedReaction}`] = increment(-1);
                     }
-                    // Add the new reaction.
-                    transaction.update(postRef, { [`reactions.${reactionType}`]: increment(1) });
+                    updates[`reactions.${reactionType}`] = increment(1);
                     transaction.set(reactionRef, { type: reactionType, timestamp: serverTimestamp() });
+                    setCurrentUserPostReaction(reactionType);
                 }
+                transaction.update(postRef, updates);
             });
-
-            // Optimistically update the UI. The onSnapshot listener will correct it if needed.
-            setCurrentUserPostReaction(prev => prev === reactionType ? null : prev);
         } catch (error: any) {
             console.error("Error handling reaction:", error);
             toast({ variant: 'destructive', title: 'Erro ao Reagir', description: error.message || 'Não foi possível processar sua reação. Tente novamente.' });
