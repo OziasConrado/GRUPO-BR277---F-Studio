@@ -557,14 +557,15 @@ export default function PostCard({
 
   // Process main post text for mentions
   useEffect(() => {
-    if (text) {
+    const fullText = linkMatch ? text.replace(linkRegex, '').trim() : text;
+    if (fullText) {
         const processText = async () => {
-            const mentions = await findMentions(text);
-            setPostTextElements(renderTextWithClickableMentions(text, mentions, handleShowUserProfile));
+            const mentions = await findMentions(fullText);
+            setPostTextElements(renderTextWithClickableMentions(fullText, mentions, handleShowUserProfile));
         };
         processText();
     }
-  }, [text, handleShowUserProfile]);
+  }, [text, linkMatch, handleShowUserProfile]);
 
 
   // Real-time listener for the post document to update reactions
@@ -1028,7 +1029,7 @@ export default function PostCard({
             >
               {text && (
                 <p className="text-2xl font-bold leading-tight" style={{ color: cardStyle.text }}>
-                  {postTextElements || text}
+                  {postTextElements}
                 </p>
               )}
             </div>
@@ -1038,7 +1039,7 @@ export default function PostCard({
                 <p className="text-base leading-normal whitespace-pre-wrap px-4">
                     {needsTruncation && !isTextExpanded ? (
                         <>
-                            {text.substring(0, MAX_CHARS)}...
+                            {textToShow}...
                             <Button variant="link" size="sm" className="p-0 h-auto text-xs text-primary inline align-baseline" onClick={(e) => { e.stopPropagation(); setIsTextExpanded(true); }}>
                                 Ver mais
                             </Button>
