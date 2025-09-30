@@ -3,13 +3,13 @@
 import { initializeApp, getApp, getApps, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
-import { getStorage, ref, uploadBytesResumable, getDownloadURL, type FirebaseStorage } from 'firebase/storage';
+import { getStorage, ref, uploadBytes, getDownloadURL, type FirebaseStorage } from 'firebase/storage';
 import { getAnalytics, isSupported, type Analytics } from 'firebase/analytics';
 
 const firebaseConfig = {
   "projectId": "grupo-br277",
   "appId": "1:491779757123:web:f0c1615487eb032c17b0f6",
-  "storageBucket": "grupo-br277.appspot.com",
+  "storageBucket": "grupo-br277.firebasestorage.app",
   "apiKey": "AIzaSyBkj9LYAUrrdXXb-M80C-q9FMQxGWMWA1A",
   "authDomain": "grupo-br277.firebaseapp.com",
   "measurementId": "G-MD0VTEF82W",
@@ -58,7 +58,7 @@ export async function uploadFile(
   const storageRef = ref(storage, path);
   
   // Utiliza await diretamente para simplificar o código e melhorar o tratamento de erros.
-  const uploadTask = await uploadBytesResumable(storageRef, file);
+  const uploadTask = await uploadBytes(storageRef, file);
   const downloadURL = await getDownloadURL(uploadTask.ref);
   
   return downloadURL;
