@@ -76,7 +76,6 @@ const reportReasonsStory = [
   { id: "story_hate", label: "Discurso de ódio ou bullying." },
   { id: "story_nudity", label: "Nudez ou conteúdo sexual." },
   { id: "story_violence", label: "Violência ou conteúdo perigoso." },
-  { id: "story_impersonation", label: "Falsidade ideológica." },
   { id: "story_other", label: "Outro motivo..." },
 ];
 
@@ -649,7 +648,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
                   <DropdownMenuContent align="end" side="left" className="bg-background/80 backdrop-blur-md border-slate-700/50 text-foreground z-[225]">
                       <DropdownMenuItem onClick={() => { setIsEditing(true); setEditedDescription(story?.description || ''); }}>
                         <Edit3 className="mr-2 h-4 w-4" />
-                        <span>Editar Descrição</span>
+                        <span>Editar Reel</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => setIsDeleteAlertOpen(true)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
                         <Trash2 className="mr-2 h-4 w-4" />
