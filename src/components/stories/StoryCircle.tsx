@@ -38,6 +38,7 @@ export default function StoryCircle({
   storyType,
   videoContentUrl,
   timestamp,
+  description,
   onClick,
   onAuthorClick,
 }: StoryCircleProps) {
@@ -57,12 +58,12 @@ export default function StoryCircle({
   const handleStoryClick = () => {
     // Passamos o objeto de dados para o handler
     onClick({
-      id, authorId, authorName, authorAvatarUrl, timestamp, description: story.description,
+      id, authorId, authorName, authorAvatarUrl, timestamp, description,
       thumbnailUrl, dataAIThumbnailHint, storyType, videoContentUrl
     });
   };
 
-  const story = { id, authorId, authorName, authorAvatarUrl, timestamp, description: '', thumbnailUrl, dataAIThumbnailHint, storyType, videoContentUrl };
+  const story = { id, authorId, authorName, authorAvatarUrl, timestamp, description, thumbnailUrl, dataAIThumbnailHint, storyType, videoContentUrl };
 
   return (
     <button

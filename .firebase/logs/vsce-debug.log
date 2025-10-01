@@ -6000,3 +6000,5 @@ I0930 00:07:53.894196    3710 dev.go:102] Listening on address (HTTP + gRPC): 12
 [debug] [2025-09-30T00:07:54.145Z] I0930 00:07:54.143089    3710 engine.go:169] [/emulator/s 084f] ExecuteGraphqlRead IntrospectionQuery: succeeded. 
  {"metadata":{"emulator":{"name":"dataconnect"},"message":"I0930 00:07:54.143089    3710 engine.go:169] [/emulator/s 084f] ExecuteGraphqlRead IntrospectionQuery: succeeded. \n"}}
 [error] [Firebase Plugin] requireAuth error: Could not refresh access token: Unsuccessful response status code. Request failed with status code 500
+[info] [Firebase Plugin] Stopping Data Connect toolkit
+[warn] ⚠  Data Connect Emulator has exited upon receiving signal: SIGINT 

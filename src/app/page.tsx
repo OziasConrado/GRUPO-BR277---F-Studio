@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef, type ChangeEvent, useCallback, type FormEvent } from 'react';
@@ -45,7 +46,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useAuth } from '@/contexts/AuthContext';
-import { firestore, storage } from '@/lib/firebase/client';
+import { firestore, uploadFile } from '@/lib/firebase/client';
 import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, Timestamp, where, getDocs, doc, writeBatch, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useRouter } from 'next/navigation';
@@ -541,7 +542,7 @@ export default function FeedPage() {
   }
 
   const handlePublish = async () => {
-    if (!currentUser || !firestore || !storage) {
+    if (!currentUser || !firestore) {
         toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado ou o serviço está indisponível.' });
         return;
     }
@@ -559,10 +560,8 @@ export default function FeedPage() {
         if (selectedMediaForUpload) {
             const mediaType = currentPostType === 'video' ? 'reels' : 'posts';
             const storagePath = `${mediaType}/${currentUser.uid}/${Date.now()}_${selectedMediaForUpload.name}`;
-            const storageRef = ref(storage, storagePath);
-            
-            const uploadResult = await uploadBytes(storageRef, selectedMediaForUpload);
-            mediaUrl = await getDownloadURL(uploadResult.ref);
+            const uploadResult = await uploadFile(selectedMediaForUpload, storagePath);
+            mediaUrl = uploadResult;
         }
 
         if (currentPostType === 'alert' && selectedAlertType) {
@@ -623,7 +622,7 @@ export default function FeedPage() {
         resetFormState();
 
     } catch (error) {
-        console.error("--- ERRO NA PUBLICAÇÃO (MÉTODO DIRETO):", error);
+        console.error("--- ERRO NA PUBLICAÇÃO:", error);
         toast({
             variant: "destructive",
             title: "Erro na Publicação",
@@ -806,7 +805,7 @@ export default function FeedPage() {
                       }
                     : {}
                 }
-                maxLength={currentPostType === 'alert' ? 500 : (currentPostType === 'video' ? 600 : undefined)}
+                maxLength={currentPostType === 'alert' ? 500 : (currentPostType === 'video' ? 3000 : undefined)}
               />
               {showMentions && (
                 <Card className="absolute z-10 w-full max-w-sm max-h-40 overflow-y-auto mt-1 shadow-lg border">
