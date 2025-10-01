@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef, type ChangeEvent, useMemo, useCallback } from 'react';
@@ -636,36 +635,38 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
               >
                 <Share2 size={26} />
               </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    className="text-white hover:bg-white/10 hover:text-white/90 p-1.5 h-auto w-auto flex flex-col items-center"
-                    aria-label="Mais opções"
-                  >
-                    <MoreVertical size={26} />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" side="left" className="bg-background/80 backdrop-blur-md border-slate-700/50 text-foreground">
-                  {isAuthor ? (
-                      <>
-                        <DropdownMenuItem onClick={() => { setIsEditing(true); setEditedDescription(story?.description || ''); }}>
-                          <Edit3 className="mr-2 h-4 w-4" />
-                          <span>Editar Descrição</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setIsDeleteAlertOpen(true)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          <span>Excluir Reel</span>
-                        </DropdownMenuItem>
-                      </>
-                    ) : (
-                      <DropdownMenuItem onClick={() => setIsReportModalOpenStory(true)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
-                        <Flag className="mr-2 h-4 w-4" />
-                        <span>Reportar Reel</span>
+              {isAuthor ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      className="text-white hover:bg-white/10 hover:text-white/90 p-1.5 h-auto w-auto flex flex-col items-center"
+                      aria-label="Mais opções"
+                    >
+                      <MoreVertical size={26} />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" side="left" className="bg-background/80 backdrop-blur-md border-slate-700/50 text-foreground z-[225]">
+                      <DropdownMenuItem onClick={() => { setIsEditing(true); setEditedDescription(story?.description || ''); }}>
+                        <Edit3 className="mr-2 h-4 w-4" />
+                        <span>Editar Descrição</span>
                       </DropdownMenuItem>
-                    )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                      <DropdownMenuItem onClick={() => setIsDeleteAlertOpen(true)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        <span>Excluir Reel</span>
+                      </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setIsReportModalOpenStory(true)}
+                  className="text-white hover:bg-white/10 hover:text-white/90 p-1.5 h-auto w-auto flex flex-col items-center"
+                  aria-label="Reportar Reel"
+                >
+                  <Flag size={26} />
+                </Button>
+              )}
             </div>
 
             {/* Bottom overlays container */}
