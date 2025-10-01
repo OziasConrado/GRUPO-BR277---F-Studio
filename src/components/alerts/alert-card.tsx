@@ -93,6 +93,8 @@ export default function AlertCard({ alert }: AlertCardProps) {
     setIsProfileModalOpen(true);
   };
 
+  const defaultAvatar = 'https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/images%2FImagem%20Gen%C3%A9rica%20-%20Foto%20de%20Perfil%20Feed%20BR277.png?alt=media';
+
   return (
     <>
       <Card className="w-full shadow-md rounded-lg overflow-hidden bg-white dark:bg-card">
@@ -116,7 +118,7 @@ export default function AlertCard({ alert }: AlertCardProps) {
               aria-label={`Ver perfil de ${alert.userNameReportedBy}`}
             >
               <Avatar className="h-6 w-6 mr-1.5 border-2 border-primary/30">
-                {alert.userAvatarUrl ? <AvatarImage src={alert.userAvatarUrl} alt={alert.userNameReportedBy} data-ai-hint={alert.dataAIAvatarHint} /> : null}
+                <AvatarImage src={alert.userAvatarUrl || defaultAvatar} alt={alert.userNameReportedBy} data-ai-hint={alert.dataAIAvatarHint} />
                 <AvatarFallback className="text-xs">
                   {alert.userNameReportedBy ? alert.userNameReportedBy.substring(0,1).toUpperCase() : <UserCircle className="h-4 w-4"/>}
                 </AvatarFallback>

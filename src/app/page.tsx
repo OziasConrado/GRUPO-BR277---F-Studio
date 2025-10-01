@@ -317,7 +317,7 @@ export default function FeedPage() {
           id: doc.id,
           userId: data.userId,
           userName: data.userName || 'Usuário Anônimo',
-          userAvatarUrl: data.userAvatarUrl || 'https://placehold.co/40x40.png',
+          userAvatarUrl: data.userAvatarUrl || 'https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/images%2FImagem%20Gen%C3%A9rica%20-%20Foto%20de%20Perfil%20Feed%20BR277.png?alt=media',
           userLocation: data.userLocation || 'Local Desconhecido',
           timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
           text: data.text || '',

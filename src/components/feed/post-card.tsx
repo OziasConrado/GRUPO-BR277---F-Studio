@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { StaticImageData } from 'next/image';
