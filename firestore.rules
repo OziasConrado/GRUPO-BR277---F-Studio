@@ -3,109 +3,128 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Regra para perfil de usuário
+    // Regra Geral: Bloqueia por padrão
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Coleção Usuarios
     match /Usuarios/{userId} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
+      allow create: if request.auth.uid == userId;
+      allow update: if request.auth.uid == userId;
 
-    // Regra para notificações de usuário
-    match /Usuarios/{userId}/notifications/{notificationId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Subcoleção de notificações
+      match /notifications/{notificationId} {
+        allow read, update, delete: if request.auth.uid == userId;
+      }
     }
-
-    // Regra para posts
+    
+    // Coleção de Posts
     match /posts/{postId} {
       allow read: if true;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow update: if request.auth != null &&
-                      (request.resource.data.userId == request.auth.uid ||
-                       (request.resource.data.diff(resource.data).affectedKeys().hasOnly('reactions') ||
-                        request.resource.data.diff(resource.data).affectedKeys().hasOnly('poll')));
-      allow delete: if false; // Posts are soft-deleted via an 'deleted' field update
-
-      // Subcoleção de reações do post
-      match /userReactions/{userId} {
-        allow read: if true;
-        allow write: if request.auth != null && request.auth.uid == userId;
-      }
+      allow create: if request.auth != null;
+      // Permite que o autor atualize o post, incluindo marcá-lo como deletado
+      allow update: if request.auth.uid == resource.data.userId;
       
-      // Subcoleção de votos da enquete
-      match /userVotes/{userId} {
-          allow read: if true;
-          allow create: if request.auth != null && request.auth.uid == userId;
-          allow update, delete: if false;
-      }
+      // Permite que qualquer usuário autenticado atualize APENAS o campo de reações
+      allow update: if request.auth != null && request.resource.data.keys().hasOnly(['reactions']);
 
       // Subcoleção de comentários
       match /comments/{commentId} {
         allow read: if true;
-        allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-        allow update: if request.auth != null &&
-                      (request.resource.data.userId == request.auth.uid ||
-                       request.resource.data.diff(resource.data).affectedKeys().hasOnly('reactions'));
-        allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
-
-        // Subcoleção de reações do comentário
-        match /commentReactions/{userId} {
-            allow read: if true;
-            allow write: if request.auth != null && request.auth.uid == userId;
-        }
+        allow create: if request.auth != null;
+        // Permite que o autor do comentário atualize
+        allow update: if request.auth.uid == resource.data.userId;
+        // Permite que qualquer usuário autenticado atualize APENAS as reações do comentário
+        allow update: if request.auth != null && request.resource.data.keys().hasOnly(['reactions']);
+      }
+      
+      // Subcoleção de reações do post
+      match /userReactions/{userId} {
+        allow read, create, delete: if request.auth.uid == userId;
       }
     }
 
-    // Regra para reels
+    // Coleção de Reels
     match /reels/{reelId} {
-      allow read: if resource.data.deleted == false;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow update: if request.auth != null &&
-                      (request.resource.data.userId == request.auth.uid ||
-                       request.resource.data.diff(resource.data).affectedKeys().hasOnly('reactions'));
-      allow delete: if false;
+        allow read: if true;
+        allow create: if request.auth != null;
+        allow update: if request.auth.uid == resource.data.userId;
 
-        // Subcoleção de reações do reel
+        // Reações no Reel
         match /userReactions/{userId} {
-            allow read: if true;
-            allow write: if request.auth != null && request.auth.uid == userId;
+            allow read, create, delete: if request.auth.uid == userId;
         }
-        
-        // Subcoleção de comentários do reel
+
+        // Comentários no Reel
         match /comments/{commentId} {
             allow read: if true;
-            allow write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+            allow create: if request.auth != null;
+            allow update: if request.auth.uid == resource.data.userId;
         }
     }
 
-    // Regra para o chat da comunidade
-    match /chatMessages/{messageId} {
-      allow read: if true;
+    // Coleção de Alertas
+    match /alerts/{alertId} {
+      allow read: if request.auth != null;
       allow create: if request.auth != null;
-      allow update: if request.auth != null &&
-                      (request.resource.data.userId == request.auth.uid ||
-                       request.resource.data.diff(resource.data).affectedKeys().hasOnly('reactions'));
-      allow delete: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      
-      // Subcoleção de reações da mensagem
-      match /userReactions/{userId} {
-          allow read: if true;
-          allow write: if request.auth != null && request.auth.uid == userId;
-      }
+      // Permite que o autor do alerta (ou um admin no futuro) delete
+      allow delete, update: if request.auth.uid == resource.data.userId;
     }
     
-    // Regras para SAUs e avaliações
-    match /sau_reviews/{reviewId} {
-        allow read, create: if request.auth != null;
+    // **NOVA REGRA CORRIGIDA**
+    // Permite que usuários autenticados listem os alertas na página inicial
+    match /alerts/{alertId} {
+      allow list: if request.auth != null;
     }
 
-    // Regras para Pontos Turísticos e avaliações
+    // Coleção de Avaliações de SAUs
+    match /sau_reviews/{reviewId} {
+        allow read: if true;
+        allow create: if request.auth != null;
+    }
+    
+    // Coleção de Chat
+    match /chatMessages/{messageId} {
+        allow read: if true;
+        allow create: if request.auth != null;
+        allow update: if request.auth.uid == resource.data.userId;
+        allow delete: if request.auth.uid == resource.data.userId;
+        
+        // Reações nas mensagens do chat
+        match /userReactions/{userId} {
+          allow read, create, delete: if request.auth.uid == userId;
+        }
+    }
+
+    // Coleção de Pontos Turísticos
     match /tourist_points_indicated/{pointId} {
         allow read: if true;
         allow create: if request.auth != null;
-        allow update: if request.auth != null; // Permite atualização de contagem de reviews e média
+        // Permite atualizar contagem de reviews e rating
+        allow update: if request.auth != null; 
     }
+
+    // Coleção de Avaliações de Pontos Turísticos
     match /tourist_point_reviews/{reviewId} {
         allow read: if true;
         allow create: if request.auth != null;
+    }
+
+    // Votos em enquetes
+    match /posts/{postId}/userVotes/{userId} {
+        allow read, create: if request.auth.uid == userId;
+    }
+
+    // Reações em comentários de posts
+    match /posts/{postId}/comments/{commentId}/commentReactions/{userId} {
+        allow read, create, delete: if request.auth.uid == userId;
+    }
+    
+    // Reações em comentários de reels
+    match /reels/{reelId}/comments/{commentId}/commentReactions/{userId} {
+        allow read, create, delete: if request.auth.uid == userId;
     }
   }
 }
