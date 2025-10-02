@@ -317,7 +317,7 @@ export default function FeedPage() {
           id: doc.id,
           userId: data.userId,
           userName: data.userName || 'Usuário Anônimo',
-          userAvatarUrl: data.userAvatarUrl || 'https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/images%2FImagem%20Gen%C3%A9rica%20-%20Foto%20de%20Perfil%20Feed%20BR277.png?alt=media',
+          userAvatarUrl: data.userAvatarUrl || 'https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/images%2FImagem%20Gen%C3%A9rica%20-%20Foto%20de%20Perfil%20Feed%20BR277.png?alt=media&token=c27b0348-18e4-441e-9cb4-8a412f383ea3',
           userLocation: data.userLocation || 'Local Desconhecido',
           timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
           text: data.text || '',
@@ -376,32 +376,37 @@ export default function FeedPage() {
 
   // Real-time Alerts Fetch
   useEffect(() => {
-    if (!firestore) return setLoadingAlerts(false);
+    if (!firestore) {
+        setLoadingAlerts(false);
+        return;
+    };
     setLoadingAlerts(true);
-    const q = query(collection(firestore, 'alerts'), orderBy('timestamp', 'desc'), limit(6));
-    
+    const alertsCollection = collection(firestore, 'alerts');
+    const q = query(alertsCollection, orderBy('timestamp', 'desc'), limit(6));
+
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const fetchedAlerts: HomeAlertCardData[] = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          type: data.type || 'Alerta',
-          description: data.description || '',
-          timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
-          userNameReportedBy: data.userNameReportedBy || 'Anônimo',
-          userAvatarUrl: data.userAvatarUrl,
-          bio: data.bio,
-          instagramUsername: data.instagramUsername,
-          userLocation: data.userLocation || 'Localização Desconhecida',
-        } as HomeAlertCardData;
-      });
-      setDisplayedAlertsFeed(fetchedAlerts);
-      setLoadingAlerts(false);
+        const fetchedAlerts: HomeAlertCardData[] = querySnapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                type: data.type || 'Alerta',
+                description: data.description || '',
+                timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
+                userNameReportedBy: data.userNameReportedBy || 'Anônimo',
+                userAvatarUrl: data.userAvatarUrl || 'https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/images%2FImagem%20Gen%C3%A9rica%20-%20Foto%20de%20Perfil%20Feed%20BR277.png?alt=media&token=c27b0348-18e4-441e-9cb4-8a412f383ea3',
+                bio: data.bio,
+                instagramUsername: data.instagramUsername,
+                userLocation: data.userLocation || 'Localização Desconhecida',
+            } as HomeAlertCardData;
+        });
+        setDisplayedAlertsFeed(fetchedAlerts);
+        setLoadingAlerts(false);
     }, (error) => {
-      console.error("Error fetching alerts:", error);
-      toast({ variant: "destructive", title: "Erro ao Carregar Alertas" });
-      setLoadingAlerts(false);
+        console.error("Error fetching alerts:", error);
+        toast({ variant: "destructive", title: "Erro ao Carregar Alertas", description: "Não foi possível conectar para buscar os alertas." });
+        setLoadingAlerts(false);
     });
+
     return () => unsubscribe();
   }, [toast]);
 
