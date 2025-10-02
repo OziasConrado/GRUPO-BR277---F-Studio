@@ -1,0 +1,93 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Regra geral para a coleção 'Usuarios'
+    match /Usuarios/{userId} {
+      // Qualquer usuário autenticado pode ler perfis (para ver nomes, avatares, etc.)
+      allow read: if request.auth != null;
+      // Apenas o próprio usuário pode criar ou atualizar seu perfil
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /posts/{postId} {
+      allow read: if true;
+      // Permite criar post se autenticado
+      allow create: if request.auth != null;
+      // Permite atualizar ou deletar post apenas se for o autor
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+
+      // --- REGRAS PARA REAÇÕES NOS POSTS ---
+      match /userReactions/{userId} {
+        // Usuário só pode mexer na sua própria reação
+        allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // --- REGRAS PARA COMENTÁRIOS NOS POSTS ---
+      match /comments/{commentId} {
+        allow read: if true;
+        // Qualquer usuário logado pode criar um comentário
+        allow create: if request.auth != null;
+        // Apenas o autor do comentário pode editar ou deletar
+        allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+
+        // --- REGRAS PARA REAÇÕES NOS COMENTÁRIOS (NOVO) ---
+        match /commentReactions/{userId} {
+          // Usuário só pode criar/deletar sua própria reação no comentário
+          allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+        }
+      }
+    }
+    
+    // --- REGRAS PARA REELS ---
+    match /reels/{reelId} {
+        allow read: if true;
+        allow create: if request.auth != null;
+        allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+
+        // Reações nos Reels
+        match /userReactions/{userId} {
+            allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+        }
+
+        // Comentários nos Reels
+        match /comments/{commentId} {
+            allow read: if true;
+            allow create: if request.auth != null;
+            allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+        }
+    }
+    
+    // Regras para outras coleções (Alerts, SAUs, etc.)
+    match /alerts/{alertId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+    }
+
+    match /sau_reviews/{reviewId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+    }
+
+    match /tourist_points_indicated/{pointId} {
+      allow read: if true;
+      allow write: if request.auth != null; // Simplificado para permitir criação e atualização por usuários logados
+    }
+
+    match /tourist_point_reviews/{reviewId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+    }
+    
+    match /chatMessages/{messageId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null;
+        allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+
+        match /userReactions/{userId} {
+            allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+        }
+    }
+  }
+}

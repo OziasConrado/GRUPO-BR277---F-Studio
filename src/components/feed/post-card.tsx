@@ -7,7 +7,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle as PostCardTitleUI
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send, MoreVertical, Trash2, Edit3, Flag, X, ListChecks, Check, Link as LinkIcon, Loader2 } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, MessageSquare, Share2, UserCircle, Send, MoreVertical, Trash2, Edit3, Flag, X, ListChecks, Check, Link as LinkIcon, Loader2, Heart } from 'lucide-react';
 import React, { useState, type ChangeEvent, type FormEvent, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
 import {
@@ -161,6 +161,7 @@ export interface CommentProps {
   text: string;
   textElements?: React.ReactNode[];
   parentCommentId?: string | null;
+  reactions?: { heart?: number };
 }
 
 export interface PostReactions {
@@ -612,6 +613,7 @@ export default function PostCard({
           timestamp: commentTimestamp,
           textElements: textElements,
           parentCommentId: data.parentCommentId || null,
+          reactions: data.reactions || { heart: 0 },
         } as CommentProps;
       });
       const fetchedComments = await Promise.all(fetchedCommentsPromises);
@@ -717,6 +719,7 @@ export default function PostCard({
             text: commentText,
             timestamp: serverTimestamp(),
             parentCommentId: replyingTo?.commentId || null,
+            reactions: { heart: 0 },
         });
 
         if (currentUser) {
@@ -891,8 +894,50 @@ export default function PostCard({
   const displayImageUrl = (cardStyle && cardStyle.name !== 'Padrão') ? null : (uploadedImageUrl || imageUrl);
   const displayImageAlt = (cardStyle && cardStyle.name !== 'Padrão') ? '' : (uploadedImageUrl ? (dataAIUploadedImageHint || "Imagem do post") : (dataAIImageHint || "Imagem do post"));
   
+    const handleCommentReaction = async (commentId: string) => {
+        if (!currentUser || !firestore) {
+            toast({ variant: 'destructive', title: 'Ação Requer Login' });
+            return;
+        }
+
+        const commentRef = doc(firestore, 'posts', postId, 'comments', commentId);
+        const reactionRef = doc(firestore, 'posts', postId, 'comments', commentId, 'commentReactions', currentUser.uid);
+
+        try {
+            await runTransaction(firestore, async (transaction) => {
+                const commentDoc = await transaction.get(commentRef);
+                if (!commentDoc.exists()) throw "Comentário não existe mais.";
+
+                const reactionDoc = await transaction.get(reactionRef);
+                const currentReactions = commentDoc.data().reactions || { heart: 0 };
+                const newHeartCount = currentReactions.heart || 0;
+
+                if (reactionDoc.exists()) {
+                    transaction.update(commentRef, { 'reactions.heart': increment(-1) });
+                    transaction.delete(reactionRef);
+                } else {
+                    transaction.update(commentRef, { 'reactions.heart': increment(1) });
+                    transaction.set(reactionRef, { type: 'heart', timestamp: serverTimestamp() });
+                }
+            });
+        } catch (error: any) {
+            console.error("Error handling comment reaction:", error);
+            toast({ variant: 'destructive', title: 'Erro ao Reagir', description: error.message || 'Não foi possível processar sua reação.' });
+        }
+    };
+
   const CommentItem = ({ comment, allComments, level = 0, onReply }: { comment: CommentProps; allComments: CommentProps[]; level?: number; onReply: (comment: CommentProps) => void; }) => {
     const childComments = allComments.filter(c => c.parentCommentId === comment.id);
+    const [userHasReacted, setUserHasReacted] = useState(false);
+
+    useEffect(() => {
+        if (!currentUser || !firestore) return;
+        const reactionRef = doc(firestore, 'posts', postId, 'comments', comment.id, 'commentReactions', currentUser.uid);
+        const unsubscribe = onSnapshot(reactionRef, (doc) => {
+            setUserHasReacted(doc.exists());
+        });
+        return () => unsubscribe();
+    }, [comment.id]);
   
     return (
       <div className="relative">
@@ -901,7 +946,7 @@ export default function PostCard({
            {level > 0 && <div className="absolute left-4 top-6 w-5 h-0.5 bg-border -z-10" />}
           <button className="flex-shrink-0" onClick={() => handleShowUserProfile(comment.userId)}>
             <Avatar className="h-8 w-8 mt-1">
-              {comment.userAvatarUrl && <AvatarImage src={comment.userAvatarUrl as string} alt={comment.userName} />}
+              <AvatarImage src={comment.userAvatarUrl as string || 'https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/images%2FImagem%20Gen%C3%A9rica%20-%20Foto%20de%20Perfil%20Feed%20BR277.png?alt=media'} alt={comment.userName} />
               <AvatarFallback>{comment.userName?.substring(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
           </button>
@@ -912,6 +957,14 @@ export default function PostCard({
             </div>
             <p className="text-sm mt-1 whitespace-pre-wrap">{comment.textElements || comment.text}</p>
             <div className="flex items-center mt-1.5 space-x-0.5">
+              <button 
+                onClick={() => handleInteractionAttempt(() => handleCommentReaction(comment.id))}
+                className="flex items-center gap-1.5 text-muted-foreground p-1 rounded-full hover:bg-muted"
+                aria-label="Reagir com coração"
+              >
+                  <Heart className={cn("h-4 w-4 transition-colors", userHasReacted ? "text-red-500 fill-red-500" : "hover:text-red-500/80")} />
+                  {(comment.reactions?.heart ?? 0) > 0 && <span className="font-medium text-xs pr-1 tabular-nums">{comment.reactions?.heart}</span>}
+              </button>
               <Button variant="link" size="sm" className="p-0 h-auto text-xs text-primary ml-1" onClick={() => handleInteractionAttempt(() => onReply(comment))}>
                 Responder
               </Button>
@@ -948,7 +1001,7 @@ export default function PostCard({
         <CardHeader className="flex flex-row items-start space-x-3 p-4">
           <button onClick={handleAvatarOrNameClick} aria-label={`Ver perfil de ${userName}`}>
             <Avatar className="h-10 w-10">
-              {userAvatarUrl ? <AvatarImage src={userAvatarUrl as string} alt={userName} data-ai-hint={dataAIAvatarHint} /> : null}
+              <AvatarImage src={userAvatarUrl as string || 'https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/images%2FImagem%20Gen%C3%A9rica%20-%20Foto%20de%20Perfil%20Feed%20BR277.png?alt=media'} alt={userName} data-ai-hint={dataAIAvatarHint} />
               <AvatarFallback>{userName ? userName.substring(0,2).toUpperCase() : <UserCircle className="h-10 w-10" />}</AvatarFallback>
             </Avatar>
           </button>
