@@ -27,6 +27,12 @@ Participe do nosso bate-papo ao vivo! Troque informações, peça ajuda, ou apen
 🎥 **Câmeras AO VIVO (Streaming):**
 Acompanhe o trânsito em tempo real com acesso a câmeras de rodovias em diversas regiões. Planeje seu trajeto com mais segurança e evite surpresas.
 
+🆘 **Emergência:**
+Acesso rápido a uma lista de telefones úteis para qualquer situação. Contate bombeiros, polícia, SAMU, concessionárias e outros serviços essenciais com apenas um toque.
+
+🛣️ **Concessões/SAU:**
+Encontre facilmente os SAUs (Serviço de Atendimento ao Usuário) das concessionárias. Consulte a localização, os serviços oferecidos (banheiros, Wi-Fi, bebedouros) e avalie a qualidade de cada ponto de apoio.
+
 🛠️ **Galeria de Ferramentas:**
 Um verdadeiro canivete suíço digital para facilitar sua vida! Confira nossas ferramentas:
 
