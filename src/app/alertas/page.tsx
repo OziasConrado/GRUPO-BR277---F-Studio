@@ -44,7 +44,7 @@ export default function AlertasPage() {
           location: data.location || 'Localização não especificada',
           timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
           userNameReportedBy: data.userNameReportedBy || 'Usuário Anônimo',
-          userAvatarUrl: data.userAvatarUrl || 'https://placehold.co/40x40.png',
+          userAvatarUrl: data.userAvatarUrl, // Let the component handle the default
           dataAIAvatarHint: data.dataAIAvatarHint || 'user avatar',
           bio: data.bio || 'Usuário da comunidade Rota Segura.',
           instagramUsername: data.instagramUsername,
