@@ -347,6 +347,13 @@ export default function ChatMessageItem({
                 )}
                 <div className="flex items-center justify-between mt-1.5 text-xs">
                 <div className="flex items-center gap-3">
+                    <button 
+                    onClick={() => onReaction(message.id)} 
+                    className="flex items-center gap-1.5 text-muted-foreground p-1 rounded-full hover:bg-muted"
+                    >
+                        <Heart className={cn("h-4 w-4 transition-colors", userHasReacted ? "text-red-500 fill-red-500" : "hover:text-red-500/80")} />
+                        {(reactions?.heart ?? 0) > 0 && <span className="font-medium text-xs pr-1">{reactions?.heart}</span>}
+                    </button>
                     {!isCurrentUser &&
                         <Button
                         variant="link"
@@ -359,13 +366,6 @@ export default function ChatMessageItem({
                     }
                 </div>
                 <div className="flex items-center gap-2">
-                    <button 
-                    onClick={() => onReaction(message.id)} 
-                    className="flex items-center gap-1.5 text-muted-foreground p-1 rounded-full hover:bg-muted"
-                    >
-                        <Heart className={cn("h-4 w-4 transition-colors", userHasReacted ? "text-red-500 fill-red-500" : "hover:text-red-500/80")} />
-                        {(reactions?.heart ?? 0) > 0 && <span className="font-medium text-xs pr-1">{reactions?.heart}</span>}
-                    </button>
                     {edited && <p className={cn("italic", isCurrentUser ? "text-primary/70" : "text-muted-foreground")}>(editado)</p>}
                     <p className={cn(isCurrentUser ? "text-primary/70" : "text-muted-foreground")}>
                         {timestamp}
