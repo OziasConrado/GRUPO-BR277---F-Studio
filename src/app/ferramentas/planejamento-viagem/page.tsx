@@ -205,14 +205,21 @@ export default function PlanejamentoViagemPage() {
           {timeline.length > 0 && (
             <div className="mt-8 pt-6 border-t">
               <h3 className="text-lg font-semibold text-center mb-4">Sua Linha do Tempo da Viagem:</h3>
-              <div className="relative flex flex-col space-y-6 pl-8">
-                 <div className="absolute top-4 left-[19px] h-[calc(100%-2rem)] w-0.5 bg-border -z-10"/>
-                 {timeline.map((item, index) => (
-                    <div key={index} className="relative flex items-start gap-4">
-                        <div className={cn("absolute -left-1 top-0 h-10 w-10 rounded-full flex items-center justify-center border-4", getTimelineItemClasses(item.type))}>
+              <div className="relative pl-6">
+                {/* Vertical line */}
+                <div className="absolute top-5 left-[23px] h-[calc(100%-2.5rem)] w-0.5 bg-border -z-10" />
+                
+                {timeline.map((item, index) => (
+                    <div key={index} className="relative flex items-start gap-4 pb-8">
+                        {/* Icon circle */}
+                        <div className={cn(
+                            "flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center border-4 bg-background",
+                            getTimelineItemClasses(item.type)
+                        )}>
                             <item.icon className="h-5 w-5" />
                         </div>
-                        <div className="pl-4 pt-1 flex-1">
+                        {/* Text content */}
+                        <div className="pt-1 flex-grow">
                             <p className="font-semibold text-foreground">{item.title}</p>
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                 <span className="font-mono">{item.time}</span>
@@ -221,7 +228,7 @@ export default function PlanejamentoViagemPage() {
                              {item.details && <p className="text-xs mt-1 text-muted-foreground">{item.details}</p>}
                         </div>
                     </div>
-                 ))}
+                ))}
               </div>
             </div>
           )}
