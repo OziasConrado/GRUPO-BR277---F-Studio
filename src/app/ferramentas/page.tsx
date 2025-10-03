@@ -62,6 +62,13 @@ const tools: CategorizedTool[] = [
     category: 'Saúde e Bem Estar',
   },
   {
+    title: 'Calculadora de Hidratação',
+    Icon: Droplets,
+    href: '/ferramentas/calculadora-hidratacao',
+    description: 'Estime a quantidade de água que você deve beber por dia.',
+    category: 'Saúde e Bem Estar',
+  },
+  {
     title: 'Calculadora de Frete',
     Icon: Calculator,
     href: '/ferramentas/calculadora-frete',
