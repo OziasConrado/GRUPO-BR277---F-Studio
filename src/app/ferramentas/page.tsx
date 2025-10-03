@@ -29,6 +29,7 @@ import {
   Bed,
   ScanLine,
   Cloud,
+  Route,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -39,6 +40,13 @@ interface CategorizedTool extends ToolCardProps {
 }
 
 const tools: CategorizedTool[] = [
+  {
+    title: 'Planejamento de Viagem',
+    Icon: Route,
+    href: '/ferramentas/planejamento-viagem',
+    description: 'Calcule suas paradas e horários para uma viagem segura.',
+    category: 'Trânsito e Veículos',
+  },
   {
     title: 'Álcool ou Gasolina?',
     Icon: Droplets,
