@@ -115,7 +115,7 @@ export default function ExerciciosLaboraisPage() {
                   <Card className="h-full rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
                     <CardContent className="p-3 flex flex-col items-center text-center h-full">
                       <div className="relative w-full h-24 mb-3 rounded-md overflow-hidden bg-muted">
-                        <Image src={ex.img} alt={ex.title} layout="fill" objectFit="contain" data-ai-hint={ex.dataAihint} />
+                        <Image src={ex.img} alt={ex.title} layout="fill" objectFit="contain" data-ai-hint={ex.dataAihint} unoptimized={true} />
                       </div>
                       <h3 className="text-xs font-semibold flex-grow">{index + 1}. {ex.title}</h3>
                     </CardContent>
@@ -143,7 +143,7 @@ export default function ExerciciosLaboraisPage() {
               </DialogHeader>
               <div className="py-2 space-y-4 text-center">
                 <div className="relative w-48 h-48 mx-auto bg-muted rounded-lg overflow-hidden border">
-                    <Image src={selectedExercise.img} alt={selectedExercise.title} layout="fill" objectFit="contain" data-ai-hint={selectedExercise.dataAihint} />
+                    <Image src={selectedExercise.img} alt={selectedExercise.title} layout="fill" objectFit="contain" data-ai-hint={selectedExercise.dataAihint} unoptimized={true} />
                 </div>
                 <DialogDescription>{selectedExercise.desc}</DialogDescription>
                 
