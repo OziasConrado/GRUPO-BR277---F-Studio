@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -27,7 +26,8 @@ import {
   ActivitySquare,
   HeartPulse,
   Bed,
-  ScanLine
+  ScanLine,
+  Cloud,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -86,6 +86,13 @@ const tools: CategorizedTool[] = [
     href: '/ferramentas/declaracao-transporte',
     description: 'Gere uma declaração de transporte rapidamente.',
     category: 'Empreendedorismo',
+  },
+    {
+    title: 'Emissão de Carbono Veicular',
+    Icon: Cloud,
+    href: '/ferramentas/emissao-carbono',
+    description: 'Estime a pegada de carbono da sua viagem.',
+    category: 'Trânsito e Veículos',
   },
   {
     title: 'Gerador de Currículo',
