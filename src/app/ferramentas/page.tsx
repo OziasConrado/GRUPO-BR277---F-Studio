@@ -29,6 +29,7 @@ import {
   ScanLine,
   Cloud,
   Route,
+  Dumbbell,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -108,6 +109,13 @@ const tools: CategorizedTool[] = [
     href: '/ferramentas/emissao-carbono',
     description: 'Estime a pegada de carbono da sua viagem.',
     category: 'Trânsito e Veículos',
+  },
+  {
+    title: 'Exercícios Laborais',
+    Icon: Dumbbell,
+    href: '/ferramentas/exercicios-laborais',
+    description: 'Exercícios simples para fazer durante as paradas e evitar lesões.',
+    category: 'Saúde e Bem Estar',
   },
   {
     title: 'Gerador de Currículo',
