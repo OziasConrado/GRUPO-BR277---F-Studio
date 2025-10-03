@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -157,6 +156,13 @@ const tools: CategorizedTool[] = [
     Icon: HeartPulse,
     href: '/ferramentas/monitoramento-glicemia',
     description: 'Registre e acompanhe seus níveis de glicose.',
+    category: 'Saúde e Bem Estar',
+  },
+  {
+    title: 'Zonas de Frequência Cardíaca',
+    Icon: HeartPulse,
+    href: '/ferramentas/zonas-frequencia-cardiaca',
+    description: 'Calcule suas zonas de treino ideais para exercícios.',
     category: 'Saúde e Bem Estar',
   },
    {
