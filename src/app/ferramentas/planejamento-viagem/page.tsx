@@ -4,7 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, Route, Clock, Coffee, Flag, Trash2, Sailboat } from "lucide-react";
+import { ArrowLeft, Route, Clock, Coffee, Flag, Trash2, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -18,7 +18,7 @@ const AdPlaceholder = ({ className }: { className?: string }) => (
 );
 
 interface TimelineItem {
-  type: 'drive' | 'pause' | 'arrival';
+  type: 'drive' | 'pause' | 'arrival' | 'start';
   icon: React.ElementType;
   title: string;
   duration?: string;
@@ -67,9 +67,9 @@ export default function PlanejamentoViagemPage() {
     const formatTime = (date: Date) => date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
     newTimeline.push({
-        type: 'drive',
-        icon: Sailboat,
-        title: `Início da Viagem de ${origem}`,
+        type: 'start',
+        icon: MapPin,
+        title: `Início da Viagem de ${origem || 'Origem'}`,
         time: formatTime(tempoAtual),
     });
 
@@ -108,7 +108,7 @@ export default function PlanejamentoViagemPage() {
     newTimeline.push({
       type: 'arrival',
       icon: Flag,
-      title: `Chegada em ${destino}`,
+      title: `Chegada em ${destino || 'Destino'}`,
       time: formatTime(tempoAtual),
       details: `Tempo total de direção: ${Math.floor(tempoDirigidoAcumulado / 60)}h ${Math.round(tempoDirigidoAcumulado % 60)}min. Pausas: ${Math.floor(tempoDePausaAcumulado / 60)}h ${Math.round(tempoDePausaAcumulado % 60)}min.`
     });
@@ -130,7 +130,8 @@ export default function PlanejamentoViagemPage() {
   
   const getTimelineItemClasses = (type: TimelineItem['type']) => {
     switch(type) {
-      case 'drive': return 'border-blue-500 bg-blue-500/10 text-blue-700 dark:text-blue-300';
+      case 'start': return 'border-blue-500 bg-blue-500/10 text-blue-700 dark:text-blue-300';
+      case 'drive': return 'border-slate-500 bg-slate-500/10 text-slate-700 dark:text-slate-300';
       case 'pause': return 'border-orange-500 bg-orange-500/10 text-orange-700 dark:text-orange-300';
       case 'arrival': return 'border-green-500 bg-green-500/10 text-green-700 dark:text-green-300';
       default: return 'border-muted';
@@ -204,14 +205,14 @@ export default function PlanejamentoViagemPage() {
           {timeline.length > 0 && (
             <div className="mt-8 pt-6 border-t">
               <h3 className="text-lg font-semibold text-center mb-4">Sua Linha do Tempo da Viagem:</h3>
-              <div className="relative space-y-6 pl-8">
-                 <div className="absolute top-0 left-3 h-full w-0.5 bg-border -z-10"/>
+              <div className="relative flex flex-col space-y-6 pl-8">
+                 <div className="absolute top-4 left-[19px] h-[calc(100%-2rem)] w-0.5 bg-border -z-10"/>
                  {timeline.map((item, index) => (
                     <div key={index} className="relative flex items-start gap-4">
-                        <div className={cn("absolute -left-1 top-1 h-8 w-8 rounded-full flex items-center justify-center border-2", getTimelineItemClasses(item.type))}>
-                            <item.icon className="h-4 w-4" />
+                        <div className={cn("absolute -left-1 top-0 h-10 w-10 rounded-full flex items-center justify-center border-4", getTimelineItemClasses(item.type))}>
+                            <item.icon className="h-5 w-5" />
                         </div>
-                        <div className="flex-1">
+                        <div className="pl-4 pt-1 flex-1">
                             <p className="font-semibold text-foreground">{item.title}</p>
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                 <span className="font-mono">{item.time}</span>
