@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, type FormEvent } from 'react';
@@ -20,9 +21,10 @@ const AdPlaceholder = ({ className }: { className?: string }) => (
 
 const fatoresEmissao = {
     gasolina: 2.31, // kg CO2/L
-    etanol: 0.52,   // kg CO2/L (considerando o ciclo de vida e a absorção no cultivo)
+    etanol: 0.52,   // kg CO2/L (ciclo de vida)
     diesel: 2.68,   // kg CO2/L
     gnv: 2.25,      // kg CO2/m³
+    eletrico: 0.05, // kg CO2/km (considerando a matriz energética brasileira)
 };
 
 const ARVORE_ABSORCAO_ANO = 22; // kg CO2 por ano
@@ -45,19 +47,35 @@ export default function EmissaoCarbonoPage() {
 
     const distNum = parseFloat(distancia);
     const consumoNum = parseFloat(consumo);
-    const fator = fatoresEmissao[combustivel as keyof typeof fatoresEmissao];
-
-    if (!distNum || distNum <= 0 || !consumoNum || consumoNum <= 0 || !combustivel || !fator) {
+    
+    if (!distNum || distNum <= 0 || !combustivel) {
       toast({
         variant: 'destructive',
         title: 'Valores Inválidos',
-        description: 'Preencha todos os campos com valores válidos.',
+        description: 'Preencha a distância e selecione o tipo de combustível.',
       });
       return;
     }
+    
+    let emissaoTotalKg = 0;
+    
+    if (combustivel === 'eletrico') {
+        const fator = fatoresEmissao.eletrico;
+        emissaoTotalKg = distNum * fator;
+    } else {
+        const fator = fatoresEmissao[combustivel as keyof typeof fatoresEmissao];
+        if (!consumoNum || consumoNum <= 0 || !fator) {
+             toast({
+                variant: 'destructive',
+                title: 'Valores Inválidos',
+                description: 'Para este combustível, o consumo médio é obrigatório.',
+            });
+            return;
+        }
+        const volumeConsumido = distNum / consumoNum;
+        emissaoTotalKg = volumeConsumido * fator;
+    }
 
-    const volumeConsumido = distNum / consumoNum;
-    const emissaoTotalKg = volumeConsumido * fator;
     const arvoresEquivalentes = emissaoTotalKg / ARVORE_ABSORCAO_ANO;
 
     setResultado({
@@ -70,6 +88,8 @@ export default function EmissaoCarbonoPage() {
     { title: "Custo de Viagem (Diesel + Arla)", Icon: Cloud, href: "/ferramentas/custo-viagem", description: "Planeje todos os gastos." },
     { title: "Álcool ou Gasolina?", Icon: Cloud, href: "/ferramentas/etanol-gasolina", description: "Qual combustível vale mais?"}
   ];
+  
+  const isElectric = combustivel === 'eletrico';
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-6">
@@ -94,10 +114,6 @@ export default function EmissaoCarbonoPage() {
               <Input id="distancia-carbono" type="number" inputMode="decimal" value={distancia} onChange={e => setDistancia(e.target.value)} placeholder="Ex: 500" className="rounded-lg mt-1"/>
             </div>
             <div>
-              <Label htmlFor="consumo-carbono">Consumo Médio (km/L ou km/m³)</Label>
-              <Input id="consumo-carbono" type="number" inputMode="decimal" value={consumo} onChange={e => setConsumo(e.target.value)} placeholder="Ex: 10" className="rounded-lg mt-1"/>
-            </div>
-            <div>
               <Label htmlFor="combustivel-carbono">Tipo de Combustível</Label>
               <Select value={combustivel} onValueChange={setCombustivel}>
                 <SelectTrigger id="combustivel-carbono" className="w-full rounded-lg mt-1">
@@ -108,9 +124,16 @@ export default function EmissaoCarbonoPage() {
                   <SelectItem value="etanol">Etanol</SelectItem>
                   <SelectItem value="diesel">Diesel</SelectItem>
                   <SelectItem value="gnv">GNV (Gás Natural)</SelectItem>
+                  <SelectItem value="eletrico">Elétrico</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            {!isElectric && (
+                 <div>
+                    <Label htmlFor="consumo-carbono">Consumo Médio (km/L ou km/m³)</Label>
+                    <Input id="consumo-carbono" type="number" inputMode="decimal" value={consumo} onChange={e => setConsumo(e.target.value)} placeholder="Ex: 10" className="rounded-lg mt-1"/>
+                </div>
+            )}
             <Button type="submit" className="w-full rounded-full py-3 text-base">
               <Calculator className="mr-2 h-5 w-5" /> Calcular Emissão
             </Button>

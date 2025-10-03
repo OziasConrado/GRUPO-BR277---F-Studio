@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -75,7 +76,7 @@ const tools: CategorizedTool[] = [
   },
   {
     title: 'Custo de Viagem (Diesel + Arla)',
-    Icon: ClipboardList, // Consider changing to Fuel if consistent with custo-viagem page
+    Icon: ClipboardList,
     href: '/ferramentas/custo-viagem',
     description: 'Calcule diesel, Arla32 e custo total.',
     category: 'Trânsito e Veículos',
@@ -87,7 +88,7 @@ const tools: CategorizedTool[] = [
     description: 'Gere uma declaração de transporte rapidamente.',
     category: 'Empreendedorismo',
   },
-    {
+  {
     title: 'Emissão de Carbono Veicular',
     Icon: Cloud,
     href: '/ferramentas/emissao-carbono',
@@ -187,13 +188,13 @@ export default function FerramentasPage() {
     const subject = isPositive
       ? "Feedback Positivo: Galeria de Ferramentas GRUPO BR277"
       : "Feedback Construtivo: Galeria de Ferramentas GRUPO BR277";
-    const body = encodeURIComponent("Olá,\n\n[Descreva sua experiência ou sugestão aqui]\n\nObrigado!");
+    const body = encodeURIComponent("Olá,\\n\\n[Descreva sua experiência ou sugestão aqui]\\n\\nObrigado!");
     window.location.href = `mailto:oziasconrado@opaatec.com.br?subject=${encodeURIComponent(subject)}&body=${body}`;
   };
 
   const handleSendIdeaClick = () => {
     const subject = "Sugestão de Melhoria/Nova Ferramenta: GRUPO BR277";
-    const body = encodeURIComponent("Olá,\n\Tenho uma ideia para o GRUPO BR277:\n\n[Descreva sua ideia aqui]\n\nObrigado!");
+    const body = encodeURIComponent("Olá,\\n\\nTenho uma ideia para o GRUPO BR277:\\n\\n[Descreva sua ideia aqui]\\n\\nObrigado!");
     window.location.href = `mailto:oziasconrado@opaatec.com.br?subject=${encodeURIComponent(subject)}&body=${body}`;
   };
 
