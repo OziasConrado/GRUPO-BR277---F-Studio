@@ -30,13 +30,14 @@ import {
   Cloud,
   Route,
   Dumbbell,
+  Wand2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 // Extend ToolCardProps to include category for local use
 interface CategorizedTool extends ToolCardProps {
-  category: 'Trânsito e Veículos' | 'Saúde e Bem Estar' | 'Empreendedorismo' | 'Outros';
+  category: 'Trânsito e Veículos' | 'Saúde e Bem Estar' | 'Empreendedorismo' | 'Outros' | 'IA';
 }
 
 const tools: CategorizedTool[] = [
@@ -124,6 +125,13 @@ const tools: CategorizedTool[] = [
     description: 'Crie um currículo profissional rapidamente.',
     category: 'Empreendedorismo',
   },
+   {
+    title: 'Gerador de Imagens (IA)',
+    Icon: Wand2,
+    href: '/ferramentas/gerador-imagem-ia',
+    description: 'Crie imagens únicas com Inteligência Artificial.',
+    category: 'IA',
+  },
   {
     title: 'Gerador de Link Pix',
     Icon: ClipboardCopy,
@@ -137,6 +145,13 @@ const tools: CategorizedTool[] = [
     href: '/ferramentas/gerador-link-whatsapp',
     description: 'Crie links diretos para conversas no WhatsApp.',
     category: 'Empreendedorismo',
+  },
+  {
+    title: 'Gerador de Post Promocional (IA)',
+    Icon: Lightbulb,
+    href: '/ferramentas/gerador-post-promocional',
+    description: 'Crie textos para redes sociais usando Inteligência Artificial.',
+    category: 'IA',
   },
   {
     title: 'Gerador de QR Code',
@@ -189,7 +204,7 @@ const tools: CategorizedTool[] = [
   },
 ];
 
-const categories: CategorizedTool['category'][] = ['Trânsito e Veículos', 'Saúde e Bem Estar', 'Empreendedorismo', 'Outros'];
+const categories: CategorizedTool['category'][] = ['Trânsito e Veículos', 'Saúde e Bem Estar', 'Empreendedorismo', 'IA', 'Outros'];
 
 const AdPlaceholder = ({ className }: { className?: string }) => (
   <div className={cn("my-6 p-4 rounded-xl bg-muted/30 border border-dashed h-24 flex items-center justify-center", className)}>
