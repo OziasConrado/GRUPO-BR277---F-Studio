@@ -400,7 +400,7 @@ export default function SAUPage() {
         />
         
         <Button variant="destructive" className="w-full rounded-lg" onClick={() => setIsContactsSheetOpen(true)}>
-            Telefones e Sites das Concessionárias
+            EMERGÊNCIA | Informações
         </Button>
 
         <AdPlaceholder />
