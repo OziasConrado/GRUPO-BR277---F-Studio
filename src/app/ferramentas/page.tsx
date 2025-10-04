@@ -125,13 +125,6 @@ const tools: CategorizedTool[] = [
     description: 'Crie um currículo profissional rapidamente.',
     category: 'Empreendedorismo',
   },
-   {
-    title: 'Gerador de Imagens (IA)',
-    Icon: Wand2,
-    href: '/ferramentas/gerador-imagem-ia',
-    description: 'Crie imagens únicas com Inteligência Artificial.',
-    category: 'IA',
-  },
   {
     title: 'Gerador de Link Pix',
     Icon: ClipboardCopy,
