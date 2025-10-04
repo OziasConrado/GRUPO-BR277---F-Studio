@@ -330,7 +330,7 @@ const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData
 
     const initialTotalVotes = useMemo(() => {
         if (Array.isArray(poll?.options)) {
-            return poll.options.reduce((sum, option) => sum + option.votes, 0);
+            return poll.options.reduce((sum, option) => sum + (option.votes || 0), 0);
         }
         return 0;
     }, [poll?.options]);
@@ -358,9 +358,9 @@ const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData
         const unsub = onSnapshot(postRef, (doc) => {
             if (doc.exists() && doc.data().poll) {
                 const pollData = doc.data().poll as PollData;
-                setPoll(pollData);
                 if (Array.isArray(pollData.options)) {
-                    const total = pollData.options.reduce((acc: number, opt: { votes: number; }) => acc + opt.votes, 0);
+                    setPoll(pollData);
+                    const total = pollData.options.reduce((acc, opt) => acc + (opt.votes || 0), 0);
                     setTotalVotes(total);
                 }
             }
@@ -385,26 +385,40 @@ const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData
         try {
             await runTransaction(firestore, async (transaction) => {
                 const postDoc = await transaction.get(postRef);
-                if (!postDoc.exists()) throw "Document does not exist!";
+                if (!postDoc.exists()) {
+                    throw new Error("A publicação não existe mais.");
+                }
+
+                const currentPollData = postDoc.data()?.poll as PollData | undefined;
+                if (!currentPollData || !Array.isArray(currentPollData.options)) {
+                    throw new Error("Dados da enquete inválidos ou corrompidos.");
+                }
                 
                 const userVoteDoc = await transaction.get(voteRef);
                 if (userVoteDoc.exists()) {
+                    // This case should be rare due to client-side check, but good for safety
                     toast({ title: 'Você já votou nesta enquete.' });
                     return;
                 }
 
-                const currentPollData = postDoc.data().poll as PollData;
                 const optionIndex = currentPollData.options.findIndex(opt => opt.id === optionId);
-                if (optionIndex === -1) throw "Option not found!";
+                if (optionIndex === -1) {
+                    throw new Error("A opção selecionada não é válida.");
+                }
 
-                transaction.update(postRef, {
-                    [`poll.options.${optionIndex}.votes`]: increment(1)
-                });
+                // Firestore's array update syntax is tricky. It's safer to read, modify, and write the whole array.
+                const newOptions = [...currentPollData.options];
+                newOptions[optionIndex] = {
+                    ...newOptions[optionIndex],
+                    votes: (newOptions[optionIndex].votes || 0) + 1,
+                };
+
+                transaction.update(postRef, { 'poll.options': newOptions });
                 transaction.set(voteRef, { optionId, timestamp: serverTimestamp() });
             });
-        } catch (e) {
+        } catch (e: any) {
             console.error("Transaction failed: ", e);
-            toast({ variant: "destructive", title: "Erro ao votar", description: "Tente novamente." });
+            toast({ variant: "destructive", title: "Erro ao votar", description: e.message || "Não foi possível registrar seu voto. Tente novamente." });
         }
     };
     
@@ -417,7 +431,7 @@ const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData
             <p className="font-semibold text-foreground">{poll.question}</p>
             <div className="space-y-2">
                 {poll.options.map((option) => {
-                    const percentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
+                    const percentage = totalVotes > 0 ? ((option.votes || 0) / totalVotes) * 100 : 0;
                     const userVotedForThis = votedOptionId === option.id;
 
                     return (
