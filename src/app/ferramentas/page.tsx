@@ -37,7 +37,7 @@ import { cn } from '@/lib/utils';
 
 // Extend ToolCardProps to include category for local use
 interface CategorizedTool extends ToolCardProps {
-  category: 'Trânsito e Veículos' | 'Saúde e Bem Estar' | 'Empreendedorismo' | 'Outros' | 'IA';
+  category: 'Trânsito e Veículos' | 'Saúde e Bem Estar' | 'Empreendedorismo' | 'Outros';
 }
 
 const tools: CategorizedTool[] = [
@@ -140,13 +140,6 @@ const tools: CategorizedTool[] = [
     category: 'Empreendedorismo',
   },
   {
-    title: 'Gerador de Post Promocional (IA)',
-    Icon: Lightbulb,
-    href: '/ferramentas/gerador-post-promocional',
-    description: 'Crie textos para redes sociais usando Inteligência Artificial.',
-    category: 'IA',
-  },
-  {
     title: 'Gerador de QR Code',
     Icon: QrCode,
     href: '/ferramentas/gerador-qr-code',
@@ -197,7 +190,7 @@ const tools: CategorizedTool[] = [
   },
 ];
 
-const categories: CategorizedTool['category'][] = ['Trânsito e Veículos', 'Saúde e Bem Estar', 'Empreendedorismo', 'IA', 'Outros'];
+const categories: CategorizedTool['category'][] = ['Trânsito e Veículos', 'Saúde e Bem Estar', 'Empreendedorismo', 'Outros'];
 
 const AdPlaceholder = ({ className }: { className?: string }) => (
   <div className={cn("my-6 p-4 rounded-xl bg-muted/30 border border-dashed h-24 flex items-center justify-center", className)}>
