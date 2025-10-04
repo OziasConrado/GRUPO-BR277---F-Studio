@@ -24,7 +24,6 @@ import {
   Check,
   Link as LinkIcon,
   UserCircle,
-  Camera,
   MessageCircle,
 } from 'lucide-react';
 import {
@@ -779,7 +778,11 @@ export default function FeedPage() {
                 <CardContent className="p-2 grid grid-cols-3 gap-2">
                     <Button asChild variant="outline" className="h-full flex-col py-2 rounded-md hover:bg-primary/5">
                         <Link href="/streaming">
-                            <Camera className="h-6 w-6 text-primary mb-1"/>
+                            <svg className="h-6 w-6 text-primary mb-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M14.5801 15.31L18.6601 18.1C19.1501 18.42 19.1801 19.11 18.7101 19.46C18.2501 19.82 17.5701 19.75 17.2001 19.31L13.1301 16.48C12.9801 16.38 12.8701 16.22 12.8301 16.05L11.5301 10.82C11.3901 10.23 11.8001 9.64999 12.3901 9.50999C12.9801 9.36999 13.5701 9.77999 13.7101 10.37L14.7301 14.59C14.7701 14.78 14.8901 14.95 15.0501 15.06L14.5801 15.31z" fill="currentColor"/>
+                                <path d="M12.99 6.09C12.99 5.81 13.22 5.58 13.5 5.58C13.78 5.58 14.01 5.81 14.01 6.09C14.01 6.37 13.78 6.6 13.5 6.6C13.22 6.6 12.99 6.37 12.99 6.09z" fill="currentColor"/>
+                                <path d="M5.99006 14H10.0001C10.5501 14 11.0001 13.55 11.0001 13V8C11.0001 7.45 10.5501 7 10.0001 7H3.00006C2.45006 7 2.00006 7.45 2.00006 8V13C2.00006 13.55 2.45006 14 3.00006 14H4.00006V16.5C4.00006 17.05 4.45006 17.5 5.00006 17.5C5.55006 17.5 6.00006 17.05 6.00006 16.5L5.99006 14z" fill="currentColor"/>
+                            </svg>
                             <span className="text-xs text-center leading-tight">Câmeras AO VIVO</span>
                         </Link>
                     </Button>
