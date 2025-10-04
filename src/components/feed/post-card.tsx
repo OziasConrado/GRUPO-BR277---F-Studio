@@ -329,8 +329,11 @@ const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData
     const [totalVotes, setTotalVotes] = useState(0);
 
     const initialTotalVotes = useMemo(() => {
-        return poll.options.reduce((sum, option) => sum + option.votes, 0);
-    }, [poll.options]);
+        if (Array.isArray(poll?.options)) {
+            return poll.options.reduce((sum, option) => sum + option.votes, 0);
+        }
+        return 0;
+    }, [poll?.options]);
     
     useEffect(() => {
         setTotalVotes(initialTotalVotes);
@@ -356,8 +359,10 @@ const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData
             if (doc.exists() && doc.data().poll) {
                 const pollData = doc.data().poll as PollData;
                 setPoll(pollData);
-                const total = pollData.options.reduce((acc: number, opt: { votes: number; }) => acc + opt.votes, 0);
-                setTotalVotes(total);
+                if (Array.isArray(pollData.options)) {
+                    const total = pollData.options.reduce((acc: number, opt: { votes: number; }) => acc + opt.votes, 0);
+                    setTotalVotes(total);
+                }
             }
         });
 
@@ -402,6 +407,10 @@ const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData
             toast({ variant: "destructive", title: "Erro ao votar", description: "Tente novamente." });
         }
     };
+    
+    if (!poll || !Array.isArray(poll.options)) {
+        return <div className="mt-4 px-4 text-sm text-destructive">Erro: Dados da enquete inválidos.</div>;
+    }
 
     return (
         <div className="mt-4 px-4 space-y-3">
