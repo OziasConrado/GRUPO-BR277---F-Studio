@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import { firestore } from '@/lib/firebase/client';
 import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, Timestamp, where } from 'firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetClose } from '@/components/ui/sheet';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import Image from 'next/image';
 
@@ -37,6 +37,7 @@ const concessionaireContacts = [
     phone: '0800 277 0376',
     website: 'https://viaaraucaria.com.br/',
     color: '#273896',
+    textColor: '#FFFFFF',
   },
   {
     name: 'EPR Litoral Pioneiro',
@@ -44,6 +45,7 @@ const concessionaireContacts = [
     phone: '0800 277 0153',
     website: 'https://eprlpioneiro.com.br/',
     color: '#012F57',
+    textColor: '#FFFFFF',
   },
   {
     name: 'EPR Iguaçu',
@@ -51,6 +53,7 @@ const concessionaireContacts = [
     phone: '0800 277 0163',
     website: 'https://epriguacu.com.br/',
     color: '#012F57',
+    textColor: '#FFFFFF',
   },
   {
     name: 'Arteris Planalto Sul',
@@ -59,7 +62,7 @@ const concessionaireContacts = [
     phone2: '0800 7171 000',
     website: 'https://www.arteris.com.br/nossas-rodovias/planalto-sul/apresentacao/',
     color: '#FFB000',
-    textColor: '#333',
+    textColor: '#333333',
   },
   {
     name: 'Arteris Régis Bittencourt',
@@ -68,7 +71,7 @@ const concessionaireContacts = [
     phone2: '0800 7171 000',
     website: 'https://www.arteris.com.br/nossas-rodovias/regis-bittencourt/apresentacao/',
     color: '#FFB000',
-    textColor: '#333',
+    textColor: '#333333',
   },
   {
     name: 'Arteris Litoral Sul',
@@ -77,7 +80,7 @@ const concessionaireContacts = [
     phone2: '0800 7171 000',
     website: 'https://www.arteris.com.br/nossas-rodovias/litoral-sul/apresentacao/',
     color: '#FFB000',
-    textColor: '#333',
+    textColor: '#333333',
   },
   {
     name: 'CCR PRVias',
@@ -85,6 +88,7 @@ const concessionaireContacts = [
     phone: '0800 376 0000',
     website: 'https://rodovias.motiva.com.br/prvias/',
     color: '#822121',
+    textColor: '#FFFFFF',
   },
   {
     name: 'CCR RioSP',
@@ -93,6 +97,7 @@ const concessionaireContacts = [
     phone2: '(11) 2795-2238',
     website: 'https://www.ccrriosp.com.br/mobile/#!/services',
     color: '#822121',
+    textColor: '#FFFFFF',
   },
 ];
 
@@ -239,7 +244,7 @@ export default function SAUPage() {
   const { toast } = useToast();
   const { currentUser } = useAuth();
   
-  const [isContactsModalOpen, setIsContactsModalOpen] = useState(false);
+  const [isContactsSheetOpen, setIsContactsSheetOpen] = useState(false);
 
 
   const requestLocation = useCallback(() => {
@@ -394,7 +399,7 @@ export default function SAUPage() {
           onFilterChange={setActiveConcessionaireFilter}
         />
         
-        <Button variant="destructive" className="w-full rounded-lg" onClick={() => setIsContactsModalOpen(true)}>
+        <Button variant="destructive" className="w-full rounded-lg" onClick={() => setIsContactsSheetOpen(true)}>
             Telefones e Sites das Concessionárias
         </Button>
 
@@ -454,20 +459,20 @@ export default function SAUPage() {
           </Alert>
       </div>
 
-      <Dialog open={isContactsModalOpen} onOpenChange={setIsContactsModalOpen}>
-        <DialogContent className="sm:max-w-xl md:max-w-2xl lg:max-w-3xl rounded-xl">
-          <DialogHeader>
-            <DialogTitle className="font-headline text-xl">Contatos das Concessionárias</DialogTitle>
-            <DialogDescription>
+      <Sheet open={isContactsSheetOpen} onOpenChange={setIsContactsSheetOpen}>
+        <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0 rounded-t-[25px]">
+          <SheetHeader className="p-4 border-b">
+            <SheetTitle className="text-center font-headline text-lg">Contatos das Concessionárias</SheetTitle>
+            <SheetDescription className="text-center text-xs">
               Acesse rapidamente os telefones e sites das principais concessionárias.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="max-h-[60vh] overflow-y-auto pr-2 -mr-2 space-y-4 py-2">
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex-grow overflow-y-auto p-4 space-y-4">
             {concessionaireContacts.map((contact, index) => (
-              <Card key={index} className="shadow-md rounded-lg" style={{ borderColor: contact.color }}>
+              <Card key={index} className="shadow-md rounded-lg overflow-hidden" style={{ borderColor: contact.color }}>
                 <CardHeader className="p-4" style={{ backgroundColor: `${contact.color}1A` }}>
-                  <h3 className="font-bold font-headline text-base" style={{ color: contact.textColor || '#fff' }}>{contact.name}</h3>
-                  <p className="text-xs" style={{ color: contact.textColor || '#fff' }}>{contact.highways}</p>
+                  <h3 className="font-bold font-headline text-base" style={{ color: contact.textColor }}>{contact.name}</h3>
+                  <p className="text-xs" style={{ color: contact.textColor, opacity: 0.8 }}>{contact.highways}</p>
                 </CardHeader>
                 <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <Button asChild variant="outline" className="w-full rounded-full">
@@ -491,13 +496,15 @@ export default function SAUPage() {
               </Card>
             ))}
           </div>
-          <DialogClose asChild>
-            <Button type="button" variant="outline" className="mt-4 w-full">
-              Fechar
-            </Button>
-          </DialogClose>
-        </DialogContent>
-      </Dialog>
+          <div className="p-4 border-t">
+              <SheetClose asChild>
+                <Button type="button" variant="outline" className="w-full rounded-full">
+                  Fechar
+                </Button>
+              </SheetClose>
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   );
 }
