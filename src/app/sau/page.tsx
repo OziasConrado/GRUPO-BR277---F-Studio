@@ -470,7 +470,7 @@ export default function SAUPage() {
           <div className="flex-grow overflow-y-auto p-4 space-y-4">
             {concessionaireContacts.map((contact, index) => (
               <Card key={index} className="shadow-md rounded-lg overflow-hidden" style={{ borderColor: contact.color }}>
-                <CardHeader className="p-4" style={{ backgroundColor: `${contact.color}1A` }}>
+                <CardHeader className="p-4" style={{ backgroundColor: `${contact.color}3A` }}>
                   <h3 className="font-bold font-headline text-base" style={{ color: contact.textColor }}>{contact.name}</h3>
                   <p className="text-xs" style={{ color: contact.textColor, opacity: 0.8 }}>{contact.highways}</p>
                 </CardHeader>
