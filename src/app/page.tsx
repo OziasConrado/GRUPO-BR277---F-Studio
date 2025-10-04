@@ -24,6 +24,8 @@ import {
   Check,
   Link as LinkIcon,
   UserCircle,
+  Camera,
+  MessageCircle,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -53,6 +55,7 @@ import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ToastAction } from '@/components/ui/toast';
 import UserProfileModal, { type UserProfileData } from '@/components/profile/UserProfileModal';
+import { useChat } from '@/contexts/ChatContext';
 
 interface MentionUser {
   id: string;
@@ -302,6 +305,7 @@ export default function FeedPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const alertsContainerRef = useRef<HTMLDivElement>(null);
+  const { openChat } = useChat();
 
   // Real-time Posts Fetch
   useEffect(() => {
@@ -760,24 +764,37 @@ export default function FeedPage() {
       <div className="w-full space-y-6">
         <ProfileCompletionAlert />
         
-        <div className="flex gap-3 h-20">
-          <Button asChild
-            variant="destructive"
-            className="w-2/3 h-full bg-red-500 hover:bg-red-600 text-white text-lg font-semibold rounded-lg shadow-md"
-          >
-            <Link href="/emergencia">
-                <Phone className="mr-2 h-6 w-6" />
-                EMERGÊNCIA
-            </Link>
-          </Button>
-          <div className="w-1/3 flex flex-col gap-3">
-              <Button asChild variant="outline" className="h-full w-full text-xs rounded-lg hover:bg-primary/10 hover:text-primary">
-                <Link href="/sau" className="flex-col items-center justify-center">
-                  <Headset className="h-5 w-5 mb-1" />
-                  <span>Concessões/SAU</span>
-                </Link>
-              </Button>
-          </div>
+        <div>
+            <Button asChild
+              variant="destructive"
+              className="w-full h-16 bg-red-500 hover:bg-red-600 text-white text-lg font-semibold rounded-lg shadow-md mb-3"
+            >
+              <Link href="/emergencia">
+                  <Phone className="mr-2 h-6 w-6" />
+                  EMERGÊNCIA
+              </Link>
+            </Button>
+
+            <Card className="rounded-lg">
+                <CardContent className="p-2 grid grid-cols-3 gap-2">
+                    <Button asChild variant="outline" className="h-full flex-col py-2 rounded-md hover:bg-primary/5">
+                        <Link href="/streaming">
+                            <Camera className="h-6 w-6 text-primary mb-1"/>
+                            <span className="text-xs text-center leading-tight">Câmeras AO VIVO</span>
+                        </Link>
+                    </Button>
+                     <Button variant="outline" className="h-full flex-col py-2 rounded-md hover:bg-primary/5" onClick={openChat}>
+                        <MessageCircle className="h-6 w-6 text-primary mb-1"/>
+                        <span className="text-xs text-center leading-tight">Comunidade277</span>
+                    </Button>
+                    <Button asChild variant="outline" className="h-full flex-col py-2 rounded-md hover:bg-primary/5">
+                        <Link href="/sau">
+                            <Headset className="h-6 w-6 text-primary mb-1"/>
+                            <span className="text-xs text-center leading-tight">Concessões/SAU</span>
+                        </Link>
+                    </Button>
+                </CardContent>
+            </Card>
         </div>
 
         <Card className="p-4 shadow-sm rounded-xl">

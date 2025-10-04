@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from "react";
@@ -43,8 +44,7 @@ const MoreFeaturesSheet: React.FC<MoreFeaturesSheetProps> = ({ children }) => {
   const { openChat } = useChat();
 
   const mainFeatures: Feature[] = [
-    { icon: Video, label: "AO VIVO", href: "/streaming" },
-    { icon: MessageCircle, label: "Comunidade277", onClick: openChat },
+    // Principais foram movidos para a página inicial
   ];
 
   const secondaryFeatures: Feature[] = [
@@ -119,13 +119,14 @@ const MoreFeaturesSheet: React.FC<MoreFeaturesSheetProps> = ({ children }) => {
           </SheetHeader>
           
           <div className="flex-grow overflow-y-auto p-2 space-y-4">
-              {/* Main Features */}
-              <div className="grid grid-cols-2 gap-2">
-                  {mainFeatures.map(feature => renderFeature(feature, true))}
-              </div>
-
-              {/* Separator */}
-              <div className="w-full h-px bg-border my-2"></div>
+              {mainFeatures.length > 0 && (
+                <>
+                  <div className="grid grid-cols-2 gap-2">
+                      {mainFeatures.map(feature => renderFeature(feature, true))}
+                  </div>
+                  <div className="w-full h-px bg-border my-2"></div>
+                </>
+              )}
 
               {/* Secondary Features */}
               <div className="grid grid-cols-4 gap-1.5">
