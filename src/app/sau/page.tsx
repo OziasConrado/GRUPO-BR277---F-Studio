@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import React from 'react'; // Import React for React.Fragment
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, MapPin, AlertTriangle, Info } from 'lucide-react';
+import { Loader2, MapPin, AlertTriangle, Info, Phone, Globe } from 'lucide-react';
 import type { SAULocation, SAUReview } from '@/types/sau';
 import SauLocationCard from '@/components/sau/sau-location-card';
 import SauFilters from '@/components/sau/sau-filters';
@@ -14,6 +14,9 @@ import { cn } from '@/lib/utils';
 import { firestore } from '@/lib/firebase/client';
 import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, Timestamp, where } from 'firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
+import Image from 'next/image';
 
 const concessionairesForFilter = [
   "Todos",
@@ -25,6 +28,72 @@ const concessionairesForFilter = [
   "Arteris Planalto Sul",
   "Arteris Régis Bitencourt",
   "CCR RioSP",
+];
+
+const concessionaireContacts = [
+  {
+    name: 'Via Araucária',
+    highways: 'BRs 277 Centro-Sul e Campos Gerais, 373, 376 e 476. PRs 418, 423 e 427',
+    phone: '0800 277 0376',
+    website: 'https://viaaraucaria.com.br/',
+    color: '#273896',
+  },
+  {
+    name: 'EPR Litoral Pioneiro',
+    highways: 'BRs 153, 277 (Curitiba-Paranaguá) e 369. PRs 092, 151, 239, 407, 408, 411, 508, 804 e 855',
+    phone: '0800 277 0153',
+    website: 'https://eprlpioneiro.com.br/',
+    color: '#012F57',
+  },
+  {
+    name: 'EPR Iguaçu',
+    highways: 'BR-277, BR-163, PR-182, PR-483, PR-180, PR-280, e PR-158',
+    phone: '0800 277 0163',
+    website: 'https://epriguacu.com.br/',
+    color: '#012F57',
+  },
+  {
+    name: 'Arteris Planalto Sul',
+    highways: 'BR-116/PR-SC',
+    phone: '0800 6420 116',
+    phone2: '0800 7171 000',
+    website: 'https://www.arteris.com.br/nossas-rodovias/planalto-sul/apresentacao/',
+    color: '#FFB000',
+    textColor: '#333',
+  },
+  {
+    name: 'Arteris Régis Bittencourt',
+    highways: 'BR-116/SP-PR',
+    phone: '0800 7090 116',
+    phone2: '0800 7171 000',
+    website: 'https://www.arteris.com.br/nossas-rodovias/regis-bittencourt/apresentacao/',
+    color: '#FFB000',
+    textColor: '#333',
+  },
+  {
+    name: 'Arteris Litoral Sul',
+    highways: 'BRs 116/PR, 376/PR e 101/SC',
+    phone: '0800 7251 771',
+    phone2: '0800 7171 000',
+    website: 'https://www.arteris.com.br/nossas-rodovias/litoral-sul/apresentacao/',
+    color: '#FFB000',
+    textColor: '#333',
+  },
+  {
+    name: 'CCR PRVias',
+    highways: 'BR-369, BR-373, BR-376, PR-090, PR-170, PR-323 e PR-445',
+    phone: '0800 376 0000',
+    website: 'https://rodovias.motiva.com.br/prvias/',
+    color: '#822121',
+  },
+  {
+    name: 'CCR RioSP',
+    highways: 'BR-116/RJ-SP',
+    phone: '0800 0173 536',
+    phone2: '(11) 2795-2238',
+    website: 'https://www.ccrriosp.com.br/mobile/#!/services',
+    color: '#822121',
+  },
 ];
 
 const allSausData: SAULocation[] = [
@@ -169,6 +238,8 @@ export default function SAUPage() {
   const [activeConcessionaireFilter, setActiveConcessionaireFilter] = useState<string>('Todos');
   const { toast } = useToast();
   const { currentUser } = useAuth();
+  
+  const [isContactsModalOpen, setIsContactsModalOpen] = useState(false);
 
 
   const requestLocation = useCallback(() => {
@@ -310,72 +381,123 @@ export default function SAUPage() {
   const isLoading = loadingSaus || loadingReviews || locationStatus === 'loading';
 
   return (
-    <div className="w-full space-y-6">
-      <div className="text-center sm:text-left">
-        <h1 className="text-2xl lg:text-3xl font-bold font-headline">Concessões de Pedágio</h1>
-        <p className="text-muted-foreground">Rodovias sob concessão e Serviço de Atendimento ao Usuário (SAU).</p>
-      </div>
+    <>
+      <div className="w-full space-y-6">
+        <div className="text-center sm:text-left">
+          <h1 className="text-2xl lg:text-3xl font-bold font-headline">Concessões de Pedágio</h1>
+          <p className="text-muted-foreground">Rodovias sob concessão e Serviço de Atendimento ao Usuário (SAU).</p>
+        </div>
 
-      <SauFilters
-        concessionaires={concessionairesForFilter}
-        currentFilter={activeConcessionaireFilter}
-        onFilterChange={setActiveConcessionaireFilter}
-      />
+        <SauFilters
+          concessionaires={concessionairesForFilter}
+          currentFilter={activeConcessionaireFilter}
+          onFilterChange={setActiveConcessionaireFilter}
+        />
+        
+        <Button variant="destructive" className="w-full rounded-lg" onClick={() => setIsContactsModalOpen(true)}>
+            Telefones e Sites das Concessionárias
+        </Button>
 
-      <AdPlaceholder />
+        <AdPlaceholder />
 
-      {isLoading && (
-        <Alert>
-          <Loader2 className="h-5 w-5 animate-spin text-primary" />
-          <AlertTitle className="font-headline">Carregando SAUs e Avaliações...</AlertTitle>
-          <AlertDescription>
-            Buscando informações e {locationStatus === 'loading' ? "tentando obter sua localização..." : "calculando distâncias..."}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {!isLoading && locationStatus === 'error' && (
-         <Alert variant="destructive">
-            <AlertTriangle className="h-5 w-5" />
-            <AlertTitle className="font-headline">Localização indisponível</AlertTitle>
+        {isLoading && (
+          <Alert>
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <AlertTitle className="font-headline">Carregando SAUs e Avaliações...</AlertTitle>
             <AlertDescription>
-                Verifique as permissões de localização e tente novamente.
-                <Button variant="outline" size="sm" onClick={requestLocation} className="ml-2 mt-1 sm:mt-0">
-                    Tentar Novamente
-                </Button>
+              Buscando informações e {locationStatus === 'loading' ? "tentando obter sua localização..." : "calculando distâncias..."}
             </AlertDescription>
-        </Alert>
-      )}
-
-      <div className="space-y-4">
-        {!isLoading && processedSaus.length > 0 ? processedSaus.map((sau, index) => {
-          const sauSpecificReviews = reviews.filter(r => r.sauId === sau.id);
-          return (
-            <React.Fragment key={sau.id}>
-              <SauLocationCard
-                sau={sau} // already has aggregated review data from processedSaus
-                reviews={sauSpecificReviews} // Pass filtered reviews for this SAU
-                onAddReview={(reviewData) => handleAddReview(reviewData, sau.id)}
-              />
-              {(index + 1) % 3 === 0 && index < processedSaus.length - 1 && (
-                <AdPlaceholder />
-              )}
-            </React.Fragment>
-          );
-        }) : !isLoading && (
-          <p className="text-muted-foreground text-center py-4">
-            Nenhum SAU encontrado para os filtros selecionados.
-          </p>
+          </Alert>
         )}
+
+        {!isLoading && locationStatus === 'error' && (
+          <Alert variant="destructive">
+              <AlertTriangle className="h-5 w-5" />
+              <AlertTitle className="font-headline">Localização indisponível</AlertTitle>
+              <AlertDescription>
+                  Verifique as permissões de localização e tente novamente.
+                  <Button variant="outline" size="sm" onClick={requestLocation} className="ml-2 mt-1 sm:mt-0">
+                      Tentar Novamente
+                  </Button>
+              </AlertDescription>
+          </Alert>
+        )}
+
+        <div className="space-y-4">
+          {!isLoading && processedSaus.length > 0 ? processedSaus.map((sau, index) => {
+            const sauSpecificReviews = reviews.filter(r => r.sauId === sau.id);
+            return (
+              <React.Fragment key={sau.id}>
+                <SauLocationCard
+                  sau={sau} // already has aggregated review data from processedSaus
+                  reviews={sauSpecificReviews} // Pass filtered reviews for this SAU
+                  onAddReview={(reviewData) => handleAddReview(reviewData, sau.id)}
+                />
+                {(index + 1) % 3 === 0 && index < processedSaus.length - 1 && (
+                  <AdPlaceholder />
+                )}
+              </React.Fragment>
+            );
+          }) : !isLoading && (
+            <p className="text-muted-foreground text-center py-4">
+              Nenhum SAU encontrado para os filtros selecionados.
+            </p>
+          )}
+        </div>
+
+        <Alert className="mt-6">
+            <Info className="h-5 w-5 text-primary" />
+            <AlertTitle className="font-headline">Sobre os SAUs</AlertTitle>
+            <AlertDescription>
+              Os SAUs são pontos de apoio das concessionárias, oferecendo serviços como banheiros, água e informações.
+            </AlertDescription>
+          </Alert>
       </div>
 
-       <Alert className="mt-6">
-          <Info className="h-5 w-5 text-primary" />
-          <AlertTitle className="font-headline">Sobre os SAUs</AlertTitle>
-          <AlertDescription>
-            Os SAUs são pontos de apoio das concessionárias, oferecendo serviços como banheiros, água e informações.
-          </AlertDescription>
-        </Alert>
-    </div>
+      <Dialog open={isContactsModalOpen} onOpenChange={setIsContactsModalOpen}>
+        <DialogContent className="sm:max-w-xl md:max-w-2xl lg:max-w-3xl rounded-xl">
+          <DialogHeader>
+            <DialogTitle className="font-headline text-xl">Contatos das Concessionárias</DialogTitle>
+            <DialogDescription>
+              Acesse rapidamente os telefones e sites das principais concessionárias.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto pr-2 -mr-2 space-y-4 py-2">
+            {concessionaireContacts.map((contact, index) => (
+              <Card key={index} className="shadow-md rounded-lg" style={{ borderColor: contact.color }}>
+                <CardHeader className="p-4" style={{ backgroundColor: `${contact.color}1A` }}>
+                  <h3 className="font-bold font-headline text-base" style={{ color: contact.textColor || '#fff' }}>{contact.name}</h3>
+                  <p className="text-xs" style={{ color: contact.textColor || '#fff' }}>{contact.highways}</p>
+                </CardHeader>
+                <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <Button asChild variant="outline" className="w-full rounded-full">
+                    <a href={`tel:${contact.phone?.replace(/\D/g, '')}`}>
+                      <Phone className="mr-2 h-4 w-4" /> {contact.phone}
+                    </a>
+                  </Button>
+                  {contact.phone2 && (
+                    <Button asChild variant="outline" className="w-full rounded-full">
+                        <a href={`tel:${contact.phone2.replace(/\D/g, '')}`}>
+                            <Phone className="mr-2 h-4 w-4" /> {contact.phone2}
+                        </a>
+                    </Button>
+                  )}
+                  <Button asChild variant="outline" className="w-full rounded-full sm:col-span-2">
+                    <a href={contact.website} target="_blank" rel="noopener noreferrer">
+                      <Globe className="mr-2 h-4 w-4" /> Acessar Site
+                    </a>
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <DialogClose asChild>
+            <Button type="button" variant="outline" className="mt-4 w-full">
+              Fechar
+            </Button>
+          </DialogClose>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
