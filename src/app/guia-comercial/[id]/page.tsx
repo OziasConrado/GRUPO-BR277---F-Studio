@@ -49,40 +49,41 @@ const mockBusinesses: BusinessData[] = [
     id: 'mock-2',
     name: 'Restaurante Sabor da Estrada',
     category: 'Restaurante',
-    plano: 'INTERMEDIARIO', // Plano Intermediário
+    plano: 'GRATUITO', // Plano Gratuito para visualização
     statusPagamento: 'ATIVO',
     address: 'Rod. BR-277, km 50, Curitiba, PR',
-    description: 'A melhor comida caseira da região, com buffet livre e pratos executivos. Amplo estacionamento para caminhões e ambiente familiar. Wi-fi liberado para clientes.',
-    imageUrl: 'https://picsum.photos/seed/restaurante/800/400',
+    description: 'A melhor comida caseira da região, com buffet livre e pratos executivos. Amplo estacionamento para caminhões e ambiente familiar.',
+    imageUrl: 'https://picsum.photos/seed/restaurante/800/400', // Será substituída por placeholder na lógica
     dataAIImageHint: 'restaurant exterior',
-    whatsapp: '5541988887777',
-    operatingHours: 'Todos os dias: 11:00-15:00 e 18:00-22:00',
-    servicesOffered: ['Buffet Livre', 'Marmitex', 'Wi-Fi Grátis', 'Banheiros Limpos', 'Estacionamento Amplo'],
-    isPremium: true,
+    phone: '41988887777', // Telefone é permitido no plano gratuito
+    isPremium: false, // Não é premium
     latitude: -25.4411,
     longitude: -49.2908,
     averageRating: 4.5,
     reviewCount: 210,
-    promoImages: [
-        { url: 'https://picsum.photos/seed/comida1/500/300', hint: 'plate of food' },
-        { url: 'https://picsum.photos/seed/comida2/500/300', hint: 'restaurant buffet' },
-    ]
+    // Outros campos (whatsapp, instagram, etc.) são omitidos e serão tratados pela lógica da página
   },
    {
     id: 'mock-3',
     name: 'Mecânica Confiança',
     category: 'Oficina Mecânica',
-    plano: 'GRATUITO', // Plano Gratuito
+    plano: 'INTERMEDIARIO', // Mudado para Intermediário para ter variedade
     statusPagamento: 'ATIVO',
     address: 'Rua das Orquídeas, 45, Campina Grande do Sul, PR',
     description: 'Especialistas em motor e suspensão para veículos pesados. Socorro 24h na região. Orçamento sem compromisso.',
     imageUrl: 'https://picsum.photos/seed/mecanica/600/400',
     dataAIImageHint: 'auto repair bay',
     phone: '4136765555',
+    whatsapp: '5541999995555',
+    instagramUsername: 'mecanicaconfianca',
     latitude: -25.2959,
     longitude: -49.0543,
     averageRating: 4.9,
     reviewCount: 88,
+    promoImages: [
+        { url: 'https://picsum.photos/seed/mecanica1/500/300', hint: 'engine repair' },
+        { url: 'https://picsum.photos/seed/mecanica2/500/300', hint: 'car diagnostic' },
+    ]
   },
 ];
 
