@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -47,17 +46,20 @@ const plans = [
     features: [
       { text: 'Nome, Categoria e Descrição', included: true },
       { text: 'Endereço e Mapa (Pin)', included: true },
-      { text: '1 Foto Principal', included: true },
+      { text: 'Botão ligar', included: true },
+      { text: 'Exibição de Avaliações', included: true },
+      { text: 'Foto Principal (logo)', included: true },
+      { text: 'Geolocalização', included: true },
       { text: 'Link para WhatsApp', included: true },
       { text: 'Horário de Atendimento', included: true },
-      { text: '4 Imagens Promocionais', included: true },
-      { text: 'Links para Redes Sociais', included: false },
-      { text: 'Link para Website', included: false },
-      { text: 'Exibição de Avaliações', included: false },
+      { text: '2 Imagens Promocionais', included: true },
+      { text: 'Links para Redes Sociais', included: true },
+      { text: 'Link para Website', included: true },
     ],
     isPopular: false,
     cardClass: 'bg-secondary/30 dark:bg-secondary/20',
     buttonVariant: 'secondary' as const,
+    extraInfo: 'Sem anúncio'
   },
   {
     name: 'Premium',
