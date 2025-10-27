@@ -60,7 +60,7 @@ export default function BusinessCard({ business }: { business: BusinessData }) {
           />
           {business.plano === 'PREMIUM' && (
             <div className="absolute top-2 right-2 bg-green-600 text-white text-xs px-2 py-1 rounded-md font-semibold shadow-md flex items-center gap-1">
-              <StarIcon className="h-3 w-3" /> PREMIUM
+              <StarIcon className="h-3 w-3 text-yellow-400 fill-yellow-400" /> PREMIUM
             </div>
           )}
           <Badge variant={business.plano !== 'GRATUITO' ? "default" : "secondary"} className="absolute top-2 left-2 shadow-md bg-opacity-80 backdrop-blur-sm">
@@ -89,7 +89,7 @@ export default function BusinessCard({ business }: { business: BusinessData }) {
         </CardContent>
 
         <CardFooter className="flex flex-col gap-2 pt-3 border-t">
-          {business.plano === 'PREMIUM' && business.whatsapp && business.instagramUsername && (
+          {business.plano === 'PREMIUM' && (
             <div className="grid grid-cols-2 gap-2 w-full">
               <Button variant="outline" size="sm" onClick={handleWhatsAppClick} className="w-full bg-green-500/10 border-green-500/50 text-green-700 hover:bg-green-500/20 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300">
                   <MessageCircle className="mr-1.5 h-4 w-4" /> WhatsApp
