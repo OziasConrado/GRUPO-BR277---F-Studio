@@ -10,13 +10,10 @@ import { Loader2, MapPin, AlertTriangle, Search, ListFilter, PlusCircle } from '
 import type { BusinessData, BusinessCategory } from '@/types/guia-comercial';
 import { businessCategories } from '@/types/guia-comercial';
 import BusinessCard from '@/components/guia-comercial/business-card';
-import RegisterBusinessModal from '@/components/guia-comercial/register-business-modal';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
-import { ToastAction } from '@/components/ui/toast';
 import { getUserLocation, calculateDistance } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 
 // Mock Data - Substituir com dados do Firestore
@@ -92,12 +89,8 @@ export default function GuiaComercialPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState<BusinessCategory | 'Todas'>('Todas');
 
-  const { currentUser } = useAuth();
   const { toast } = useToast();
-  const router = useRouter();
-
-  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
-
+  
   const requestLocation = useCallback(() => {
     setLocationStatus('loading');
     getUserLocation()
@@ -152,27 +145,6 @@ export default function GuiaComercialPage() {
     return processedBusinesses.sort((a, b) => a.name.localeCompare(b.name));
   }, [businesses, searchTerm, activeCategory, userLocation, locationStatus]);
 
-  const handleRegisterClick = () => {
-    if (!currentUser) {
-      toast({
-        title: "Login Necessário",
-        description: "Você precisa fazer login para cadastrar seu comércio.",
-        variant: "destructive",
-        action: <ToastAction altText="Fazer Login" onClick={() => router.push('/login')}>Login</ToastAction>,
-      });
-      return;
-    }
-    setIsRegisterModalOpen(true);
-  };
-  
-  const handleRegisterSubmit = (data: any) => {
-    toast({
-        title: "Cadastro em Simulação",
-        description: "Funcionalidade de cadastro será implementada com o backend.",
-    });
-    console.log("Registering Business (Simulated):", data);
-    setIsRegisterModalOpen(false);
-  }
 
   return (
     <>
@@ -238,14 +210,11 @@ export default function GuiaComercialPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <AdPlaceholder />
           
-          <div 
-            onClick={handleRegisterClick}
-            className="flex flex-col items-center justify-center p-6 rounded-xl border-2 border-dashed border-primary/50 text-primary hover:bg-primary/5 hover:border-primary cursor-pointer transition-colors"
-          >
+          <Link href="/planos" className="flex flex-col items-center justify-center p-6 rounded-xl border-2 border-dashed border-primary/50 text-primary hover:bg-primary/5 hover:border-primary cursor-pointer transition-colors">
               <PlusCircle className="h-10 w-10 mb-2"/>
               <h3 className="font-semibold text-center">Cadastre Seu Negócio</h3>
               <p className="text-xs text-center text-muted-foreground">Apareça para milhares de usuários na estrada.</p>
-          </div>
+          </Link>
           
           {loading || locationStatus === 'loading' ? (
             <div className="md:col-span-2 flex justify-center items-center py-8">
@@ -265,11 +234,6 @@ export default function GuiaComercialPage() {
           )}
         </div>
       </div>
-      <RegisterBusinessModal 
-        isOpen={isRegisterModalOpen}
-        onClose={() => setIsRegisterModalOpen(false)}
-        onSubmit={handleRegisterSubmit}
-      />
     </>
   );
 }
