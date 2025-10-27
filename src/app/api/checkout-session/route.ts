@@ -7,11 +7,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
 });
 
-// IMPORTANTE: Substitua estes valores pelos seus "Price IDs" reais do Stripe.
-// Você pode encontrá-los no seu Dashboard do Stripe, na seção de Produtos.
+// IDs de preço reais da sua conta Stripe.
 const planPrices: Record<Exclude<PlanType, 'GRATUITO'>, string> = {
-  INTERMEDIARIO: 'price_SEU_ID_DO_PLANO_INTERMEDIARIO', // Ex: price_1PGjJZFZ66hy1ES19y6PAu2O
-  PREMIUM: 'price_SEU_ID_DO_PLANO_PREMIUM', // Ex: price_1PGjJkFZ66hy1ES1YgL4x1vC
+  INTERMEDIARIO: 'price_1SMyCgFZ66hy1ES1QoZfAmKd',
+  PREMIUM: 'price_1SMyFuFZ66hy1ES1ohlRs8pq',
 };
 
 export async function POST(req: NextRequest) {
