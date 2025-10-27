@@ -7,9 +7,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
 });
 
+// IMPORTANTE: Substitua estes valores pelos seus "Price IDs" reais do Stripe.
+// Você pode encontrá-los no seu Dashboard do Stripe, na seção de Produtos.
 const planPrices: Record<Exclude<PlanType, 'GRATUITO'>, string> = {
-  INTERMEDIARIO: 'price_1PGjJZFZ66hy1ES19y6PAu2O', // Substitua pelo seu Price ID real
-  PREMIUM: 'price_1PGjJkFZ66hy1ES1YgL4x1vC', // Substitua pelo seu Price ID real
+  INTERMEDIARIO: 'price_SEU_ID_DO_PLANO_INTERMEDIARIO', // Ex: price_1PGjJZFZ66hy1ES19y6PAu2O
+  PREMIUM: 'price_SEU_ID_DO_PLANO_PREMIUM', // Ex: price_1PGjJkFZ66hy1ES1YgL4x1vC
 };
 
 export async function POST(req: NextRequest) {
@@ -26,7 +28,7 @@ export async function POST(req: NextRequest) {
     }
 
     const priceId = planPrices[plano];
-    const mode = plano === 'INTERMEDIARIO' ? 'subscription' : 'subscription'; // Ambos são assinaturas
+    const mode = 'subscription'; // Ambos são assinaturas
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card', 'boleto'],
