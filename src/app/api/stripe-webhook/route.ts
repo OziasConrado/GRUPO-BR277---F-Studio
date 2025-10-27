@@ -4,12 +4,13 @@ import Stripe from 'stripe';
 import { headers } from 'next/headers';
 import { firestore } from '@/lib/firebase/server';
 import { doc, updateDoc, Timestamp } from 'firebase/firestore';
+import type { PlanType } from '@/types/guia-comercial';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
 });
 
-// Você precisará criar este segredo no seu painel do Stripe
+// O segredo do webhook é lido das variáveis de ambiente.
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 export async function POST(req: NextRequest) {
@@ -19,10 +20,13 @@ export async function POST(req: NextRequest) {
   let event: Stripe.Event;
 
   try {
+    if (!webhookSecret) {
+      throw new Error('O segredo do webhook do Stripe não está configurado nas variáveis de ambiente.');
+    }
     event = stripe.webhooks.constructEvent(buf, sig, webhookSecret);
   } catch (err: any) {
     console.error(`Webhook signature verification failed: ${err.message}`);
-    return NextResponse.json({ error: 'Webhook Error' }, { status: 400 });
+    return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
   }
 
   // Lidar com o evento
@@ -38,6 +42,10 @@ export async function POST(req: NextRequest) {
       }
 
       try {
+        if (!firestore) {
+          throw new Error('Conexão com o Firestore não estabelecida no servidor.');
+        }
+        
         const businessRef = doc(firestore, 'businesses', businessId);
         
         let dataExpiracao: Date;
@@ -55,14 +63,15 @@ export async function POST(req: NextRequest) {
 
         await updateDoc(businessRef, {
             statusPagamento: 'ATIVO',
+            plano: plano as PlanType, // Garante que o tipo do plano seja atualizado
             stripeSubscriptionId: session.subscription,
             dataInicio: Timestamp.fromDate(new Date()),
             dataExpiracao: Timestamp.fromDate(dataExpiracao),
         });
 
-        console.log(`Negócio ${businessId} atualizado para ATIVO.`);
+        console.log(`Negócio ${businessId} atualizado para ATIVO com plano ${plano}.`);
 
-      } catch (dbError) {
+      } catch (dbError: any) {
           console.error('Erro ao atualizar o Firestore:', dbError);
           // Retornar um erro 500 para que o Stripe tente reenviar o webhook.
           return NextResponse.json({ error: 'Database update failed' }, { status: 500 });

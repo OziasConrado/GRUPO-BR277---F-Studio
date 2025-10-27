@@ -18,5 +18,6 @@ environmentVariables:
   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: "grupo-br277.firebasestorage.app"
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: {secret: STRIPE_PUBLISHABLE_KEY}
   STRIPE_SECRET_KEY: {secret: STRIPE_SECRET_KEY}
+  STRIPE_WEBHOOK_SECRET: {secret: STRIPE_WEBHOOK_SECRET}
 # A variável NEXT_PUBLIC_FIREBASE_CONFIG é injetada automaticamente pelo App Hosting.
 # Não é necessário (e não é seguro) defini-la aqui.
