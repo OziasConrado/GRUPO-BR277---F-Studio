@@ -7,10 +7,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
 });
 
-// IDs de preço reais da sua conta Stripe.
+// IDs de preço de TESTE da sua conta Stripe.
 const planPrices: Record<Exclude<PlanType, 'GRATUITO'>, string> = {
-  INTERMEDIARIO: 'price_1SMyCgFZ66hy1ES1QoZfAmKd',
-  PREMIUM: 'price_1SMyFuFZ66hy1ES1ohlRs8pq',
+  INTERMEDIARIO: 'price_1SMzMoFZ66hy1ES1HUGnRSP1',
+  PREMIUM: 'price_1SMzQZFZ66hy1ES1KSm7S2ga',
 };
 
 export async function POST(req: NextRequest) {
