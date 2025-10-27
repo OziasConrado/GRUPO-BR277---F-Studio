@@ -3,9 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import type { PlanType } from '@/types/guia-comercial';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 // IDs de preço de TESTE da sua conta Stripe.
 const planPrices: Record<Exclude<PlanType, 'GRATUITO'>, string> = {
