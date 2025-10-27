@@ -21,3 +21,5 @@ environmentVariables:
   STRIPE_WEBHOOK_SECRET: "whsec_gsqG1RG6oAUyEzuH3HZRgPDioang3564"
 # A variável NEXT_PUBLIC_FIREBASE_CONFIG é injetada automaticamente pelo App Hosting.
 # Não é necessário (e não é seguro) defini-la aqui.
+vpcConnector:
+  egress: ALL_TRAFFIC
