@@ -1,5 +1,3 @@
-
-
 export const businessCategories = [
   "Restaurante", "Borracharia", "Hotel/Pousada", "Posto de Combustível",
   "Oficina Mecânica", "Loja de Peças", "Conveniência", "Mercado", "Outros"
@@ -26,4 +24,5 @@ export interface BusinessData {
   averageRating?: number;
   reviewCount?: number;
   distance?: number; // Calculated client-side
+  promoImages?: { url: string; hint: string; }[]; // For detailed view
 }

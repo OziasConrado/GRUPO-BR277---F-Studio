@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -35,7 +34,7 @@ const registerBusinessSchema = z.object({
     message: "WhatsApp inválido (Ex: 5541999998888)."
   }),
   instagramUsername: z.string().optional().refine(val => !val || /^[\w](?!.*?\.{2})[\w.]{1,28}[\w]$/.test(val), {
-    message: "Nome de usuário do Instagram inválido."
+    message: "Usuário do Instagram inválido."
   }),
   description: z.string().min(20, "Descrição é obrigatória (mín. 20 caracteres).").max(500),
   imageFile: z.custom<File>(
@@ -46,18 +45,19 @@ const registerBusinessSchema = z.object({
     ).refine(
       (file) => ["image/jpeg", "image/png", "image/webp"].includes(file.type),
       "Formato de imagem inválido (aceito: JPG, PNG, WebP)."
-    ).optional(),
+    ),
   servicesOffered: z.string().optional(),
   operatingHours: z.string().max(100).optional(),
-  isPremium: z.boolean().default(false),
 });
 
 type RegisterBusinessFormValues = z.infer<typeof registerBusinessSchema>;
 
+export type RegisterBusinessSubmitData = RegisterBusinessFormValues;
+
 interface RegisterBusinessModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: Omit<BusinessData, 'id' | 'imageUrl' | 'dataAIImageHint'> & { imagePreviewUrl: string }) => void;
+  onSubmit: (data: RegisterBusinessSubmitData) => void;
 }
 
 export default function RegisterBusinessModal({ isOpen, onClose, onSubmit }: RegisterBusinessModalProps) {
@@ -71,7 +71,6 @@ export default function RegisterBusinessModal({ isOpen, onClose, onSubmit }: Reg
       name: "",
       address: "",
       description: "",
-      isPremium: false,
       instagramUsername: "",
     },
   });
@@ -79,25 +78,16 @@ export default function RegisterBusinessModal({ isOpen, onClose, onSubmit }: Reg
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Validação do Zod já cuida disso, mas uma checagem rápida aqui melhora a UX
       if (file.size > MAX_FILE_SIZE_BYTES) {
         toast({ variant: "destructive", title: "Erro na Imagem", description: `Tamanho máximo da imagem: ${MAX_FILE_SIZE_MB}MB.`});
         if(fileInputRef.current) fileInputRef.current.value = "";
         return;
       }
-      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-        toast({ variant: "destructive", title: "Erro na Imagem", description: "Formato de imagem inválido (aceito: JPG, PNG, WebP)."});
-        if(fileInputRef.current) fileInputRef.current.value = "";
-        return;
-      }
       form.setValue("imageFile", file, { shouldValidate: true });
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
+      reader.onloadend = () => setImagePreview(reader.result as string);
       reader.readAsDataURL(file);
-    } else {
-      form.setValue("imageFile", undefined);
-      setImagePreview(null);
     }
   };
   
@@ -110,25 +100,7 @@ export default function RegisterBusinessModal({ isOpen, onClose, onSubmit }: Reg
   };
 
   const handleFormSubmit = async (data: RegisterBusinessFormValues) => {
-    if (!data.imageFile || !imagePreview) {
-        toast({ variant: "destructive", title: "Erro de Validação", description: "Por favor, envie uma foto principal para o comércio."});
-        return;
-    }
-    
-    const businessPayload = { // Explicitly create the payload for onSubmit
-        name: data.name,
-        category: data.category,
-        address: data.address,
-        phone: data.phone,
-        whatsapp: data.whatsapp,
-        instagramUsername: data.instagramUsername,
-        description: data.description,
-        servicesOffered: data.servicesOffered?.split(',').map(s => s.trim()).filter(s => s) || [],
-        operatingHours: data.operatingHours,
-        isPremium: data.isPremium,
-        imagePreviewUrl: imagePreview, // Pass the preview URL
-    };
-    onSubmit(businessPayload);
+    onSubmit(data);
     form.reset();
     removeImage();
   };
@@ -141,16 +113,16 @@ export default function RegisterBusinessModal({ isOpen, onClose, onSubmit }: Reg
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleCloseDialog(); }}>
-      <DialogContent className="sm:max-w-lg rounded-xl">
-        <DialogHeader>
+      <DialogContent className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none bg-background !p-0 grid grid-rows-[auto_1fr_auto] !translate-x-0 !translate-y-0">
+        <DialogHeader className="p-4 border-b shrink-0">
           <DialogTitle className="font-headline text-xl">Cadastrar Novo Comércio</DialogTitle>
           <DialogDescription>
             Preencha os dados abaixo para adicionar seu estabelecimento ao guia.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-3">
-          <ScrollArea className="h-[65vh] pr-5">
-            <div className="space-y-3 py-1">
+        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="flex-grow flex flex-col overflow-hidden">
+          <ScrollArea className="flex-grow min-h-0">
+            <div className="space-y-4 py-4 px-4">
               <div>
                 <Label htmlFor="name-comercial">Nome do Comércio <span className="text-destructive">*</span></Label>
                 <Input id="name-comercial" {...form.register("name")} className="mt-1" />
@@ -188,33 +160,34 @@ export default function RegisterBusinessModal({ isOpen, onClose, onSubmit }: Reg
                     className="hidden"
                     onChange={handleImageChange}
                   />
-                <Button 
-                    type="button" 
-                    variant="outline" 
-                    className="w-full mt-1 flex flex-col items-center justify-center h-32 border-dashed hover:border-primary"
+                <div
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Clique para enviar ou alterar a foto"
                     onClick={() => fileInputRef.current?.click()}
-                >
-                    {imagePreview ? (
-                        <div className="relative w-full h-full">
-                            <Image src={imagePreview} alt="Preview da foto principal" layout="fill" objectFit="contain" className="rounded"/>
-                            <Button 
-                                type="button" 
-                                variant="destructive" 
-                                size="icon" 
-                                className="absolute top-1 right-1 h-6 w-6 z-10 opacity-70 hover:opacity-100"
-                                onClick={(e) => { e.stopPropagation(); removeImage(); }}
-                            >
-                                <X className="h-4 w-4"/>
-                            </Button>
-                        </div>
-                    ) : (
-                        <>
-                            <UploadCloud className="mr-2 h-8 w-8 text-muted-foreground"/>
-                            <span className="text-muted-foreground text-sm">Clique para enviar imagem</span>
-                            <span className="text-xs text-muted-foreground/80 mt-1">JPG, PNG, WebP - Máx {MAX_FILE_SIZE_MB}MB</span>
-                        </>
-                    )}
-                </Button>
+                    onKeyDown={(e) => { if (e.key === 'Enter') fileInputRef.current?.click(); }}
+                    className="mt-1 flex flex-col items-center justify-center h-36 rounded-lg border-2 border-dashed border-input hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer transition-colors"
+                  >
+                      {imagePreview ? (
+                          <div className="relative w-full h-full p-1">
+                              <Image src={imagePreview} alt="Preview da foto principal" layout="fill" objectFit="contain" className="rounded"/>
+                              <button
+                                  type="button"
+                                  aria-label="Remover foto"
+                                  className="absolute -top-1 -right-1 h-6 w-6 z-10 bg-destructive text-destructive-foreground rounded-full p-1 flex items-center justify-center cursor-pointer opacity-70 hover:opacity-100 transition-opacity"
+                                  onClick={(e) => { e.stopPropagation(); removeImage(); }}
+                              >
+                                  <X className="h-4 w-4"/>
+                              </button>
+                          </div>
+                      ) : (
+                          <>
+                              <UploadCloud className="mx-auto h-8 w-8 text-muted-foreground"/>
+                              <span className="text-muted-foreground text-sm mt-1">Clique para enviar uma foto</span>
+                              <span className="text-xs text-muted-foreground/80 mt-0.5">JPG, PNG, WebP (Máx {MAX_FILE_SIZE_MB}MB)</span>
+                          </>
+                      )}
+                  </div>
                 {form.formState.errors.imageFile && <p className="text-sm text-destructive mt-1">{form.formState.errors.imageFile.message}</p>}
               </div>
 
@@ -241,13 +214,12 @@ export default function RegisterBusinessModal({ isOpen, onClose, onSubmit }: Reg
                 <Input id="whatsapp-comercial" type="tel" {...form.register("whatsapp")} className="mt-1" placeholder="Ex: 5541999998888"/>
                 {form.formState.errors.whatsapp && <p className="text-sm text-destructive mt-1">{form.formState.errors.whatsapp.message}</p>}
               </div>
-
-              <div>
-                <Label htmlFor="instagramUsername-comercial">Usuário do Instagram</Label>
+              
+               <div>
+                <Label htmlFor="instagramUsername-comercial">Usuário do Instagram (sem @)</Label>
                 <Input id="instagramUsername-comercial" {...form.register("instagramUsername")} className="mt-1" placeholder="Ex: nome_do_meu_comercio"/>
                 {form.formState.errors.instagramUsername && <p className="text-sm text-destructive mt-1">{form.formState.errors.instagramUsername.message}</p>}
               </div>
-
 
               <div>
                 <Label htmlFor="servicesOffered-comercial">Serviços Oferecidos (separados por vírgula)</Label>
@@ -259,32 +231,13 @@ export default function RegisterBusinessModal({ isOpen, onClose, onSubmit }: Reg
                 <Input id="operatingHours-comercial" {...form.register("operatingHours")} className="mt-1" placeholder="Ex: Seg-Sex: 08:00-18:00"/>
                 {form.formState.errors.operatingHours && <p className="text-sm text-destructive mt-1">{form.formState.errors.operatingHours.message}</p>}
               </div>
-
-              <div className="flex items-center space-x-2 pt-2">
-                <Controller
-                    name="isPremium"
-                    control={form.control}
-                    render={({ field }) => (
-                        <Checkbox
-                        id="isPremium-comercial"
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        />
-                    )}
-                />
-                <Label htmlFor="isPremium-comercial" className="font-normal text-sm">
-                  Este é um Comércio Premium (Destaque e sem anúncios no card. Funcionalidade conceitual).
-                </Label>
-              </div>
-              <p className="text-xs text-muted-foreground pl-7">
-                Comércios no plano gratuito podem exibir um pequeno banner de anúncio no card.
-              </p>
+              
             </div>
           </ScrollArea>
-          <DialogFooter className="pt-4">
+          <DialogFooter className="p-4 border-t shrink-0">
             <Button type="button" variant="outline" onClick={handleCloseDialog}>Cancelar</Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? "Salvando..." : "Cadastrar Comércio"}
+              {form.formState.isSubmitting ? "Enviando..." : "Enviar para Análise"}
             </Button>
           </DialogFooter>
         </form>
