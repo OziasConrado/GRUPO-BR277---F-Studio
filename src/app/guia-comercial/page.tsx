@@ -229,10 +229,7 @@ export default function GuiaComercialPage() {
             </div>
           ) : filteredAndSortedBusinesses.length > 0 ? (
             filteredAndSortedBusinesses.map((business, index) => (
-              <React.Fragment key={business.id}>
-                {business.plano === 'GRATUITO' && index > 0 && <AdPlaceholder />}
-                <BusinessCard business={business} />
-              </React.Fragment>
+              <BusinessCard key={business.id} business={business} />
             ))
           ) : (
              <p className="text-center text-muted-foreground py-8 md:col-span-2">
