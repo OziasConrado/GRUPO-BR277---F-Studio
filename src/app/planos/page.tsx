@@ -43,7 +43,7 @@ const plans = [
     price: 'R$ 83,40',
     period: 'Semestral',
     cta: 'Comprar Agora',
-    href: '/checkout/intermediario',
+    href: '/cadastro/intermediario',
     features: [
       { text: 'Nome, Categoria e Descrição', included: true },
       { text: 'Endereço e Mapa (Pin)', included: true },
@@ -67,7 +67,7 @@ const plans = [
     price: 'R$ 118,80',
     period: 'Anual',
     cta: 'Comprar Agora',
-    href: '/checkout/premium',
+    href: '/cadastro/premium',
     features: [
       { text: 'Nome, Categoria e Descrição', included: true },
       { text: 'Endereço e Mapa (Pin)', included: true },

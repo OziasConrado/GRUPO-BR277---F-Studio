@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, MapPin, AlertTriangle, Search, ListFilter, PlusCircle } from 'lucide-react';
-import type { BusinessData, BusinessCategory } from '@/types/guia-comercial';
+import type { BusinessData, BusinessCategory, PlanType } from '@/types/guia-comercial';
 import { businessCategories } from '@/types/guia-comercial';
 import BusinessCard from '@/components/guia-comercial/business-card';
 import { useToast } from '@/hooks/use-toast';
@@ -21,6 +21,8 @@ const mockBusinesses: Omit<BusinessData, 'id'>[] = [
   {
     name: 'Borracharia do Zé',
     category: 'Borracharia',
+    plano: 'PREMIUM',
+    statusPagamento: 'ATIVO',
     address: 'Av. das Torres, 123, São José dos Pinhais, PR',
     description: 'Serviços rápidos e de confiança para seu pneu não te deixar na mão. Mais de 20 anos de experiência.',
     imageUrl: 'https://picsum.photos/seed/borracharia/600/400',
@@ -38,6 +40,8 @@ const mockBusinesses: Omit<BusinessData, 'id'>[] = [
   {
     name: 'Restaurante Sabor da Estrada',
     category: 'Restaurante',
+    plano: 'INTERMEDIARIO',
+    statusPagamento: 'ATIVO',
     address: 'Rod. BR-277, km 50, Curitiba, PR',
     description: 'A melhor comida caseira da região, com buffet livre e pratos executivos. Amplo estacionamento.',
     imageUrl: 'https://picsum.photos/seed/restaurante/600/400',
@@ -55,6 +59,8 @@ const mockBusinesses: Omit<BusinessData, 'id'>[] = [
   {
     name: 'Mecânica Confiança',
     category: 'Oficina Mecânica',
+    plano: 'GRATUITO',
+    statusPagamento: 'ATIVO',
     address: 'Rua das Orquídeas, 45, Campina Grande do Sul, PR',
     description: 'Especialistas em motor e suspensão para veículos pesados. Socorro 24h.',
     imageUrl: 'https://picsum.photos/seed/mecanica/600/400',
@@ -127,7 +133,7 @@ export default function GuiaComercialPage() {
         business.address.toLowerCase().includes(searchTerm.toLowerCase())
       );
 
-    if (userLocation && locationStatus === 'success') {
+    if (userLocation && locationStatus === 'success' && processedBusinesses.every(p => p.plano !== 'GRATUITO')) {
       return processedBusinesses
         .map(business => ({
           ...business,
@@ -141,7 +147,7 @@ export default function GuiaComercialPage() {
         .sort((a, b) => a.distance - b.distance);
     }
     
-    // Fallback sort if no location
+    // Fallback sort if no location or if free plans are included
     return processedBusinesses.sort((a, b) => a.name.localeCompare(b.name));
   }, [businesses, searchTerm, activeCategory, userLocation, locationStatus]);
 
@@ -223,8 +229,8 @@ export default function GuiaComercialPage() {
           ) : filteredAndSortedBusinesses.length > 0 ? (
             filteredAndSortedBusinesses.map((business, index) => (
               <React.Fragment key={business.id}>
+                {business.plano === 'GRATUITO' && index > 0 && <AdPlaceholder />}
                 <BusinessCard business={business} />
-                {(index + 1) % 4 === 0 && <AdPlaceholder />}
               </React.Fragment>
             ))
           ) : (
