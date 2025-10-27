@@ -12,8 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import type { BusinessData, BusinessCategory } from '@/types/guia-comercial';
-import { businessCategories } from '@/types/guia-comercial';
+import type { BusinessData, BusinessCategory, PlanType } from '@/types/guia-comercial';
+import { businessCategories, planTypes } from '@/types/guia-comercial';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { useState, type ChangeEvent, useRef } from "react";
@@ -48,6 +48,7 @@ const registerBusinessSchema = z.object({
     ),
   servicesOffered: z.string().optional(),
   operatingHours: z.string().max(100).optional(),
+  plano: z.enum(planTypes, { required_error: "A seleção de um plano é obrigatória." }),
 });
 
 type RegisterBusinessFormValues = z.infer<typeof registerBusinessSchema>;
@@ -72,13 +73,15 @@ export default function RegisterBusinessModal({ isOpen, onClose, onSubmit }: Reg
       address: "",
       description: "",
       instagramUsername: "",
+      plano: "PREMIUM", // Default to Premium for full feature visibility in simulation
     },
   });
+
+  const selectedPlan = form.watch("plano");
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Validação do Zod já cuida disso, mas uma checagem rápida aqui melhora a UX
       if (file.size > MAX_FILE_SIZE_BYTES) {
         toast({ variant: "destructive", title: "Erro na Imagem", description: `Tamanho máximo da imagem: ${MAX_FILE_SIZE_MB}MB.`});
         if(fileInputRef.current) fileInputRef.current.value = "";
@@ -111,6 +114,27 @@ export default function RegisterBusinessModal({ isOpen, onClose, onSubmit }: Reg
     onClose();
   };
 
+  const planFeatures = {
+    GRATUITO: {
+        operatingHours: false,
+        instagramUsername: false,
+        servicesOffered: false,
+    },
+    INTERMEDIARIO: {
+        operatingHours: true,
+        instagramUsername: false,
+        servicesOffered: true,
+    },
+    PREMIUM: {
+        operatingHours: true,
+        instagramUsername: true,
+        servicesOffered: true,
+    }
+  };
+
+  const currentPlanFeatures = planFeatures[selectedPlan] || planFeatures.GRATUITO;
+
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleCloseDialog(); }}>
       <DialogContent className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none bg-background !p-0 grid grid-rows-[auto_1fr_auto] !translate-x-0 !translate-y-0">
@@ -123,6 +147,27 @@ export default function RegisterBusinessModal({ isOpen, onClose, onSubmit }: Reg
         <form onSubmit={form.handleSubmit(handleFormSubmit)} className="flex-grow flex flex-col overflow-hidden">
           <ScrollArea className="flex-grow min-h-0">
             <div className="space-y-4 py-4 px-4">
+              <div>
+                <Label htmlFor="plano-comercial">Plano Escolhido <span className="text-destructive">*</span></Label>
+                <Controller
+                  name="plano"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger id="plano-comercial" className="mt-1">
+                        <SelectValue placeholder="Selecione um plano..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {planTypes.map(plan => (
+                          <SelectItem key={plan} value={plan}>{plan.charAt(0) + plan.slice(1).toLowerCase()}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                 {form.formState.errors.plano && <p className="text-sm text-destructive mt-1">{form.formState.errors.plano.message}</p>}
+              </div>
+
               <div>
                 <Label htmlFor="name-comercial">Nome do Comércio <span className="text-destructive">*</span></Label>
                 <Input id="name-comercial" {...form.register("name")} className="mt-1" />
@@ -215,23 +260,28 @@ export default function RegisterBusinessModal({ isOpen, onClose, onSubmit }: Reg
                 {form.formState.errors.whatsapp && <p className="text-sm text-destructive mt-1">{form.formState.errors.whatsapp.message}</p>}
               </div>
               
-               <div>
-                <Label htmlFor="instagramUsername-comercial">Usuário do Instagram (sem @)</Label>
-                <Input id="instagramUsername-comercial" {...form.register("instagramUsername")} className="mt-1" placeholder="Ex: nome_do_meu_comercio"/>
-                {form.formState.errors.instagramUsername && <p className="text-sm text-destructive mt-1">{form.formState.errors.instagramUsername.message}</p>}
-              </div>
+              {currentPlanFeatures.instagramUsername && (
+                <div>
+                  <Label htmlFor="instagramUsername-comercial">Usuário do Instagram (sem @)</Label>
+                  <Input id="instagramUsername-comercial" {...form.register("instagramUsername")} className="mt-1" placeholder="Ex: nome_do_meu_comercio"/>
+                  {form.formState.errors.instagramUsername && <p className="text-sm text-destructive mt-1">{form.formState.errors.instagramUsername.message}</p>}
+                </div>
+              )}
 
-              <div>
-                <Label htmlFor="servicesOffered-comercial">Serviços Oferecidos (separados por vírgula)</Label>
-                <Input id="servicesOffered-comercial" {...form.register("servicesOffered")} className="mt-1" placeholder="Ex: Wi-Fi, Banheiro, Café"/>
-              </div>
+              {currentPlanFeatures.servicesOffered && (
+                <div>
+                  <Label htmlFor="servicesOffered-comercial">Serviços Oferecidos (separados por vírgula)</Label>
+                  <Input id="servicesOffered-comercial" {...form.register("servicesOffered")} className="mt-1" placeholder="Ex: Wi-Fi, Banheiro, Café"/>
+                </div>
+              )}
 
-              <div>
-                <Label htmlFor="operatingHours-comercial">Horário de Funcionamento</Label>
-                <Input id="operatingHours-comercial" {...form.register("operatingHours")} className="mt-1" placeholder="Ex: Seg-Sex: 08:00-18:00"/>
-                {form.formState.errors.operatingHours && <p className="text-sm text-destructive mt-1">{form.formState.errors.operatingHours.message}</p>}
-              </div>
-              
+              {currentPlanFeatures.operatingHours && (
+                <div>
+                  <Label htmlFor="operatingHours-comercial">Horário de Funcionamento</Label>
+                  <Input id="operatingHours-comercial" {...form.register("operatingHours")} className="mt-1" placeholder="Ex: Seg-Sex: 08:00-18:00"/>
+                  {form.formState.errors.operatingHours && <p className="text-sm text-destructive mt-1">{form.formState.errors.operatingHours.message}</p>}
+                </div>
+              )}
             </div>
           </ScrollArea>
           <DialogFooter className="p-4 border-t shrink-0">
