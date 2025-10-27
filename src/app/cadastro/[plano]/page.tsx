@@ -15,7 +15,7 @@ import type { BusinessCategory, PlanType } from '@/types/guia-comercial';
 import { businessCategories, planTypes } from '@/types/guia-comercial';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { useState, type ChangeEvent, useRef, useEffect } from "react";
+import { useState, type ChangeEvent, useRef, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { UploadCloud, X, ArrowLeft, Loader2 } from "lucide-react";
 import Link from 'next/link';
@@ -318,3 +318,5 @@ export default function RegisterBusinessPage() {
     </div>
   );
 }
+
+    
