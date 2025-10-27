@@ -3,7 +3,6 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -13,7 +12,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import type { BusinessCategory, PlanType } from '@/types/guia-comercial';
 import { businessCategories, planTypes } from '@/types/guia-comercial';
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { useState, type ChangeEvent, useRef, useEffect, useMemo } from "react";
 import Image from "next/image";
@@ -21,7 +19,9 @@ import { UploadCloud, X, ArrowLeft, Loader2 } from "lucide-react";
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
-import { Alert, AlertTitle, AlertDescription as ShadcnAlertDescription } from '@/components/ui/alert';
+import { firestore, uploadFile } from '@/lib/firebase/client';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+
 
 const MAX_FILE_SIZE_MB = 2;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
@@ -69,7 +69,8 @@ export default function RegisterBusinessPage() {
   const router = useRouter();
   const { currentUser, isAuthenticating } = useAuth();
   const planoParam = params.plano as string;
-  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const formattedPlano = useMemo(() => {
     if (!planoParam) return null;
     const upperCasePlano = planoParam.toUpperCase() as PlanType;
@@ -111,7 +112,6 @@ export default function RegisterBusinessPage() {
         router.push('/planos');
       } else {
         setValue('plano', formattedPlano);
-        // Add dynamic validation for main image based on plan
         if (currentPlanFeatures.photo) {
           form.register('imageFile', {
               validate: value => value instanceof File || "A foto principal é obrigatória para este plano."
@@ -122,14 +122,63 @@ export default function RegisterBusinessPage() {
   }, [isAuthenticating, currentUser, formattedPlano, planoParam, router, toast, setValue, currentPlanFeatures.photo, form]);
 
 
-  const onSubmit = (data: RegisterBusinessFormValues) => {
-    console.log("Form data submitted:", data);
-    toast({
-      title: "Cadastro Enviado para Análise!",
-      description: "Seu estabelecimento foi enviado e será revisado em breve.",
-    });
-    router.push('/guia-comercial');
+  const onSubmit = async (data: RegisterBusinessFormValues) => {
+    if (!currentUser || !firestore) {
+      toast({ title: "Erro", description: "Você precisa estar logado para cadastrar.", variant: "destructive" });
+      return;
+    }
+    setIsSubmitting(true);
+
+    try {
+      const { imageFile, promoImageFiles, ...businessData } = data;
+      let imageUrl: string | undefined;
+      let promoImageUrls: { url: string; hint: string; }[] = [];
+
+      if (imageFile && currentPlanFeatures.photo) {
+        const filePath = `business_images/${currentUser.uid}/${Date.now()}_${imageFile.name}`;
+        imageUrl = await uploadFile(imageFile, filePath);
+      }
+
+      if (promoImageFiles && currentPlanFeatures.promoImages > 0) {
+        for (const file of promoImageFiles) {
+          const filePath = `business_promo_images/${currentUser.uid}/${Date.now()}_${file.name}`;
+          const url = await uploadFile(file, filePath);
+          promoImageUrls.push({ url, hint: `promotion for ${data.name}` });
+        }
+      }
+
+      const docToSave = {
+        ...businessData,
+        ownerId: currentUser.uid,
+        imageUrl: imageUrl || 'https://placehold.co/800x400/e2e8f0/64748b?text=Sem+Foto',
+        dataAIImageHint: imageUrl ? `photo of ${data.name}` : 'no photo placeholder',
+        promoImages: promoImageUrls,
+        statusPagamento: data.plano === 'GRATUITO' ? 'ATIVO' : 'PENDENTE',
+        createdAt: serverTimestamp(),
+      };
+      
+      await addDoc(collection(firestore, 'businesses'), docToSave);
+      
+      toast({
+        title: "Cadastro Enviado com Sucesso!",
+        description: data.plano === 'GRATUITO'
+          ? "Seu estabelecimento foi publicado no Guia Comercial."
+          : "Seu estabelecimento foi enviado para análise. Efetue o pagamento para publicá-lo.",
+      });
+      router.push('/guia-comercial');
+
+    } catch (error) {
+      console.error("Erro ao cadastrar negócio:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro no Cadastro",
+        description: "Não foi possível salvar seu cadastro. Tente novamente.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
 
   if (isAuthenticating || !currentUser || !formattedPlano) {
     return (
@@ -306,8 +355,8 @@ export default function RegisterBusinessPage() {
                     )}
 
                      <div className="pt-4">
-                        <Button type="submit" disabled={form.formState.isSubmitting} className="w-full">
-                            {form.formState.isSubmitting ? "Enviando..." : "Enviar Cadastro para Análise"}
+                        <Button type="submit" disabled={isSubmitting} className="w-full">
+                            {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Enviando...</> : "Enviar Cadastro para Análise"}
                         </Button>
                     </div>
 

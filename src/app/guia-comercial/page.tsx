@@ -7,79 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, MapPin, AlertTriangle, Search, ListFilter, PlusCircle } from 'lucide-react';
-import type { BusinessData, BusinessCategory, PlanType } from '@/types/guia-comercial';
+import type { BusinessData, BusinessCategory } from '@/types/guia-comercial';
 import { businessCategories } from '@/types/guia-comercial';
 import BusinessCard from '@/components/guia-comercial/business-card';
 import { useToast } from '@/hooks/use-toast';
 import { getUserLocation, calculateDistance } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { firestore } from '@/lib/firebase/client';
+import { collection, getDocs, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 
-
-// Mock Data - Substituir com dados do Firestore
-const mockBusinesses: Omit<BusinessData, 'id'>[] = [
-  {
-    name: 'Borracharia do Zé',
-    category: 'Borracharia',
-    plano: 'PREMIUM',
-    statusPagamento: 'ATIVO',
-    address: 'Av. das Torres, 123, São José dos Pinhais, PR',
-    description: 'Serviços rápidos e de confiança para seu pneu não te deixar na mão. Mais de 20 anos de experiência.',
-    imageUrl: 'https://picsum.photos/seed/borracharia/600/400',
-    dataAIImageHint: 'tire shop',
-    phone: '4133334444',
-    whatsapp: '5541999998888',
-    instagramUsername: 'borracharia_do_ze',
-    operatingHours: 'Seg-Sex: 08:00-18:00, Sáb: 08:00-12:00',
-    servicesOffered: ['Conserto de Pneus', 'Balanceamento', 'Troca de Roda'],
-    isPremium: true,
-    latitude: -25.5398,
-    longitude: -49.1925,
-    averageRating: 4.8,
-    reviewCount: 125,
-  },
-  {
-    name: 'Restaurante Sabor da Estrada',
-    category: 'Restaurante',
-    plano: 'INTERMEDIARIO',
-    statusPagamento: 'ATIVO',
-    address: 'Rod. BR-277, km 50, Curitiba, PR',
-    description: 'A melhor comida caseira da região, com buffet livre e pratos executivos. Amplo estacionamento.',
-    imageUrl: 'https://picsum.photos/seed/restaurante/600/400',
-    dataAIImageHint: 'restaurant facade',
-    whatsapp: '5541988887777',
-    instagramUsername: 'saborestrada',
-    operatingHours: 'Todos os dias: 11:00-15:00 e 18:00-22:00',
-    servicesOffered: ['Buffet Livre', 'Marmitex', 'Wi-Fi Grátis', 'Banheiros Limpos'],
-    isPremium: true,
-    latitude: -25.4411,
-    longitude: -49.2908,
-    averageRating: 4.5,
-    reviewCount: 210,
-  },
-  {
-    name: 'Mecânica Confiança',
-    category: 'Oficina Mecânica',
-    plano: 'GRATUITO',
-    statusPagamento: 'ATIVO',
-    address: 'Rua das Orquídeas, 45, Campina Grande do Sul, PR',
-    description: 'Especialistas em motor e suspensão para veículos pesados. Socorro 24h.',
-    imageUrl: 'https://picsum.photos/seed/mecanica/600/400',
-    dataAIImageHint: 'auto repair shop',
-    phone: '4136765555',
-    operatingHours: 'Seg-Sex: 08:00-18:30',
-    servicesOffered: ['Troca de Óleo', 'Freios', 'Suspensão', 'Motor'],
-    latitude: -25.2959,
-    longitude: -49.0543,
-    averageRating: 4.9,
-    reviewCount: 88,
-  },
-];
-
-const businessesWithIds: BusinessData[] = mockBusinesses.map((business, index) => ({
-  ...business,
-  id: `mock-${index + 1}`
-}));
 
 const AdPlaceholder = ({ className }: { className?: string }) => (
   <div className={cn("my-6 p-4 rounded-xl bg-muted/30 border border-dashed h-24 flex items-center justify-center col-span-1 md:col-span-2", className)}>
@@ -117,11 +54,29 @@ export default function GuiaComercialPage() {
   }, [toast]);
 
   useEffect(() => {
-    // Simula o carregamento dos dados
-    setBusinesses(businessesWithIds);
-    setLoading(false);
+    if (!firestore) return;
+    setLoading(true);
+
+    const businessesCollection = collection(firestore, 'businesses');
+    const q = query(businessesCollection, where("statusPagamento", "==", "ATIVO"));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const fetchedBusinesses = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        } as BusinessData));
+        setBusinesses(fetchedBusinesses);
+        setLoading(false);
+    }, (error) => {
+        console.error("Error fetching businesses:", error);
+        toast({ variant: "destructive", title: "Erro ao Carregar", description: "Não foi possível buscar os estabelecimentos."});
+        setLoading(false);
+    });
+    
     requestLocation();
-  }, [requestLocation]);
+
+    return () => unsubscribe();
+  }, [requestLocation, toast]);
 
   const filteredAndSortedBusinesses = useMemo(() => {
     let processedBusinesses = businesses
@@ -149,7 +104,14 @@ export default function GuiaComercialPage() {
     }
     
     // Fallback sort if no location or if free plans are included
-    return processedBusinesses.sort((a, b) => a.name.localeCompare(b.name));
+    return processedBusinesses.sort((a, b) => {
+        const aVal = a.isPremium ? 0 : 1;
+        const bVal = b.isPremium ? 0 : 1;
+        if (aVal !== bVal) {
+            return aVal - bVal;
+        }
+        return a.name.localeCompare(b.name);
+    });
   }, [businesses, searchTerm, activeCategory, userLocation, locationStatus]);
 
 
@@ -228,7 +190,7 @@ export default function GuiaComercialPage() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : filteredAndSortedBusinesses.length > 0 ? (
-            filteredAndSortedBusinesses.map((business, index) => (
+            filteredAndSortedBusinesses.map((business) => (
               <BusinessCard key={business.id} business={business} />
             ))
           ) : (
@@ -241,3 +203,5 @@ export default function GuiaComercialPage() {
     </>
   );
 }
+
+    

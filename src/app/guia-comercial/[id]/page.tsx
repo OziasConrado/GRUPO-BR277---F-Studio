@@ -12,80 +12,10 @@ import StarDisplay from '@/components/sau/star-display';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
-import type { BusinessData, PlanType } from '@/types/guia-comercial';
+import type { BusinessData } from '@/types/guia-comercial';
 import { cn } from '@/lib/utils';
-
-
-// Mock Data - Simula a busca no DB, agora com planos
-const mockBusinesses: BusinessData[] = [
-  {
-    id: 'mock-1',
-    name: 'Borracharia do Zé',
-    category: 'Borracharia',
-    plano: 'PREMIUM', // Plano Premium
-    statusPagamento: 'ATIVO',
-    address: 'Av. das Torres, 123, São José dos Pinhais, PR',
-    description: 'Serviços rápidos e de confiança para seu pneu não te deixar na mão. Mais de 20 anos de experiência no ramo, atendendo carros, caminhões e motos. Temos pneus novos e remold.',
-    imageUrl: 'https://picsum.photos/seed/borracharia/800/400',
-    dataAIImageHint: 'tire shop interior',
-    phone: '4133334444',
-    whatsapp: '5541999998888',
-    instagramUsername: 'borracharia_do_ze',
-    operatingHours: 'Seg-Sex: 08:00-18:00, Sáb: 08:00-12:00',
-    servicesOffered: ['Conserto de Pneus', 'Balanceamento', 'Troca de Roda', 'Venda de Pneus'],
-    isPremium: true,
-    latitude: -25.5398,
-    longitude: -49.1925,
-    averageRating: 4.8,
-    reviewCount: 125,
-    promoImages: [
-        { url: 'https://picsum.photos/seed/promo1/500/300', hint: 'promotion tires' },
-        { url: 'https://picsum.photos/seed/promo2/500/300', hint: 'mechanic working' },
-        { url: 'https://picsum.photos/seed/promo3/500/300', hint: 'tire alignment machine' },
-        { url: 'https://picsum.photos/seed/promo4/500/300', hint: 'car on lift' },
-    ]
-  },
-  {
-    id: 'mock-2',
-    name: 'Restaurante Sabor da Estrada',
-    category: 'Restaurante',
-    plano: 'GRATUITO', // Plano Gratuito para visualização
-    statusPagamento: 'ATIVO',
-    address: 'Rod. BR-277, km 50, Curitiba, PR',
-    description: 'A melhor comida caseira da região, com buffet livre e pratos executivos. Amplo estacionamento para caminhões e ambiente familiar.',
-    imageUrl: 'https://picsum.photos/seed/restaurante/800/400', // Será substituída por placeholder na lógica
-    dataAIImageHint: 'restaurant exterior',
-    phone: '41988887777', // Telefone é permitido no plano gratuito
-    isPremium: false, // Não é premium
-    latitude: -25.4411,
-    longitude: -49.2908,
-    averageRating: 4.5,
-    reviewCount: 210,
-    // Outros campos (whatsapp, instagram, etc.) são omitidos e serão tratados pela lógica da página
-  },
-   {
-    id: 'mock-3',
-    name: 'Mecânica Confiança',
-    category: 'Oficina Mecânica',
-    plano: 'INTERMEDIARIO', // Mudado para Intermediário para ter variedade
-    statusPagamento: 'ATIVO',
-    address: 'Rua das Orquídeas, 45, Campina Grande do Sul, PR',
-    description: 'Especialistas em motor e suspensão para veículos pesados. Socorro 24h na região. Orçamento sem compromisso.',
-    imageUrl: 'https://picsum.photos/seed/mecanica/600/400',
-    dataAIImageHint: 'auto repair bay',
-    phone: '4136765555',
-    whatsapp: '5541999995555',
-    instagramUsername: 'mecanicaconfianca',
-    latitude: -25.2959,
-    longitude: -49.0543,
-    averageRating: 4.9,
-    reviewCount: 88,
-    promoImages: [
-        { url: 'https://picsum.photos/seed/mecanica1/500/300', hint: 'engine repair' },
-        { url: 'https://picsum.photos/seed/mecanica2/500/300', hint: 'car diagnostic' },
-    ]
-  },
-];
+import { firestore } from '@/lib/firebase/client';
+import { doc, getDoc } from 'firebase/firestore';
 
 
 const AdPlaceholder = ({ className }: { className?: string }) => (
@@ -104,12 +34,14 @@ export default function BusinessDetailPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (id) {
-      setLoading(true);
-      // Simula a busca do negócio pelo ID
-      const foundBusiness = mockBusinesses.find(b => b.id === id);
-      if (foundBusiness) {
-        setBusiness(foundBusiness);
+    if (!id || !firestore) return;
+
+    setLoading(true);
+    const businessDocRef = doc(firestore, 'businesses', id);
+    
+    getDoc(businessDocRef).then(docSnap => {
+      if (docSnap.exists()) {
+        setBusiness({ id: docSnap.id, ...docSnap.data() } as BusinessData);
       } else {
         toast({
           variant: 'destructive',
@@ -118,8 +50,14 @@ export default function BusinessDetailPage() {
         });
         router.push('/guia-comercial');
       }
+    }).catch(error => {
+        console.error("Error fetching business:", error);
+        toast({ variant: "destructive", title: "Erro de Rede", description: "Não foi possível carregar os dados do estabelecimento." });
+        router.push('/guia-comercial');
+    }).finally(() => {
       setLoading(false);
-    }
+    });
+
   }, [id, toast, router]);
 
   if (loading) {
@@ -165,7 +103,7 @@ export default function BusinessDetailPage() {
       <Card className="rounded-xl shadow-lg overflow-hidden">
         <div className="relative w-full h-56 md:h-72 bg-muted">
           <Image
-            src={business.plano !== 'GRATUITO' ? business.imageUrl : 'https://placehold.co/800x400/e2e8f0/64748b?text=Sem+Foto'}
+            src={business.imageUrl || 'https://placehold.co/800x400/e2e8f0/64748b?text=Sem+Foto'}
             alt={`Foto de ${business.name}`}
             layout="fill"
             objectFit="cover"
@@ -243,3 +181,5 @@ export default function BusinessDetailPage() {
     </div>
   );
 }
+
+    
