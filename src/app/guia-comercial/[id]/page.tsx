@@ -105,8 +105,8 @@ export default function BusinessDetailPage() {
           <Image
             src={business.imageUrl || 'https://placehold.co/800x400/e2e8f0/64748b?text=Sem+Foto'}
             alt={`Foto de ${business.name}`}
-            layout="fill"
-            objectFit="cover"
+            fill
+            style={{ objectFit: 'cover' }}
             data-ai-hint={business.dataAIImageHint}
             priority
           />
@@ -146,7 +146,7 @@ export default function BusinessDetailPage() {
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                 {visiblePromoImages.map((img, index) => (
                     <div key={index} className="relative aspect-square rounded-lg overflow-hidden border">
-                        <Image src={img.url} alt={`Promoção ${index + 1}`} layout="fill" objectFit="cover" data-ai-hint={img.hint} />
+                        <Image src={img.url} alt={`Promoção ${index + 1}`} fill style={{ objectFit: 'cover' }} data-ai-hint={img.hint} />
                     </div>
                 ))}
               </div>
@@ -181,5 +181,3 @@ export default function BusinessDetailPage() {
     </div>
   );
 }
-
-    

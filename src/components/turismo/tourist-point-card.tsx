@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -41,8 +42,8 @@ export default function TouristPointCard({ point, showIndicatedBy = false, onAdd
           <Image
             src={point.imageUrl}
             alt={point.name}
-            layout="fill"
-            objectFit="cover"
+            fill
+            style={{ objectFit: 'cover' }}
             data-ai-hint={point.dataAIImageHint}
           />
           <Badge variant="secondary" className="absolute top-2 left-2 shadow-md bg-opacity-80 backdrop-blur-sm">

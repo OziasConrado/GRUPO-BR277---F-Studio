@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { BusinessData } from '@/types/guia-comercial';
@@ -53,8 +54,8 @@ export default function BusinessCard({ business }: { business: BusinessData }) {
           <Image
             src={business.plano !== 'GRATUITO' ? business.imageUrl : 'https://placehold.co/600x400/e2e8f0/64748b?text=Sem+Foto'}
             alt={business.name}
-            layout="fill"
-            objectFit="cover"
+            fill
+            style={{ objectFit: 'cover' }}
             className="group-hover:scale-105 transition-transform duration-300"
             data-ai-hint={business.dataAIImageHint}
           />

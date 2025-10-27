@@ -224,8 +224,8 @@ export default function TouristPointDetailPage() {
             <Image
               src={point.imageUrl}
               alt={`Foto de ${point.name}`}
-              layout="fill"
-              objectFit="cover"
+              fill
+              style={{ objectFit: 'cover' }}
               data-ai-hint={point.dataAIImageHint}
             />
           </div>

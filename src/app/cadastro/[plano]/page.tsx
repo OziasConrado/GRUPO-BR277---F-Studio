@@ -296,7 +296,7 @@ export default function RegisterBusinessPage() {
                             <div role="button" tabIndex={0} onClick={() => fileInputRef.current?.click()} className="mt-1 flex flex-col items-center justify-center h-36 rounded-lg border-2 border-dashed border-input hover:border-primary cursor-pointer transition-colors">
                                 {imagePreview ? (
                                     <div className="relative w-full h-full p-1">
-                                        <Image src={imagePreview} alt="Preview da foto principal" layout="fill" objectFit="contain" className="rounded"/>
+                                        <Image src={imagePreview} alt="Preview da foto principal" fill style={{ objectFit: 'contain' }} className="rounded"/>
                                         <button type="button" className="absolute -top-1 -right-1 h-6 w-6 z-10 bg-destructive text-destructive-foreground rounded-full p-1" onClick={(e) => { e.stopPropagation(); removeImage(); }}><X className="h-4 w-4"/></button>
                                     </div>
                                 ) : (
@@ -368,7 +368,7 @@ export default function RegisterBusinessPage() {
                                 <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 gap-2">
                                     {promoImagePreviews.map((src, index) => (
                                         <div key={src} className="relative aspect-square">
-                                            <Image src={src} alt={`Preview ${index}`} layout="fill" objectFit="cover" className="rounded" />
+                                            <Image src={src} alt={`Preview ${index}`} fill style={{ objectFit: 'cover' }} className="rounded" />
                                             <button type="button" className="absolute -top-1 -right-1 h-6 w-6 z-10 bg-destructive text-destructive-foreground rounded-full p-1" onClick={() => removePromoImage(index)}><X className="h-4 w-4"/></button>
                                         </div>
                                     ))}

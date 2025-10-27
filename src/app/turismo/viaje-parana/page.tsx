@@ -213,8 +213,8 @@ const RegionCard = ({ region }: { region: RegionData }) => {
                               <Image
                                   src={region.imageUrl}
                                   alt={region.title}
-                                  layout="fill"
-                                  objectFit="cover"
+                                  fill
+                                  style={{ objectFit: 'cover' }}
                                   className="transition-transform duration-300 group-hover:scale-105"
                                   data-ai-hint={region.imageHint}
                               />
@@ -228,8 +228,8 @@ const RegionCard = ({ region }: { region: RegionData }) => {
                                 <Image
                                     src={region.imageUrl}
                                     alt={region.title}
-                                    layout="fill"
-                                    objectFit="contain"
+                                    fill
+                                    style={{ objectFit: 'contain' }}
                                     data-ai-hint={region.imageHint}
                                 />
                             </div>
@@ -295,7 +295,7 @@ export default function ViajeParanaPage() {
                         <DialogDescription>Mapa mostrando as diferentes regiões turísticas do estado do Paraná.</DialogDescription>
                     </DialogHeader>
                     <div className="relative w-full aspect-[4/3]">
-                        <Image src={mapUrl} alt="Mapa das Regiões Turísticas do Paraná" layout="fill" objectFit="contain" />
+                        <Image src={mapUrl} alt="Mapa das Regiões Turísticas do Paraná" fill style={{ objectFit: 'contain' }} />
                     </div>
                 </DialogContent>
             </Dialog>
@@ -306,8 +306,8 @@ export default function ViajeParanaPage() {
           <Image
             src="https://firebasestorage.googleapis.com/v0/b/grupo-br277.firebasestorage.app/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2FTurismo-PR%2Fviaje-parana.webp?alt=media"
             alt="Logo Viaje Paraná"
-            layout="fill"
-            objectFit="contain"
+            fill
+            style={{ objectFit: 'contain' }}
             data-ai-hint="viaje parana logo"
           />
         </div>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -166,7 +167,7 @@ export default function IndicatePointModal({ isOpen, onClose, onSubmit, isSubmit
                   >
                       {imagePreview ? (
                           <div className="relative w-full h-full p-1">
-                              <Image src={imagePreview} alt="Preview da foto" layout="fill" objectFit="contain" className="rounded"/>
+                              <Image src={imagePreview} alt="Preview da foto" fill style={{ objectFit: 'contain' }} className="rounded"/>
                               <div
                                   role="button"
                                   tabIndex={0}

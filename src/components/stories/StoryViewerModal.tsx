@@ -578,8 +578,8 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
                 <Image
                   src={story.thumbnailUrl} 
                   alt={`Story de ${story.authorName}`}
-                  layout="fill"
-                  objectFit="contain"
+                  fill
+                  style={{ objectFit: 'contain' }}
                   data-ai-hint={story.dataAIThumbnailHint || "story content"}
                 />
               )}
