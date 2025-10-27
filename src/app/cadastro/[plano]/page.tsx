@@ -21,6 +21,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { useAuth } from '@/contexts/AuthContext';
 import { firestore, uploadFile } from '@/lib/firebase/client';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getStripe } from '@/lib/stripe/client';
 
 
 const MAX_FILE_SIZE_MB = 2;
@@ -157,15 +158,38 @@ export default function RegisterBusinessPage() {
         createdAt: serverTimestamp(),
       };
       
-      await addDoc(collection(firestore, 'businesses'), docToSave);
+      const docRef = await addDoc(collection(firestore, 'businesses'), docToSave);
       
-      toast({
-        title: "Cadastro Enviado com Sucesso!",
-        description: data.plano === 'GRATUITO'
-          ? "Seu estabelecimento foi publicado no Guia Comercial."
-          : "Seu estabelecimento foi enviado para análise. Efetue o pagamento para publicá-lo.",
-      });
-      router.push('/guia-comercial');
+      if(data.plano !== 'GRATUITO') {
+        toast({ title: "Cadastro Recebido!", description: "Quase lá! Redirecionando para o pagamento..." });
+        
+        const response = await fetch('/api/checkout-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ plano: data.plano, businessId: docRef.id }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Falha ao criar sessão de pagamento.');
+        }
+        
+        const { sessionId } = await response.json();
+        const stripe = await getStripe();
+        if(!stripe) throw new Error('Stripe não foi inicializado.');
+
+        const { error } = await stripe.redirectToCheckout({ sessionId });
+        if(error) {
+            console.error(error);
+            toast({ variant: 'destructive', title: 'Erro de Pagamento', description: error.message });
+        }
+
+      } else {
+        toast({
+          title: "Cadastro Enviado com Sucesso!",
+          description: "Seu estabelecimento foi publicado no Guia Comercial.",
+        });
+        router.push('/guia-comercial');
+      }
 
     } catch (error) {
       console.error("Erro ao cadastrar negócio:", error);
@@ -174,7 +198,6 @@ export default function RegisterBusinessPage() {
         title: "Erro no Cadastro",
         description: "Não foi possível salvar seu cadastro. Tente novamente.",
       });
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -356,7 +379,7 @@ export default function RegisterBusinessPage() {
 
                      <div className="pt-4">
                         <Button type="submit" disabled={isSubmitting} className="w-full">
-                            {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Enviando...</> : "Enviar Cadastro para Análise"}
+                            {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Enviando...</> : (formattedPlano === 'GRATUITO' ? "Finalizar Cadastro" : "Continuar para Pagamento")}
                         </Button>
                     </div>
 
@@ -367,5 +390,3 @@ export default function RegisterBusinessPage() {
     </div>
   );
 }
-
-    
