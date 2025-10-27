@@ -23,17 +23,20 @@ const plans = [
     features: [
       { text: 'Nome, Categoria e Descrição', included: true },
       { text: 'Endereço e Mapa (Pin)', included: true },
-      { text: '1 Foto Principal', included: true },
-      { text: 'Link para WhatsApp', included: true },
+      { text: 'Botão ligar', included: true },
+      { text: 'Exibição de Avaliações', included: true },
+      { text: 'Foto Principal (logo)', included: false },
+      { text: 'Geolocalização', included: false },
+      { text: 'Link para WhatsApp', included: false },
       { text: 'Horário de Atendimento', included: false },
-      { text: '4 Imagens Promocionais', included: false },
+      { text: 'Imagens Promocionais', included: false },
       { text: 'Links para Redes Sociais', included: false },
       { text: 'Link para Website', included: false },
-      { text: 'Exibição de Avaliações', included: false },
     ],
     isPopular: false,
     cardClass: 'bg-card',
     buttonVariant: 'outline' as const,
+    extraInfo: 'Contém anúncio'
   },
   {
     name: 'Intermediário',
@@ -123,6 +126,9 @@ export default function PlanosPage() {
                   <FeatureItem key={index} text={feature.text} included={feature.included} />
                 ))}
               </ul>
+               {plan.extraInfo && (
+                <p className="text-xs text-center text-muted-foreground mt-4">{plan.extraInfo}</p>
+              )}
             </CardContent>
             <CardFooter className="p-4">
               <Button asChild size="lg" className="w-full rounded-full" variant={plan.buttonVariant}>
