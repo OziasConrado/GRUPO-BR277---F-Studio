@@ -29,6 +29,7 @@ const mockBusinesses: Omit<BusinessData, 'id'>[] = [
     dataAIImageHint: 'tire shop',
     phone: '4133334444',
     whatsapp: '5541999998888',
+    instagramUsername: 'borracharia_do_ze',
     operatingHours: 'Seg-Sex: 08:00-18:00, Sáb: 08:00-12:00',
     servicesOffered: ['Conserto de Pneus', 'Balanceamento', 'Troca de Roda'],
     isPremium: true,

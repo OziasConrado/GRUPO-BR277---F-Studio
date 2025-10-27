@@ -63,11 +63,6 @@ export default function BusinessCard({ business }: { business: BusinessData }) {
               <StarIcon className="h-3 w-3" /> PREMIUM
             </div>
           )}
-           {business.plano === 'INTERMEDIARIO' && (
-            <div className="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-md font-semibold shadow-md flex items-center gap-1">
-              <StarIcon className="h-3 w-3" /> INTERMEDIÁRIO
-            </div>
-          )}
           <Badge variant={business.plano !== 'GRATUITO' ? "default" : "secondary"} className="absolute top-2 left-2 shadow-md bg-opacity-80 backdrop-blur-sm">
               {business.category}
           </Badge>
@@ -93,26 +88,20 @@ export default function BusinessCard({ business }: { business: BusinessData }) {
           <p className="text-sm text-foreground/80 line-clamp-2">{business.description}</p>
         </CardContent>
 
-        <CardFooter className={cn("grid gap-2 pt-3 border-t", 
-            business.plano === 'PREMIUM' && business.whatsapp && business.instagramUsername ? 'grid-cols-2' : 'grid-cols-1'
-        )}>
-            {business.plano === 'PREMIUM' && business.whatsapp && business.instagramUsername ? (
-                <>
-                    <Button variant="outline" size="sm" onClick={handleWhatsAppClick} className="w-full bg-green-500/10 border-green-500/50 text-green-700 hover:bg-green-500/20 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300">
-                        <MessageCircle className="mr-1.5 h-4 w-4" /> WhatsApp
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={handleInstagramClick} className="w-full bg-pink-500/10 border-pink-500/50 text-pink-700 hover:bg-pink-500/20 hover:text-pink-800 dark:text-pink-400 dark:hover:text-pink-300">
-                        <Instagram className="mr-1.5 h-4 w-4" /> Instagram
-                    </Button>
-                </>
-            ) : business.whatsapp && (business.plano === 'INTERMEDIARIO') ? (
-                 <Button variant="outline" size="sm" onClick={handleWhatsAppClick} className="w-full bg-green-500/10 border-green-500/50 text-green-700 hover:bg-green-500/20 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300">
-                    <MessageCircle className="mr-1.5 h-4 w-4" /> WhatsApp
-                </Button>
-            ) : null}
+        <CardFooter className="flex flex-col gap-2 pt-3 border-t">
+          {business.plano === 'PREMIUM' && business.whatsapp && business.instagramUsername && (
+            <div className="grid grid-cols-2 gap-2 w-full">
+              <Button variant="outline" size="sm" onClick={handleWhatsAppClick} className="w-full bg-green-500/10 border-green-500/50 text-green-700 hover:bg-green-500/20 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300">
+                  <MessageCircle className="mr-1.5 h-4 w-4" /> WhatsApp
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleInstagramClick} className="w-full bg-pink-500/10 border-pink-500/50 text-pink-700 hover:bg-pink-500/20 hover:text-pink-800 dark:text-pink-400 dark:hover:text-pink-300">
+                  <Instagram className="mr-1.5 h-4 w-4" /> Instagram
+              </Button>
+            </div>
+          )}
 
-          <Button variant="default" size="sm" className="w-full col-span-full">
-              Ver Detalhes e Avaliar
+          <Button variant="default" size="sm" className="w-full">
+            Ver Detalhes e Avaliar
           </Button>
         </CardFooter>
       </Card>
