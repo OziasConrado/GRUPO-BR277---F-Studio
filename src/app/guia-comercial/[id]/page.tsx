@@ -207,7 +207,7 @@ export default function BusinessDetailPage() {
               <h3 className="text-lg font-semibold mb-3">Destaques e Promoções</h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                 {visiblePromoImages.map((img, index) => (
-                    <div key={index} className="relative aspect-video rounded-lg overflow-hidden border">
+                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden border">
                         <Image src={img.url} alt={`Promoção ${index + 1}`} layout="fill" objectFit="cover" data-ai-hint={img.hint} />
                     </div>
                 ))}
