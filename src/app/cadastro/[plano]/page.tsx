@@ -152,40 +152,17 @@ export default function RegisterBusinessPage() {
         imageUrl: imageUrl || 'https://placehold.co/800x400/e2e8f0/64748b?text=Sem+Foto',
         dataAIImageHint: imageUrl ? `photo of ${data.name}` : 'no photo placeholder',
         promoImages: promoImageUrls,
-        statusPagamento: data.plano === 'GRATUITO' ? 'ATIVO' : 'PENDENTE',
+        statusPagamento: 'ATIVO', // Agora todos os planos são ativados diretamente
         createdAt: serverTimestamp(),
       };
       
-      const docRef = await addDoc(collection(firestore, 'businesses'), docToSave);
+      await addDoc(collection(firestore, 'businesses'), docToSave);
       
-      if(data.plano !== 'GRATUITO') {
-        toast({ title: "Cadastro Recebido!", description: "Quase lá! Redirecionando para o pagamento..." });
-        
-        const response = await fetch('/api/checkout-session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ plano: data.plano, businessId: docRef.id }),
-        });
-
-        if (!response.ok) {
-            const errorBody = await response.json();
-            throw new Error(errorBody.error || 'Falha ao criar sessão de pagamento.');
-        }
-        
-        const { sessionId } = await response.json();
-        if (sessionId) {
-          router.push(`https://checkout.stripe.com/pay/${sessionId}`);
-        } else {
-          throw new Error('ID da sessão de checkout não recebido.');
-        }
-
-      } else {
-        toast({
+      toast({
           title: "Cadastro Enviado com Sucesso!",
           description: "Seu estabelecimento foi publicado no Guia Comercial.",
         });
-        router.push('/guia-comercial');
-      }
+      router.push('/guia-comercial');
 
     } catch (error: any) {
       console.error("Erro ao cadastrar negócio:", error);
@@ -375,7 +352,7 @@ export default function RegisterBusinessPage() {
 
                      <div className="pt-4">
                         <Button type="submit" disabled={isSubmitting} className="w-full">
-                            {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Enviando...</> : (formattedPlano === 'GRATUITO' ? "Finalizar Cadastro" : "Continuar para Pagamento")}
+                            {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Enviando...</> : "Finalizar Cadastro"}
                         </Button>
                     </div>
 
