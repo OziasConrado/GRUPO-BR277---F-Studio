@@ -1,86 +1,71 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Regras abertas para desenvolvimento inicial. REVISE ANTES DE PRODUZIR.
-    match /{document=**} {
-      allow read; // Permite leitura em toda a base por enquanto
-    }
-    
-    // Regra específica para a coleção 'businesses'
-    match /businesses/{businessId} {
-      allow read; // Qualquer um pode ler os dados de um negócio
-      // Permite que um usuário logado crie ou atualize um negócio.
-      // A lógica de que só o dono pode editar um negócio existente deve ser
-      // implementada no frontend/backend, mas esta regra permite o cadastro inicial.
-      allow create, update: if request.auth != null;
-      // Regra de deleção pode ser mais restrita
-      allow delete: if false; // Ninguém pode deletar por enquanto
-    }
-
-    // Regras para subcoleções de 'businesses' (ex: reviews)
-    match /businesses/{businessId}/{allChildren=**} {
-      allow read, write: if request.auth != null; // Usuários logados podem ler/escrever reviews
-    }
-    
-     // Regra específica para a coleção 'tourist_points_indicated'
-    match /tourist_points_indicated/{pointId} {
-      allow read;
-      allow create, update: if request.auth != null;
-    }
-
-    // Regras para subcoleções de 'tourist_points_indicated'
-    match /tourist_points_indicated/{pointId}/{allChildren=**} {
-      allow read, write: if request.auth != null;
-    }
-
+  
     // Regra para a coleção 'posts'
     match /posts/{postId} {
-      allow read;
-      allow create, update, delete: if request.auth != null;
+      // Leitura permitida para todos
+      allow read: if true;
+      // Escrita (criar, atualizar, deletar) permitida apenas para o dono do post
+      allow write: if request.auth != null && request.auth.uid == resource.data.userId;
+
+      // Regras para subcoleções de 'posts', se houver
+      match /{allChildren=**} {
+        allow read, write: if request.auth != null;
+      }
     }
 
-    match /posts/{postId}/{subcollection}/{docId} {
-      allow read, write: if request.auth != null;
-    }
-
-    // Regra para a coleção 'reels'
-    match /reels/{reelId} {
-      allow read;
-      allow create, update, delete: if request.auth != null;
-    }
-    match /reels/{reelId}/{subcollection}/{docId} {
-      allow read, write: if request.auth != null;
-    }
-    
-    // Regra para a coleção 'chatMessages'
-    match /chatMessages/{messageId} {
-      allow read, create; // Aberto para leitura por todos e criação por todos
-      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid; // Só o autor pode editar/deletar
-    }
-    
-    match /chatMessages/{messageId}/{subcollection}/{docId} {
+    // Permite que qualquer usuário autenticado leia e escreva na coleção 'chatMessages'
+    match /chatMessages/{messageId}/{allChildren=**} {
         allow read, write: if request.auth != null;
     }
 
-    // Regra para a coleção 'alerts'
-    match /alerts/{alertId} {
-      allow read, create; // Qualquer um pode ler ou criar alertas
-    }
-
-    // Regra para a coleção 'sau_reviews'
-    match /sau_reviews/{reviewId} {
-        allow read, create: if request.auth != null;
-    }
-
-    // Regra para a coleção 'Usuarios'
+    // Regras para a coleção de usuários
     match /Usuarios/{userId} {
-      allow read;
-      allow create, update: if request.auth.uid == userId; // Só o próprio usuário pode criar/atualizar seu perfil
+      // Qualquer um pode ler o perfil de um usuário (necessário para mostrar avatares, nomes, etc.)
+      allow read: if true;
+      // Um usuário só pode criar ou modificar seu próprio perfil
+      allow write: if request.auth != null && request.auth.uid == userId;
+
+      // Permite que usuários autenticados leiam e escrevam em suas próprias notificações
+      match /notifications/{notificationId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+    
+    // Regras para a coleção de alertas
+    match /alerts/{alertId} {
+        // Leitura permitida para todos
+        allow read: if true;
+        // Escrita permitida para usuários autenticados
+        allow write: if request.auth != null;
     }
 
-    match /Usuarios/{userId}/{subcollection}/{docId} {
-      allow read, write: if request.auth.uid == userId;
+    // Regras para o guia comercial
+    match /businesses/{businessId} {
+        // Qualquer pessoa pode ver os negócios listados
+        allow read: if true;
+        // Usuários logados podem criar e atualizar negócios
+        allow create, update: if request.auth != null;
+    }
+    
+    match /sau_reviews/{reviewId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    match /tourist_points_indicated/{pointId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null;
+    }
+
+    match /tourist_point_reviews/{reviewId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null;
+    }
+
+    match /reels/{reelId}/{allChildren=**} {
+      allow read, write: if true;
     }
   }
 }
