@@ -6,7 +6,6 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import axios from 'axios';
-import { doc, getDoc } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/server'; // Use server-side firebase admin
 
 // Define o esquema de entrada
@@ -59,17 +58,17 @@ const criarCobrancaAsaasFlow = ai.defineFlow(
 
     try {
       // 1. Buscar dados do cliente (usuário dono do negócio) no Firestore
-      const userDocRef = doc(firestore, 'Usuarios', ownerId);
-      const userDoc = await getDoc(userDocRef);
-      if (!userDoc.exists()) {
+      const userDocRef = firestore.collection('Usuarios').doc(ownerId);
+      const userDoc = await userDocRef.get();
+      if (!userDoc.exists) {
         throw new Error(`Usuário com ID ${ownerId} não encontrado.`);
       }
       const userData = userDoc.data();
-      const customerName = userData.displayName;
-      const customerEmail = userData.email;
+      const customerName = userData?.displayName;
+      const customerEmail = userData?.email;
       
       if (!customerName || !customerEmail) {
-        throw new Error("Dados do usuário (nome, email) estão incompletos.");
+        throw new Error("Dados do usuário (nome, email) estão incompletos no perfil.");
       }
 
       console.log('[Asaas Flow] Dados do cliente obtidos:', { customerName, customerEmail });
@@ -78,7 +77,7 @@ const criarCobrancaAsaasFlow = ai.defineFlow(
       let customerId: string;
       const findCustomerUrl = `https://www.asaas.com/api/v3/customers?email=${customerEmail}`;
       const existingCustomerResponse = await axios.get(findCustomerUrl, {
-        headers: { 'access_token': asaasApiKey },
+        headers: { 'access_token': asaasApiKey, 'Content-Type': 'application/json' },
       });
 
       if (existingCustomerResponse.data.data.length > 0) {
@@ -89,9 +88,9 @@ const criarCobrancaAsaasFlow = ai.defineFlow(
         const newCustomerResponse = await axios.post(createCustomerUrl, {
           name: customerName,
           email: customerEmail,
-          externalReference: ownerId, // Usa o ID do nosso sistema como referência
+          externalReference: ownerId,
         }, {
-          headers: { 'access_token': asaasApiKey },
+          headers: { 'access_token': asaasApiKey, 'Content-Type': 'application/json' },
         });
         customerId = newCustomerResponse.data.id;
         console.log(`[Asaas Flow] Cliente criado na Asaas: ${customerId}`);
@@ -108,12 +107,12 @@ const criarCobrancaAsaasFlow = ai.defineFlow(
         value: planPrices[plano],
         dueDate: dueDate.toISOString().split('T')[0],
         description: planDescriptions[plano],
-        externalReference: businessId, // Vincula a cobrança ao ID do negócio
+        externalReference: businessId,
       };
       
       console.log('[Asaas Flow] Enviando dados da cobrança para Asaas:', paymentData);
       const paymentResponse = await axios.post(createPaymentUrl, paymentData, {
-        headers: { 'access_token': asaasApiKey },
+        headers: { 'access_token': asaasApiKey, 'Content-Type': 'application/json' },
       });
       
       const paymentUrl = paymentResponse.data.invoiceUrl;
@@ -125,16 +124,17 @@ const criarCobrancaAsaasFlow = ai.defineFlow(
       return { paymentUrl };
 
     } catch (err: any) {
-      // Improved error handling
       let errorMessage = 'Um erro inesperado ocorreu ao contatar o serviço de pagamento.';
       if (axios.isAxiosError(err) && err.response) {
-        console.error('[Asaas Flow] ERRO da API Asaas:', JSON.stringify(err.response.data, null, 2));
-        // Tenta pegar a primeira descrição de erro do array, se existir
-        errorMessage = err.response.data?.errors?.[0]?.description || JSON.stringify(err.response.data);
+        // Tenta extrair a mensagem de erro específica da Asaas
+        const asaasError = err.response.data?.errors?.[0]?.description;
+        console.error('[Asaas Flow] ERRO da API Asaas:', asaasError || JSON.stringify(err.response.data, null, 2));
+        errorMessage = `Erro do sistema de pagamento: ${asaasError || JSON.stringify(err.response.data)}`;
       } else {
-        console.error('[Asaas Flow] ERRO CRÍTICO ao criar cobrança:', err.message);
+        console.error('[Asaas Flow] ERRO CRÍTICO ao criar cobrança:', err.message, err.stack);
         errorMessage = err.message;
       }
+      // Lança o erro para que a API de checkout possa capturá-lo e enviá-lo ao cliente
       throw new Error(errorMessage);
     }
   }
