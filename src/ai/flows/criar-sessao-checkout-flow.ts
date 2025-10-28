@@ -44,22 +44,21 @@ const criarSessaoCheckoutFlow = ai.defineFlow(
   },
   async (input) => {
     const { plano, businessId } = input;
-    
+    console.log('[Flow] Início da criação da sessão de checkout para o plano:', plano);
+
     // Pega a chave secreta do Stripe das variáveis de ambiente
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
     if (!stripeSecretKey) {
-      console.error("[Flow] Stripe secret key is not configured.");
+      console.error("[Flow] ERRO: Chave secreta da Stripe não está configurada.");
       throw new Error("A configuração de pagamento do servidor está incompleta.");
     }
-    
+    console.log('[Flow] Chave secreta da Stripe carregada com sucesso.');
+
     const stripe = new Stripe(stripeSecretKey);
     const priceId = planPrices[plano];
     const origin = 'https://grupobr277-v2-d85f5.web.app'; // URL de produção fixa
 
-    console.log(`[Flow] Criando sessão Stripe com priceId: ${priceId} para businessId: ${businessId}`);
-
-    try {
-      const session = await stripe.checkout.sessions.create({
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
         payment_method_types: ['card', 'boleto'],
         line_items: [
           {
@@ -74,17 +73,24 @@ const criarSessaoCheckoutFlow = ai.defineFlow(
           businessId: businessId,
           plano: plano,
         }
-      });
+      };
+
+    console.log('[Flow] Preparando para criar sessão no Stripe com os parâmetros:', JSON.stringify(sessionParams, null, 2));
+
+    try {
+      const session = await stripe.checkout.sessions.create(sessionParams);
       
       if (!session.id) {
         throw new Error('Não foi possível criar a sessão de checkout do Stripe.');
       }
       
-      console.log(`[Flow] Sessão criada com sucesso: ${session.id}`);
+      console.log(`[Flow] Sessão criada com sucesso no Stripe: ${session.id}`);
       return { sessionId: session.id };
 
     } catch (err: any) {
-      console.error('[Flow] Erro ao criar sessão no Stripe:', err);
+      console.error('[Flow] ERRO CRÍTICO ao criar sessão no Stripe:', err);
+      // Loga o erro inteiro para depuração completa
+      console.error('[Flow] Detalhes completos do erro:', JSON.stringify(err, null, 2));
       throw new Error(err.message || 'Um erro inesperado ocorreu ao contatar o serviço de pagamento.');
     }
   }
