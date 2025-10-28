@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -19,7 +20,7 @@ import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { firestore, uploadFile } from '@/lib/firebase/client';
-import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 
 const MAX_FILE_SIZE_MB = 2;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
@@ -131,11 +132,27 @@ export default function RegisterBusinessPage() {
     setIsSubmitting(true);
 
     try {
-      // 1. Criar o documento inicial para obter um ID
+      // 1. Criar a referência do documento para obter um ID.
       const newBusinessRef = doc(collection(firestore, 'businesses'));
       const businessId = newBusinessRef.id;
+      
+      const { imageFile, promoImageFiles, ...businessData } = data;
 
-      // 2. Upload de imagens usando o ID
+      // 2. Preparar os dados iniciais do negócio.
+      const docToSave = {
+        ...businessData,
+        ownerId: currentUser.uid,
+        statusPagamento: formattedPlano === 'GRATUITO' ? 'ATIVO' : 'PENDENTE',
+        createdAt: serverTimestamp(),
+        imageUrl: 'https://placehold.co/800x400/e2e8f0/64748b?text=Sem+Foto',
+        dataAIImageHint: 'no photo placeholder',
+        promoImages: [],
+      };
+
+      // 3. Criar o documento no Firestore com os dados iniciais.
+      await setDoc(newBusinessRef, docToSave);
+
+      // 4. Fazer upload das imagens.
       let imageUrl: string | undefined;
       if (data.imageFile && currentPlanFeatures.photo) {
         const filePath = `business_images/${businessId}/${data.imageFile.name}`;
@@ -149,23 +166,23 @@ export default function RegisterBusinessPage() {
           promoImageUrls.push({ url: await uploadFile(file, filePath), hint: `promo image for ${data.name}` });
         }
       }
-
-      // 3. Salvar os dados finais no Firestore
-      const { imageFile, promoImageFiles, ...businessData } = data;
-      const docToSave = {
-        ...businessData,
-        ownerId: currentUser.uid,
-        imageUrl: imageUrl || 'https://placehold.co/800x400/e2e8f0/64748b?text=Sem+Foto',
-        dataAIImageHint: imageUrl ? `photo of ${data.name}` : 'no photo placeholder',
-        promoImages: promoImageUrls,
-        statusPagamento: formattedPlano === 'GRATUITO' ? 'ATIVO' : 'PENDENTE',
-        createdAt: serverTimestamp(),
-      };
-      await updateDoc(newBusinessRef, docToSave); // Use updateDoc no ref já criado
+      
+      // 5. Atualizar o documento com as URLs das imagens.
+      const updateData: { [key: string]: any } = {};
+      if (imageUrl) {
+        updateData.imageUrl = imageUrl;
+        updateData.dataAIImageHint = `photo of ${data.name}`;
+      }
+      if (promoImageUrls.length > 0) {
+        updateData.promoImages = promoImageUrls;
+      }
+      if (Object.keys(updateData).length > 0) {
+          await updateDoc(newBusinessRef, updateData);
+      }
 
       toast({ title: "Cadastro Recebido!", description: formattedPlano !== 'GRATUITO' ? "Quase lá! Redirecionando para o pagamento..." : "Seu negócio foi publicado no Guia Comercial." });
 
-      // 4. Se for plano pago, iniciar checkout
+      // 6. Se for plano pago, iniciar checkout.
       if (formattedPlano !== 'GRATUITO') {
         const response = await fetch('/api/checkout-session', {
           method: 'POST',
@@ -194,6 +211,7 @@ export default function RegisterBusinessPage() {
       setIsSubmitting(false);
     }
   };
+
 
   if (isAuthenticating || !currentUser || !formattedPlano) {
     return (
