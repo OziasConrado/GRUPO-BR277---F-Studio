@@ -15,7 +15,6 @@ import Stripe from 'stripe';
 export const CriarSessaoCheckoutInputSchema = z.object({
   plano: z.enum(["INTERMEDIARIO", "PREMIUM"]),
   businessId: z.string().min(1, "businessId é obrigatório."),
-  origin: z.string().url("A URL de origem é obrigatória."),
 });
 export type CriarSessaoCheckoutInput = z.infer<typeof CriarSessaoCheckoutInputSchema>;
 
@@ -44,7 +43,7 @@ const criarSessaoCheckoutFlow = ai.defineFlow(
     outputSchema: CriarSessaoCheckoutOutputSchema,
   },
   async (input) => {
-    const { plano, businessId, origin } = input;
+    const { plano, businessId } = input;
     
     // Pega a chave secreta do Stripe das variáveis de ambiente
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
@@ -55,6 +54,7 @@ const criarSessaoCheckoutFlow = ai.defineFlow(
     
     const stripe = new Stripe(stripeSecretKey);
     const priceId = planPrices[plano];
+    const origin = 'https://grupobr277-v2-d85f5.web.app'; // URL de produção fixa
 
     console.log(`[Flow] Criando sessão Stripe com priceId: ${priceId} para businessId: ${businessId}`);
 

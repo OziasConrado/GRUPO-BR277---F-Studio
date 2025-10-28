@@ -20,13 +20,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'ID do negócio é obrigatório' }, { status: 400 });
     }
 
-    const origin = req.headers.get('origin') || 'https://grupobr277.com.br';
-
     // Chama o Genkit flow para criar a sessão
     const result = await criarSessaoCheckout({
         plano: plano,
         businessId: businessId,
-        origin: origin,
     });
     
     if (!result.sessionId) {
