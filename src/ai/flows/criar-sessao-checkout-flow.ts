@@ -56,7 +56,7 @@ const criarSessaoCheckoutFlow = ai.defineFlow(
     const stripe = new Stripe(stripeSecretKey);
     const priceId = planPrices[plano];
 
-    console.log(`[Flow] Criando sessão Stripe com priceId: ${priceId}`);
+    console.log(`[Flow] Criando sessão Stripe com priceId: ${priceId} para businessId: ${businessId}`);
 
     try {
       const session = await stripe.checkout.sessions.create({
