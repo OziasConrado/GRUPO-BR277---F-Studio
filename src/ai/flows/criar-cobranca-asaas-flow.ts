@@ -60,22 +60,23 @@ const criarCobrancaAsaasFlow = ai.defineFlow(
       // 1. Buscar dados do cliente (usuário dono do negócio) no Firestore
       const userDocRef = firestore.collection('Usuarios').doc(ownerId);
       const userDoc = await userDocRef.get();
+
       if (!userDoc.exists) {
-        throw new Error(`Usuário com ID ${ownerId} não encontrado.`);
+        throw new Error(`Usuário com ID ${ownerId} não encontrado no banco de dados.`);
       }
       const userData = userDoc.data();
       const customerName = userData?.displayName;
       const customerEmail = userData?.email;
       
       if (!customerName || !customerEmail) {
-        throw new Error("Dados do usuário (nome, email) estão incompletos no perfil.");
+        throw new Error("Dados do usuário (nome, email) estão incompletos no perfil. Complete o perfil antes de continuar.");
       }
 
       console.log('[Asaas Flow] Dados do cliente obtidos:', { customerName, customerEmail });
 
       // 2. Criar ou buscar o cliente na Asaas
       let customerId: string;
-      const findCustomerUrl = `https://www.asaas.com/api/v3/customers?email=${customerEmail}`;
+      const findCustomerUrl = `https://www.asaas.com/api/v3/customers?email=${encodeURIComponent(customerEmail)}`;
       const existingCustomerResponse = await axios.get(findCustomerUrl, {
         headers: { 'access_token': asaasApiKey, 'Content-Type': 'application/json' },
       });
@@ -88,7 +89,7 @@ const criarCobrancaAsaasFlow = ai.defineFlow(
         const newCustomerResponse = await axios.post(createCustomerUrl, {
           name: customerName,
           email: customerEmail,
-          externalReference: ownerId,
+          externalReference: ownerId, // Associa o cliente Asaas ao nosso ID de usuário
         }, {
           headers: { 'access_token': asaasApiKey, 'Content-Type': 'application/json' },
         });
@@ -107,7 +108,7 @@ const criarCobrancaAsaasFlow = ai.defineFlow(
         value: planPrices[plano],
         dueDate: dueDate.toISOString().split('T')[0],
         description: planDescriptions[plano],
-        externalReference: businessId,
+        externalReference: businessId, // Associa o pagamento ao nosso ID de negócio
       };
       
       console.log('[Asaas Flow] Enviando dados da cobrança para Asaas:', paymentData);
@@ -117,10 +118,10 @@ const criarCobrancaAsaasFlow = ai.defineFlow(
       
       const paymentUrl = paymentResponse.data.invoiceUrl;
       if (!paymentUrl) {
-        throw new Error('Asaas não retornou uma URL de pagamento.');
+        throw new Error('A Asaas não retornou uma URL de pagamento.');
       }
       
-      console.log(`[Asaas Flow] Link de pagamento gerado: ${paymentUrl}`);
+      console.log(`[Asaas Flow] Link de pagamento gerado com sucesso: ${paymentUrl}`);
       return { paymentUrl };
 
     } catch (err: any) {
