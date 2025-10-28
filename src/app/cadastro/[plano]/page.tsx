@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,12 +19,10 @@ import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { firestore, uploadFile } from '@/lib/firebase/client';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-
+import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc } from 'firebase/firestore';
 
 const MAX_FILE_SIZE_MB = 2;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
-const MAX_PROMO_IMAGES = 4;
 
 const registerBusinessSchema = z.object({
   name: z.string().min(3, "Nome do comércio é obrigatório (mín. 3 caracteres).").max(100),
@@ -66,9 +64,11 @@ const planFeatures = {
 export default function RegisterBusinessPage() {
   const params = useParams();
   const router = useRouter();
-  const { currentUser, isAuthenticating } = useAuth();
+  const searchParams = useSearchParams();
+  const { currentUser, isAuthenticating, userProfile } = useAuth();
   const planoParam = params.plano as string;
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   const formattedPlano = useMemo(() => {
     if (!planoParam) return null;
@@ -76,7 +76,6 @@ export default function RegisterBusinessPage() {
     return planTypes.includes(upperCasePlano) ? upperCasePlano : null;
   }, [planoParam]);
 
-  const { toast } = useToast();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [promoImagePreviews, setPromoImagePreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -89,7 +88,7 @@ export default function RegisterBusinessPage() {
     },
   });
 
-  const { control, register, handleSubmit, formState: { errors }, setValue, watch } = form;
+  const { control, register, handleSubmit, formState: { errors }, setValue } = form;
 
   const currentPlanFeatures = planFeatures[formattedPlano as keyof typeof planFeatures] || planFeatures.GRATUITO;
 
@@ -103,23 +102,26 @@ export default function RegisterBusinessPage() {
         });
         router.push(`/login?redirect=/cadastro/${planoParam}`);
       } else if (!formattedPlano) {
-        toast({
-          title: "Plano Inválido",
-          description: "O plano selecionado não é válido. Por favor, escolha um plano.",
-          variant: "destructive"
-        });
+        toast({ title: "Plano Inválido", description: "O plano selecionado não é válido.", variant: "destructive" });
         router.push('/planos');
       } else {
         setValue('plano', formattedPlano);
         if (currentPlanFeatures.photo) {
-          form.register('imageFile', {
-              validate: value => value instanceof File || "A foto principal é obrigatória para este plano."
-          });
+          form.register('imageFile', { validate: value => value instanceof File || "A foto principal é obrigatória para este plano." });
         }
       }
     }
   }, [isAuthenticating, currentUser, formattedPlano, planoParam, router, toast, setValue, currentPlanFeatures.photo, form]);
 
+  useEffect(() => {
+    const sessionId = searchParams.get('session_id');
+    if (sessionId) {
+        toast({
+            title: "Pagamento Concluído (Status Pendente)",
+            description: "Seu pagamento foi recebido e está sendo processado. A ativação do plano pode levar alguns minutos.",
+        });
+    }
+  }, [searchParams, toast]);
 
   const onSubmit = async (data: RegisterBusinessFormValues) => {
     if (!currentUser || !firestore) {
@@ -129,52 +131,69 @@ export default function RegisterBusinessPage() {
     setIsSubmitting(true);
 
     try {
-      const { imageFile, promoImageFiles, ...businessData } = data;
-      let imageUrl: string | undefined;
-      let promoImageUrls: { url: string; hint: string; }[] = [];
+      // 1. Criar o documento inicial para obter um ID
+      const newBusinessRef = doc(collection(firestore, 'businesses'));
+      const businessId = newBusinessRef.id;
 
-      if (imageFile && currentPlanFeatures.photo) {
-        const filePath = `business_images/${currentUser.uid}/${Date.now()}_${imageFile.name}`;
-        imageUrl = await uploadFile(imageFile, filePath);
+      // 2. Upload de imagens usando o ID
+      let imageUrl: string | undefined;
+      if (data.imageFile && currentPlanFeatures.photo) {
+        const filePath = `business_images/${businessId}/${data.imageFile.name}`;
+        imageUrl = await uploadFile(data.imageFile, filePath);
       }
 
-      if (promoImageFiles && currentPlanFeatures.promoImages > 0) {
-        for (const file of promoImageFiles) {
-          const filePath = `business_promo_images/${currentUser.uid}/${Date.now()}_${file.name}`;
-          const url = await uploadFile(file, filePath);
-          promoImageUrls.push({ url, hint: `promotion for ${data.name}` });
+      let promoImageUrls: { url: string; hint: string; }[] = [];
+      if (data.promoImageFiles && currentPlanFeatures.promoImages > 0) {
+        for (const file of data.promoImageFiles) {
+          const filePath = `business_promo_images/${businessId}/${file.name}`;
+          promoImageUrls.push({ url: await uploadFile(file, filePath), hint: `promo image for ${data.name}` });
         }
       }
 
+      // 3. Salvar os dados finais no Firestore
+      const { imageFile, promoImageFiles, ...businessData } = data;
       const docToSave = {
         ...businessData,
         ownerId: currentUser.uid,
         imageUrl: imageUrl || 'https://placehold.co/800x400/e2e8f0/64748b?text=Sem+Foto',
         dataAIImageHint: imageUrl ? `photo of ${data.name}` : 'no photo placeholder',
         promoImages: promoImageUrls,
-        statusPagamento: 'ATIVO', // Agora todos os planos são ativados diretamente
+        statusPagamento: formattedPlano === 'GRATUITO' ? 'ATIVO' : 'PENDENTE',
         createdAt: serverTimestamp(),
       };
-      
-      await addDoc(collection(firestore, 'businesses'), docToSave);
-      
-      toast({
-          title: "Cadastro Enviado com Sucesso!",
-          description: "Seu estabelecimento foi publicado no Guia Comercial.",
+      await updateDoc(newBusinessRef, docToSave); // Use updateDoc no ref já criado
+
+      toast({ title: "Cadastro Recebido!", description: formattedPlano !== 'GRATUITO' ? "Quase lá! Redirecionando para o pagamento..." : "Seu negócio foi publicado no Guia Comercial." });
+
+      // 4. Se for plano pago, iniciar checkout
+      if (formattedPlano !== 'GRATUITO') {
+        const response = await fetch('/api/checkout-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            plano: formattedPlano,
+            businessId: businessId,
+            ownerId: currentUser.uid
+          }),
         });
-      router.push('/guia-comercial');
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Falha ao criar sessão de pagamento.');
+        }
+
+        window.location.href = result.paymentUrl;
+      } else {
+        router.push('/guia-comercial');
+      }
 
     } catch (error: any) {
-      console.error("Erro ao cadastrar negócio:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro no Cadastro",
-        description: error.message || "Não foi possível salvar seu cadastro. Tente novamente.",
-      });
+      console.error("Erro no processo de cadastro/pagamento:", error);
+      toast({ variant: "destructive", title: "Erro no Cadastro", description: error.message || "Não foi possível salvar seu cadastro. Tente novamente." });
       setIsSubmitting(false);
     }
   };
-
 
   if (isAuthenticating || !currentUser || !formattedPlano) {
     return (
@@ -184,7 +203,6 @@ export default function RegisterBusinessPage() {
     );
   }
 
-  // --- IMAGE HANDLERS ---
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -197,6 +215,7 @@ export default function RegisterBusinessPage() {
       setImagePreview(URL.createObjectURL(file));
     }
   };
+
   const removeImage = () => {
     setValue("imageFile", undefined, { shouldValidate: true });
     setImagePreview(null);
@@ -206,13 +225,11 @@ export default function RegisterBusinessPage() {
   const handlePromoImagesChange = (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     if (!files.length) return;
-
     const currentPromoFiles = form.getValues("promoImageFiles") || [];
     if(currentPromoFiles.length + files.length > currentPlanFeatures.promoImages) {
-        toast({ variant: "destructive", title: "Limite de Imagens Excedido", description: `Você pode enviar no máximo ${currentPlanFeatures.promoImages} imagens promocionais para este plano.` });
+        toast({ variant: "destructive", title: "Limite de Imagens Excedido", description: `Você pode enviar no máximo ${currentPlanFeatures.promoImages} imagens.` });
         return;
     }
-
     const newPreviews = files.map(file => URL.createObjectURL(file));
     setPromoImagePreviews(prev => [...prev, ...newPreviews]);
     setValue("promoImageFiles", [...currentPromoFiles, ...files], { shouldValidate: true });
@@ -222,11 +239,9 @@ export default function RegisterBusinessPage() {
     const currentPromoFiles = form.getValues("promoImageFiles") || [];
     const updatedFiles = currentPromoFiles.filter((_, index) => index !== indexToRemove);
     setValue("promoImageFiles", updatedFiles, { shouldValidate: true });
-    
     const updatedPreviews = promoImagePreviews.filter((_, index) => index !== indexToRemove);
     setPromoImagePreviews(updatedPreviews);
   };
-
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-6">
@@ -250,7 +265,6 @@ export default function RegisterBusinessPage() {
                         <Input id="name-comercial" {...register("name")} className="mt-1" />
                         {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
                     </div>
-
                     <div>
                         <Label htmlFor="category-comercial">Categoria <span className="text-destructive">*</span></Label>
                         <Controller name="category" control={control} render={({ field }) => (
@@ -261,7 +275,6 @@ export default function RegisterBusinessPage() {
                         )} />
                         {errors.category && <p className="text-sm text-destructive mt-1">{errors.category.message}</p>}
                     </div>
-
                     {currentPlanFeatures.photo && (
                         <div>
                             <Label htmlFor="imageFile-comercial">Foto Principal / Logo <span className="text-destructive">*</span></Label>
@@ -279,25 +292,21 @@ export default function RegisterBusinessPage() {
                             {errors.imageFile && <p className="text-sm text-destructive mt-1">{errors.imageFile.message}</p>}
                         </div>
                     )}
-                    
                     <div>
                         <Label htmlFor="address-comercial">Endereço Completo <span className="text-destructive">*</span></Label>
                         <Textarea id="address-comercial" {...register("address")} className="mt-1 min-h-[60px]" />
                         {errors.address && <p className="text-sm text-destructive mt-1">{errors.address.message}</p>}
                     </div>
-
                     <div>
                         <Label htmlFor="description-comercial">Descrição <span className="text-destructive">*</span></Label>
                         <Textarea id="description-comercial" {...register("description")} className="mt-1 min-h-[80px]" placeholder="Fale sobre seu negócio, diferenciais, etc."/>
                         {errors.description && <p className="text-sm text-destructive mt-1">{errors.description.message}</p>}
                     </div>
-
                     <div>
                         <Label htmlFor="phone-comercial">Telefone (Fixo ou Celular)</Label>
                         <Input id="phone-comercial" type="tel" {...register("phone")} className="mt-1" placeholder="Ex: 4133334444" />
                         {errors.phone && <p className="text-sm text-destructive mt-1">{errors.phone.message}</p>}
                     </div>
-
                     {currentPlanFeatures.whatsapp && (
                         <div>
                             <Label htmlFor="whatsapp-comercial">WhatsApp (País+DDD+Número)</Label>
@@ -305,7 +314,6 @@ export default function RegisterBusinessPage() {
                             {errors.whatsapp && <p className="text-sm text-destructive mt-1">{errors.whatsapp.message}</p>}
                         </div>
                     )}
-
                     {currentPlanFeatures.instagramUsername && (
                         <div>
                             <Label htmlFor="instagramUsername-comercial">Usuário do Instagram (sem @)</Label>
@@ -313,14 +321,12 @@ export default function RegisterBusinessPage() {
                             {errors.instagramUsername && <p className="text-sm text-destructive mt-1">{errors.instagramUsername.message}</p>}
                         </div>
                     )}
-
                     {currentPlanFeatures.servicesOffered && (
                         <div>
                             <Label htmlFor="servicesOffered-comercial">Serviços Oferecidos (separados por vírgula)</Label>
                             <Input id="servicesOffered-comercial" {...register("servicesOffered")} className="mt-1" placeholder="Ex: Wi-Fi, Banheiro, Café"/>
                         </div>
                     )}
-
                     {currentPlanFeatures.operatingHours && (
                         <div>
                             <Label htmlFor="operatingHours-comercial">Horário de Funcionamento</Label>
@@ -328,7 +334,6 @@ export default function RegisterBusinessPage() {
                             {errors.operatingHours && <p className="text-sm text-destructive mt-1">{errors.operatingHours.message}</p>}
                         </div>
                     )}
-
                     {currentPlanFeatures.promoImages > 0 && (
                         <div>
                              <Label htmlFor="promoImageFiles-comercial">Imagens Promocionais (até {currentPlanFeatures.promoImages})</Label>
@@ -349,13 +354,11 @@ export default function RegisterBusinessPage() {
                              )}
                         </div>
                     )}
-
                      <div className="pt-4">
                         <Button type="submit" disabled={isSubmitting} className="w-full">
-                            {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Enviando...</> : "Finalizar Cadastro"}
+                            {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Processando...</> : (formattedPlano === 'GRATUITO' ? 'Finalizar Cadastro' : 'Continuar para Pagamento')}
                         </Button>
                     </div>
-
                 </div>
             </form>
             </CardContent>
