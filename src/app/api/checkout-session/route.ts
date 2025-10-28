@@ -7,7 +7,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 // IDs de preço de TESTE da sua conta Stripe.
 const planPrices: Record<Exclude<PlanType, 'GRATUITO'>, string> = {
-  INTERMEDIARIO: 'price_1SMzMoFZ66hy1ES1HUGnRSP1',
+  INTERMEDIARIO: 'price_1PWTy2FZ66hy1ES1gYn1sEyV',
   PREMIUM: 'price_1SMzQZFZ66hy1ES1KSm7S2ga',
 };
 
