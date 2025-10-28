@@ -163,6 +163,14 @@ export default function RegisterBusinessPage() {
       if(data.plano !== 'GRATUITO') {
         toast({ title: "Cadastro Recebido!", description: "Quase lá! Redirecionando para o pagamento..." });
         
+        // Simulação de sucesso - Redireciona diretamente para a página de guia comercial
+        toast({
+          title: "Cadastro Concluído (Simulado)",
+          description: "O pagamento foi pulado para fins de teste. Seu estabelecimento está no guia.",
+        });
+        router.push('/guia-comercial');
+
+        /*
         const response = await fetch('/api/checkout-session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -182,6 +190,7 @@ export default function RegisterBusinessPage() {
             console.error(error);
             toast({ variant: 'destructive', title: 'Erro de Pagamento', description: error.message });
         }
+        */
 
       } else {
         toast({

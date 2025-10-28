@@ -5,9 +5,6 @@ import type { PlanType } from '@/types/guia-comercial';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-// Aumenta o tempo limite da função para 2 minutos
-export const maxDuration = 120;
-
 // IDs de preço de TESTE da sua conta Stripe.
 const planPrices: Record<Exclude<PlanType, 'GRATUITO'>, string> = {
   INTERMEDIARIO: 'price_1SMzMoFZ66hy1ES1HUGnRSP1',
