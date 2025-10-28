@@ -4,7 +4,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import axios from 'axios';
 import { doc, getDoc } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/server'; // Use server-side firebase admin
@@ -67,9 +67,6 @@ const criarCobrancaAsaasFlow = ai.defineFlow(
       const userData = userDoc.data();
       const customerName = userData.displayName;
       const customerEmail = userData.email;
-      // O CPF/CNPJ é obrigatório para Asaas, mas pode não estar no perfil inicial.
-      // Vamos usar um placeholder ou buscar de um campo específico se existir.
-      const customerCpfCnpj = userData.cpfCnpj || "00000000000"; 
       
       if (!customerName || !customerEmail) {
         throw new Error("Dados do usuário (nome, email) estão incompletos.");
@@ -92,7 +89,7 @@ const criarCobrancaAsaasFlow = ai.defineFlow(
         const newCustomerResponse = await axios.post(createCustomerUrl, {
           name: customerName,
           email: customerEmail,
-          cpfCnpj: customerCpfCnpj,
+          externalReference: ownerId, // Usa o ID do nosso sistema como referência
         }, {
           headers: { 'access_token': asaasApiKey },
         });
@@ -128,8 +125,17 @@ const criarCobrancaAsaasFlow = ai.defineFlow(
       return { paymentUrl };
 
     } catch (err: any) {
-      console.error('[Asaas Flow] ERRO CRÍTICO ao criar cobrança na Asaas:', err.response ? err.response.data : err.message);
-      throw new Error(err.response?.data?.errors?.[0]?.description || 'Um erro inesperado ocorreu ao contatar o serviço de pagamento.');
+      // Improved error handling
+      let errorMessage = 'Um erro inesperado ocorreu ao contatar o serviço de pagamento.';
+      if (axios.isAxiosError(err) && err.response) {
+        console.error('[Asaas Flow] ERRO da API Asaas:', JSON.stringify(err.response.data, null, 2));
+        // Tenta pegar a primeira descrição de erro do array, se existir
+        errorMessage = err.response.data?.errors?.[0]?.description || JSON.stringify(err.response.data);
+      } else {
+        console.error('[Asaas Flow] ERRO CRÍTICO ao criar cobrança:', err.message);
+        errorMessage = err.message;
+      }
+      throw new Error(errorMessage);
     }
   }
 );
