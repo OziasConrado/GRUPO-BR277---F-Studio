@@ -1,15 +1,7 @@
+'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
-import type { PlanType } from '@/types/guia-comercial';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
-// IDs de preço de TESTE da sua conta Stripe.
-const planPrices: Record<Exclude<PlanType, 'GRATUITO'>, string> = {
-  INTERMEDIARIO: 'price_1PWTy2FZ66hy1ES1gYn1sEyV',
-  PREMIUM: 'price_1SMzQZFZ66hy1ES1KSm7S2ga',
-};
+import { criarSessaoCheckout } from '@/ai/flows/criar-sessao-checkout-flow';
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,35 +20,21 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'ID do negócio é obrigatório' }, { status: 400 });
     }
 
-    const priceId = planPrices[plano];
-    const mode = 'subscription'; // Ambos são assinaturas
+    const origin = req.headers.get('origin') || 'https://grupobr277.com.br';
 
-    console.log(`[Checkout API] - Tentando criar sessão Stripe com priceId: ${priceId}`);
-
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card', 'boleto'],
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
-      mode: mode,
-      success_url: `${req.headers.get('origin')}/guia-comercial?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get('origin')}/planos`,
-      metadata: {
-        businessId: businessId,
+    // Chama o Genkit flow para criar a sessão
+    const result = await criarSessaoCheckout({
         plano: plano,
-      }
+        businessId: businessId,
+        origin: origin,
     });
-
-    console.log('[Checkout API] - Sessão Stripe criada com sucesso:', session.id);
-
-    if (!session.id) {
-        throw new Error('Não foi possível criar a sessão de checkout do Stripe.');
+    
+    if (!result.sessionId) {
+      throw new Error('Flow do Genkit não retornou um sessionId.');
     }
 
-    return NextResponse.json({ sessionId: session.id });
+    console.log('[Checkout API] - Sessão Stripe criada com sucesso via Flow:', result.sessionId);
+    return NextResponse.json({ sessionId: result.sessionId });
 
   } catch (err: any) {
     console.error('[Checkout API] - Erro CRÍTICO na API de checkout:', err);

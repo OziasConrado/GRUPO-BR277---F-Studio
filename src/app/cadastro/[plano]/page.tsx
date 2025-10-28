@@ -20,7 +20,6 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { useAuth } from '@/contexts/AuthContext';
 import { firestore, uploadFile } from '@/lib/firebase/client';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { getStripe } from '@/lib/stripe/client';
 
 
 const MAX_FILE_SIZE_MB = 2;
@@ -169,17 +168,15 @@ export default function RegisterBusinessPage() {
         });
 
         if (!response.ok) {
-            throw new Error('Falha ao criar sessão de pagamento.');
+            const errorBody = await response.json();
+            throw new Error(errorBody.error || 'Falha ao criar sessão de pagamento.');
         }
         
         const { sessionId } = await response.json();
-        const stripe = await getStripe();
-        if(!stripe) throw new Error('Stripe não foi inicializado.');
-
-        const { error } = await stripe.redirectToCheckout({ sessionId });
-        if(error) {
-            console.error(error);
-            toast({ variant: 'destructive', title: 'Erro de Pagamento', description: error.message });
+        if (sessionId) {
+          router.push(`https://checkout.stripe.com/pay/${sessionId}`);
+        } else {
+          throw new Error('ID da sessão de checkout não recebido.');
         }
 
       } else {
@@ -190,12 +187,12 @@ export default function RegisterBusinessPage() {
         router.push('/guia-comercial');
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao cadastrar negócio:", error);
       toast({
         variant: "destructive",
         title: "Erro no Cadastro",
-        description: "Não foi possível salvar seu cadastro. Tente novamente.",
+        description: error.message || "Não foi possível salvar seu cadastro. Tente novamente.",
       });
       setIsSubmitting(false);
     }
