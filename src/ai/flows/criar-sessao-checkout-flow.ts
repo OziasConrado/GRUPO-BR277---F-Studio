@@ -54,7 +54,10 @@ const criarSessaoCheckoutFlow = ai.defineFlow(
     }
     console.log('[Flow] Chave secreta da Stripe carregada com sucesso.');
 
-    const stripe = new Stripe(stripeSecretKey);
+    const stripe = new Stripe(stripeSecretKey, {
+        apiVersion: '2024-06-20', // Versão da API é obrigatória
+    });
+
     const priceId = planPrices[plano];
     const origin = 'https://grupobr277-v2-d85f5.web.app'; // URL de produção fixa
 
