@@ -6,9 +6,9 @@ location: us-central1
 runConfig:
   cpu: 1
   memoryMiB: 512
-vpcConnector:
-  name: "projects/grupobr277-v2-d85f5/locations/us-central1/connectors/apphosting-managed-vpc-connector"
-  egress: ALL_TRAFFIC
+  vpcConnector:
+    name: "projects/grupobr277-v2-d85f5/locations/us-central1/connectors/apphosting-managed-vpc-connector"
+    egress: ALL_TRAFFIC
 env:
   - variable: STRIPE_SECRET_KEY
     secret: STRIPE_SECRET_KEY
