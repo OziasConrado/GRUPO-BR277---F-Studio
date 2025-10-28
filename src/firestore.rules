@@ -2,70 +2,89 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Regra para a coleção 'posts'
     match /posts/{postId} {
-      // Leitura permitida para todos
       allow read: if true;
-      // Escrita (criar, atualizar, deletar) permitida apenas para o dono do post
-      allow write: if request.auth != null && request.auth.uid == resource.data.userId;
-
-      // Regras para subcoleções de 'posts', se houver
-      match /{allChildren=**} {
-        allow read, write: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth.uid == resource.data.userId;
+      
+      // Regras para comentários
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if request.auth != null;
+        allow update, delete: if request.auth.uid == resource.data.userId;
+        
+        // Reações a comentários
+        match /commentReactions/{userId} {
+            allow read: if true;
+            allow create, delete: if request.auth.uid == userId;
+        }
+      }
+      
+      // Reações a posts
+      match /userReactions/{userId} {
+        allow read: if true;
+        allow create, delete: if request.auth.uid == userId;
       }
     }
 
-    // Permite que qualquer usuário autenticado leia e escreva na coleção 'chatMessages'
-    match /chatMessages/{messageId}/{allChildren=**} {
-        allow read, write: if request.auth != null;
-    }
-
-    // Regras para a coleção de usuários
     match /Usuarios/{userId} {
-      // Qualquer um pode ler o perfil de um usuário (necessário para mostrar avatares, nomes, etc.)
+      // PERMISSÃO CORRIGIDA: Permite a leitura de qualquer perfil (necessário para o servidor e para exibir perfis de outros usuários).
+      // A escrita continua restrita apenas ao próprio usuário.
       allow read: if true;
-      // Um usuário só pode criar ou modificar seu próprio perfil
-      allow write: if request.auth != null && request.auth.uid == userId;
-
-      // Permite que usuários autenticados leiam e escrevam em suas próprias notificações
+      allow write: if request.auth.uid == userId;
+      
       match /notifications/{notificationId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if request.auth.uid == userId;
       }
     }
-    
-    // Regras para a coleção de alertas
-    match /alerts/{alertId} {
-        // Leitura permitida para todos
-        allow read: if true;
-        // Escrita permitida para usuários autenticados
-        allow write: if request.auth != null;
-    }
 
-    // Regras para o guia comercial
     match /businesses/{businessId} {
-        // Qualquer pessoa pode ver os negócios listados
-        allow read: if true;
-        // Usuários logados podem criar e atualizar negócios
-        allow create, update: if request.auth != null;
+      allow read: if true;
+      allow create, update: if request.auth != null; // Permite criação e atualização se logado
+      allow delete: if request.auth.uid == resource.data.ownerId; // Apenas o dono pode deletar
     }
     
     match /sau_reviews/{reviewId} {
-      allow read, write: if request.auth != null;
+      allow read: if true;
+      allow create: if request.auth != null;
     }
     
-    match /tourist_points_indicated/{pointId} {
+    match /reels/{reelId} {
       allow read: if true;
-      allow create, update, delete: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth.uid == resource.data.authorId;
+      
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if request.auth != null;
+      }
+      
+      match /userReactions/{userId} {
+        allow read: if true;
+        allow create, delete: if request.auth.uid == userId;
+      }
+    }
+
+    match /tourist_points_indicated/{pointId} {
+        allow read: if true;
+        allow create: if request.auth != null;
+        allow update: if true; // Permitir que o admin atualize o status
     }
 
     match /tourist_point_reviews/{reviewId} {
-      allow read: if true;
-      allow create, update, delete: if request.auth != null;
+        allow read: if true;
+        allow create: if request.auth != null;
     }
-
-    match /reels/{reelId}/{allChildren=**} {
-      allow read, write: if true;
+    
+    match /chatMessages/{messageId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth.uid == resource.data.userId;
+      
+      match /userReactions/{userId} {
+        allow read: if true;
+        allow create, delete: if request.auth.uid == userId;
+      }
     }
   }
 }
