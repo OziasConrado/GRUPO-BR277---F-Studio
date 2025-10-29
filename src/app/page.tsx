@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -11,8 +10,8 @@ export default function Home() {
   const { isAuthenticating } = useAuth();
 
   useEffect(() => {
-    // Redirect logic can be placed here if needed,
-    // for now, we just show a loader.
+    // Redirect to the correct feed page
+    router.replace('/feed');
   }, [router]);
 
   if (isAuthenticating) {
@@ -23,9 +22,7 @@ export default function Home() {
     );
   }
 
-  // Redirect to feed page after loading
-  router.replace('/feed');
-
+  // Fallback loader while redirecting
   return (
       <div className="flex justify-center items-center h-screen">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />

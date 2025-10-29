@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -8,7 +7,7 @@ import { cn } from '@/lib/utils';
 import MoreFeaturesSheet from '../MoreFeaturesSheet';
 
 const navItems = [
-  { href: '/', label: 'Feed277', icon: Newspaper },
+  { href: '/feed', label: 'Início', icon: Newspaper },
   { href: '/guia-comercial', label: 'Comercial', icon: Store },
   { href: '#', label: '', icon: Plus },
   { href: '/ferramentas', label: 'Ferramentas', icon: Wrench },
