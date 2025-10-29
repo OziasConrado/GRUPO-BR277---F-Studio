@@ -1,3 +1,4 @@
+
 'use client';
 
 import { initializeApp, getApp, getApps, type FirebaseApp } from 'firebase/app';
@@ -18,23 +19,18 @@ const firebaseConfig = {
 
 // --- Início da Implementação do Padrão Singleton ---
 
-let app: FirebaseApp;
-let auth: Auth;
-let firestore: Firestore;
-let storage: FirebaseStorage;
+const getFirebaseApp = (): FirebaseApp => {
+    if (!getApps().length) {
+        return initializeApp(firebaseConfig);
+    }
+    return getApp();
+};
+
+const app: FirebaseApp = getFirebaseApp();
+const auth: Auth = getAuth(app);
+const firestore: Firestore = getFirestore(app);
+const storage: FirebaseStorage = getStorage(app);
 let analytics: Analytics | null = null;
-
-// Verifica se o app já foi inicializado para evitar erros durante o Hot Reloading.
-if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApp();
-}
-
-// Inicializa os serviços usando a instância única do app.
-auth = getAuth(app);
-firestore = getFirestore(app);
-storage = getStorage(app);
 
 // Inicializa o Analytics apenas no lado do cliente (browser).
 if (typeof window !== 'undefined') {
