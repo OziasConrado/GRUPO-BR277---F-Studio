@@ -1,106 +1,38 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if the user is authenticated
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    // Helper function to check if the user is the owner of the document
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    // Posts: Public read, authenticated write/update/delete
-    match /posts/{postId} {
+    // Regra geral de leitura: Qualquer pessoa pode ler a maioria dos dados públicos.
+    match /{document=**} {
       allow read: if true;
-      allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
-
-      // Comments on posts
-      match /comments/{commentId} {
-        allow read: if true;
-        allow create: if isAuthenticated();
-        allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
-      }
-
-      // Reactions on posts
-      match /userReactions/{userId} {
-        allow read: if true;
-        allow create, update, delete: if isAuthenticated() && isOwner(userId);
-      }
     }
 
-    // Reels: Public read, authenticated write/update/delete
-    match /reels/{reelId} {
-      allow read: if resource.data.deleted == false;
-      allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated() && isOwner(resource.data.authorId);
-
-      // Comments on reels
-      match /comments/{commentId} {
-        allow read: if true;
-        allow create: if isAuthenticated();
-        allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
-      }
-
-      // Reactions on reels
-      match /userReactions/{userId} {
-        allow read: if true;
-        allow create, update, delete: if isAuthenticated() && isOwner(userId);
-      }
-    }
-
-    // Alerts: Public read, authenticated write
-    match /alerts/{alertId} {
-      allow read: if true;
-      allow create: if isAuthenticated();
-      allow update, delete: if false; // Generally alerts are not editable by users
-    }
-
-    // Businesses (Guia Comercial): Public read, authenticated write
-    match /businesses/{businessId} {
-      allow read: if true;
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && isOwner(resource.data.ownerId); // Only owner can update
-      allow delete: if false; // Prevent deletion
-    }
-
-    // SAU Reviews: Public read, authenticated write
-    match /sau_reviews/{reviewId} {
-      allow read: if true;
-      allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
-    }
-    
-    // Tourist Points: Public read, authenticated write
-    match /tourist_points_indicated/{pointId} {
-      allow read: if true;
-      allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated() && isOwner(resource.data.indicatedByUserId);
-    }
-
-    // Tourist Point Reviews: Public read, authenticated write
-    match /tourist_point_reviews/{reviewId} {
-      allow read: if true;
-      allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
-    }
-
-    // User Profiles: Read for any authenticated user, write only for the owner.
+    // Coleção de Usuários
     match /Usuários/{userId} {
-      allow read: if isAuthenticated();
-      allow create, update: if isOwner(userId);
-      allow delete: if false; // Users cannot delete their own profiles via client
+      // Qualquer um pode criar seu próprio perfil de usuário
+      allow create: if request.auth != null && request.auth.uid == userId;
+      // Um usuário só pode ler e atualizar seu próprio perfil
+      allow read, update: if request.auth != null && request.auth.uid == userId;
+    }
 
-       // Notifications subcollection
-      match /notifications/{notificationId} {
-        allow read, update, delete: if isOwner(userId);
-        allow create: if isAuthenticated(); // Server-side logic should handle who can create
-      }
+    // Posts, Reels, Alertas, Avaliações, etc.
+    match /{collection}/{docId} {
+      // Qualquer usuário autenticado pode criar um documento
+      allow create: if request.auth != null;
+      // Um usuário só pode atualizar ou deletar seus próprios documentos
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Reações (subcoleções)
+    match /{collection}/{docId}/userReactions/{userId} {
+      allow create, delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Comentários (subcoleções de posts e reels)
+    match /{collection}/{docId}/comments/{commentId} {
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
   }
 }
