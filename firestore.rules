@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -7,107 +8,116 @@ service cloud.firestore {
     function isSignedIn() {
       return request.auth != null;
     }
-    
-    // Helper function to check if the request is coming from the Admin SDK.
-    function isAdmin() {
-      // This is a common way to check for admin access in security rules.
-      // It assumes you don't expose session tokens to your backend.
-      // A more robust way if needed is to check a custom claim on the user's token.
-      return request.auth.token.email_verified == true; 
+
+    // Helper function to check if the user is the owner of the document.
+    function isOwner(userId) {
+      return request.auth.uid == userId;
     }
 
-    // --- Feed (Posts, Reels, Alerts) ---
-    match /posts/{postId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    // --- Public Content (Read-only for most users) ---
 
-      // Rules for subcollections of posts
-      match /comments/{commentId} {
-        allow read: if isSignedIn();
-        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-        allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-      }
+    // Posts and Reels: Anyone can read, but only owners can create/update/delete.
+    match /posts/{postId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() && isOwner(resource.data.userId);
+
+      // Reactions
       match /userReactions/{userId} {
-        allow read: if isSignedIn();
-        allow create, update, delete: if isSignedIn() && userId == request.auth.uid;
+        allow read: if true;
+        allow create, delete: if isOwner(userId);
+      }
+      
+      // Comments
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isSignedIn();
+        allow update, delete: if isSignedIn() && isOwner(resource.data.userId);
+
+        match /commentReactions/{reactionUserId} {
+           allow read: if true;
+           allow create, delete: if isOwner(reactionUserId);
+        }
       }
     }
     
     match /reels/{reelId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
-      allow update, delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && isOwner(resource.data.authorId);
+      allow delete: if isSignedIn() && isOwner(resource.data.authorId);
+      
+      // Comments for Reels
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isSignedIn();
+        allow update, delete: if isSignedIn() && isOwner(resource.data.userId);
+      }
+    }
+
+    // Alerts: Anyone can read, but only authenticated users can create.
+    match /alerts/{alertId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      // No updates or deletes for alerts from the client side for now.
+    }
+
+    // --- Business Guide & Tourism (Read-heavy) ---
+
+    // Businesses: Anyone can read. Only owners can update/delete.
+    match /businesses/{businessId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && isOwner(resource.data.ownerId);
+      // Deletion is a sensitive operation, restrict for now.
+    }
+
+    // SAU Reviews: Anyone can read, authenticated users can create.
+    match /sau_reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isSignedIn();
     }
     
-    match /alerts/{alertId} {
-      allow read: if isSignedIn();
-      // Allow any signed-in user to create an alert
-      allow create: if isSignedIn();
-      // Only the user who created it can delete it (adjust if admins can)
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-    }
-
-    // --- Guia Comercial & Pagamentos ---
-    match /businesses/{businessId} {
-      allow read: if true; // Publicly readable
-      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-      // Allow owner to update. Admin (backend) can update for payment status.
-      allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
-    }
-
-    // --- SAU (Serviço de Atendimento ao Usuário) ---
-    match /sau_reviews/{reviewId} {
-      allow read: if true; // Publicly readable
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-    }
-
-    // --- Turismo ---
+    // Tourist Points: Anyone can read, authenticated users can create.
     match /tourist_points_indicated/{pointId} {
-      allow read: if true; // Publicly readable
-      // Allow authenticated users to create indications
-      allow create: if isSignedIn() && request.resource.data.indicatedByUserId == request.auth.uid;
-      // Allow admin to update status
-      allow update: if isAdmin();
+        allow read: if true;
+        allow create: if isSignedIn();
+        allow update: if isSignedIn() && isOwner(resource.data.indicatedByUserId);
     }
-
+    
+    // Tourist Point Reviews: Anyone can read, authenticated users can create.
     match /tourist_point_reviews/{reviewId} {
-      allow read: if true; // Publicly readable
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+        allow read: if true;
+        allow create: if isSignedIn();
+        allow update, delete: if isSignedIn() && isOwner(resource.data.userId);
     }
 
+    // --- User Profiles ---
+    
+    // User Profiles: Users can read any profile, but can only create/update their own.
+    match /Usuários/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId);
+      allow update: if isSignedIn() && isOwner(userId);
+      // Do not allow users to delete their own profiles directly.
+      
+      // Notifications subcollection
+      match /notifications/{notificationId} {
+        allow read, update: if isSignedIn() && isOwner(userId);
+      }
+    }
+    
     // --- Chat ---
     match /chatMessages/{messageId} {
-      allow read, create: if isSignedIn();
-      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-
-      // Subcollections for reactions
-      match /userReactions/{userId} {
         allow read: if isSignedIn();
-        allow create, update, delete: if isSignedIn() && userId == request.auth.uid;
-      }
-      match /commentReactions/{userId} {
-        allow read: if isSignedIn();
-        allow create, update, delete: if isSignedIn() && userId == request.auth.uid;
-      }
+        allow create: if isSignedIn();
+        allow update, delete: if isSignedIn() && isOwner(resource.data.userId);
+        
+        match /userReactions/{reactionUserId} {
+            allow read: if true;
+            allow create, delete: if isOwner(reactionUserId);
+        }
     }
 
-    // --- Coleção de Usuários ---
-    match /Usuários/{userId} {
-      // Anyone can read a user's public profile data
-      allow read: if true;
-      // A user can create their own profile document
-      allow create: if isSignedIn() && userId == request.auth.uid;
-      // A user can only update their own profile
-      allow update, delete: if isSignedIn() && userId == request.auth.uid;
-
-      // Subcollection for user notifications
-      match /notifications/{notificationId} {
-        allow read, update, delete: if isSignedIn() && userId == request.auth.uid;
-        // Prevent creation from client-side for security
-        allow create: if false; 
-      }
-    }
   }
 }
