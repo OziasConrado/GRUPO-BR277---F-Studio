@@ -8,25 +8,18 @@ import { getStorage, ref, uploadBytes, getDownloadURL, type FirebaseStorage } fr
 import { getAnalytics, isSupported, type Analytics } from 'firebase/analytics';
 
 const firebaseConfig = {
-  "projectId": "grupo-br277",
+  "projectId": "grupobr277-v2-d85f5",
   "appId": "1:491779757123:web:f0c1615487eb032c17b0f6",
-  "storageBucket": "grupo-br277.firebasestorage.app",
-  "apiKey": "AIzaSyBkj9LYAUrrdXXb-M80C-q9FMQxGWMWA1A",
-  "authDomain": "grupo-br277.firebaseapp.com",
-  "measurementId": "G-MD0VTEF82W",
-  "messagingSenderId": "491779757123"
+  "storageBucket": "grupobr277-v2-d85f5.appspot.com",
+  "apiKey": process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  "authDomain": process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  "measurementId": process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+  "messagingSenderId": process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
 };
 
 // --- Início da Implementação do Padrão Singleton ---
 
-const getFirebaseApp = (): FirebaseApp => {
-    if (!getApps().length) {
-        return initializeApp(firebaseConfig);
-    }
-    return getApp();
-};
-
-const app: FirebaseApp = getFirebaseApp();
+const app: FirebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth: Auth = getAuth(app);
 const firestore: Firestore = getFirestore(app);
 const storage: FirebaseStorage = getStorage(app);
