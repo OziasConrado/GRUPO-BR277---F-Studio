@@ -10,12 +10,6 @@ runConfig:
     name: "projects/grupobr277-v2-d85f5/locations/us-central1/connectors/apphosting-managed-vpc-connector"
     egress: ALL_TRAFFIC
 env:
-  - variable: STRIPE_SECRET_KEY
-    secret: STRIPE_SECRET_KEY
-  - variable: STRIPE_WEBHOOK_SECRET
-    secret: STRIPE_WEBHOOK_SECRET
-  - variable: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-    secret: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
   - variable: FIREBASE_SERVICE_ACCOUNT
     secret: FIREBASE_SERVICE_ACCOUNT
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
