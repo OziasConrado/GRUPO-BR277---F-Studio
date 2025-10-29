@@ -2,88 +2,119 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Helper function to check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if the user is the owner of the document
+    function isOwner(userId) {
+      // Ensure request.auth.uid exists before comparing
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Posts: Public read, authenticated write/update/delete
     match /posts/{postId} {
       allow read: if true;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth.uid == resource.data.userId;
-      
-      // Regras para comentários
+      allow create: if isAuthenticated();
+      // Only the owner of the post can update/delete it
+      allow update, delete: if isOwner(resource.data.userId);
+
+      // Comments on posts
       match /comments/{commentId} {
         allow read: if true;
-        allow create: if request.auth != null;
-        allow update, delete: if request.auth.uid == resource.data.userId;
-        
-        // Reações a comentários
-        match /commentReactions/{userId} {
-            allow read: if true;
-            allow create, delete: if request.auth.uid == userId;
-        }
+        allow create: if isAuthenticated();
+        // Only the owner of the comment can update/delete it
+        allow update, delete: if isOwner(resource.data.userId);
       }
-      
-      // Reações a posts
-      match /userReactions/{userId} {
+
+      // Reactions on posts (assuming reaction document has a 'userId' field)
+      match /userReactions/{reactionId} { // Renamed {userId} to {reactionId} for clarity
         allow read: if true;
-        allow create, delete: if request.auth.uid == userId;
+        // Only the owner of the reaction can create/update/delete it
+        allow create, update, delete: if isOwner(resource.data.userId);
       }
     }
 
-    match /Usuarios/{userId} {
-      // PERMISSÃO CORRIGIDA: Permite a leitura de qualquer perfil (necessário para o servidor e para exibir perfis de outros usuários).
-      // A escrita continua restrita apenas ao próprio usuário.
+    // Reels: Public read, authenticated write/update/delete
+    match /reels/{reelId} {
+      // Only read if 'deleted' field is explicitly false
+      allow read: if resource.data.deleted == false;
+      allow create: if isAuthenticated();
+      // Only the author of the reel can update/delete it
+      allow update, delete: if isOwner(resource.data.authorId);
+
+      // Comments on reels
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isAuthenticated();
+        // Only the owner of the comment can update/delete it
+        allow update, delete: if isOwner(resource.data.userId);
+      }
+
+      // Reactions on reels (assuming reaction document has a 'userId' field)
+      match /userReactions/{reactionId} { // Renamed {userId} to {reactionId} for clarity
+        allow read: if true;
+        // Only the owner of the reaction can create/update/delete it
+        allow create, update, delete: if isOwner(resource.data.userId);
+      }
+    }
+
+    // Alerts: Public read, authenticated write
+    match /alerts/{alertId} {
       allow read: if true;
-      allow write: if request.auth.uid == userId;
-      
-      match /notifications/{notificationId} {
-        allow read, write: if request.auth.uid == userId;
-      }
+      allow create: if isAuthenticated();
+      allow update, delete: if false; // Alerts are generally not editable/deletable by users
     }
 
+    // Businesses (Guia Comercial): Public read, authenticated write
     match /businesses/{businessId} {
       allow read: if true;
-      allow create, update: if request.auth != null; // Permite criação e atualização se logado
-      allow delete: if request.auth.uid == resource.data.ownerId; // Apenas o dono pode deletar
+      allow create: if isAuthenticated();
+      // Only the owner of the business can update it
+      allow update: if isOwner(resource.data.ownerId);
+      allow delete: if false; // Prevent deletion
     }
-    
+
+    // SAU Reviews: Public read, authenticated write
     match /sau_reviews/{reviewId} {
       allow read: if true;
-      allow create: if request.auth != null;
+      allow create: if isAuthenticated();
+      // Only the owner of the review can update/delete it
+      allow update, delete: if isOwner(resource.data.userId);
     }
     
-    match /reels/{reelId} {
-      allow read: if true;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth.uid == resource.data.authorId;
-      
-      match /comments/{commentId} {
-        allow read: if true;
-        allow create: if request.auth != null;
-      }
-      
-      match /userReactions/{userId} {
-        allow read: if true;
-        allow create, delete: if request.auth.uid == userId;
-      }
-    }
-
+    // Tourist Points: Public read, authenticated write
     match /tourist_points_indicated/{pointId} {
-        allow read: if true;
-        allow create: if request.auth != null;
-        allow update: if true; // Permitir que o admin atualize o status
+      allow read: if true;
+      allow create: if isAuthenticated();
+      // Only the user who indicated the point can update/delete it
+      allow update, delete: if isOwner(resource.data.indicatedByUserId);
     }
 
+    // Tourist Point Reviews: Public read, authenticated write
     match /tourist_point_reviews/{reviewId} {
-        allow read: if true;
-        allow create: if request.auth != null;
-    }
-    
-    match /chatMessages/{messageId} {
       allow read: if true;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth.uid == resource.data.userId;
-      
-      match /userReactions/{userId} {
-        allow read: if true;
-        allow create, delete: if request.auth.uid == userId;
+      allow create: if isAuthenticated();
+      // Only the owner of the review can update/delete it
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    // User Profiles: Read for any authenticated user, write only for the owner.
+    // RENOMEADO: /Usuários para /users (sem acento)
+    match /users/{userId} { 
+      allow read: if isAuthenticated();
+      // Only the user whose profile it is can create/update it
+      allow create, update: if isOwner(userId);
+      allow delete: if false; // Users cannot delete their own profiles via client
+
+       // Notifications subcollection
+      match /notifications/{notificationId} {
+        // Only the profile owner can read/update/delete their notifications
+        allow read, update, delete: if isOwner(userId);
+        // Any authenticated user can create a notification (e.g., server could create it for another user)
+        allow create: if isAuthenticated(); 
       }
     }
   }

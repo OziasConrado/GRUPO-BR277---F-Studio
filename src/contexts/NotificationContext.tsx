@@ -31,7 +31,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
 
     setLoading(true);
-    const notificationsCollection = collection(firestore, 'Usuarios', currentUser.uid, 'notifications');
+    const notificationsCollection = collection(firestore, 'users', currentUser.uid, 'notifications');
     const q = query(notificationsCollection, orderBy('timestamp', 'desc'), limit(20));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {

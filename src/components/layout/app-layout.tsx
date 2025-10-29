@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -66,12 +67,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
     const batch = writeBatch(firestore);
     if (notificationId) {
-        const notifRef = doc(firestore, 'Usuarios', currentUser.uid, 'notifications', notificationId);
+        const notifRef = doc(firestore, 'users', currentUser.uid, 'notifications', notificationId);
         batch.update(notifRef, { read: true });
     } else {
         notifications.forEach(n => {
             if (!n.read) {
-                const notifRef = doc(firestore, 'Usuarios', currentUser.uid, 'notifications', n.id);
+                const notifRef = doc(firestore, 'users', currentUser.uid, 'notifications', n.id);
                 batch.update(notifRef, { read: true });
             }
         });

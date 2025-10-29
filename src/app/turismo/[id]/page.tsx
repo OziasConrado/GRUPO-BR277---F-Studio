@@ -95,7 +95,7 @@ export default function TouristPointDetailPage() {
     }
 
     try {
-      const userDocRef = doc(firestore, 'Usuarios', userId);
+      const userDocRef = doc(firestore, 'users', userId);
       const userDoc = await getDoc(userDocRef);
 
       if (userDoc.exists()) {
