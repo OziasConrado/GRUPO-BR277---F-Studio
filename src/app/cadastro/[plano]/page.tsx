@@ -190,24 +190,13 @@ export default function RegisterBusinessPage() {
           body: JSON.stringify({
             plano: formattedPlano,
             businessId: businessId,
-            ownerId: userProfile.uid // CORRIGIDO: Usar o UID do perfil de usuário
+            ownerId: currentUser.uid,
           }),
         });
 
         if (!response.ok) {
-          // Tenta ler a resposta como texto se não for JSON válido
-          const errorText = await response.text();
-          let errorMessage = 'Falha ao criar sessão de pagamento.';
-          try {
-            // Tenta parsear o texto como JSON, caso o erro seja um JSON malformado
-            const result = JSON.parse(errorText);
-            errorMessage = result.error || errorMessage;
-          } catch (e) {
-             // Se não for JSON, mostra o texto do erro que pode ser HTML
-            errorMessage = errorText.substring(0, 200); // Trunca para não poluir o toast
-            console.error("Non-JSON error response from checkout API:", errorText);
-          }
-          throw new Error(errorMessage);
+          const result = await response.json();
+          throw new Error(result.error || 'Falha ao criar sessão de pagamento.');
         }
 
         const result = await response.json();
