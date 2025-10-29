@@ -47,7 +47,7 @@ const criarCobrancaAsaasFlow = ai.defineFlow(
 
     try {
       // 1. Buscar dados do cliente (usuário dono do negócio) no Firestore
-      const userDocRef = firestore.collection('Usuarios').doc(ownerId);
+      const userDocRef = firestore.collection('usuarios').doc(ownerId);
       const userDoc = await userDocRef.get();
 
       if (!userDoc.exists) {
