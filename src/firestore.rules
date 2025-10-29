@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -10,7 +11,6 @@ service cloud.firestore {
 
     // Helper function to check if the user is the owner of the document
     function isOwner(userId) {
-      // Ensure request.auth.uid exists before comparing
       return isAuthenticated() && request.auth.uid == userId;
     }
 
@@ -18,46 +18,38 @@ service cloud.firestore {
     match /posts/{postId} {
       allow read: if true;
       allow create: if isAuthenticated();
-      // Only the owner of the post can update/delete it
       allow update, delete: if isOwner(resource.data.userId);
 
       // Comments on posts
       match /comments/{commentId} {
         allow read: if true;
         allow create: if isAuthenticated();
-        // Only the owner of the comment can update/delete it
         allow update, delete: if isOwner(resource.data.userId);
       }
-
-      // Reactions on posts (assuming reaction document has a 'userId' field)
-      match /userReactions/{reactionId} { // Renamed {userId} to {reactionId} for clarity
+      
+      match /userReactions/{userId} {
         allow read: if true;
-        // Only the owner of the reaction can create/update/delete it
-        allow create, update, delete: if isOwner(resource.data.userId);
+        allow write: if isOwner(userId);
       }
     }
 
     // Reels: Public read, authenticated write/update/delete
     match /reels/{reelId} {
-      // Only read if 'deleted' field is explicitly false
       allow read: if resource.data.deleted == false;
       allow create: if isAuthenticated();
-      // Only the author of the reel can update/delete it
       allow update, delete: if isOwner(resource.data.authorId);
 
       // Comments on reels
       match /comments/{commentId} {
         allow read: if true;
         allow create: if isAuthenticated();
-        // Only the owner of the comment can update/delete it
         allow update, delete: if isOwner(resource.data.userId);
       }
 
-      // Reactions on reels (assuming reaction document has a 'userId' field)
-      match /userReactions/{reactionId} { // Renamed {userId} to {reactionId} for clarity
+      // Reactions on reels
+      match /userReactions/{userId} {
         allow read: if true;
-        // Only the owner of the reaction can create/update/delete it
-        allow create, update, delete: if isOwner(resource.data.userId);
+        allow write: if isOwner(userId);
       }
     }
 
@@ -102,19 +94,30 @@ service cloud.firestore {
     }
 
     // User Profiles: Read for any authenticated user, write only for the owner.
-    // RENOMEADO: /Usuários para /users (sem acento)
     match /users/{userId} { 
       allow read: if isAuthenticated();
-      // Only the user whose profile it is can create/update it
-      allow create, update: if isOwner(userId);
-      allow delete: if false; // Users cannot delete their own profiles via client
+      // Allow user to create and update their own document.
+      allow write: if isOwner(userId);
 
        // Notifications subcollection
       match /notifications/{notificationId} {
         // Only the profile owner can read/update/delete their notifications
         allow read, update, delete: if isOwner(userId);
-        // Any authenticated user can create a notification (e.g., server could create it for another user)
+        // Only authenticated users can create notifications
         allow create: if isAuthenticated(); 
+      }
+    }
+    
+    // Chat Messages: Authenticated users can read/write.
+    match /chatMessages/{messageId} {
+      allow read, create: if isAuthenticated();
+      // Only the owner of a message can edit/delete it.
+      allow update, delete: if isOwner(resource.data.userId);
+      
+      // Reactions on chat messages
+      match /userReactions/{userId} {
+        allow read: if true;
+        allow write: if isOwner(userId);
       }
     }
   }
