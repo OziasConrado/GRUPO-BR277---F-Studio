@@ -4,137 +4,114 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if user is authenticated
-    function isAuthenticated() {
-      return request.auth != null;
-    }
+    // --- Coleções com Leitura Pública ---
 
-    // Helper function to check if the user is the owner of the document
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    //----------------------------------------------------------------------
-    // Usuários Collection
-    //----------------------------------------------------------------------
-    match /Usuários/{userId} {
-      // Um usuário pode ler seu próprio perfil.
-      // O backend (usando a conta de serviço) pode ler qualquer perfil.
-      allow read: if isAuthenticated();
-
-      // Um usuário pode criar e atualizar seu próprio perfil.
-      allow create, update: if isOwner(userId);
-    }
-
-    //----------------------------------------------------------------------
-    // Posts Collection (Feed)
-    //----------------------------------------------------------------------
-    match /posts/{postId} {
-      // Qualquer usuário autenticado pode ler os posts.
-      allow read: if isAuthenticated();
-
-      // Usuário pode criar um post se estiver autenticado.
-      // E só pode atualizar/deletar se for o dono do post.
-      allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
-
-      // Subcoleções de comentários e reações
-      match /comments/{commentId} {
-        allow read, create: if isAuthenticated();
-        allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
-      }
-      match /userReactions/{userId} {
-        allow read, create, update, delete: if isAuthenticated() && isOwner(userId);
-      }
-      match /userVotes/{userId} {
-        allow read, create, update, delete: if isAuthenticated() && isOwner(userId);
-      }
-    }
-
-    //----------------------------------------------------------------------
-    // Reels Collection (Stories)
-    //----------------------------------------------------------------------
-    match /reels/{reelId} {
-      allow read, create: if isAuthenticated();
-      allow update, delete: if isAuthenticated() && isOwner(resource.data.authorId);
-
-      match /comments/{commentId} {
-        allow read, create: if isAuthenticated();
-        allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
-      }
-       match /userReactions/{userId} {
-        allow read, create, update, delete: if isAuthenticated() && isOwner(userId);
-      }
-    }
-
-    //----------------------------------------------------------------------
-    // Alerts Collection
-    //----------------------------------------------------------------------
-    match /alerts/{alertId} {
-      // Qualquer usuário autenticado pode ler os alertas.
-      allow read: if isAuthenticated();
-      // Qualquer usuário autenticado pode criar um alerta.
-      allow create: if isAuthenticated();
-      // Apenas o dono pode deletar (ou admin no futuro).
-      allow delete: if isAuthenticated() && isOwner(resource.data.userId);
-    }
-    
-    //----------------------------------------------------------------------
-    // Chat Messages Collection
-    //----------------------------------------------------------------------
-    match /chatMessages/{messageId} {
-        allow read, create: if isAuthenticated();
-        // Apenas o dono da mensagem pode editar ou deletar.
-        allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
-        
-        match /userReactions/{userId} {
-            allow read, create, update, delete: if isAuthenticated() && isOwner(userId);
-        }
-    }
-
-    //----------------------------------------------------------------------
-    // Businesses Collection (Guia Comercial)
-    //----------------------------------------------------------------------
-    match /businesses/{businessId} {
-      // Todos podem ler os estabelecimentos.
+    // Todos podem ler os pontos de atendimento (SAUs)
+    match /sau_locations/{sauId} {
       allow read: if true;
-      // Apenas usuários autenticados podem criar.
-      allow create: if isAuthenticated();
-      // Apenas o dono do estabelecimento pode atualizar ou deletar.
-      allow update, delete: if isAuthenticated() && isOwner(resource.data.ownerId);
+      allow write: if false; // Bloqueia escrita direta
     }
 
-    //----------------------------------------------------------------------
-    // SAU Reviews Collection
-    //----------------------------------------------------------------------
+    // Todos podem ler os pontos turísticos aprovados
+    match /tourist_points_indicated/{pointId} {
+      allow read: if resource.data.status == 'approved';
+      allow create: if request.auth != null; // Qualquer usuário logado pode criar (indicar)
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.indicatedByUserId; // O autor pode editar/deletar sua indicação
+    }
+
+    // Todos podem ler as avaliações de turismo e SAU
+    match /tourist_point_reviews/{reviewId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
     match /sau_reviews/{reviewId} {
-        // Todos podem ler as avaliações.
-        allow read: if true;
-        // Apenas usuários autenticados podem criar avaliações.
-        allow create: if isAuthenticated();
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
     
-    //----------------------------------------------------------------------
-    // Tourist Points & Reviews
-    //----------------------------------------------------------------------
-    match /tourist_points_indicated/{pointId} {
-        // Todos podem ler os pontos turísticos.
+    // Todos podem ler os posts que não foram deletados
+    match /posts/{postId} {
+      allow read: if resource.data.deleted == false;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Reações (votos)
+      match /userReactions/{userId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      // Comentários
+      match /comments/{commentId} {
         allow read: if true;
-        // Apenas usuários autenticados podem criar.
-        allow create: if isAuthenticated();
-        // Apenas o dono da indicação ou um admin (futuro) pode atualizar/deletar.
-        allow update, delete: if isAuthenticated() && isOwner(resource.data.indicatedByUserId);
-        
-        match /userVotes/{userId} {
-          allow read, create, delete: if isAuthenticated() && isOwner(userId);
+        allow create: if request.auth != null;
+        allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+        match /commentReactions/{reactionUserId} {
+          allow read, write: if request.auth != null && request.auth.uid == reactionUserId;
+        }
+      }
+    }
+    
+    // Todos podem ler os reels que não foram deletados
+    match /reels/{reelId} {
+        allow read: if resource.data.deleted == false;
+        allow create: if request.auth != null;
+        allow update: if request.auth != null && request.auth.uid == resource.data.authorId;
+        allow delete: if request.auth != null && request.auth.uid == resource.data.authorId;
+
+        // Reações e comentários dos reels
+        match /userReactions/{userId} {
+            allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+        match /comments/{commentId} {
+            allow read: if true;
+            allow create: if request.auth != null;
+            allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
         }
     }
 
-    match /tourist_point_reviews/{reviewId} {
-        // Todos podem ler as avaliações.
+    // Todos podem ler os alertas
+    match /alerts/{alertId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId; // Se houver um dono
+    }
+    
+    // --- Coleções com Acesso Restrito ---
+    
+    // Usuários: Um usuário pode ler qualquer perfil, mas só pode escrever/editar o seu próprio.
+    match /Usuários/{userId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      
+      // Subcoleção de notificações
+      match /notifications/{notificationId} {
+        allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+    
+    // Mensagens do Chat: Apenas usuários autenticados podem ler e escrever.
+    match /chatMessages/{messageId} {
+        allow read, create: if request.auth != null;
+        allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+        
+        // Reações das mensagens
+        match /userReactions/{userId} {
+            allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+    }
+    
+    // Guia Comercial: Todos podem ler, mas apenas o dono pode editar seu negócio.
+    match /businesses/{businessId} {
         allow read: if true;
-        // Apenas usuários autenticados podem criar.
-        allow create: if isAuthenticated();
+        allow create: if request.auth != null; // Qualquer usuário logado pode iniciar o cadastro
+        allow update: if request.auth != null && request.auth.uid == resource.data.ownerId; // Apenas o dono pode editar
+        
+        // Votos de enquete
+        match /userVotes/{userId} {
+            allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
     }
   }
 }
