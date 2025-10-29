@@ -17,6 +17,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetClose } from '@/components/ui/sheet';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import Image from 'next/image';
+import { getUserLocation } from '@/lib/location';
 
 const concessionairesForFilter = [
   "Todos",
@@ -216,6 +217,9 @@ const allSausData: SAULocation[] = [
 ];
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+  if ((lat1 === lat2) && (lon1 === lon2)) {
+    return 0;
+  }
   const R = 6371; // Radius of the Earth in km
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
@@ -224,7 +228,8 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c; // Distance in km
+  const distance = R * c; // Distância em km
+  return distance;
 }
 
 const AdPlaceholder = ({ className }: { className?: string }) => (
@@ -249,29 +254,19 @@ export default function SAUPage() {
 
   const requestLocation = useCallback(() => {
     setLocationStatus('loading');
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
+    getUserLocation()
+      .then(position => {
           setUserLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
+            latitude: position.latitude,
+            longitude: position.longitude,
           });
           setLocationStatus('success');
-        },
-        (error) => {
+        })
+        .catch(error => {
           console.error("Error getting location:", error);
           setLocationStatus('error');
-        }
-      );
-    } else {
-      setLocationStatus('error');
-      toast({
-        title: "Geolocalização não suportada",
-        description: "Seu navegador não suporta geolocalização.",
-        variant: "destructive"
-      });
-    }
-  }, [toast]);
+        });
+  }, []);
 
   useEffect(() => {
     const loadDataAndLocation = async () => {
