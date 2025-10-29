@@ -1,9 +1,9 @@
-// This file is intended for server-side use only.
-import { genkit } from 'genkit';
-import {googleAI} from '@genkit-ai/googleai';
-// O plugin googleCloud não é necessário para a funcionalidade atual e está causando erro.
-// import {googleCloud} from '@genkit-ai/google-cloud';
+'use server';
 
-// A inicialização global foi removida para ser feita sob demanda em cada fluxo.
-// Isso evita problemas de timing com o carregamento de variáveis de ambiente.
+/**
+ * @deprecated This file is deprecated. AI initialization is now handled in /src/ai/index.ts
+ * All flows should import from '@/ai' instead.
+ */
+import { genkit } from 'genkit';
+
 export const ai = genkit();

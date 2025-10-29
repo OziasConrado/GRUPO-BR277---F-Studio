@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A promotional post generation AI agent.
@@ -8,8 +7,7 @@
  * - GerarPostsPromocionaisOutput - The return type for the gerarPostsPromocionais function.
  */
 
-import { genkit } from 'genkit';
-import { googleAI } from '@genkit-ai/googleai';
+import { ai } from '@/ai'; // Import the central AI instance
 import {z} from 'genkit';
 import {
   GerarPostsPromocionaisInputSchema,
@@ -19,11 +17,6 @@ import {
 } from '@/ai/schemas/gerar-post-promocional-schemas';
 
 export type { GerarPostsPromocionaisInput, GerarPostsPromocionaisOutput };
-
-// Inicializa o Genkit com a chave da API do Gemini aqui, sob demanda.
-const ai = genkit({
-  plugins: [googleAI({ apiKey: process.env.GEMINI_API_KEY })],
-});
 
 export async function gerarPostsPromocionais(input: GerarPostsPromocionaisInput): Promise<GerarPostsPromocionaisOutput> {
   return gerarPostsPromocionaisFlow(input);
