@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -112,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setCurrentUser(user);
-        const userDocRef = doc(firestore, 'Usuarios', user.uid);
+        const userDocRef = doc(firestore, 'Usuários', user.uid);
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
           setUserProfile(userDoc.data() as UserProfile);
@@ -217,7 +218,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             await firebaseUpdateProfile(currentUser, authUpdates);
         }
         
-        const userDocRef = doc(firestore, 'Usuarios', currentUser.uid);
+        const userDocRef = doc(firestore, 'Usuários', currentUser.uid);
         const firestoreUpdates: any = {
           displayName_lowercase: data.displayName?.toLowerCase(),
           bio: data.bio,

@@ -17,14 +17,14 @@ import StarDisplay from '../sau/star-display';
 interface TouristPointCardProps {
   point: TouristPointData;
   showIndicatedBy?: boolean;
-  onAddReview: (pointId: string, reviewData: Omit<TouristPointReview, 'id' | 'timestamp' | 'author' | 'userId' | 'pointId'>) => Promise<void>;
+  onAddReview: (pointId: string, reviewData: Omit<TouristPointReview, 'id' | 'timestamp' | 'author' | 'userId' | 'pointId' | 'userAvatarUrl'>) => Promise<void>;
 }
 
 export default function TouristPointCard({ point, showIndicatedBy = false, onAddReview }: TouristPointCardProps) {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleReviewSubmit = async (reviewData: Omit<TouristPointReview, 'id' | 'timestamp' | 'author' | 'userId' | 'pointId'>) => {
+  const handleReviewSubmit = async (reviewData: Omit<TouristPointReview, 'id' | 'timestamp' | 'author' | 'userId' | 'pointId' | 'userAvatarUrl'>) => {
     setIsSubmitting(true);
     try {
       await onAddReview(point.id, reviewData);

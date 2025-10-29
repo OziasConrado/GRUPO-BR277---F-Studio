@@ -182,7 +182,7 @@ export default function ChatMessageItem({
     if (!firestore || !message.userId) return;
 
     try {
-        const userDocRef = doc(firestore, "Usuarios", message.userId);
+        const userDocRef = doc(firestore, "Usuários", message.userId);
         const userDoc = await getDoc(userDocRef);
 
         if (userDoc.exists()) {
