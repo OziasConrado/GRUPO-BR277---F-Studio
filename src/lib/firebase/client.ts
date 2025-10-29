@@ -25,7 +25,7 @@ let storage: FirebaseStorage;
 let analytics: Analytics | null = null;
 
 // Verifica se o app já foi inicializado para evitar erros durante o Hot Reloading.
-if (getApps().length === 0) {
+if (!getApps().length) {
   app = initializeApp(firebaseConfig);
 } else {
   app = getApp();
