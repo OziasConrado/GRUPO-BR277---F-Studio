@@ -1,104 +1,106 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Regra para a coleção 'posts'
+    // Helper function to check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if the user is the owner of the document
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Posts: Public read, authenticated write/update/delete
     match /posts/{postId} {
       allow read: if true;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth.uid == resource.data.userId;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
 
-      // Regras para subcoleções de 'posts' (comentários, reações)
+      // Comments on posts
       match /comments/{commentId} {
         allow read: if true;
-        allow create: if request.auth != null;
-        allow delete: if request.auth.uid == resource.data.userId;
+        allow create: if isAuthenticated();
+        allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
       }
-      
+
+      // Reactions on posts
       match /userReactions/{userId} {
         allow read: if true;
-        allow create, update, delete: if request.auth.uid == userId;
+        allow create, update, delete: if isAuthenticated() && isOwner(userId);
       }
     }
 
-    // Regra para a coleção 'reels'
+    // Reels: Public read, authenticated write/update/delete
     match /reels/{reelId} {
-      allow read: if true;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth.uid == resource.data.authorId;
+      allow read: if resource.data.deleted == false;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && isOwner(resource.data.authorId);
 
-      // Regras para subcoleções de 'reels'
+      // Comments on reels
       match /comments/{commentId} {
         allow read: if true;
-        allow create: if request.auth != null;
-        allow delete: if request.auth.uid == resource.data.userId;
+        allow create: if isAuthenticated();
+        allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
       }
 
+      // Reactions on reels
       match /userReactions/{userId} {
         allow read: if true;
-        allow create, update, delete: if request.auth.uid == userId;
+        allow create, update, delete: if isAuthenticated() && isOwner(userId);
       }
     }
 
-    // Regra para a coleção 'alerts'
+    // Alerts: Public read, authenticated write
     match /alerts/{alertId} {
       allow read: if true;
-      allow create: if request.auth != null;
-      allow delete: if request.auth.uid == resource.data.userId;
+      allow create: if isAuthenticated();
+      allow update, delete: if false; // Generally alerts are not editable by users
     }
-    
-    // Regra para a coleção 'businesses' (Guia Comercial)
+
+    // Businesses (Guia Comercial): Public read, authenticated write
     match /businesses/{businessId} {
       allow read: if true;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth.uid == resource.data.ownerId;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && isOwner(resource.data.ownerId); // Only owner can update
+      allow delete: if false; // Prevent deletion
     }
 
-    // Regra para a coleção 'sau_reviews'
+    // SAU Reviews: Public read, authenticated write
     match /sau_reviews/{reviewId} {
       allow read: if true;
-      allow create: if request.auth != null;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
     }
-
-    // Regra para a coleção 'tourist_points_indicated'
+    
+    // Tourist Points: Public read, authenticated write
     match /tourist_points_indicated/{pointId} {
       allow read: if true;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth.uid == resource.data.indicatedByUserId;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && isOwner(resource.data.indicatedByUserId);
     }
 
-    // Regra para a coleção 'tourist_point_reviews'
+    // Tourist Point Reviews: Public read, authenticated write
     match /tourist_point_reviews/{reviewId} {
-        allow read: if true;
-        allow create: if request.auth != null;
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
     }
 
-    // Regra para a coleção 'Usuários'
+    // User Profiles: Read for any authenticated user, write only for the owner.
     match /Usuários/{userId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth.uid == userId;
-      allow update: if request.auth.uid == userId;
+      allow read: if isAuthenticated();
+      allow create, update: if isOwner(userId);
+      allow delete: if false; // Users cannot delete their own profiles via client
 
-      // Regra para a subcoleção 'notifications'
+       // Notifications subcollection
       match /notifications/{notificationId} {
-        allow read, update, delete: if request.auth.uid == userId;
+        allow read, update, delete: if isOwner(userId);
+        allow create: if isAuthenticated(); // Server-side logic should handle who can create
       }
     }
-
-    // Regra para a coleção 'chatMessages'
-    match /chatMessages/{messageId} {
-        allow read: if request.auth != null;
-        allow create: if request.auth != null;
-        allow update: if request.auth.uid == resource.data.userId;
-        allow delete: if request.auth.uid == resource.data.userId;
-        
-        // Subcoleção de reações a mensagens do chat
-        match /userReactions/{reactionId} {
-            allow read: if request.auth != null;
-            allow create, update, delete: if request.auth.uid == reactionId;
-        }
-    }
-
   }
 }
