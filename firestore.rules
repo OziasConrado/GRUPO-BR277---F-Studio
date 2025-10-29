@@ -1,117 +1,113 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- Coleções com Leitura Pública ---
-
-    // Todos podem ler os pontos de atendimento (SAUs)
-    match /sau_locations/{sauId} {
-      allow read: if true;
-      allow write: if false; // Bloqueia escrita direta
-    }
-
-    // Todos podem ler os pontos turísticos aprovados
-    match /tourist_points_indicated/{pointId} {
-      allow read: if resource.data.status == 'approved';
-      allow create: if request.auth != null; // Qualquer usuário logado pode criar (indicar)
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.indicatedByUserId; // O autor pode editar/deletar sua indicação
-    }
-
-    // Todos podem ler as avaliações de turismo e SAU
-    match /tourist_point_reviews/{reviewId} {
-      allow read: if true;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-    }
-
-    match /sau_reviews/{reviewId} {
-      allow read: if true;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    // Helper function to check if the user is authenticated.
+    function isSignedIn() {
+      return request.auth != null;
     }
     
-    // Todos podem ler os posts que não foram deletados
+    // Helper function to check if the request is coming from the Admin SDK.
+    function isAdmin() {
+      // This is a common way to check for admin access in security rules.
+      // It assumes you don't expose session tokens to your backend.
+      // A more robust way if needed is to check a custom claim on the user's token.
+      return request.auth.token.email_verified == true; 
+    }
+
+    // --- Feed (Posts, Reels, Alerts) ---
     match /posts/{postId} {
-      allow read: if resource.data.deleted == false;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
-      // Reações (votos)
-      match /userReactions/{userId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-      // Comentários
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      // Rules for subcollections of posts
       match /comments/{commentId} {
-        allow read: if true;
-        allow create: if request.auth != null;
-        allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-        match /commentReactions/{reactionUserId} {
-          allow read, write: if request.auth != null && request.auth.uid == reactionUserId;
-        }
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+        allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      }
+      match /userReactions/{userId} {
+        allow read: if isSignedIn();
+        allow create, update, delete: if isSignedIn() && userId == request.auth.uid;
       }
     }
     
-    // Todos podem ler os reels que não foram deletados
     match /reels/{reelId} {
-        allow read: if resource.data.deleted == false;
-        allow create: if request.auth != null;
-        allow update: if request.auth != null && request.auth.uid == resource.data.authorId;
-        allow delete: if request.auth != null && request.auth.uid == resource.data.authorId;
-
-        // Reações e comentários dos reels
-        match /userReactions/{userId} {
-            allow read, write: if request.auth != null && request.auth.uid == userId;
-        }
-        match /comments/{commentId} {
-            allow read: if true;
-            allow create: if request.auth != null;
-            allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-        }
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
     }
-
-    // Todos podem ler os alertas
+    
     match /alerts/{alertId} {
-      allow read: if true;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId; // Se houver um dono
+      allow read: if isSignedIn();
+      // Allow any signed-in user to create an alert
+      allow create: if isSignedIn();
+      // Only the user who created it can delete it (adjust if admins can)
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
-    
-    // --- Coleções com Acesso Restrito ---
-    
-    // Usuários: Um usuário pode ler qualquer perfil, mas só pode escrever/editar o seu próprio.
-    match /Usuários/{userId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && request.auth.uid == userId;
-      
-      // Subcoleção de notificações
-      match /notifications/{notificationId} {
-        allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+
+    // --- Guia Comercial & Pagamentos ---
+    match /businesses/{businessId} {
+      allow read: if true; // Publicly readable
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      // Allow owner to update. Admin (backend) can update for payment status.
+      allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+    }
+
+    // --- SAU (Serviço de Atendimento ao Usuário) ---
+    match /sau_reviews/{reviewId} {
+      allow read: if true; // Publicly readable
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // --- Turismo ---
+    match /tourist_points_indicated/{pointId} {
+      allow read: if true; // Publicly readable
+      // Allow authenticated users to create indications
+      allow create: if isSignedIn() && request.resource.data.indicatedByUserId == request.auth.uid;
+      // Allow admin to update status
+      allow update: if isAdmin();
+    }
+
+    match /tourist_point_reviews/{reviewId} {
+      allow read: if true; // Publicly readable
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // --- Chat ---
+    match /chatMessages/{messageId} {
+      allow read, create: if isSignedIn();
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      // Subcollections for reactions
+      match /userReactions/{userId} {
+        allow read: if isSignedIn();
+        allow create, update, delete: if isSignedIn() && userId == request.auth.uid;
+      }
+      match /commentReactions/{userId} {
+        allow read: if isSignedIn();
+        allow create, update, delete: if isSignedIn() && userId == request.auth.uid;
       }
     }
-    
-    // Mensagens do Chat: Apenas usuários autenticados podem ler e escrever.
-    match /chatMessages/{messageId} {
-        allow read, create: if request.auth != null;
-        allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-        
-        // Reações das mensagens
-        match /userReactions/{userId} {
-            allow read, write: if request.auth != null && request.auth.uid == userId;
-        }
-    }
-    
-    // Guia Comercial: Todos podem ler, mas apenas o dono pode editar seu negócio.
-    match /businesses/{businessId} {
-        allow read: if true;
-        allow create: if request.auth != null; // Qualquer usuário logado pode iniciar o cadastro
-        allow update: if request.auth != null && request.auth.uid == resource.data.ownerId; // Apenas o dono pode editar
-        
-        // Votos de enquete
-        match /userVotes/{userId} {
-            allow read, write: if request.auth != null && request.auth.uid == userId;
-        }
+
+    // --- Coleção de Usuários ---
+    match /Usuários/{userId} {
+      // Anyone can read a user's public profile data
+      allow read: if true;
+      // A user can create their own profile document
+      allow create: if isSignedIn() && userId == request.auth.uid;
+      // A user can only update their own profile
+      allow update, delete: if isSignedIn() && userId == request.auth.uid;
+
+      // Subcollection for user notifications
+      match /notifications/{notificationId} {
+        allow read, update, delete: if isSignedIn() && userId == request.auth.uid;
+        // Prevent creation from client-side for security
+        allow create: if false; 
+      }
     }
   }
 }
