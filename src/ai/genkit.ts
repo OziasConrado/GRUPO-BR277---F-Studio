@@ -4,6 +4,6 @@ import {googleAI} from '@genkit-ai/googleai';
 // O plugin googleCloud não é necessário para a funcionalidade atual e está causando erro.
 // import {googleCloud} from '@genkit-ai/google-cloud';
 
-export const ai = genkit({
-  plugins: [googleAI({ apiKey: process.env.GEMINI_API_KEY })],
-});
+// A inicialização global foi removida para ser feita sob demanda em cada fluxo.
+// Isso evita problemas de timing com o carregamento de variáveis de ambiente.
+export const ai = genkit();

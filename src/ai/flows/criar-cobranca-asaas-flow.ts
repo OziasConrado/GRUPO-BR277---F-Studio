@@ -3,7 +3,8 @@
  * @fileOverview A Genkit flow to create an Asaas payment link.
  */
 
-import { ai } from '@/ai/genkit';
+import { genkit } from 'genkit';
+import { googleAI } from '@genkit-ai/googleai';
 import { CriarCobrancaAsaasInputSchema, type CriarCobrancaAsaasInput, CriarCobrancaAsaasOutputSchema, type CriarCobrancaAsaasOutput } from '@/ai/schemas/criar-cobranca-asaas-schemas';
 import axios from 'axios';
 import { firestore } from '@/lib/firebase/server';
@@ -22,6 +23,12 @@ const planDescriptions = {
   INTERMEDIARIO: "Plano Intermediário (Semestral) - Guia Comercial BR277",
   PREMIUM: "Plano Premium (Anual) - Guia Comercial BR277",
 };
+
+// Inicializa o Genkit com a chave da API do Gemini aqui, sob demanda.
+const ai = genkit({
+  plugins: [googleAI({ apiKey: process.env.GEMINI_API_KEY })],
+});
+
 
 // Exporta a função que será chamada pela API route
 export async function criarCobrancaAsaas(input: CriarCobrancaAsaasInput): Promise<CriarCobrancaAsaasOutput> {
