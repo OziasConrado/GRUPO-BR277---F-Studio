@@ -15,6 +15,12 @@ runConfig:
 environmentVariables:
   GOOGLE_MAPS_API_KEY: {secret: GOOGLE_MAPS_API_KEY}
   FIREBASE_SERVICE_ACCOUNT: {secret: FIREBASE_SERVICE_ACCOUNT}
-  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: "grupo-br277.firebasestorage.app"
-# A variável NEXT_PUBLIC_FIREBASE_CONFIG é injetada automaticamente pelo App Hosting.
-# Não é necessário (e não é seguro) defini-la aqui.
+  # As variáveis do Firebase serão referenciadas como secrets para maior segurança.
+  # O App Hosting irá buscar os valores correspondentes no Secret Manager durante o build.
+  NEXT_PUBLIC_FIREBASE_API_KEY: {secret: NEXT_PUBLIC_FIREBASE_API_KEY}
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: {secret: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID: {secret: NEXT_PUBLIC_FIREBASE_PROJECT_ID}
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: {secret: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: {secret: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID}
+  NEXT_PUBLIC_FIREBASE_APP_ID: {secret: NEXT_PUBLIC_FIREBASE_APP_ID}
+  NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: {secret: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID}
