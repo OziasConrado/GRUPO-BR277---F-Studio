@@ -6,16 +6,6 @@ import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, type FirebaseStorage } from 'firebase/storage';
 import { getAnalytics, isSupported, type Analytics } from 'firebase/analytics';
 
-const firebaseConfig = {
-  "projectId": "grupo-br277",
-  "appId": "1:491779757123:web:f0c1615487eb032c17b0f6",
-  "storageBucket": "grupo-br277.firebasestorage.app",
-  "apiKey": "AIzaSyBkj9LYAUrrdXXb-M80C-q9FMQxGWMWA1A",
-  "authDomain": "grupo-br277.firebaseapp.com",
-  "measurementId": "G-MD0VTEF82W",
-  "messagingSenderId": "491779757123"
-};
-
 // --- Início da Implementação do Padrão Singleton ---
 
 let app: FirebaseApp;
@@ -25,8 +15,10 @@ let storage: FirebaseStorage;
 let analytics: Analytics | null = null;
 
 // Verifica se o app já foi inicializado para evitar erros durante o Hot Reloading.
+// Ao passar um objeto vazio, o SDK do Firebase detectará automaticamente a configuração
+// do ambiente do App Hosting.
 if (getApps().length === 0) {
-  app = initializeApp(firebaseConfig);
+  app = initializeApp({});
 } else {
   app = getApp();
 }
