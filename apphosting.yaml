@@ -7,6 +7,8 @@ location: us-central1
 buildConfig:
   memoryMiB: 4096
   environmentVariables:
+    GOOGLE_MAPS_API_KEY: {secret: GOOGLE_MAPS_API_KEY}
+    FIREBASE_SERVICE_ACCOUNT: {secret: FIREBASE_SERVICE_ACCOUNT}
     NEXT_PUBLIC_FIREBASE_API_KEY: {secret: NEXT_PUBLIC_FIREBASE_API_KEY}
     NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: {secret: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}
     NEXT_PUBLIC_FIREBASE_PROJECT_ID: {secret: NEXT_PUBLIC_FIREBASE_PROJECT_ID}
@@ -20,6 +22,3 @@ runConfig:
   # more instances in response to increased traffic.
   maxInstances: 1
   memoryMiB: 2048
-  environmentVariables:
-    GOOGLE_MAPS_API_KEY: {secret: GOOGLE_MAPS_API_KEY}
-    FIREBASE_SERVICE_ACCOUNT: {secret: FIREBASE_SERVICE_ACCOUNT}
