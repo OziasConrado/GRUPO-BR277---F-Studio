@@ -62,7 +62,7 @@ service cloud.firestore {
 
     // Businesses (Guia Comercial): Public read, authenticated write
     match /businesses/{businessId} {
-      allow read: if true;
+      allow get, list: if true; // Allow public read access for single documents and lists
       allow create: if isAuthenticated();
       // Only the owner of the business can update it
       allow update: if isOwner(resource.data.ownerId);
