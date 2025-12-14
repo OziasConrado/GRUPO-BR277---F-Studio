@@ -1,4 +1,3 @@
-
 'use client';
 
 import { initializeApp, getApp, getApps, type FirebaseApp } from 'firebase/app';
@@ -7,15 +6,18 @@ import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, type FirebaseStorage } from 'firebase/storage';
 import { getAnalytics, isSupported, type Analytics } from 'firebase/analytics';
 
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  "projectId": "grupobr277-v2-d85f5",
-  "appId": "1:491779757123:web:f0c1615487eb032c17b0f6",
-  "storageBucket": "grupobr277-v2-d85f5.appspot.com",
-  "apiKey": process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  "authDomain": process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  "measurementId": process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
-  "messagingSenderId": process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+  apiKey: "AIzaSyBkj9LYAUrrdXXb-M80C-q9FMQxGWMWA1A",
+  authDomain: "grupo-br277.firebaseapp.com",
+  projectId: "grupo-br277",
+  storageBucket: "grupo-br277.appspot.com",
+  messagingSenderId: "491779757123",
+  appId: "1:491779757123:web:48eae01a02fa2b3617b0f6",
+  measurementId: "G-L7QXVV5X54"
 };
+
 
 // --- Início da Implementação do Padrão Singleton ---
 
