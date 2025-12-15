@@ -11,7 +11,8 @@ import type { BusinessData, BusinessCategory } from '@/types/guia-comercial';
 import { businessCategories } from '@/types/guia-comercial';
 import BusinessCard from '@/components/guia-comercial/business-card';
 import { useToast } from '@/hooks/use-toast';
-import { getUserLocation, calculateDistance } from '@/lib/utils';
+import { calculateDistance } from '@/lib/utils';
+import { getUserLocation } from '@/lib/location';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { firestore } from '@/lib/firebase/client';
@@ -203,5 +204,3 @@ export default function GuiaComercialPage() {
     </>
   );
 }
-
-    
