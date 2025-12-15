@@ -30,7 +30,7 @@ type ReviewFormValues = z.infer<typeof reviewSchema>;
 interface SubmitReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (reviewData: Omit<TouristPointReview, 'id' | 'timestamp' | 'author' | 'userId' | 'pointId'>) => Promise<void>;
+  onSubmit: (reviewData: Omit<TouristPointReview, 'id' | 'timestamp' | 'author' | 'userId' | 'pointId' | 'userAvatarUrl'>) => Promise<void>;
   pointName: string;
   isSubmitting: boolean;
 }
