@@ -12,7 +12,7 @@ interface ChatContextType {
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
-function ChatProvider({ children }: { children: ReactNode }) {
+export function ChatProvider({ children }: { children: ReactNode }) {
   const [isChatOpen, setIsChatOpen] = useState(false);
 
   const openChat = useCallback(() => {
@@ -37,12 +37,10 @@ function ChatProvider({ children }: { children: ReactNode }) {
   );
 }
 
-function useChat() {
+export function useChat() {
   const context = useContext(ChatContext);
   if (context === undefined) {
     throw new Error('useChat must be used within a ChatProvider');
   }
   return context;
 }
-
-export { ChatProvider, useChat };

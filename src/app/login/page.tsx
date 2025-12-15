@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -26,6 +25,8 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get('redirect') || '/';
   const { signInWithEmail, currentUser, loading, authAction } = useAuth();
 
   const {
@@ -38,9 +39,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && currentUser) {
-      router.push('/'); 
+      router.push(redirectUrl); 
     }
-  }, [currentUser, loading, router]);
+  }, [currentUser, loading, router, redirectUrl]);
 
   const onSubmit = async (data: LoginFormValues) => {
     await signInWithEmail(data.email, data.password);

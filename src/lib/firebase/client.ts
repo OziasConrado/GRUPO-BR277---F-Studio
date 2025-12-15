@@ -6,35 +6,40 @@ import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, type FirebaseStorage } from 'firebase/storage';
 import { getAnalytics, isSupported, type Analytics } from 'firebase/analytics';
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// Your web app's Firebase configuration is injected via environment variables
 const firebaseConfig = {
-  apiKey: "AIzaSyBkj9LYAUrrdXXb-M80C-q9FMQxGWMWA1A",
-  authDomain: "grupo-br277.firebaseapp.com",
-  projectId: "grupo-br277",
-  storageBucket: "grupo-br277.appspot.com",
-  messagingSenderId: "491779757123",
-  appId: "1:491779757123:web:48eae01a02fa2b3617b0f6",
-  measurementId: "G-L7QXVV5X54"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
 
-// --- Início da Implementação do Padrão Singleton ---
+// --- Singleton Pattern for Firebase Services ---
 
 const app: FirebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth: Auth = getAuth(app);
 const firestore: Firestore = getFirestore(app);
 const storage: FirebaseStorage = getStorage(app);
+
+// Analytics is initialized only on the client-side when needed.
 let analytics: Analytics | null = null;
 
-// Inicializa o Analytics apenas no lado do cliente (browser).
-if (typeof window !== 'undefined') {
-  isSupported().then((supported) => {
-    if (supported) {
-      analytics = getAnalytics(app);
-    }
-  });
+export function getClientAnalytics() {
+  if (typeof window !== 'undefined') {
+    if (analytics) return analytics;
+    isSupported().then((supported) => {
+      if (supported) {
+        analytics = getAnalytics(app);
+      }
+    });
+  }
+  return analytics;
 }
+
 
 /**
  * Uploads a file to Firebase Storage and returns the download URL.
@@ -48,7 +53,6 @@ export async function uploadFile(
 ): Promise<string> {
   const storageRef = ref(storage, path);
   
-  // Utiliza await diretamente para simplificar o código e melhorar o tratamento de erros.
   const uploadTask = await uploadBytes(storageRef, file);
   const downloadURL = await getDownloadURL(uploadTask.ref);
   
@@ -56,5 +60,5 @@ export async function uploadFile(
 }
 
 
-// Exporta as instâncias prontas para serem usadas em qualquer lugar do app.
-export { app, auth, firestore, storage, analytics };
+// Export the initialized services
+export { app, auth, firestore, storage };
