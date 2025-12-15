@@ -31,7 +31,6 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { firestore } from '@/lib/firebase/client';
 import {
   collection,
   addDoc,
@@ -88,7 +87,8 @@ interface MentionUser {
 async function createStoryCommentMentions(
     text: string, 
     storyId: string,
-    fromUser: { uid: string, displayName: string | null, photoURL: string | null }
+    fromUser: { uid: string, displayName: string | null, photoURL: string | null },
+    firestore: any
 ) {
     if (!firestore) return;
 
@@ -178,7 +178,7 @@ interface ReplyingToInfo {
 
 export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewerModalProps) {
   const { toast } = useToast();
-  const { currentUser } = useAuth();
+  const { currentUser, firestore } = useAuth();
   
   // State for reactions, comments, and modals
   const [storyReactions, setStoryReactions] = useState({ thumbsUp: 0, thumbsDown: 0 });
@@ -233,7 +233,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
         console.error("Error fetching user profile for modal:", error);
         toast({ variant: "destructive", title: "Erro ao carregar perfil." });
     }
-  }, [toast]);
+  }, [toast, firestore]);
 
 
   // Effect to fetch real-time data for the story
@@ -278,7 +278,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
       unsubUserReaction();
       unsubComments();
     };
-  }, [isOpen, story, currentUser]);
+  }, [isOpen, story, currentUser, firestore]);
   
   useEffect(() => {
     if (showMentions && mentionQuery.length > 0 && firestore) {
@@ -309,7 +309,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
     } else {
       setMentionSuggestions([]);
     }
-  }, [mentionQuery, showMentions]);
+  }, [mentionQuery, showMentions, firestore]);
 
 
   const handleStoryReactionClick = async (reactionType: 'thumbsUp' | 'thumbsDown') => {
@@ -358,7 +358,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
         parentCommentId: replyingTo?.commentId || null,
       });
 
-      await createStoryCommentMentions(commentText, story.id, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL });
+      await createStoryCommentMentions(commentText, story.id, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL }, firestore);
 
       setNewComment('');
       setReplyingTo(null);
@@ -848,5 +848,3 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
     </>
   );
 }
-
-    
