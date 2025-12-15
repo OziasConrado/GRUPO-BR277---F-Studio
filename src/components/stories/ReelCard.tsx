@@ -63,6 +63,15 @@ export default function ReelCard({
     });
   };
 
+  // Render a placeholder or nothing if the thumbnail is missing
+  if (!thumbnailUrl) {
+    return (
+      <div className="group flex-shrink-0 rounded-xl overflow-hidden w-[150px] h-[250px] bg-muted border flex items-center justify-center">
+        <p className="text-xs text-muted-foreground text-center p-2">Imagem indisponível</p>
+      </div>
+    );
+  }
+
   return (
     <button
       type="button"

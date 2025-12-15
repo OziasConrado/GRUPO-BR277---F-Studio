@@ -95,7 +95,7 @@ function FeedContent() {
           storyType: data.storyType,
           videoContentUrl: data.videoContentUrl,
         } as StoryData;
-      });
+      }).filter(story => story.thumbnailUrl); // Ensure thumbnailUrl exists
       setStories(fetchedStories);
       setStoriesLoading(false);
     }, (error) => {
