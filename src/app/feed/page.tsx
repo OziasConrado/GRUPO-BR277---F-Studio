@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { firestore } from '@/lib/firebase/client';
-import { collection, query, where, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, Timestamp, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -15,15 +15,13 @@ import StoryCircle, { type StoryData } from '@/components/stories/StoryCircle';
 import StoryViewerModal from '@/components/stories/StoryViewerModal';
 import HomeAlertCard, { type HomeAlertCardData } from '@/components/alerts/home-alert-card';
 
-export default function FeedPage() {
-  const { currentUser, isAuthenticating } = useAuth();
+function FeedContent() {
   const { toast } = useToast();
 
   const [posts, setPosts] = useState<PostCardProps[]>([]);
   const [stories, setStories] = useState<StoryData[]>([]);
   const [alerts, setAlerts] = useState<HomeAlertCardData[]>([]);
-  
-  // State to track loading status of each data type
+
   const [postsLoading, setPostsLoading] = useState(true);
   const [storiesLoading, setStoriesLoading] = useState(true);
   const [alertsLoading, setAlertsLoading] = useState(true);
@@ -102,7 +100,8 @@ export default function FeedPage() {
       setStoriesLoading(false);
     }, (error) => {
         console.error('Error fetching stories:', error);
-        setStoriesLoading(false); // Still allow page to load
+        toast({ variant: 'destructive', title: 'Erro ao Carregar Stories', description: 'Não foi possível buscar os reels.' });
+        setStoriesLoading(false);
     });
     
     // Listener for Alerts
@@ -128,10 +127,10 @@ export default function FeedPage() {
         setAlertsLoading(false);
     }, (error) => {
         console.error('Error fetching alerts:', error);
-        setAlertsLoading(false); // Still allow page to load
+        toast({ variant: 'destructive', title: 'Erro ao Carregar Alertas', description: 'Não foi possível buscar os alertas.' });
+        setAlertsLoading(false);
     });
 
-    // Cleanup function
     return () => {
       unsubscribePosts();
       unsubscribeStories();
@@ -145,7 +144,6 @@ export default function FeedPage() {
   };
   
   const handleAuthorClick = useCallback((authorId: string) => {
-    // Logic to open user profile modal will be needed here
     console.log("Profile click:", authorId);
   }, []);
 
@@ -158,13 +156,13 @@ export default function FeedPage() {
     />
   )), [stories, handleAuthorClick]);
 
-  // Overall loading state
-  const isLoading = postsLoading || storiesLoading || alertsLoading || isAuthenticating;
+  const isLoading = postsLoading || storiesLoading || alertsLoading;
 
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-[calc(100vh-150px)]">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="ml-4 text-muted-foreground">Carregando conteúdo do feed...</p>
       </div>
     );
   }
@@ -172,7 +170,6 @@ export default function FeedPage() {
   return (
     <>
       <div className="w-full max-w-4xl mx-auto space-y-6">
-        {/* Stories Section */}
         {stories.length > 0 && (
           <section>
             <h2 className="text-xl font-bold font-headline mb-3 px-4 sm:px-0">Reels</h2>
@@ -184,7 +181,6 @@ export default function FeedPage() {
           </section>
         )}
 
-        {/* Alerts Section */}
         {alerts.length > 0 && (
             <section>
                  <div className="flex justify-between items-center mb-3 px-4 sm:px-0">
@@ -201,7 +197,6 @@ export default function FeedPage() {
             </section>
         )}
 
-        {/* Feed Posts Section */}
         <section>
             <h2 className="text-xl font-bold font-headline mb-3 px-4 sm:px-0">Feed da Comunidade</h2>
             <div className="space-y-6">
@@ -225,4 +220,20 @@ export default function FeedPage() {
       )}
     </>
   );
+}
+
+
+export default function FeedPage() {
+    const { isAuthenticating } = useAuth();
+  
+    if (isAuthenticating) {
+      return (
+        <div className="flex justify-center items-center h-[calc(100vh-150px)]">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <p className="ml-4 text-muted-foreground">Autenticando...</p>
+        </div>
+      );
+    }
+  
+    return <FeedContent />;
 }
