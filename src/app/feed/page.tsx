@@ -22,7 +22,11 @@ export default function FeedPage() {
   const [posts, setPosts] = useState<PostCardProps[]>([]);
   const [stories, setStories] = useState<StoryData[]>([]);
   const [alerts, setAlerts] = useState<HomeAlertCardData[]>([]);
-  const [loading, setLoading] = useState(true);
+  
+  // State to track loading status of each data type
+  const [postsLoading, setPostsLoading] = useState(true);
+  const [storiesLoading, setStoriesLoading] = useState(true);
+  const [alertsLoading, setAlertsLoading] = useState(true);
 
   const [isStoryViewerOpen, setIsStoryViewerOpen] = useState(false);
   const [selectedStory, setSelectedStory] = useState<StoryData | null>(null);
@@ -30,31 +34,19 @@ export default function FeedPage() {
   useEffect(() => {
     if (!firestore) {
       toast({ variant: 'destructive', title: 'Erro de Conexão', description: 'Não foi possível conectar ao banco de dados.' });
-      setLoading(false);
+      setPostsLoading(false);
+      setStoriesLoading(false);
+      setAlertsLoading(false);
       return;
     }
 
-    setLoading(true);
-
+    // Listener for Posts
     const postsQuery = query(
       collection(firestore, 'posts'),
       where('deleted', '!=', true),
       orderBy('deleted', 'asc'),
       orderBy('timestamp', 'desc')
     );
-
-    const storiesQuery = query(
-      collection(firestore, 'reels'),
-      where('deleted', '!=', true),
-      orderBy('deleted', 'asc'),
-      orderBy('timestamp', 'desc')
-    );
-    
-    const alertsQuery = query(
-        collection(firestore, 'alerts'),
-        orderBy('timestamp', 'desc')
-    );
-
     const unsubscribePosts = onSnapshot(postsQuery, (snapshot) => {
       const fetchedPosts = snapshot.docs.map(doc => {
         const data = doc.data();
@@ -77,13 +69,20 @@ export default function FeedPage() {
         } as PostCardProps;
       });
       setPosts(fetchedPosts);
-      setLoading(false);
+      setPostsLoading(false);
     }, (error) => {
       console.error('Error fetching posts:', error);
       toast({ variant: 'destructive', title: 'Erro ao Carregar Posts', description: 'Não foi possível buscar as publicações.' });
-      setLoading(false);
+      setPostsLoading(false);
     });
 
+    // Listener for Stories (Reels)
+    const storiesQuery = query(
+      collection(firestore, 'reels'),
+      where('deleted', '!=', true),
+      orderBy('deleted', 'asc'),
+      orderBy('timestamp', 'desc')
+    );
     const unsubscribeStories = onSnapshot(storiesQuery, (snapshot) => {
       const fetchedStories = snapshot.docs.map(doc => {
         const data = doc.data();
@@ -100,8 +99,17 @@ export default function FeedPage() {
         } as StoryData;
       });
       setStories(fetchedStories);
+      setStoriesLoading(false);
+    }, (error) => {
+        console.error('Error fetching stories:', error);
+        setStoriesLoading(false); // Still allow page to load
     });
     
+    // Listener for Alerts
+    const alertsQuery = query(
+        collection(firestore, 'alerts'),
+        orderBy('timestamp', 'desc')
+    );
     const unsubscribeAlerts = onSnapshot(alertsQuery, (snapshot) => {
         const fetchedAlerts = snapshot.docs.map(doc => {
             const data = doc.data();
@@ -117,9 +125,13 @@ export default function FeedPage() {
             } as HomeAlertCardData;
         });
         setAlerts(fetchedAlerts);
+        setAlertsLoading(false);
+    }, (error) => {
+        console.error('Error fetching alerts:', error);
+        setAlertsLoading(false); // Still allow page to load
     });
 
-
+    // Cleanup function
     return () => {
       unsubscribePosts();
       unsubscribeStories();
@@ -146,7 +158,10 @@ export default function FeedPage() {
     />
   )), [stories, handleAuthorClick]);
 
-  if (loading || isAuthenticating) {
+  // Overall loading state
+  const isLoading = postsLoading || storiesLoading || alertsLoading || isAuthenticating;
+
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-[calc(100vh-150px)]">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
