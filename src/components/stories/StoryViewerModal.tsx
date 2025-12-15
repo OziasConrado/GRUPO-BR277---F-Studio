@@ -8,7 +8,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { X, ThumbsUp, ThumbsDown, MessageSquare, Share2, MoreVertical, Flag, Send, Loader2, UserCircle, Edit3, Trash2 } from 'lucide-react';
-import type { StoryData } from './StoryCircle';
+import type { StoryData } from './ReelCard';
 import Image from 'next/image';
 import {
   DropdownMenu,
@@ -106,7 +106,7 @@ async function createStoryCommentMentions(
         
         const firstWord = firstWordMatch[1];
         
-        const usersRef = collection(firestore, "Usuarios");
+        const usersRef = collection(firestore, "users");
         const q = query(
             usersRef,
             where("displayName_lowercase", ">=", firstWord.toLowerCase()),
@@ -151,7 +151,7 @@ async function createStoryCommentMentions(
 
     const batch = writeBatch(firestore);
     for (const user of foundUsers.values()) {
-        const notificationRef = doc(collection(firestore, 'Usuarios', user.id, 'notifications'));
+        const notificationRef = doc(collection(firestore, 'users', user.id, 'notifications'));
         batch.set(notificationRef, {
             type: 'mention_story_comment',
             fromUserId: fromUser.uid,
@@ -216,7 +216,7 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
   const handleShowUserProfile = useCallback(async (userIdToShow: string) => {
     if (!firestore) return;
     try {
-        const userDoc = await getDoc(doc(firestore, "Usuarios", userIdToShow));
+        const userDoc = await getDoc(doc(firestore, "users", userIdToShow));
         if (userDoc.exists()) {
             const userData = userDoc.data();
             setSelectedUserProfile({
@@ -284,7 +284,8 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
     if (showMentions && mentionQuery.length > 0 && firestore) {
       setLoadingMentions(true);
       const fetchUsers = async () => {
-        const usersRef = collection(firestore, "Usuarios");
+        if (!firestore) return;
+        const usersRef = collection(firestore, "users");
         const q = query(
           usersRef,
           where("displayName_lowercase", ">=", mentionQuery.toLowerCase()),
@@ -847,3 +848,5 @@ export default function StoryViewerModal({ isOpen, onClose, story }: StoryViewer
     </>
   );
 }
+
+    
