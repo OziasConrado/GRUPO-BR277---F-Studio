@@ -7,76 +7,74 @@ import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, type FirebaseStorage } from 'firebase/storage';
 import { getAnalytics, isSupported, type Analytics } from 'firebase/analytics';
 
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
-};
-
-let app: FirebaseApp;
-let auth: Auth;
-let firestore: Firestore;
-let storage: FirebaseStorage;
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
+let firestore: Firestore | null = null;
+let storage: FirebaseStorage | null = null;
 let analytics: Analytics | null = null;
 
-function getFirebaseServices() {
-  if (app) {
-    return { app, auth, firestore, storage, analytics };
+function initializeFirebase() {
+  if (app) return; // Already initialized
+
+  const firebaseConfig = {
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+  };
+
+  if (
+    !firebaseConfig.apiKey ||
+    !firebaseConfig.projectId ||
+    !firebaseConfig.authDomain
+  ) {
+    throw new Error(
+      "Firebase config is missing. Make sure NEXT_PUBLIC_FIREBASE_* environment variables are set."
+    );
   }
 
-  if (getApps().length === 0) {
-    if (
-      !firebaseConfig.apiKey ||
-      !firebaseConfig.projectId ||
-      !firebaseConfig.authDomain
-    ) {
-      throw new Error(
-        "Firebase config is missing. Make sure NEXT_PUBLIC_FIREBASE_* environment variables are set."
-      );
-    }
-    app = initializeApp(firebaseConfig);
-  } else {
-    app = getApp();
-  }
-
+  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
   auth = getAuth(app);
   firestore = getFirestore(app);
   storage = getStorage(app);
   if (typeof window !== "undefined") {
     isSupported().then((supported) => {
-      if (supported) {
+      if (supported && app) {
         analytics = getAnalytics(app);
       }
     });
   }
-
-  return { app, auth, firestore, storage, analytics };
 }
 
-// Lazy initialization: Services are now accessed via these functions
+// Export functions that ensure initialization before returning the service
 function getFirebaseAuth() {
-  return getFirebaseServices().auth;
+  if (!auth) initializeFirebase();
+  return auth!;
 }
 
 function getFirebaseFirestore() {
-  return getFirebaseServices().firestore;
+  if (!firestore) initializeFirebase();
+  return firestore!;
 }
 
 function getFirebaseStorage() {
-  return getFirebaseServices().storage;
+  if (!storage) initializeFirebase();
+  return storage!;
 }
 
 function getFirebaseApp() {
-  return getFirebaseServices().app;
+  if (!app) initializeFirebase();
+  return app!;
 }
 
 function getFirebaseAnalytics() {
-  return getFirebaseServices().analytics;
+    if (!analytics) initializeFirebase();
+    return analytics;
 }
+
 
 async function uploadFile(
   file: File,
