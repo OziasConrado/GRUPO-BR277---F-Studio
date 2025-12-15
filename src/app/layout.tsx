@@ -2,11 +2,8 @@ import type { Metadata } from 'next';
 import { PT_Sans } from 'next/font/google';
 import '@/app/globals.css';
 import { Toaster } from "@/components/ui/toaster";
-import { NotificationProvider } from '@/contexts/NotificationContext';
-import { ChatProvider } from '@/contexts/ChatContext';
-import { AuthProvider } from '@/contexts/AuthContext';
 import Script from 'next/script';
-import AppLayout from '@/components/layout/app-layout';
+import { Providers } from './providers'; // Import the new Providers component
 
 const ptSans = PT_Sans({
   subsets: ['latin'],
@@ -33,19 +30,15 @@ export default function RootLayout({
       <head>
         <Script
           async
-          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-SEU_PUBLISHER_ID_AQUI`}
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3646331718909935`}
           crossOrigin="anonymous"
           strategy="afterInteractive"
         />
       </head>
       <body className={`${ptSans.variable} font-sans antialiased`}>
-        <AuthProvider>
-          <NotificationProvider>
-            <ChatProvider>
-              <AppLayout>{children}</AppLayout>
-            </ChatProvider>
-          </NotificationProvider>
-        </AuthProvider>
+        <Providers>
+          {children}
+        </Providers>
         <Toaster />
       </body>
     </html>

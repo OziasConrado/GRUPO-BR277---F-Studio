@@ -7,26 +7,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function getUserLocation(): Promise<{ latitude: number; longitude: number }> {
-  return new Promise((resolve, reject) => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          });
-        },
-        (error) => {
-          reject(error);
-        }
-      );
-    } else {
-      reject(new Error("Geolocalização não é suportada por este navegador."));
-    }
-  });
-}
-
 export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   if ((lat1 === lat2) && (lon1 === lon2)) {
     return 0;

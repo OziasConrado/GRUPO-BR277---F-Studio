@@ -471,13 +471,13 @@ export default function SAUPage() {
                 </CardHeader>
                 <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <Button asChild variant="outline" className="w-full rounded-full">
-                    <a href={`tel:${contact.phone?.replace(/\D/g, '')}`}>
+                    <a href={`tel:${contact.phone?.replace(/\\D/g, '')}`}>
                       <Phone className="mr-2 h-4 w-4" /> {contact.phone}
                     </a>
                   </Button>
                   {contact.phone2 && (
                     <Button asChild variant="outline" className="w-full rounded-full">
-                        <a href={`tel:${contact.phone2.replace(/\D/g, '')}`}>
+                        <a href={`tel:${contact.phone2.replace(/\\D/g, '')}`}>
                             <Phone className="mr-2 h-4 w-4" /> {contact.phone2}
                         </a>
                     </Button>

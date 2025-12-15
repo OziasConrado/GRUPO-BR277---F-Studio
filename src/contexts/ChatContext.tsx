@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
@@ -13,7 +12,7 @@ interface ChatContextType {
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
-export function ChatProvider({ children }: { children: ReactNode }) {
+function ChatProvider({ children }: { children: ReactNode }) {
   const [isChatOpen, setIsChatOpen] = useState(false);
 
   const openChat = useCallback(() => {
@@ -38,10 +37,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useChat() {
+function useChat() {
   const context = useContext(ChatContext);
   if (context === undefined) {
     throw new Error('useChat must be used within a ChatProvider');
   }
   return context;
 }
+
+export { ChatProvider, useChat };

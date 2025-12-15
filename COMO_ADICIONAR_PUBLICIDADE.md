@@ -1,141 +1,64 @@
 # Como Adicionar Publicidade (Google AdSense) ao Web App
 
-Você está correto! Para um Web App, a ferramenta certa é o Google AdSense, não o AdMob. Este guia fornece o passo a passo para integrar anúncios do AdSense ao projeto Next.js.
+Este guia fornece o passo a passo para integrar anúncios do AdSense ao projeto Next.js. O AdMob é para aplicativos nativos, enquanto o AdSense é para Web Apps.
 
 **Pré-requisitos:**
 *   Uma conta no [Google AdSense](https://www.google.com/adsense/start/).
 *   Seu site/domínio aprovado pelo AdSense.
+*   Seu ID de Editor (Publisher ID) do AdSense, que se parece com `pub-XXXXXXXXXXXXXXXX`.
 
 ---
 
-### Passo 1: Configuração no Google AdSense
+### Passo 1: Adicionar o Script do AdSense ao Projeto (Já realizado)
 
-1.  **Obtenha seu ID de Editor (Publisher ID):**
-    *   Após a aprovação da sua conta, você receberá um ID de Editor (Publisher ID). Ele se parece com `pub-XXXXXXXXXXXXXXXX`. Anote-o.
+O script principal do AdSense já foi adicionado ao layout raiz da aplicação (`src/app/layout.tsx`). O ID do Editor (`ca-pub-3646331718909935`) também já foi configurado.
 
-2.  **Crie Blocos de Anúncios:**
+```tsx
+// Em src/app/layout.tsx
+import Script from 'next/script';
+
+<head>
+  <Script
+    async
+    src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3646331718909935`}
+    crossOrigin="anonymous"
+    strategy="afterInteractive"
+  />
+</head>
+```
+
+---
+
+### Passo 2: Usar o Componente de Anúncio (`AdSenseAd`)
+
+Para exibir anúncios, utilizamos um componente reutilizável chamado `AdSenseAd`. Você só precisa importá-lo e passar o **ID do Bloco de Anúncios** (Ad Slot ID) que você criou na sua conta AdSense.
+
+1.  **Crie um Bloco de Anúncios no AdSense:**
     *   Na sua conta AdSense, vá para `Anúncios` > `Por bloco de anúncios`.
     *   Crie um bloco de "Anúncios de display".
-    *   Dê um nome e escolha o formato (recomendamos "Responsivo" para melhor adaptação).
-    *   Após criar, o AdSense fornecerá um código. Anote o **ID do bloco de anúncios** (Data Ad Slot). Ele se parece com `YYYYYYYYYY`.
+    *   Dê um nome e escolha o formato (recomendamos "Responsivo").
+    *   Após criar, o AdSense fornecerá um código. Anote o **ID do bloco de anúncios** (Data Ad Slot). Ele é uma sequência de números, como `1234567890`.
+
+2.  **Importe e Use o Componente na Página Desejada:**
+    Abra o arquivo onde você quer exibir o anúncio (por exemplo, `src/app/alertas/page.tsx`).
+
+    *   **Importe o componente:**
+        ```tsx
+        import AdSenseAd from '@/components/ads/adsense-ad';
+        ```
+
+    *   **Substitua o placeholder `AdPlaceholder` pelo `AdSenseAd`, fornecendo seu Ad Slot ID:**
+        ```tsx
+        // Antes:
+        <AdPlaceholder />
+
+        // Depois (substitua 'SEU_AD_SLOT_ID_AQUI' pelo seu número):
+        <AdSenseAd adSlot="SEU_AD_SLOT_ID_AQUI" className="my-6" />
+        ```
 
 ---
 
-### Passo 2: Adicionar o Script do AdSense ao Projeto
-
-A melhor forma de adicionar o script principal do AdSense é no layout raiz da aplicação, para que ele seja carregado em todas as páginas.
-
-1.  **Edite o arquivo `src/app/layout.tsx`:**
-    Adicione o componente `<Script>` do Next.js dentro da tag `<head>`. Você precisará substituir `SEU_PUBLISHER_ID_AQUI` pelo seu ID.
-
-    ```tsx
-    // Em src/app/layout.tsx
-    import Script from 'next/script'; // Importe o Script
-    
-    // ... dentro do componente RootLayout
-    
-    <html lang="pt-BR" suppressHydrationWarning>
-      <head>
-        <Script
-          async
-          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-SEU_PUBLISHER_ID_AQUI`}
-          crossOrigin="anonymous"
-          strategy="afterInteractive" // Carrega após a página se tornar interativa
-        />
-      </head>
-      <body>
-        {/* ... resto do seu layout ... */}
-      </body>
-    </html>
-    ```
-
----
-
-### Passo 3: Criar um Componente de Anúncio Reutilizável
-
-Para gerenciar a exibição dos anúncios de forma limpa, criaremos um componente específico.
-
-1.  **Crie o arquivo `src/components/ads/adsense-ad.tsx`:**
-
-    ```tsx
-    'use client';
-    
-    import { useEffect } from 'react';
-    
-    interface AdSenseAdProps {
-      adSlot: string; // O ID do seu bloco de anúncios
-      className?: string;
-    }
-    
-    declare global {
-      interface Window {
-        adsbygoogle?: {
-          push: (props: object) => void;
-        }[];
-      }
-    }
-    
-    const AdSenseAd = ({ adSlot, className }: AdSenseAdProps) => {
-      useEffect(() => {
-        try {
-          (window.adsbygoogle = window.adsbygoogle || []).push({});
-        } catch (err) {
-          console.error('AdSense error:', err);
-        }
-      }, []);
-    
-      if (process.env.NODE_ENV !== 'production') {
-        return (
-          <div
-            className={`flex items-center justify-center bg-muted/30 border border-dashed text-muted-foreground text-sm h-24 rounded-lg ${className}`}
-          >
-            Anúncio do AdSense (Visível em Produção)
-          </div>
-        );
-      }
-    
-      return (
-        <div className={className}>
-          <ins
-            className="adsbygoogle"
-            style={{ display: 'block' }}
-            data-ad-client={`ca-SEU_PUBLISHER_ID_AQUI`} // Substitua
-            data-ad-slot={adSlot}
-            data-ad-format="auto"
-            data-full-width-responsive="true"
-          ></ins>
-        </div>
-      );
-    };
-    
-    export default AdSenseAd;
-    ```
-    *Não se esqueça de substituir `SEU_PUBLISHER_ID_AQUI` também neste arquivo.*
-
----
-
-### Passo 4: Usar o Componente de Anúncio
-
-Agora, substitua os `AdPlaceholder`s existentes pelo novo componente `AdSenseAd`.
-
-1.  **Exemplo de uso em `src/app/alertas/page.tsx`:**
-
-    Primeiro, importe o novo componente:
-    ```tsx
-    import AdSenseAd from '@/components/ads/adsense-ad';
-    ```
-
-    Depois, substitua `AdPlaceholder` por `AdSenseAd`, passando o `adSlot` do anúncio que você criou.
-    ```tsx
-    // Antes:
-    <AdPlaceholder />
-    
-    // Depois:
-    <AdSenseAd adSlot="SEU_AD_SLOT_ID_AQUI" className="my-6" /> // Substitua
-    ```
-
-2.  **Repita o processo** para todos os outros locais onde `AdPlaceholder` é usado (`ferramentas/*`, `sau/page.tsx`, etc.), sempre fornecendo o ID do seu bloco de anúncios.
-
----
-
-Este guia é o ponto de partida. Lembre-se que os anúncios do AdSense podem demorar um pouco para aparecer após a configuração e só serão exibidos no ambiente de produção (quando o app estiver publicado no seu domínio aprovado). Em desenvolvimento, você verá o aviso que configuramos no componente.
+**Importante:**
+*   Os anúncios só serão exibidos no ambiente de **produção**, ou seja, quando o app estiver publicado no seu domínio aprovado pelo AdSense.
+*   Em desenvolvimento, você verá um componente cinza com a mensagem "Anúncio do AdSense (Visível em Produção)".
+*   Pode levar algum tempo para os anúncios começarem a aparecer após a configuração inicial.
