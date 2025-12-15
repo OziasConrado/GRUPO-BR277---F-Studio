@@ -35,7 +35,7 @@ service cloud.firestore {
 
     // Reels: Public read, authenticated write/update/delete
     match /reels/{reelId} {
-      allow read: if resource.data.deleted == false;
+      allow read: if resource.data.deleted != true;
       allow create: if isAuthenticated();
       allow update, delete: if isOwner(resource.data.authorId);
 
@@ -122,5 +122,4 @@ service cloud.firestore {
     }
   }
 }
-
     
