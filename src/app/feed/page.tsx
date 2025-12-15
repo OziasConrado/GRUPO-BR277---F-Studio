@@ -11,7 +11,7 @@ import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 import PostCard, { type PostCardProps } from '@/components/feed/post-card';
-import StoryCircle, { type StoryData } from '@/components/stories/StoryCircle';
+import ReelCard, { type StoryData } from '@/components/stories/ReelCard';
 import StoryViewerModal from '@/components/stories/StoryViewerModal';
 import HomeAlertCard, { type HomeAlertCardData } from '@/components/alerts/home-alert-card';
 
@@ -147,8 +147,8 @@ function FeedContent() {
     console.log("Profile click:", authorId);
   }, []);
 
-  const memoizedStories = useMemo(() => stories.map(story => (
-    <StoryCircle
+  const memoizedReels = useMemo(() => stories.map(story => (
+    <ReelCard
       key={story.id}
       {...story}
       onClick={handleStoryClick}
@@ -174,8 +174,8 @@ function FeedContent() {
           <section>
             <h2 className="text-xl font-bold font-headline mb-3 px-4 sm:px-0">Reels</h2>
             <div className="relative">
-              <div className="flex space-x-4 overflow-x-auto pb-4 no-scrollbar px-4 sm:px-0">
-                {memoizedStories}
+              <div className="flex space-x-4 overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 no-scrollbar">
+                {memoizedReels}
               </div>
             </div>
           </section>
@@ -190,7 +190,7 @@ function FeedContent() {
                     </Link>
                 </div>
                  <div className="relative">
-                     <div className="flex space-x-4 overflow-x-auto pb-4 no-scrollbar px-4 sm:px-0">
+                     <div className="flex space-x-4 overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 no-scrollbar">
                         {alerts.map(alert => <HomeAlertCard key={alert.id} alert={alert}/>)}
                     </div>
                 </div>
