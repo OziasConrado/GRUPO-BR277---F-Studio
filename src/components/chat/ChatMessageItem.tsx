@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -8,7 +9,6 @@ import { Paperclip, Mic, FileText, PlayCircle, Heart, MoreVertical, Edit, Trash2
 import React, { useState, useEffect, useMemo, useCallback } from "react"; 
 import { Button } from "../ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { firestore } from "@/lib/firebase/client";
 import { doc, getDoc, onSnapshot, getDocs, collection, query, where, limit } from "firebase/firestore";
 import {
   DropdownMenu,
@@ -117,7 +117,7 @@ export default function ChatMessageItem({
   onImageClick: (imageUrl: string | StaticImageData) => void;
 }) {
   const { senderName, avatarUrl, dataAIAvatarHint, text, textElements, imageUrl, dataAIImageHint, file, timestamp, isCurrentUser, reactions, replyTo, edited } = message;
-  const { currentUser } = useAuth();
+  const { currentUser, firestore } = useAuth();
   const { toast } = useToast();
   const [userHasReacted, setUserHasReacted] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -138,7 +138,7 @@ export default function ChatMessageItem({
         setUserHasReacted(doc.exists());
     });
     return () => unsubscribe();
-  }, [currentUser, message.id]);
+  }, [currentUser, message.id, firestore]);
   
   const handleSaveEdit = async () => {
     if (!text || editedText.trim() === text.trim() || editedText.trim() === '') {

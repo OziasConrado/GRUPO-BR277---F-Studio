@@ -19,7 +19,6 @@ import { UploadCloud, X, ArrowLeft, Loader2 } from "lucide-react";
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
-import { firestore, uploadFile } from '@/lib/firebase/client';
 import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 
 const MAX_FILE_SIZE_MB = 2;
@@ -66,7 +65,7 @@ export default function RegisterBusinessPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { currentUser, isAuthenticating, userProfile } = useAuth();
+  const { currentUser, isAuthenticating, userProfile, firestore, uploadFile } = useAuth();
   const planoParam = params.plano as string;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();

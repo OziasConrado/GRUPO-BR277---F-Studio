@@ -11,12 +11,11 @@ import type { BusinessData, BusinessCategory } from '@/types/guia-comercial';
 import { businessCategories } from '@/types/guia-comercial';
 import BusinessCard from '@/components/guia-comercial/business-card';
 import { useToast } from '@/hooks/use-toast';
-import { calculateDistance } from '@/lib/utils';
+import { calculateDistance, cn } from '@/lib/utils';
 import { getUserLocation } from '@/lib/location';
-import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { firestore } from '@/lib/firebase/client';
 import { collection, getDocs, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { useAuth } from '@/contexts/AuthContext';
 
 
 const AdPlaceholder = ({ className }: { className?: string }) => (
@@ -35,6 +34,7 @@ export default function GuiaComercialPage() {
   const [activeCategory, setActiveCategory] = useState<BusinessCategory | 'Todas'>('Todas');
 
   const { toast } = useToast();
+  const { firestore } = useAuth();
   
   const requestLocation = useCallback(() => {
     setLocationStatus('loading');
@@ -77,7 +77,7 @@ export default function GuiaComercialPage() {
     requestLocation();
 
     return () => unsubscribe();
-  }, [requestLocation, toast]);
+  }, [requestLocation, toast, firestore]);
 
   const filteredAndSortedBusinesses = useMemo(() => {
     let processedBusinesses = businesses

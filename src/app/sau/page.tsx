@@ -11,7 +11,6 @@ import SauLocationCard from '@/components/sau/sau-location-card';
 import SauFilters from '@/components/sau/sau-filters';
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
-import { firestore } from '@/lib/firebase/client';
 import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, Timestamp, where } from 'firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetClose } from '@/components/ui/sheet';
@@ -247,7 +246,7 @@ export default function SAUPage() {
   const [loadingReviews, setLoadingReviews] = useState(true);
   const [activeConcessionaireFilter, setActiveConcessionaireFilter] = useState<string>('Todos');
   const { toast } = useToast();
-  const { currentUser } = useAuth();
+  const { currentUser, firestore } = useAuth();
   
   const [isContactsSheetOpen, setIsContactsSheetOpen] = useState(false);
 
@@ -270,11 +269,9 @@ export default function SAUPage() {
 
   useEffect(() => {
     const loadDataAndLocation = async () => {
-      // Set hardcoded SAUs immediately
       setSauLocations(allSausData);
       setLoadingSaus(false);
 
-      // Fetch reviews from Firestore
       if (firestore) {
         setLoadingReviews(true);
         try {
@@ -307,7 +304,7 @@ export default function SAUPage() {
     };
 
     loadDataAndLocation();
-  }, [requestLocation, toast]);
+  }, [requestLocation, toast, firestore]);
   
 
   const processedSaus = useMemo(() => {

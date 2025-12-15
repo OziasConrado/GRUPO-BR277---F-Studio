@@ -14,13 +14,16 @@ import {
   updateProfile as firebaseUpdateProfile,
   type User as FirebaseUser,
   type AuthError,
+  getAuth,
+  type Auth,
 } from 'firebase/auth';
-// Importa as instâncias diretamente
-import { auth, firestore, uploadFile } from '@/lib/firebase/client';
-import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { initializeApp, getApp, getApps, type FirebaseApp } from 'firebase/app';
+import { getFirestore, doc, setDoc, getDoc, updateDoc, serverTimestamp, type Firestore } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL, type FirebaseStorage } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
+// Interfaces
 export interface UserProfile {
     uid: string;
     email: string | null;
@@ -40,6 +43,13 @@ interface UpdateUserProfileData {
   location?: string;
 }
 
+interface FirebaseServices {
+  app: FirebaseApp;
+  auth: Auth;
+  firestore: Firestore;
+  storage: FirebaseStorage;
+}
+
 interface AuthContextType {
   currentUser: FirebaseUser | null;
   userProfile: UserProfile | null;
@@ -47,6 +57,9 @@ interface AuthContextType {
   isAuthenticating: boolean;
   loading: boolean;
   authAction: string | null;
+  firestore: Firestore | null;
+  storage: FirebaseStorage | null;
+  uploadFile: (file: File, path: string) => Promise<string>;
   signInWithGoogle: () => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
@@ -55,13 +68,15 @@ interface AuthContextType {
   signOutUser: () => Promise<void>;
 }
 
+// --- Context Definition ---
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// --- AuthProvider Component ---
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const [firebaseServices, setFirebaseServices] = useState<FirebaseServices | null>(null);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(true);
-  const [loading, setLoading] = useState(false);
   const [authAction, setAuthAction] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
@@ -69,38 +84,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const handleAuthError = useCallback((error: AuthError, customTitle?: string) => {
     console.error("Firebase Auth Error:", error.code, error.message);
     let message = "Ocorreu um erro. Tente novamente.";
-    switch (error.code) {
-        case 'auth/wrong-password':
-            message = 'Senha incorreta. Verifique sua senha e tente novamente.';
-            break;
-        case 'auth/user-not-found':
-            message = 'Usuário não encontrado. Verifique o e-mail digitado ou crie uma nova conta.';
-            break;
-        case 'auth/email-already-in-use':
-            message = 'Este e-mail já está em uso. Tente fazer login ou use um e-mail diferente.';
-            break;
-        case 'auth/weak-password':
-            message = 'Senha muito fraca. A senha deve ter pelo menos 6 caracteres.';
-            break;
-        case 'auth/invalid-email':
-            message = 'O formato do e-mail é inválido.';
-            break;
-        case 'auth/popup-closed-by-user':
-        case 'auth/cancelled-popup-request':
-            message = 'A janela de login foi fechada. Por favor, tente novamente.';
-            break;
-        case 'auth/requires-recent-login':
-            message = 'Esta operação é sensível e requer autenticação recente. Faça login novamente antes de tentar novamente.';
-            break;
-        case 'auth/too-many-requests':
-            message = 'Muitas tentativas. Por favor, tente novamente mais tarde.';
-            break;
-        case 'auth/network-request-failed':
-            message = 'Erro de rede. Verifique sua conexão com a internet e tente novamente.';
-            break;
-        default:
-            message = `Ocorreu um problema (${error.code}). Por favor, tente novamente.`;
-            break;
+     switch (error.code) {
+        case 'auth/wrong-password': message = 'Senha incorreta. Verifique sua senha e tente novamente.'; break;
+        case 'auth/user-not-found': message = 'Usuário não encontrado. Verifique o e-mail digitado ou crie uma nova conta.'; break;
+        case 'auth/email-already-in-use': message = 'Este e-mail já está em uso. Tente fazer login ou use um e-mail diferente.'; break;
+        case 'auth/weak-password': message = 'Senha muito fraca. A senha deve ter pelo menos 6 caracteres.'; break;
+        case 'auth/invalid-email': message = 'O formato do e-mail é inválido.'; break;
+        case 'auth/popup-closed-by-user': message = 'A janela de login foi fechada. Por favor, tente novamente.'; break;
+        case 'auth/cancelled-popup-request': message = 'A janela de login foi cancelada. Por favor, tente novamente.'; break;
+        case 'auth/requires-recent-login': message = 'Esta operação é sensível e requer autenticação recente. Faça login novamente.'; break;
+        case 'auth/too-many-requests': message = 'Muitas tentativas. Por favor, tente novamente mais tarde.'; break;
+        case 'auth/network-request-failed': message = 'Erro de rede. Verifique sua conexão com a internet.'; break;
+        default: message = `Ocorreu um problema (${error.code}). Por favor, tente novamente.`; break;
     }
     toast({
       title: customTitle || 'Erro de Autenticação',
@@ -110,14 +105,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [toast]);
 
   useEffect(() => {
-    // A instância 'auth' já foi inicializada em client.ts.
-    // Se ela for nula, significa que a configuração falhou.
-    if (!auth || !firestore) {
-      console.error("Firebase Auth ou Firestore não foi inicializado. Verifique a configuração.");
+    // Lazy initialization of Firebase
+    const firebaseConfig = {
+      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+      authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+      messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+      measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+    };
+
+    if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+      console.error("Firebase config is missing from environment variables.");
       setIsAuthenticating(false);
       return;
     }
 
+    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+    const auth = getAuth(app);
+    const firestore = getFirestore(app);
+    const storage = getStorage(app);
+    setFirebaseServices({ app, auth, firestore, storage });
+    
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setCurrentUser(user);
@@ -126,8 +136,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (userDoc.exists()) {
           setUserProfile(userDoc.data() as UserProfile);
         } else {
-          const displayName = user.displayName || user.email?.split('@')[0] || 'Usuário';
-          const newUserProfile: UserProfile = {
+           const displayName = user.displayName || user.email?.split('@')[0] || 'Usuário';
+           const newUserProfile: UserProfile = {
             uid: user.uid,
             email: user.email,
             displayName: displayName,
@@ -147,12 +157,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
+  const uploadFile = useCallback(async (file: File, path: string): Promise<string> => {
+    if (!firebaseServices?.storage) {
+      throw new Error("Firebase Storage is not initialized.");
+    }
+    const storageRef = ref(firebaseServices.storage, path);
+    const uploadTask = await uploadBytes(storageRef, file);
+    return await getDownloadURL(uploadTask.ref);
+  }, [firebaseServices]);
+
   const signInWithGoogle = useCallback(async () => {
-    if (!auth) return;
+    if (!firebaseServices) return;
     setAuthAction('google');
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
+      await signInWithPopup(firebaseServices.auth, provider);
       toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a) de volta!' });
       router.push('/');
     } catch (error) {
@@ -160,13 +179,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setAuthAction(null);
     }
-  }, [router, handleAuthError, toast]);
+  }, [firebaseServices, router, handleAuthError, toast]);
 
   const signUpWithEmail = useCallback(async (email: string, password: string) => {
-    if (!auth) return;
+    if (!firebaseServices) return;
     setAuthAction('signup');
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      await createUserWithEmailAndPassword(firebaseServices.auth, email, password);
       toast({ title: 'Cadastro bem-sucedido!', description: 'Sua conta foi criada.' });
       router.push('/');
     } catch (error) {
@@ -174,13 +193,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setAuthAction(null);
     }
-  }, [router, handleAuthError, toast]);
+  }, [firebaseServices, router, handleAuthError, toast]);
 
   const signInWithEmail = useCallback(async (email: string, password: string) => {
-    if (!auth) return;
+    if (!firebaseServices) return;
     setAuthAction('email');
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(firebaseServices.auth, email, password);
       toast({ title: 'Login bem-sucedido!', description: 'Bem-vindo(a) de volta!' });
       router.push('/');
     } catch (error) {
@@ -188,13 +207,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setAuthAction(null);
     }
-  }, [router, handleAuthError, toast]);
+  }, [firebaseServices, router, handleAuthError, toast]);
 
   const sendPasswordResetEmail = useCallback(async (email: string) => {
-    if (!auth) return;
+    if (!firebaseServices) return;
     setAuthAction('reset');
     try {
-      await firebaseSendPasswordResetEmail(auth, email);
+      await firebaseSendPasswordResetEmail(firebaseServices.auth, email);
       toast({
         title: 'Link de Redefinição Enviado',
         description: 'Verifique seu e-mail para as instruções.',
@@ -205,12 +224,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setAuthAction(null);
     }
-  }, [handleAuthError, toast]);
+  }, [firebaseServices, handleAuthError, toast]);
 
   const updateUserProfile = useCallback(async (data: UpdateUserProfileData) => {
-    if (!currentUser || !firestore) return;
+    if (!currentUser || !firebaseServices) return;
     setAuthAction('update');
-    setLoading(true);
     try {
         let photoURL = currentUser.photoURL;
         if (data.newPhotoFile) {
@@ -219,17 +237,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         const authUpdates: { displayName?: string, photoURL?: string } = {};
-        if (data.displayName && data.displayName !== currentUser.displayName) {
-            authUpdates.displayName = data.displayName;
-        }
-        if (photoURL && photoURL !== currentUser.photoURL) {
-            authUpdates.photoURL = photoURL;
-        }
-        if (Object.keys(authUpdates).length > 0 && auth) {
+        if (data.displayName && data.displayName !== currentUser.displayName) authUpdates.displayName = data.displayName;
+        if (photoURL && photoURL !== currentUser.photoURL) authUpdates.photoURL = photoURL;
+        
+        if (Object.keys(authUpdates).length > 0) {
             await firebaseUpdateProfile(currentUser, authUpdates);
         }
         
-        const userDocRef = doc(firestore, 'users', currentUser.uid);
+        const userDocRef = doc(firebaseServices.firestore, 'users', currentUser.uid);
         const firestoreUpdates: any = {
           displayName_lowercase: data.displayName?.toLowerCase(),
           bio: data.bio,
@@ -241,23 +256,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await updateDoc(userDocRef, firestoreUpdates);
 
         setUserProfile(prev => prev ? { ...prev, ...firestoreUpdates } : firestoreUpdates as UserProfile);
-        
         toast({ title: "Sucesso!", description: "Seu perfil foi atualizado." });
 
     } catch (error) {
-        console.error("Error updating profile:", error);
         handleAuthError(error as AuthError, 'Erro ao Atualizar Perfil');
     } finally {
         setAuthAction(null);
-        setLoading(false);
     }
-  }, [currentUser, handleAuthError, toast]);
+  }, [currentUser, firebaseServices, handleAuthError, toast, uploadFile]);
 
   const signOutUser = useCallback(async () => {
-    if (!auth) return;
+    if (!firebaseServices) return;
     setAuthAction('signout');
     try {
-      await signOut(auth);
+      await signOut(firebaseServices.auth);
       router.push('/login');
       toast({ title: 'Logout realizado com sucesso.' });
     } catch (error) {
@@ -265,17 +277,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setAuthAction(null);
     }
-  }, [router, handleAuthError, toast]);
+  }, [firebaseServices, router, handleAuthError, toast]);
 
   const isProfileComplete = !!(userProfile?.displayName && userProfile?.location);
 
-  const value = {
+  const value: AuthContextType = {
     currentUser,
     userProfile,
     isProfileComplete,
     isAuthenticating,
-    loading: loading || authAction !== null,
+    loading: authAction !== null,
     authAction,
+    firestore: firebaseServices?.firestore || null,
+    storage: firebaseServices?.storage || null,
+    uploadFile,
     signInWithGoogle,
     signUpWithEmail,
     signInWithEmail,

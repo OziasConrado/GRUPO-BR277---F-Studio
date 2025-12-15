@@ -7,9 +7,9 @@ import AlertCard, { type AlertProps } from '@/components/alerts/alert-card';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import React from 'react';
-import { firestore } from '@/lib/firebase/client';
 import { collection, query, orderBy, Timestamp, onSnapshot } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const AdPlaceholder = ({ className }: { className?: string }) => (
   <div className={cn("my-6 p-4 rounded-xl bg-muted/30 border border-dashed h-24 flex items-center justify-center", className)}>
@@ -22,10 +22,13 @@ export default function AlertasPage() {
   const [alerts, setAlerts] = useState<AlertProps[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { firestore } = useAuth();
 
   useEffect(() => {
     if (!firestore) {
-      toast({ variant: "destructive", title: "Erro de Conexão", description: "Não foi possível conectar ao banco de dados." });
+      if (!loading) { // Avoid showing error on initial load
+        toast({ variant: "destructive", title: "Erro de Conexão", description: "Não foi possível conectar ao banco de dados." });
+      }
       setLoading(false);
       return;
     }
@@ -60,7 +63,7 @@ export default function AlertasPage() {
     });
 
     return () => unsubscribe(); // Cleanup listener on component unmount
-  }, [toast]);
+  }, [firestore, toast, loading]);
 
 
   return (

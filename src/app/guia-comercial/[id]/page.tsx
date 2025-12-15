@@ -14,8 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import type { BusinessData } from '@/types/guia-comercial';
 import { cn } from '@/lib/utils';
-import { firestore } from '@/lib/firebase/client';
 import { doc, getDoc } from 'firebase/firestore';
+import { useAuth } from '@/contexts/AuthContext';
 
 
 const AdPlaceholder = ({ className }: { className?: string }) => (
@@ -29,6 +29,7 @@ export default function BusinessDetailPage() {
   const id = params.id as string;
   const { toast } = useToast();
   const router = useRouter();
+  const { firestore } = useAuth();
 
   const [business, setBusiness] = useState<BusinessData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,7 +59,7 @@ export default function BusinessDetailPage() {
       setLoading(false);
     });
 
-  }, [id, toast, router]);
+  }, [id, toast, router, firestore]);
 
   if (loading) {
     return (

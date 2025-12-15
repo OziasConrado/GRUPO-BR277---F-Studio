@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, type ChangeEvent, type FormEvent, useMemo } from 'react';
@@ -11,7 +12,6 @@ import { useToast } from '@/hooks/use-toast';
 import Image from "next/image"; // For image preview
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
-import { firestore, uploadFile } from '@/lib/firebase/client'; // Import firestore & storage
 import {
   collection,
   addDoc,
@@ -60,7 +60,7 @@ interface MentionUser {
     displayName: string;
 }
 
-async function createChatMentions(text: string, messageId: string, fromUser: { uid: string, displayName: string | null, photoURL: string | null }) {
+async function createChatMentions(text: string, messageId: string, fromUser: { uid: string, displayName: string | null, photoURL: string | null }, firestore: any) {
     if (!firestore) return;
 
     const foundUsers = new Map<string, { id: string }>();
@@ -143,7 +143,7 @@ async function createChatMentions(text: string, messageId: string, fromUser: { u
     }
 }
 
-async function findMentions(text: string): Promise<{startIndex: number, length: number}[]> {
+async function findMentions(text: string, firestore: any): Promise<{startIndex: number, length: number}[]> {
     if (!firestore || !text) return [];
 
     const mentions: {startIndex: number, length: number}[] = [];
@@ -248,7 +248,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   const audioChunksRef = useRef<Blob[]>([]);
 
   const { toast } = useToast();
-  const { currentUser } = useAuth();
+  const { currentUser, firestore, uploadFile } = useAuth();
   const { notifications, unreadCount: totalUnreadCount, loading: notificationsLoading } = useNotification();
   
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
@@ -279,7 +279,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
           ? data.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           : 'Agora'; 
 
-        const mentions = await findMentions(data.text);
+        const mentions = await findMentions(data.text, firestore);
         const textElements = renderTextWithPrecomputedMentions(data.text || '', mentions);
 
         return {
@@ -309,7 +309,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     });
 
     return () => unsubscribe();
-  }, [currentUser, toast]);
+  }, [currentUser, toast, firestore]);
 
 
   useEffect(() => {
@@ -369,7 +369,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
       const docRef = await addDoc(collection(firestore, 'chatMessages'), messageData);
   
       if (messageText) {
-        await createChatMentions(messageText, docRef.id, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL });
+        await createChatMentions(messageText, docRef.id, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL }, firestore);
       }
       
     } catch (error: any) {
@@ -562,7 +562,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     } else {
       setMentionSuggestions([]);
     }
-  }, [mentionQuery]);
+  }, [mentionQuery, firestore]);
 
   const handleTextareaInput = (event: ChangeEvent<HTMLTextAreaElement>) => {
     const textarea = event.target;
@@ -699,7 +699,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     const batch = writeBatch(firestore);
     for (const n of chatNotifications) {
       if (!n.read) {
-        const notifRef = doc(firestore, 'Usuarios', currentUser.uid, 'notifications', n.id);
+        const notifRef = doc(firestore, 'users', currentUser.uid, 'notifications', n.id);
         batch.update(notifRef, { read: true });
       }
     }
@@ -856,19 +856,19 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
                     onChange={handleTextareaInput}
                     className="rounded-lg bg-background/70 min-h-[44px] max-h-[120px] resize-none text-base p-2.5 pr-20"
                     rows={1}
-                    disabled={currentUser?.isAnonymous || isRecording}
+                    disabled={!currentUser || isRecording}
                   />
                   <div className="absolute right-1 bottom-1 flex items-center">
                     <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/png, image/jpeg, image/webp" className="hidden" />
-                    <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-primary h-9 w-9" onClick={handleAttachmentClick} disabled={currentUser?.isAnonymous || isRecording}>
+                    <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-primary h-9 w-9" onClick={handleAttachmentClick} disabled={!currentUser || isRecording}>
                       <Paperclip className="h-5 w-5" />
                     </Button>
                     {(newMessage.trim() === '' && !selectedImageFile) ? (
-                      <Button type="button" variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-primary h-9 w-9", isRecording && "text-destructive bg-destructive/10 animate-pulse")} onClick={toggleRecording} disabled={currentUser?.isAnonymous}>
+                      <Button type="button" variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-primary h-9 w-9", isRecording && "text-destructive bg-destructive/10 animate-pulse")} onClick={toggleRecording} disabled={!currentUser}>
                         <Mic className="h-5 w-5" />
                       </Button>
                     ) : (
-                      <Button type="submit" variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground h-9 w-9" disabled={currentUser?.isAnonymous || isRecording}>
+                      <Button type="submit" variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground h-9 w-9" disabled={!currentUser || isRecording}>
                         <Send className="h-5 w-5" />
                       </Button>
                     )}
