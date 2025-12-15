@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Image from 'next/image';
@@ -26,7 +25,7 @@ export interface StoryData {
 // 2. Tipo para as PROPRIEDADES do componente, que inclui os dados e as funções
 export interface ReelCardProps extends StoryData {
   onClick: (story: StoryData) => void; // To open the story viewer
-  onAuthorClick: (authorId: string, authorName: string, authorAvatarUrl?: string) => void; // To open the user profile modal
+  onAuthorClick: (authorId: string) => void; // To open the user profile modal
 }
 
 export default function ReelCard({
@@ -53,7 +52,7 @@ export default function ReelCard({
 
   const handleAuthorClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent the main onClick from firing
-    onAuthorClick(authorId, authorName, authorAvatarUrl);
+    onAuthorClick(authorId);
   };
 
   const handleStoryClick = () => {
@@ -63,8 +62,6 @@ export default function ReelCard({
       thumbnailUrl, dataAIThumbnailHint, storyType, videoContentUrl
     });
   };
-
-  const story = { id, authorId, authorName, authorAvatarUrl, timestamp, description, thumbnailUrl, dataAIThumbnailHint, storyType, videoContentUrl };
 
   return (
     <button
@@ -79,17 +76,15 @@ export default function ReelCard({
     >
       <div
         className={cn(
-          "relative w-full h-full bg-card rounded-md overflow-hidden shadow-md"
+          "relative w-full h-full bg-card rounded-xl overflow-hidden shadow-md"
         )}
       >
-        <video
-          src={videoContentUrl || thumbnailUrl}
-          muted
-          loop
-          autoPlay
-          playsInline
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          data-ai-hint={dataAIThumbnailHint || 'video story content'}
+        <Image
+            src={thumbnailUrl}
+            alt={authorName}
+            fill
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            data-ai-hint={dataAIThumbnailHint || 'video story content'}
         />
 
         {/* Gradient Overlay for better text readability */}
