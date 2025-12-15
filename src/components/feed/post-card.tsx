@@ -37,7 +37,6 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/contexts/AuthContext';
-import { firestore } from '@/lib/firebase/client';
 import {
   collection,
   query,
@@ -66,7 +65,8 @@ async function createMentions(
     text: string, 
     postId: string, 
     fromUser: { uid: string, displayName: string | null, photoURL: string | null }, 
-    type: 'mention_post' | 'mention_comment'
+    type: 'mention_post' | 'mention_comment',
+    firestore: any
 ) {
     if (!firestore) return;
 
@@ -84,7 +84,7 @@ async function createMentions(
         
         const firstWord = firstWordMatch[1];
         
-        const usersRef = collection(firestore, "Usuarios");
+        const usersRef = collection(firestore, "users");
         const q = query(
             usersRef,
             where("displayName_lowercase", ">=", firstWord.toLowerCase()),
@@ -130,7 +130,7 @@ async function createMentions(
 
     const batch = writeBatch(firestore);
     for (const user of foundUsers.values()) {
-        const notificationRef = doc(collection(firestore, 'Usuarios', user.id, 'notifications'));
+        const notificationRef = doc(collection(firestore, 'users', user.id, 'notifications'));
         batch.set(notificationRef, {
             type: type,
             fromUserId: fromUser.uid,
@@ -231,7 +231,7 @@ interface Mention {
 }
 
 
-async function findMentions(text: string): Promise<Mention[]> {
+async function findMentions(text: string, firestore: any): Promise<Mention[]> {
     if (!firestore || !text) return [];
 
     const mentions: Mention[] = [];
@@ -248,7 +248,7 @@ async function findMentions(text: string): Promise<Mention[]> {
         
         const firstWord = firstWordMatch[1];
         
-        const usersRef = collection(firestore, "Usuarios");
+        const usersRef = collection(firestore, "users");
         const q = query(
             usersRef,
             where("displayName_lowercase", ">=", firstWord.toLowerCase()),
@@ -322,7 +322,7 @@ function renderTextWithClickableMentions(text: string, mentions: Mention[], onMe
 
 
 const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData, postId: string }) => {
-    const { currentUser } = useAuth();
+    const { currentUser, firestore } = useAuth();
     const [votedOptionId, setVotedOptionId] = useState<string | null>(null);
     const [poll, setPoll] = useState(initialPollData);
     const { toast } = useToast();
@@ -349,7 +349,7 @@ const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData
             }
         });
         return () => unsub();
-    }, [postId, currentUser]);
+    }, [postId, currentUser, firestore]);
 
     useEffect(() => {
         if (!firestore || !postId) return;
@@ -367,10 +367,10 @@ const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData
         });
 
         return () => unsub();
-    }, [postId]);
+    }, [postId, firestore]);
 
     const handleVote = async (optionId: string) => {
-        if (!currentUser) {
+        if (!currentUser || !firestore) {
             toast({ variant: 'destructive', title: 'Você precisa estar logado para votar.' });
             return;
         }
@@ -493,7 +493,7 @@ export default function PostCard({
   edited,
   poll,
 }: PostCardProps) {
-  const { currentUser, isProfileComplete } = useAuth();
+  const { currentUser, isProfileComplete, firestore } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   
@@ -555,7 +555,7 @@ export default function PostCard({
     const handleShowUserProfile = useCallback(async (userIdToShow: string) => {
         if (!firestore) return;
         try {
-            const userDoc = await getDoc(doc(firestore, "Usuarios", userIdToShow));
+            const userDoc = await getDoc(doc(firestore, "users", userIdToShow));
             if (userDoc.exists()) {
                 const userData = userDoc.data();
                 setSelectedUserProfile({
@@ -572,19 +572,19 @@ export default function PostCard({
             console.error("Error fetching user profile for modal:", error);
             toast({ variant: "destructive", title: "Erro ao carregar perfil." });
         }
-    }, [toast]);
+    }, [toast, firestore]);
 
   // Process main post text for mentions
   useEffect(() => {
     const fullText = text.replace(linkRegex, "").trim();
-    if (fullText) {
+    if (fullText && firestore) {
         const processText = async () => {
-            const mentions = await findMentions(fullText);
+            const mentions = await findMentions(fullText, firestore);
             setPostTextElements(renderTextWithClickableMentions(fullText, mentions, handleShowUserProfile));
         };
         processText();
     }
-  }, [text, handleShowUserProfile]);
+  }, [text, handleShowUserProfile, firestore]);
 
 
   // Real-time listener for the post document to update reactions
@@ -598,7 +598,7 @@ export default function PostCard({
         }
     });
     return () => unsubscribe();
-  }, [postId]);
+  }, [postId, firestore]);
 
   // Fetch user's reaction on mount
   useEffect(() => {
@@ -611,7 +611,7 @@ export default function PostCard({
       }
     });
     return () => { isMounted = false; };
-  }, [currentUser, postId]);
+  }, [currentUser, postId, firestore]);
   
   // Fetch comments in real-time
   useEffect(() => {
@@ -624,7 +624,7 @@ export default function PostCard({
         const data = doc.data();
         const commentTimestamp = data.timestamp instanceof Timestamp ? formatDistanceToNow(data.timestamp.toDate(), { addSuffix: true, locale: ptBR }) : 'Agora';
         
-        const mentions = await findMentions(data.text);
+        const mentions = await findMentions(data.text, firestore);
         const textElements = renderTextWithClickableMentions(data.text || '', mentions, handleShowUserProfile);
 
         return {
@@ -645,13 +645,14 @@ export default function PostCard({
     });
 
     return () => unsubscribe();
-  }, [postId, handleShowUserProfile]);
+  }, [postId, handleShowUserProfile, firestore]);
 
   useEffect(() => {
     if (showMentions && mentionQuery.length > 0 && firestore) {
       setLoadingMentions(true);
       const fetchUsers = async () => {
-        const usersRef = collection(firestore, "Usuarios");
+        if (!firestore) return;
+        const usersRef = collection(firestore, "users");
         const q = query(
           usersRef,
           where("displayName_lowercase", ">=", mentionQuery.toLowerCase()),
@@ -675,7 +676,7 @@ export default function PostCard({
     } else {
       setMentionSuggestions([]);
     }
-  }, [mentionQuery, showMentions]);
+  }, [mentionQuery, showMentions, firestore]);
 
 
   // Handlers
@@ -735,7 +736,7 @@ export default function PostCard({
     
     try {
         const commentText = newCommentText.trim();
-        await addDoc(collection(firestore, 'posts', postId, 'comments'), {
+        const newDocRef = await addDoc(collection(firestore, 'posts', postId, 'comments'), {
             userId: currentUser.uid,
             userName: currentUser.displayName || 'Usuário Anônimo',
             userAvatarUrl: currentUser.photoURL,
@@ -746,7 +747,7 @@ export default function PostCard({
         });
 
         if (currentUser) {
-            await createMentions(commentText, postId, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL }, 'mention_comment');
+            await createMentions(commentText, postId, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL }, 'mention_comment', firestore);
         }
         
         setNewCommentText('');
@@ -929,7 +930,7 @@ export default function PostCard({
         try {
             await runTransaction(firestore, async (transaction) => {
                 const commentDoc = await transaction.get(commentRef);
-                if (!commentDoc.exists()) throw "Comentário não existe mais.";
+                if (!commentDoc.exists()) throw new Error("Comentário não existe mais.");
 
                 const reactionDoc = await transaction.get(reactionRef);
                 const currentReactions = commentDoc.data().reactions || { heart: 0 };
@@ -960,7 +961,7 @@ export default function PostCard({
             setUserHasReacted(doc.exists());
         });
         return () => unsubscribe();
-    }, [comment.id]);
+    }, [comment.id, firestore, currentUser]);
   
     return (
       <div className="relative">

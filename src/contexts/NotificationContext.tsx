@@ -4,7 +4,6 @@ import type { ReactNode } from 'react';
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { Notification } from '@/types/notifications'; // New type
 import { useAuth } from '@/contexts/AuthContext';
-import { firestore } from '@/lib/firebase/client';
 import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore';
 
 interface NotificationContextType {
@@ -16,7 +15,7 @@ interface NotificationContextType {
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
-  const { currentUser } = useAuth();
+  const { currentUser, firestore } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -50,7 +49,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [currentUser]);
+  }, [currentUser, firestore]);
 
   return (
     <NotificationContext.Provider

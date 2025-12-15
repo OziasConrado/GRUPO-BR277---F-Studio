@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -24,7 +25,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { doc, writeBatch, Timestamp } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/client';
 import type { Notification } from '@/types/notifications';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -34,7 +34,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { isChatOpen, closeChat } = useChat();
-  const { currentUser, loading, signOutUser, isAuthenticating } = useAuth();
+  const { currentUser, loading, signOutUser, isAuthenticating, firestore } = useAuth();
   const { notifications, unreadCount, loading: notificationsLoading } = useNotification();
 
   useEffect(() => {

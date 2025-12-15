@@ -4,7 +4,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { firestore } from '@/lib/firebase/client';
 import { collection, query, where, orderBy, onSnapshot, Timestamp, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
@@ -17,6 +16,7 @@ import HomeAlertCard, { type HomeAlertCardData } from '@/components/alerts/home-
 
 function FeedContent() {
   const { toast } = useToast();
+  const { firestore } = useAuth();
 
   const [posts, setPosts] = useState<PostCardProps[]>([]);
   const [stories, setStories] = useState<StoryData[]>([]);
@@ -136,7 +136,7 @@ function FeedContent() {
       unsubscribeStories();
       unsubscribeAlerts();
     };
-  }, [toast]);
+  }, [toast, firestore]);
 
   const handleStoryClick = (story: StoryData) => {
     setSelectedStory(story);
