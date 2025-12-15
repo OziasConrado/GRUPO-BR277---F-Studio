@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -14,7 +15,7 @@ import {
   type User as FirebaseUser,
   type AuthError,
 } from 'firebase/auth';
-import { auth, firestore, storage } from '@/lib/firebase/client';
+import { auth as getFirebaseAuth, firestore, uploadFile } from '@/lib/firebase/client';
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
@@ -109,7 +110,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [toast]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const authInstance = getFirebaseAuth();
+    const unsubscribe = onAuthStateChanged(authInstance, async (user) => {
       if (user) {
         setCurrentUser(user);
         const userDocRef = doc(firestore, 'users', user.uid);
@@ -139,9 +141,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = useCallback(async () => {
     setAuthAction('google');
+    const authInstance = getFirebaseAuth();
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
+      await signInWithPopup(authInstance, provider);
       toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a) de volta!' });
       router.push('/');
     } catch (error) {
@@ -153,8 +156,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUpWithEmail = useCallback(async (email: string, password: string) => {
     setAuthAction('signup');
+    const authInstance = getFirebaseAuth();
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      await createUserWithEmailAndPassword(authInstance, email, password);
       toast({ title: 'Cadastro bem-sucedido!', description: 'Sua conta foi criada.' });
       router.push('/');
     } catch (error) {
@@ -166,8 +170,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithEmail = useCallback(async (email: string, password: string) => {
     setAuthAction('email');
+    const authInstance = getFirebaseAuth();
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(authInstance, email, password);
       toast({ title: 'Login bem-sucedido!', description: 'Bem-vindo(a) de volta!' });
       router.push('/');
     } catch (error) {
@@ -179,8 +184,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const sendPasswordResetEmail = useCallback(async (email: string) => {
     setAuthAction('reset');
+    const authInstance = getFirebaseAuth();
     try {
-      await firebaseSendPasswordResetEmail(auth, email);
+      await firebaseSendPasswordResetEmail(authInstance, email);
       toast({
         title: 'Link de Redefinição Enviado',
         description: 'Verifique seu e-mail para as instruções.',
@@ -201,9 +207,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         let photoURL = currentUser.photoURL;
         if (data.newPhotoFile) {
             const storagePath = `profile_pictures/${currentUser.uid}/${Date.now()}_${data.newPhotoFile.name}`;
-            const storageRef = ref(storage, storagePath);
-            const uploadResult = await uploadBytes(storageRef, data.newPhotoFile);
-            photoURL = await getDownloadURL(uploadResult.ref);
+            photoURL = await uploadFile(data.newPhotoFile, storagePath);
         }
 
         const authUpdates: { displayName?: string, photoURL?: string } = {};
@@ -243,8 +247,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOutUser = useCallback(async () => {
     setAuthAction('signout');
+    const authInstance = getFirebaseAuth();
     try {
-      await signOut(auth);
+      await signOut(authInstance);
       router.push('/login');
       toast({ title: 'Logout realizado com sucesso.' });
     } catch (error) {

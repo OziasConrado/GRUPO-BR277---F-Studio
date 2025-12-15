@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -122,21 +123,6 @@ service cloud.firestore {
       match /userReactions/{userId} {
         allow read: if true;
         allow write: if isOwner(userId);
-      }
-    }
-    
-    // Rename 'Usuarios' collection to 'users' for consistency
-    match /Usuarios/{userId} { 
-      allow read: if isAuthenticated();
-      // Allow user to create and update their own document.
-      allow write: if isOwner(userId);
-
-       // Notifications subcollection
-      match /notifications/{notificationId} {
-        // Only the profile owner can read/update/delete their notifications
-        allow read, update, delete: if isOwner(userId);
-        // Only authenticated users can create notifications
-        allow create: if isAuthenticated(); 
       }
     }
   }
