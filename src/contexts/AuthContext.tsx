@@ -15,9 +15,9 @@ import {
   type User as FirebaseUser,
   type AuthError,
 } from 'firebase/auth';
-import { auth as getFirebaseAuth, firestore, uploadFile } from '@/lib/firebase/client';
+// Importa as instâncias diretamente
+import { auth, firestore, uploadFile } from '@/lib/firebase/client';
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -110,8 +110,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [toast]);
 
   useEffect(() => {
-    const authInstance = getFirebaseAuth();
-    const unsubscribe = onAuthStateChanged(authInstance, async (user) => {
+    // A instância 'auth' já foi inicializada em client.ts.
+    // Se ela for nula, significa que a configuração falhou.
+    if (!auth || !firestore) {
+      console.error("Firebase Auth ou Firestore não foi inicializado. Verifique a configuração.");
+      setIsAuthenticating(false);
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setCurrentUser(user);
         const userDocRef = doc(firestore, 'users', user.uid);
@@ -136,15 +143,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setIsAuthenticating(false);
     });
+
     return () => unsubscribe();
   }, []);
 
   const signInWithGoogle = useCallback(async () => {
+    if (!auth) return;
     setAuthAction('google');
-    const authInstance = getFirebaseAuth();
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(authInstance, provider);
+      await signInWithPopup(auth, provider);
       toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a) de volta!' });
       router.push('/');
     } catch (error) {
@@ -155,10 +163,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [router, handleAuthError, toast]);
 
   const signUpWithEmail = useCallback(async (email: string, password: string) => {
+    if (!auth) return;
     setAuthAction('signup');
-    const authInstance = getFirebaseAuth();
     try {
-      await createUserWithEmailAndPassword(authInstance, email, password);
+      await createUserWithEmailAndPassword(auth, email, password);
       toast({ title: 'Cadastro bem-sucedido!', description: 'Sua conta foi criada.' });
       router.push('/');
     } catch (error) {
@@ -169,10 +177,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [router, handleAuthError, toast]);
 
   const signInWithEmail = useCallback(async (email: string, password: string) => {
+    if (!auth) return;
     setAuthAction('email');
-    const authInstance = getFirebaseAuth();
     try {
-      await signInWithEmailAndPassword(authInstance, email, password);
+      await signInWithEmailAndPassword(auth, email, password);
       toast({ title: 'Login bem-sucedido!', description: 'Bem-vindo(a) de volta!' });
       router.push('/');
     } catch (error) {
@@ -183,10 +191,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [router, handleAuthError, toast]);
 
   const sendPasswordResetEmail = useCallback(async (email: string) => {
+    if (!auth) return;
     setAuthAction('reset');
-    const authInstance = getFirebaseAuth();
     try {
-      await firebaseSendPasswordResetEmail(authInstance, email);
+      await firebaseSendPasswordResetEmail(auth, email);
       toast({
         title: 'Link de Redefinição Enviado',
         description: 'Verifique seu e-mail para as instruções.',
@@ -200,7 +208,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [handleAuthError, toast]);
 
   const updateUserProfile = useCallback(async (data: UpdateUserProfileData) => {
-    if (!currentUser) return;
+    if (!currentUser || !firestore) return;
     setAuthAction('update');
     setLoading(true);
     try {
@@ -217,7 +225,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (photoURL && photoURL !== currentUser.photoURL) {
             authUpdates.photoURL = photoURL;
         }
-        if (Object.keys(authUpdates).length > 0) {
+        if (Object.keys(authUpdates).length > 0 && auth) {
             await firebaseUpdateProfile(currentUser, authUpdates);
         }
         
@@ -246,10 +254,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [currentUser, handleAuthError, toast]);
 
   const signOutUser = useCallback(async () => {
+    if (!auth) return;
     setAuthAction('signout');
-    const authInstance = getFirebaseAuth();
     try {
-      await signOut(authInstance);
+      await signOut(auth);
       router.push('/login');
       toast({ title: 'Logout realizado com sucesso.' });
     } catch (error) {
