@@ -79,7 +79,7 @@ function FeedContent() {
     });
 
     // Listener for Stories (Reels)
-    const storiesQuery = query(collection(firestore, 'reels'), orderBy('timestamp', 'desc'));
+    const storiesQuery = query(collection(firestore, 'reels'), where('deleted', '!=', true), orderBy('timestamp', 'desc'));
     const unsubscribeStories = onSnapshot(storiesQuery, (snapshot) => {
       const fetchedStories = snapshot.docs.map(doc => {
         const data = doc.data();
@@ -187,7 +187,7 @@ function FeedContent() {
 
         <CreatePost />
 
-        {stories.length > 0 && (
+        {!storiesLoading && stories.length > 0 && (
           <section>
             <h2 className="text-xl font-bold font-headline mb-3 px-4 sm:px-0">Reels</h2>
             <div className="relative">
@@ -198,7 +198,7 @@ function FeedContent() {
           </section>
         )}
 
-        {alerts.length > 0 && (
+        {!alertsLoading && alerts.length > 0 && (
             <section>
                  <div className="flex justify-between items-center mb-3 px-4 sm:px-0">
                     <h2 className="text-xl font-bold font-headline">Alertas da Rodovia</h2>
