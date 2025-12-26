@@ -27,7 +27,7 @@ const AdSenseAd = ({ adSlot, className, adKey }: AdSenseAdProps) => {
     } catch (err) {
       console.error('AdSense error:', err);
     }
-  }, []); // Array de dependências vazio para executar apenas uma vez na montagem inicial
+  }, [adKey]); // Dependência na chave para garantir a reinicialização correta
 
   if (process.env.NODE_ENV !== 'production') {
     return (
