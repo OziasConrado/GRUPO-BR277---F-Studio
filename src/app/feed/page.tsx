@@ -79,12 +79,7 @@ function FeedContent() {
     });
 
     // Listener for Stories (Reels)
-    const storiesQuery = query(
-      collection(firestore, 'reels'),
-      where('deleted', '!=', true),
-      orderBy('deleted', 'asc'),
-      orderBy('timestamp', 'desc')
-    );
+    const storiesQuery = query(collection(firestore, 'reels'), orderBy('timestamp', 'desc'));
     const unsubscribeStories = onSnapshot(storiesQuery, (snapshot) => {
       const fetchedStories = snapshot.docs.map(doc => {
         const data = doc.data();

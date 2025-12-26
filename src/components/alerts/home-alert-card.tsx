@@ -9,6 +9,7 @@ import { AlertTriangle, Construction, Car, Ambulance, Flame, CloudFog, Clock, Us
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 export interface HomeAlertCardData {
   id: string;
@@ -119,10 +120,22 @@ export default function HomeAlertCard({ alert }: HomeAlertCardProps) {
             aria-label={`Ver perfil de ${alert.userNameReportedBy}`}
           >
             <Avatar className="h-5 w-5 mr-1.5 border border-primary/20 group-hover:border-primary/40 transition-all flex-shrink-0">
-              {alert.userAvatarUrl ? <AvatarImage src={alert.userAvatarUrl as string} alt={alert.userNameReportedBy} data-ai-hint={alert.dataAIAvatarHint} /> : null}
-              <AvatarFallback className="text-[10px]">
-                {alert.userNameReportedBy ? alert.userNameReportedBy.substring(0,1).toUpperCase() : <UserCircle className="h-3 w-3"/>}
-              </AvatarFallback>
+               <div className="relative w-full h-full">
+                {alert.userAvatarUrl ? (
+                  <Image
+                    src={alert.userAvatarUrl as string}
+                    alt={alert.userNameReportedBy}
+                    fill
+                    sizes="20px"
+                    style={{ objectFit: 'cover' }}
+                    data-ai-hint={alert.dataAIAvatarHint}
+                  />
+                ) : (
+                  <AvatarFallback className="text-[10px]">
+                    {alert.userNameReportedBy ? alert.userNameReportedBy.substring(0,1).toUpperCase() : <UserCircle className="h-3 w-3"/>}
+                  </AvatarFallback>
+                )}
+              </div>
             </Avatar>
             <span className="group-hover:text-primary transition-colors truncate"> {/* Added truncate here */}
               {alert.userNameReportedBy}
