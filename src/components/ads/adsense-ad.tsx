@@ -1,3 +1,4 @@
+
 'use client';
     
 import { useEffect } from 'react';
@@ -31,6 +32,7 @@ const AdSenseAd = ({ adSlot, className, adKey }: AdSenseAdProps) => {
   if (process.env.NODE_ENV !== 'production') {
     return (
       <div
+        key={adKey}
         className={cn(`flex items-center justify-center bg-muted/30 border border-dashed text-muted-foreground text-sm h-24 rounded-lg`, className)}
       >
         Anúncio do AdSense (Slot: {adSlot})

@@ -85,10 +85,10 @@ export default function AlertasPage() {
               {alerts.map((alert, index) => (
                 <React.Fragment key={alert.id}>
                   <AlertCard alert={alert} />
-                  {(index === 2 && alerts.length > 3) && <AdSenseAd adSlot="3412792947" adKey={`alerts-mid-${index}`} className="my-6" />}
+                  {(index === 2 && alerts.length > 3) && <AdSenseAd adSlot="3412792947" adKey={`alerts-mid-${alerts.length}-${index}`} className="my-6" />}
                 </React.Fragment>
               ))}
-              {(alerts.length > 0 && alerts.length <= 3) && <AdSenseAd adSlot="1936059063" adKey="alerts-bottom-1" className="my-6" />}
+              {(alerts.length > 0 && alerts.length <= 3) && <AdSenseAd adSlot="1936059063" adKey={`alerts-bottom-1-${alerts.length}`} className="my-6" />}
             </div>
           ) : (
             <p className="text-muted-foreground text-center py-8">
