@@ -28,7 +28,7 @@
     --muted: 0 0% 93%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 217 91% 60%; /* #2196F3 Blue (Kept from original PRD accent) */
+    --accent: 220 100% 23.1%; /* Changed from #2196F3 to match primary */
     --accent-foreground: 0 0% 98%;
 
     --destructive: 0 84.2% 60.2%;
@@ -75,7 +75,7 @@
     --muted: 0 0% 15%;
     --muted-foreground: 210 14% 74%; /* #adb5bd (text-light-color) */
 
-    --accent: 217 91% 60%; /* #2196F3 Blue (Kept from original PRD accent) */
+    --accent: 220 100% 23.1%; /* Changed from #2196F3 to match primary */
     --accent-foreground: 0 0% 98%;
 
     --destructive: 0 62.8% 30.6%;
