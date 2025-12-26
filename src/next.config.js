@@ -21,7 +21,7 @@ const nextConfig = {
     return [
       {
         source: '/',
-        destination: '/feed',
+        destination: '/streaming',
         permanent: true,
       },
     ];
