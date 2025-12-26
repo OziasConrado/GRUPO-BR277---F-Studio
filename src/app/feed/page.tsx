@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -217,7 +218,11 @@ function FeedContent() {
         <section>
             <h2 className="text-xl font-bold font-headline mb-3 px-4 sm:px-0">Feed da Comunidade</h2>
             <div className="space-y-6">
-            {posts.length > 0 ? (
+            {postsLoading ? (
+                <div className="flex justify-center items-center py-10">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            ) : posts.length > 0 ? (
                 posts.map(post => <PostCard key={post.id} {...post} />)
             ) : (
                 <div className="text-center py-10">

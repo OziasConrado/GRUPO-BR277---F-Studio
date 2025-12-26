@@ -10,13 +10,7 @@ import React from 'react';
 import { collection, query, orderBy, Timestamp, onSnapshot } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-
-const AdPlaceholder = ({ className }: { className?: string }) => (
-  <div className={cn("my-6 p-4 rounded-xl bg-muted/30 border border-dashed h-24 flex items-center justify-center", className)}>
-    <p className="text-muted-foreground text-sm">Espaço para Banner AdMob (Ex: 320x50 ou Responsivo)</p>
-  </div>
-);
-
+import AdSenseAd from '@/components/ads/adsense-ad';
 
 export default function AlertasPage() {
   const [alerts, setAlerts] = useState<AlertProps[]>([]);
@@ -26,9 +20,7 @@ export default function AlertasPage() {
 
   useEffect(() => {
     if (!firestore) {
-      if (!loading) { // Avoid showing error on initial load
-        toast({ variant: "destructive", title: "Erro de Conexão", description: "Não foi possível conectar ao banco de dados." });
-      }
+      toast({ variant: "destructive", title: "Erro de Conexão", description: "Não foi possível conectar ao banco de dados." });
       setLoading(false);
       return;
     }
@@ -63,12 +55,12 @@ export default function AlertasPage() {
     });
 
     return () => unsubscribe(); // Cleanup listener on component unmount
-  }, [firestore, toast, loading]);
+  }, [firestore, toast]);
 
 
   return (
     <div className="w-full space-y-6">
-      <Link href="/" className="inline-flex items-center text-sm text-primary hover:underline mb-0">
+      <Link href="/feed" className="inline-flex items-center text-sm text-primary hover:underline mb-0">
         <ArrowLeft className="w-4 h-4 mr-1" />
         Voltar para o Feed
       </Link>
@@ -82,7 +74,7 @@ export default function AlertasPage() {
       </div>
 
       <div className="space-y-6 pt-2">
-          <AdPlaceholder />
+          <AdSenseAd adSlot="9859556839" className="my-6" />
           
           {loading ? (
             <div className="flex justify-center items-center py-8">
@@ -93,17 +85,17 @@ export default function AlertasPage() {
               {alerts.map((alert, index) => (
                 <React.Fragment key={alert.id}>
                   <AlertCard alert={alert} />
-                  {(index === 2 && alerts.length > 3) && <AdPlaceholder />}
+                  {(index === 2 && alerts.length > 3) && <AdSenseAd adSlot="3412792947" className="my-6" />}
                 </React.Fragment>
               ))}
-              {(alerts.length > 0 && alerts.length <= 3) && <AdPlaceholder />}
+              {(alerts.length > 0 && alerts.length <= 3) && <AdSenseAd adSlot="1936059063" className="my-6" />}
             </div>
           ) : (
             <p className="text-muted-foreground text-center py-8">
               Nenhum alerta reportado no momento.
             </p>
           )}
-          {alerts.length === 0 && !loading && <AdPlaceholder />}
+          {alerts.length === 0 && !loading && <AdSenseAd adSlot="5412891969" className="my-6" />}
         </div>
     </div>
   );
