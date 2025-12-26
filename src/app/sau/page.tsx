@@ -261,11 +261,16 @@ export default function SAUPage() {
           });
           setLocationStatus('success');
         })
-        .catch(error => {
+      .catch(error => {
           console.error("Error getting location:", error);
           setLocationStatus('error');
+          toast({
+            title: "Geolocalização Falhou",
+            description: "Não foi possível obter sua localização. A lista não será ordenada por proximidade.",
+            variant: "destructive",
+          });
         });
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     const loadDataAndLocation = async () => {
