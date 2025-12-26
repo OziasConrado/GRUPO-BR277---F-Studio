@@ -4,8 +4,9 @@ import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
 interface AdSenseAdProps {
-  adSlot: string; // O ID do seu bloco de anúncios
+  adSlot: string;
   className?: string;
+  adKey: string; // Chave única para forçar a recriação do componente
 }
 
 declare global {
@@ -16,7 +17,7 @@ declare global {
   }
 }
 
-const AdSenseAd = ({ adSlot, className }: AdSenseAdProps) => {
+const AdSenseAd = ({ adSlot, className, adKey }: AdSenseAdProps) => {
   useEffect(() => {
     try {
       if (window.adsbygoogle) {
@@ -25,20 +26,20 @@ const AdSenseAd = ({ adSlot, className }: AdSenseAdProps) => {
     } catch (err) {
       console.error('AdSense error:', err);
     }
-  }, []);
+  }, [adKey]); // Depender da chave única para re-executar quando necessário
 
   if (process.env.NODE_ENV !== 'production') {
     return (
       <div
         className={cn(`flex items-center justify-center bg-muted/30 border border-dashed text-muted-foreground text-sm h-24 rounded-lg`, className)}
       >
-        Anúncio do AdSense (Visível em Produção)
+        Anúncio do AdSense (Slot: {adSlot})
       </div>
     );
   }
 
   return (
-    <div className={className}>
+    <div className={className} key={adKey}>
       <ins
         className="adsbygoogle"
         style={{ display: 'block' }}

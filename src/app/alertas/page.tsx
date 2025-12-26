@@ -74,7 +74,7 @@ export default function AlertasPage() {
       </div>
 
       <div className="space-y-6 pt-2">
-          <AdSenseAd adSlot="9859556839" className="my-6" />
+          <AdSenseAd adSlot="9859556839" adKey="alerts-top" className="my-6" />
           
           {loading ? (
             <div className="flex justify-center items-center py-8">
@@ -85,17 +85,17 @@ export default function AlertasPage() {
               {alerts.map((alert, index) => (
                 <React.Fragment key={alert.id}>
                   <AlertCard alert={alert} />
-                  {(index === 2 && alerts.length > 3) && <AdSenseAd adSlot="3412792947" className="my-6" />}
+                  {(index === 2 && alerts.length > 3) && <AdSenseAd adSlot="3412792947" adKey={`alerts-mid-${index}`} className="my-6" />}
                 </React.Fragment>
               ))}
-              {(alerts.length > 0 && alerts.length <= 3) && <AdSenseAd adSlot="1936059063" className="my-6" />}
+              {(alerts.length > 0 && alerts.length <= 3) && <AdSenseAd adSlot="1936059063" adKey="alerts-bottom-1" className="my-6" />}
             </div>
           ) : (
             <p className="text-muted-foreground text-center py-8">
               Nenhum alerta reportado no momento.
             </p>
           )}
-          {alerts.length === 0 && !loading && <AdSenseAd adSlot="5412891969" className="my-6" />}
+          {alerts.length === 0 && !loading && <AdSenseAd adSlot="5412891969" adKey="alerts-empty" className="my-6" />}
         </div>
     </div>
   );
