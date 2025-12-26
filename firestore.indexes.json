@@ -34,6 +34,10 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "deleted",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "timestamp",
           "order": "DESCENDING"
         }
