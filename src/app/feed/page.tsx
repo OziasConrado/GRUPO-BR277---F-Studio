@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, where, orderBy, onSnapshot, Timestamp, getDocs } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, Timestamp, getDocs, limit } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Phone, Video, MessageCircle, Route } from 'lucide-react';
 import Link from 'next/link';
@@ -111,7 +112,8 @@ function FeedContent() {
     // Listener for Alerts
     const alertsQuery = query(
         collection(firestore, 'alerts'),
-        orderBy('timestamp', 'desc')
+        orderBy('timestamp', 'desc'),
+        limit(10)
     );
     const unsubscribeAlerts = onSnapshot(alertsQuery, (snapshot) => {
         const fetchedAlerts = snapshot.docs.map(doc => {
