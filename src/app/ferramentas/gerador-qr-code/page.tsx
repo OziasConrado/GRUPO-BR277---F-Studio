@@ -8,7 +8,7 @@ import Link from "next/link";
 import { ArrowLeft, QrCode, Download, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { QRCodeCanvas } from 'qrcode.react';
+import QRCode from "react-qr-code";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
 
@@ -21,7 +21,7 @@ const AdPlaceholder = ({ className }: { className?: string }) => (
 export default function GeradorQrCodePage() {
   const [textInput, setTextInput] = useState('');
   const [qrCodeValue, setQrCodeValue] = useState('');
-  const qrCanvasRef = useRef<HTMLDivElement>(null);
+  const qrCodeRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const handleGenerateQrCode = () => {
@@ -38,24 +38,35 @@ export default function GeradorQrCodePage() {
   };
 
   const handleDownloadQrCode = () => {
-    if (!qrCodeValue || !qrCanvasRef.current) {
-      toast({
-        variant: 'destructive',
-        title: 'QR Code Não Gerado',
-        description: 'Gere o QR Code primeiro para poder baixá-lo.',
-      });
-      return;
+    const svg = qrCodeRef.current?.querySelector('svg');
+    if (!svg) {
+        toast({
+            variant: 'destructive',
+            title: 'QR Code Não Gerado',
+            description: 'Gere o QR Code primeiro para poder baixá-lo.',
+        });
+        return;
     }
-    const canvas = qrCanvasRef.current.querySelector('canvas');
-    if (canvas) {
-      const link = document.createElement('a');
-      link.href = canvas.toDataURL("image/png");
-      link.download = "qrcode_grupobr277.png";
-      link.click();
-      toast({ title: 'Download Iniciado', description: 'O QR Code está sendo baixado.' });
-    } else {
-       toast({ variant: 'destructive', title: 'Erro no Download', description: 'Não foi possível encontrar o canvas do QR Code.' });
-    }
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    
+    const img = new Image();
+    img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        const pngFile = canvas.toDataURL("image/png");
+
+        const downloadLink = document.createElement("a");
+        downloadLink.download = "qrcode_grupobr277.png";
+        downloadLink.href = pngFile;
+        downloadLink.click();
+        toast({ title: 'Download Iniciado', description: 'O QR Code está sendo baixado.' });
+    };
+    img.src = `data:image/svg+xml;base64,${btoa(svgData)}`;
   };
   
   const handleClearFields = () => {
@@ -111,16 +122,18 @@ export default function GeradorQrCodePage() {
             <div className="mt-8 pt-6 border-t text-center">
               <h3 className="text-lg font-semibold mb-4">QR Code Gerado:</h3>
               <div 
-                ref={qrCanvasRef} 
-                className="flex justify-center items-center p-4 bg-card rounded-lg border shadow-inner mx-auto max-w-[250px]"
+                ref={qrCodeRef} 
+                className="flex justify-center items-center p-4 bg-white rounded-lg border shadow-inner mx-auto"
+                style={{ maxWidth: 256, height: 'auto' }}
               >
-                <QRCodeCanvas
+                <QRCode
                   value={qrCodeValue}
-                  size={200}
-                  bgColor={"#ffffff"}
-                  fgColor={"#002776"}
-                  level={"H"}
-                  includeMargin={true}
+                  size={256}
+                  style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                  viewBox={`0 0 256 256`}
+                  bgColor="#FFFFFF"
+                  fgColor="#002776"
+                  level="H"
                 />
               </div>
               <Button onClick={handleDownloadQrCode} className="w-full max-w-xs mx-auto mt-6 rounded-full">

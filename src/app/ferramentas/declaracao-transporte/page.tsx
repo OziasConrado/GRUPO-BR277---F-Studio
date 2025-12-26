@@ -5,12 +5,11 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, ClipboardSignature, Copy, RefreshCw, AlertCircle } from "lucide-react";
+import { ArrowLeft, ClipboardSignature, Copy, RefreshCw, AlertCircle, Calendar as CalendarIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -156,7 +155,7 @@ Assinatura: __________________________
             </div>
             <div>
               <Label htmlFor="dataTransporte">Data do Transporte</Label>
-              <Popover>
+              {/* <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant={"outline"}
@@ -166,7 +165,7 @@ Assinatura: __________________________
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dataTransporte ? format(dataTransporte, "PPP", { locale: ptBR }) : <span>Escolha uma data</span>}
+                    {dataTransporte ? format(dataTransporte, "dd 'de' LLLL 'de' yyyy", { locale: ptBR }) : <span>Escolha uma data</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
@@ -178,7 +177,14 @@ Assinatura: __________________________
                     locale={ptBR}
                   />
                 </PopoverContent>
-              </Popover>
+              </Popover> */}
+               <Input 
+                id="dataTransporte" 
+                type="text" 
+                value={dataTransporte ? format(dataTransporte, "dd/MM/yyyy") : ''} 
+                readOnly 
+                className="rounded-lg mt-1 bg-background/70"
+              />
             </div>
 
             {errorMessage && (
@@ -207,7 +213,7 @@ Assinatura: __________________________
                   <Textarea
                     value={declaracaoGerada}
                     readOnly
-                    className="min-h-[250px] text-sm bg-muted/20 border-muted/50 rounded-md"
+                    className="min-h-[250px] text-sm bg-muted/20 border-muted/50 rounded-md font-mono"
                   />
                   <Button onClick={handleCopiarDeclaracao} className="w-full mt-4 rounded-full">
                     <Copy className="mr-2 h-4 w-4" /> Copiar Texto da Declaração

@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, CheckSquare, FileText, Share2, Car, Truck, Bus, CalendarIcon } from "lucide-react";
+import { ArrowLeft, CheckSquare, FileText, Share2, Car, Truck, Bus, Calendar as CalendarIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -241,7 +241,7 @@ export default function ChecklistVeicularPage() {
                 </div>
                 <div>
                   <Label htmlFor="checklistDate">Data do Checklist</Label>
-                  <Popover>
+                  {/* <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant={"outline"}
@@ -251,7 +251,7 @@ export default function ChecklistVeicularPage() {
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {checklistDate ? format(checklistDate, "PPP", { locale: ptBR }) : <span>Escolha uma data</span>}
+                        {checklistDate ? format(checklistDate, "dd 'de' LLLL 'de' yyyy", { locale: ptBR }) : <span>Escolha uma data</span>}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">
@@ -263,7 +263,14 @@ export default function ChecklistVeicularPage() {
                         locale={ptBR}
                       />
                     </PopoverContent>
-                  </Popover>
+                  </Popover> */}
+                   <Input 
+                    id="checklistDate" 
+                    type="text" 
+                    value={checklistDate ? format(checklistDate, "dd/MM/yyyy") : ''} 
+                    readOnly 
+                    className="rounded-lg mt-1 bg-background/70"
+                  />
                 </div>
               </div>
             </div>
@@ -294,7 +301,7 @@ export default function ChecklistVeicularPage() {
                   />
                   <Label
                     htmlFor={item.id}
-                    className={cn("text-sm font-normal leading-snug peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+                    className={cn("text-sm font-normal leading-snug cursor-pointer peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
                                  checkedItems[item.id] ? "line-through text-muted-foreground" : "text-foreground"
                     )}
                   >
@@ -322,5 +329,3 @@ export default function ChecklistVeicularPage() {
     </>
   );
 }
-
-    
