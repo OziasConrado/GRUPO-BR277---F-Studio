@@ -80,9 +80,9 @@ function FeedContent() {
 
     // Listener for Stories (Reels)
     const storiesQuery = query(
-        collection(firestore, 'reels'), 
-        where('deleted', '==', false), 
-        orderBy('timestamp', 'desc')
+      collection(firestore, 'reels'),
+      where('deleted', '==', false),
+      orderBy('timestamp', 'desc')
     );
     const unsubscribeStories = onSnapshot(storiesQuery, (snapshot) => {
       const fetchedStories = snapshot.docs.map(doc => {
@@ -97,7 +97,7 @@ function FeedContent() {
           thumbnailUrl: data.thumbnailUrl,
           storyType: data.storyType,
           videoContentUrl: data.videoContentUrl,
-          deleted: data.deleted
+          deleted: data.deleted,
         } as StoryData;
       }).filter(story => story.thumbnailUrl); // Ensure thumbnail exists client-side
       setStories(fetchedStories);
