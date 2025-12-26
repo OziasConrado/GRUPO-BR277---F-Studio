@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -6,17 +5,22 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { collection, query, where, orderBy, onSnapshot, Timestamp, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Phone, Video, MessageCircle, Route } from 'lucide-react';
 import Link from 'next/link';
 
 import PostCard, { type PostCardProps } from '@/components/feed/post-card';
 import ReelCard, { type StoryData } from '@/components/stories/ReelCard';
 import StoryViewerModal from '@/components/stories/StoryViewerModal';
 import HomeAlertCard, { type HomeAlertCardData } from '@/components/alerts/home-alert-card';
+import CreatePost from '@/components/feed/CreatePost';
+import FeatureCard from '@/components/common/FeatureCard';
+import { Button } from '@/components/ui/button';
+import { useChat } from '@/contexts/ChatContext';
 
 function FeedContent() {
   const { toast } = useToast();
   const { firestore } = useAuth();
+  const { openChat } = useChat();
 
   const [posts, setPosts] = useState<PostCardProps[]>([]);
   const [stories, setStories] = useState<StoryData[]>([]);
@@ -170,6 +174,24 @@ function FeedContent() {
   return (
     <>
       <div className="w-full max-w-4xl mx-auto space-y-6">
+        
+        <Button asChild variant="destructive" className="w-full h-14 rounded-xl text-lg font-bold">
+          <Link href="/emergencia">
+            <Phone className="mr-3 h-6 w-6" />
+            EMERGÊNCIA
+          </Link>
+        </Button>
+        
+        <div className="grid grid-cols-3 gap-2">
+            <FeatureCard title="Câmeras" Icon={Video} href="/streaming" />
+            <div onClick={openChat} className="h-full">
+                <FeatureCard title="Comunidade" Icon={MessageCircle} href="#" />
+            </div>
+            <FeatureCard title="Concessões" Icon={Route} href="/sau" />
+        </div>
+
+        <CreatePost />
+
         {stories.length > 0 && (
           <section>
             <h2 className="text-xl font-bold font-headline mb-3 px-4 sm:px-0">Reels</h2>
