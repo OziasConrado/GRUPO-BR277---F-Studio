@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -120,22 +121,16 @@ export default function HomeAlertCard({ alert }: HomeAlertCardProps) {
             aria-label={`Ver perfil de ${alert.userNameReportedBy}`}
           >
             <Avatar className="h-5 w-5 mr-1.5 border border-primary/20 group-hover:border-primary/40 transition-all flex-shrink-0">
-               <div className="relative w-full h-full">
-                {alert.userAvatarUrl ? (
-                  <Image
+               {alert.userAvatarUrl ? (
+                  <AvatarImage
                     src={alert.userAvatarUrl as string}
                     alt={alert.userNameReportedBy}
-                    fill
-                    sizes="20px"
-                    style={{ objectFit: 'cover' }}
                     data-ai-hint={alert.dataAIAvatarHint}
                   />
-                ) : (
-                  <AvatarFallback className="text-[10px]">
-                    {alert.userNameReportedBy ? alert.userNameReportedBy.substring(0,1).toUpperCase() : <UserCircle className="h-3 w-3"/>}
-                  </AvatarFallback>
-                )}
-              </div>
+                ) : null}
+                <AvatarFallback className="text-[10px]">
+                  {alert.userNameReportedBy ? alert.userNameReportedBy.substring(0,1).toUpperCase() : <UserCircle className="h-3 w-3"/>}
+                </AvatarFallback>
             </Avatar>
             <span className="group-hover:text-primary transition-colors truncate"> {/* Added truncate here */}
               {alert.userNameReportedBy}
