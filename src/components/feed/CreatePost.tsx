@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, type ChangeEvent } from 'react';
@@ -106,7 +107,7 @@ const PollCreator = ({ onSave, onCancel }: { onSave: (question: string, options:
 
 
 export default function CreatePost() {
-  const { currentUser, isProfileComplete, firestore, uploadFile } = useAuth();
+  const { currentUser, userProfile, isProfileComplete, firestore, uploadFile } = useAuth();
   const { toast } = useToast();
   
   const [postText, setPostText] = useState('');
@@ -154,9 +155,9 @@ export default function CreatePost() {
         userId: currentUser.uid,
         userName: currentUser.displayName,
         userAvatarUrl: currentUser.photoURL,
-        userLocation: isProfileComplete ? (currentUser as any).location : "Localização não definida",
-        bio: isProfileComplete ? (currentUser as any).bio : "Usuário da comunidade",
-        instagramUsername: isProfileComplete ? (currentUser as any).instagramUsername : undefined,
+        userLocation: userProfile?.location || null,
+        bio: userProfile?.bio || null,
+        instagramUsername: userProfile?.instagramUsername || null,
         text: postText,
         uploadedImageUrl: uploadedImageUrl,
         cardStyle: selectedStyle,
