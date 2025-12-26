@@ -1,10 +1,10 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { PlayCircle, Cctv, Search } from 'lucide-react';
+import { PlayCircle, Cctv, Search, Phone, Route } from 'lucide-react';
 import StreamFilters from '@/components/streaming/stream-filters';
 import StreamViewerModal from '@/components/streaming/StreamViewerModal';
 import type { StreamCardProps } from '@/components/streaming/stream-card'; 
@@ -242,6 +242,21 @@ export default function StreamingPage() {
 
   return (
     <div className="w-full space-y-6">
+      <div className="grid grid-cols-2 gap-3 mb-6">
+          <Button asChild variant="destructive" className="h-auto py-3 text-base rounded-lg">
+              <Link href="/emergencia">
+                  <Phone className="mr-2 h-5 w-5" />
+                  EMERGÊNCIA
+              </Link>
+          </Button>
+          <Button asChild variant="outline" className="h-auto py-3 text-base rounded-lg">
+              <Link href="/sau">
+                  <Route className="mr-2 h-5 w-5" />
+                  Concessões SAU
+              </Link>
+          </Button>
+      </div>
+
       <div>
         <h1 className="text-3xl font-bold font-headline text-center sm:text-left">Câmeras AO VIVO</h1>
         <p className="text-muted-foreground text-center sm:text-left text-sm">Acompanhe o trânsito 24h, locais e pontos turísticos.</p>
