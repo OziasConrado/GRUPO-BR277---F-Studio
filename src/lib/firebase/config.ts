@@ -2,11 +2,11 @@
 // Don't put anything sensitive in here.
 
 export const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "grupobr277-v2-d85f5.firebaseapp.com",
-  projectId: "grupobr277-v2-d85f5",
+  apiKey: "AIzaSyBkj9LYAUrrdXXb-M80C-q9FMQxGWMWA1A",
+  authDomain: "grupo-br277.firebaseapp.com",
+  projectId: "grupo-br277",
   storageBucket: "grupobr277-v2-d85f5.appspot.com",
-  messagingSenderId: "338275344335",
-  appId: "1:338275344335:web:91a0c4f8d95e8657631168",
-  measurementId: "G-L5G7P4M65P"
+  messagingSenderId: "491779757123",
+  appId: "1:491779757123:web:f0c1615487eb032c17b0f6",
+  measurementId: "G-MD0VTEF82W"
 };
