@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -101,13 +102,8 @@ export default function ChecklistVeicularPage() {
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
   const [driverName, setDriverName] = useState('');
   const [vehicleInfo, setVehicleInfo] = useState('');
-  const [checklistDate, setChecklistDate] = useState<Date | undefined>(undefined);
+  const [checklistDate, setChecklistDate] = useState<Date | undefined>(new Date());
   const { toast } = useToast();
-
-  useEffect(() => {
-    // Evita erro de hidratação no servidor
-    setChecklistDate(new Date());
-  }, []);
 
   useEffect(() => {
     const loadCheckedItems = () => {
@@ -240,7 +236,7 @@ export default function ChecklistVeicularPage() {
                 </div>
                 <div>
                   <Label htmlFor="checklistDate">Data do Checklist</Label>
-                  {/* <Popover>
+                  <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant={"outline"}
@@ -262,14 +258,7 @@ export default function ChecklistVeicularPage() {
                         locale={ptBR}
                       />
                     </PopoverContent>
-                  </Popover> */}
-                   <Input 
-                    id="checklistDate" 
-                    type="text" 
-                    value={checklistDate ? format(checklistDate, "dd/MM/yyyy") : ''} 
-                    readOnly 
-                    className="rounded-lg mt-1 bg-background/70"
-                  />
+                  </Popover>
                 </div>
               </div>
             </div>
@@ -328,3 +317,5 @@ export default function ChecklistVeicularPage() {
     </>
   );
 }
+
+    
