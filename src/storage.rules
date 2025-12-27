@@ -4,58 +4,33 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     
-    match /{allPaths=**} {
-      allow read, write: if false;
-    }
-
+    // As imagens de perfil podem ser lidas por qualquer um, mas só podem ser
+    // escritas pelo próprio usuário.
     match /profile_pictures/{userId}/{allPaths=**} {
       allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
     
-    match /posts/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    match /reels/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    match /chat_images/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    match /chat_audio/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    
+    // Imagens de pontos turísticos indicados pela comunidade.
+    // Lidas por todos, escritas apenas pelo usuário que está indicando.
     match /indicated_points_images/{userId}/{allPaths=**} {
       allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    match /business_images/{businessId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-    
-    match /business_promo_images/{businessId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-
+    // Pasta pública para imagens do app (logos, etc.)
+    // Permite leitura pública e nenhuma escrita.
     match /images/{allPaths=**} {
         allow read: if true;
+        allow write: if false;
     }
     match /Concessoes de Pedagio/{allPaths=**} {
         allow read: if true;
+        allow write: if false;
     }
     match /Icones e Logo do app GRUPO BR277/{allPaths=**} {
         allow read: if true;
+        allow write: if false;
     }
   }
 }
