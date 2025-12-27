@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { criarCobrancaAsaas } from '@/ai/flows/criar-cobranca-asaas-flow';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+
 const CheckoutRequestSchema = z.object({
   plano: z.enum(['INTERMEDIARIO', 'PREMIUM']),
   businessId: z.string(),
