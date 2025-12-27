@@ -9,9 +9,6 @@ import { CriarCobrancaAsaasInputSchema, type CriarCobrancaAsaasInput, CriarCobra
 import axios from 'axios';
 import { firestore } from '@/lib/firebase/server';
 
-export type { CriarCobrancaAsaasInput, CriarCobrancaAsaasOutput };
-
-
 // Preços dos planos (valor em R$)
 const planPrices = {
   INTERMEDIARIO: 83.40, 
