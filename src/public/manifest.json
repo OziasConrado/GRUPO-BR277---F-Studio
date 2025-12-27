@@ -1,0 +1,36 @@
+{
+  "name": "GRUPO BR277",
+  "short_name": "GRUPO BR277",
+  "description": "O aplicativo essencial para quem vive na estrada.",
+  "display": "standalone",
+  "background_color": "#002776",
+  "theme_color": "#002776",
+  "start_url": "/",
+  "scope": "/",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2F192-192-app-web.png?alt=media",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2F512-512-app-web.png?alt=media",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2Ficone-push-250-250-png-fundo-transparente.png?alt=media",
+      "sizes": "250x250",
+      "type": "image/png",
+      "purpose": "badge"
+    }
+  ],
+  "badge": {
+    "src": "https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2Ficone-push-250-250-png-fundo-transparente.png?alt=media",
+    "type": "image/png",
+    "sizes": "250x250"
+  }
+}
