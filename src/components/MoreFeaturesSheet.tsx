@@ -35,7 +35,7 @@ interface MoreFeaturesSheetProps {
 const AdPlaceholder = () => (
   <div className="mt-auto p-3">
     <div className="h-14 bg-muted/50 rounded-lg flex items-center justify-center text-sm text-muted-foreground border border-dashed">
-      Espaço para Banner AdMob
+      Publicidade
     </div>
   </div>
 );

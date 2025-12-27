@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, type FormEvent } from 'react';
@@ -13,7 +14,7 @@ import { Alert, AlertTitle, AlertDescription as ShadcnAlertDescription } from "@
 
 const AdPlaceholder = ({ className }: { className?: string }) => (
   <div className={cn("my-6 p-4 rounded-xl bg-muted/30 border border-dashed h-24 flex items-center justify-center", className)}>
-    <p className="text-muted-foreground text-sm">Espaço para Banner AdMob (Ex: 320x50 ou Responsivo)</p>
+    <p className="text-muted-foreground text-sm">Publicidade</p>
   </div>
 );
 

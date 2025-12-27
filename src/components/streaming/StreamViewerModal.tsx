@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Dialog, DialogContent, DialogClose, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -38,7 +39,7 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
 
   const AdMobSpace = () => (
     <div className="shrink-0 h-[100px] bg-secondary/20 flex items-center justify-center text-sm text-secondary-foreground">
-      Banner AdMob (320x50 ou similar)
+      Publicidade
     </div>
   );
 

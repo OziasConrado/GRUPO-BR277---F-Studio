@@ -21,7 +21,7 @@ import { useRouter } from 'next/navigation';
 
 const AdPlaceholder = ({ className }: { className?: string }) => (
   <div className={cn("my-4 p-4 rounded-xl bg-muted/30 border border-dashed h-24 flex items-center justify-center col-span-1 md:col-span-2 lg:col-span-3", className)}>
-    <p className="text-muted-foreground text-sm">Espaço para Banner AdMob (Ex: 320x50 ou Responsivo)</p>
+    <p className="text-muted-foreground text-sm">Publicidade</p>
   </div>
 );
 

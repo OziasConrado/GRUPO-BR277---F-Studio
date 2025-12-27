@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 
 const AdPlaceholder = ({ className }: { className?: string }) => (
   <div className={cn("my-4 p-4 rounded-xl bg-muted/30 border border-dashed h-20 flex items-center justify-center", className)}>
-    <p className="text-muted-foreground text-sm">Espaço para Banner AdMob</p>
+    <p className="text-muted-foreground text-sm">Publicidade</p>
   </div>
 );
 
@@ -277,5 +277,3 @@ export default function ScannerPage() {
     </div>
   );
 }
-
-    
