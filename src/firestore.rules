@@ -111,7 +111,7 @@ service cloud.firestore {
     match /users/{userId} { 
       allow read: if isAuthenticated();
       // Only the user whose profile it is can create/update it
-      allow create, update: if isOwner(userId);
+      allow create, update: if request.auth.uid == userId;
       allow delete: if false; // Users cannot delete their own profiles via client
 
        // Notifications subcollection
@@ -129,10 +129,10 @@ service cloud.firestore {
       allow update, delete: if isOwner(resource.data.userId);
 
       // Reactions on chat messages
-      match /userReactions/{userId} {
+      match /userReactions/{reactionId} {
         allow read: if true;
         // Only the authenticated user can manage their own reaction
-        allow write: if isOwner(userId);
+        allow create, update, delete: if reactionId == request.auth.uid;
       }
     }
   }

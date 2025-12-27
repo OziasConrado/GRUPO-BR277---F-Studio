@@ -3,15 +3,47 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Permite leitura por qualquer pessoa (para exibir imagens publicamente)
+    // Permite leitura pública de todos os arquivos.
+    // Isso é necessário para que imagens de perfil, posts, etc., sejam visíveis para todos.
     match /{allPaths=**} {
       allow read;
     }
     
-    // Permite escrita (upload, update, delete) apenas para usuários autenticados.
-    // Isso é seguro e necessário para upload de fotos de perfil, posts, etc.
-    match /{allPaths=**} {
+    // PERMISSÕES DE ESCRITA (UPLOAD)
+    
+    // Usuários só podem escrever em seus próprios diretórios de fotos de perfil.
+    match /profile_pictures/{userId}/{allPaths=**} {
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Usuários autenticados podem fazer upload de imagens para posts.
+    // A segurança aqui é garantida pelo path, que inclui o ID do usuário.
+    match /posts/{userId}/{allPaths=**} {
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Usuários autenticados podem fazer upload de imagens para o chat.
+    match /chat_images/{userId}/{allPaths=**} {
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Usuários autenticados podem fazer upload de áudios para o chat.
+    match /chat_audio/{userId}/{allPaths=**} {
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Usuários autenticados podem fazer upload de imagens de negócios.
+    match /business_images/{businessId}/{allPaths=**} {
       allow write: if request.auth != null;
+    }
+
+    match /business_promo_images/{businessId}/{allPaths=**} {
+      allow write: if request.auth != null;
+    }
+
+    // Usuários autenticados podem fazer upload de imagens de pontos turísticos indicados.
+    match /indicated_points_images/{userId}/{allPaths=**} {
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }

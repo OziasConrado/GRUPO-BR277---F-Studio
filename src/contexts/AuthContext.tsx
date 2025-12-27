@@ -225,41 +225,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!currentUser || !firebaseServices) return;
     setAuthAction('update');
     try {
-        let photoURL = currentUser.photoURL;
-        if (data.newPhotoFile) {
-            const storagePath = `profile_pictures/${currentUser.uid}/${Date.now()}_${data.newPhotoFile.name}`;
-            photoURL = await uploadFile(data.newPhotoFile, storagePath);
-        }
+      let photoURL = currentUser.photoURL;
+      if (data.newPhotoFile) {
+        const storagePath = `profile_pictures/${currentUser.uid}/${Date.now()}_${data.newPhotoFile.name}`;
+        photoURL = await uploadFile(data.newPhotoFile, storagePath);
+      }
 
-        const authUpdates: { displayName?: string; photoURL?: string } = {};
-        if (data.displayName && data.displayName !== currentUser.displayName) authUpdates.displayName = data.displayName;
-        if (photoURL && photoURL !== currentUser.photoURL) authUpdates.photoURL = photoURL;
-        
-        if (Object.keys(authUpdates).length > 0) {
-            await firebaseUpdateProfile(currentUser, authUpdates);
-            // Refresh currentUser state to get the latest from Firebase Auth
-            await currentUser.reload();
-            setCurrentUser({ ...currentUser }); // Trigger re-render
-        }
-        
-        const userDocRef = doc(firebaseServices.firestore, 'users', currentUser.uid);
-        const firestoreUpdates: Partial<UserProfile> = {
-          displayName: data.displayName,
-          displayName_lowercase: data.displayName?.toLowerCase(),
-          bio: data.bio,
-          location: data.location,
-          instagramUsername: data.instagramUsername,
-          photoURL: photoURL,
-        };
-        await updateDoc(userDocRef, firestoreUpdates);
+      const authUpdates: { displayName?: string; photoURL?: string } = {};
+      if (data.displayName && data.displayName !== currentUser.displayName) {
+        authUpdates.displayName = data.displayName;
+      }
+      if (photoURL && photoURL !== currentUser.photoURL) {
+        authUpdates.photoURL = photoURL;
+      }
 
-        setUserProfile(prev => prev ? { ...prev, ...firestoreUpdates } : firestoreUpdates as UserProfile);
-        toast({ title: "Sucesso!", description: "Seu perfil foi atualizado." });
+      if (Object.keys(authUpdates).length > 0) {
+        await firebaseUpdateProfile(currentUser, authUpdates);
+        await currentUser.reload(); // Recarrega os dados do usuário do Firebase Auth
+        setCurrentUser({ ...currentUser }); // Força uma nova renderização com os dados atualizados
+      }
+      
+      const userDocRef = doc(firebaseServices.firestore, 'users', currentUser.uid);
+      const firestoreUpdates: Partial<UserProfile> = {
+        displayName: data.displayName,
+        displayName_lowercase: data.displayName?.toLowerCase(),
+        bio: data.bio,
+        location: data.location,
+        instagramUsername: data.instagramUsername,
+        photoURL: photoURL,
+      };
+
+      await updateDoc(userDocRef, firestoreUpdates);
+
+      setUserProfile(prev => prev ? { ...prev, ...firestoreUpdates } : firestoreUpdates as UserProfile);
+      toast({ title: "Sucesso!", description: "Seu perfil foi atualizado." });
 
     } catch (error) {
-        handleAuthError(error as AuthError, 'Erro ao Atualizar Perfil');
+      handleAuthError(error as AuthError, 'Erro ao Atualizar Perfil');
     } finally {
-        setAuthAction(null);
+      setAuthAction(null);
     }
   }, [currentUser, firebaseServices, handleAuthError, toast, uploadFile]);
 
