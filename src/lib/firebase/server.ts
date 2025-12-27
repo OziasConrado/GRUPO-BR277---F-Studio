@@ -6,6 +6,8 @@ import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { getAuth, type Auth } from 'firebase-admin/auth';
 import { getStorage, type Storage } from 'firebase-admin/storage';
 import * as admin from 'firebase-admin';
+import type { ServiceAccount } from 'firebase-admin';
+
 
 // Interface para as credenciais decodificadas
 interface FirebaseServiceAccount {
@@ -36,7 +38,7 @@ try {
     const serviceAccount: FirebaseServiceAccount = JSON.parse(serviceAccountString);
 
     app = initializeApp({
-      credential: admin.credential.cert(serviceAccount),
+      credential: admin.credential.cert(serviceAccount as ServiceAccount),
       storageBucket: "grupo-br277.appspot.com",
     });
   } else {
@@ -60,5 +62,6 @@ try {
 
 // Exporta as instâncias prontas para serem usadas em qualquer lugar do app (no lado do servidor).
 export { app, auth, firestore, storage };
+
 
 
