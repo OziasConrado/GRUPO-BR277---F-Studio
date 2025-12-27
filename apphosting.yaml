@@ -10,10 +10,7 @@ runConfig:
     name: "projects/grupobr277-v2-d85f5/locations/us-central1/connectors/apphosting-managed-vpc-connector"
     egress: ALL_TRAFFIC
 env:
-  - variable: FIREBASE_SERVICE_ACCOUNT
-    secret: FIREBASE_SERVICE_ACCOUNT
   - variable: GEMINI_API_KEY
     secret: GEMINI_API_KEY
   - variable: ASAAS_API_KEY
     secret: ASAAS_API_KEY
-
