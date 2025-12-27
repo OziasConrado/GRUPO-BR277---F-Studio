@@ -9,7 +9,6 @@ import { touristCategories } from '@/types/turismo';
 import TouristPointCard from '@/components/turismo/tourist-point-card';
 import { useToast } from '@/hooks/use-toast';
 import React from 'react';
-import { firestore, uploadFile } from '@/lib/firebase/client';
 import { collection, getDocs, query, orderBy, addDoc, serverTimestamp, doc, runTransaction } from 'firebase/firestore';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from '@/lib/utils';
@@ -29,7 +28,7 @@ const AdPlaceholder = ({ className }: { className?: string }) => (
 export default function TurismoPage() {
   const { toast } = useToast();
   const router = useRouter();
-  const { currentUser, isProfileComplete } = useAuth();
+  const { currentUser, isProfileComplete, firestore, uploadFile } = useAuth();
   
   const [allIndicatedPoints, setAllIndicatedPoints] = useState<TouristPointData[]>([]);
   const [loadingIndicatedPoints, setLoadingIndicatedPoints] = useState(true);
@@ -54,7 +53,7 @@ export default function TurismoPage() {
     } finally {
       setLoadingIndicatedPoints(false);
     }
-  }, [toast]);
+  }, [toast, firestore]);
 
   useEffect(() => {
     fetchIndicatedPoints();
@@ -210,7 +209,7 @@ export default function TurismoPage() {
       toast({ variant: "destructive", title: "Erro ao Avaliar", description: error.message || "Não foi possível enviar sua avaliação." });
       throw error;
     }
-  }, [currentUser, isProfileComplete, router, toast]);
+  }, [currentUser, isProfileComplete, router, toast, firestore]);
 
   return (
     <>

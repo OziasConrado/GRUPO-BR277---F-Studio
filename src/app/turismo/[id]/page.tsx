@@ -6,7 +6,6 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { doc, getDoc, collection, query, where, onSnapshot, orderBy, runTransaction, serverTimestamp, DocumentData } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/client';
 import type { TouristPointData, TouristPointReview } from '@/types/turismo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -34,7 +33,7 @@ export default function TouristPointDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const { toast } = useToast();
-  const { currentUser, isProfileComplete } = useAuth();
+  const { currentUser, isProfileComplete, firestore } = useAuth();
   const router = useRouter();
 
   const [point, setPoint] = useState<TouristPointData | null>(null);
@@ -85,7 +84,7 @@ export default function TouristPointDetailPage() {
       unsubPoint();
       unsubReviews();
     };
-  }, [id, toast]);
+  }, [id, toast, firestore]);
   
   const handleShowUserProfile = useCallback(async (userId?: string, fallbackName?: string, fallbackAvatar?: string) => {
     if (!userId) return;
@@ -120,7 +119,7 @@ export default function TouristPointDetailPage() {
       console.error('Error fetching user profile:', error);
       toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar o perfil do usuário.' });
     }
-  }, [toast]);
+  }, [toast, firestore]);
   
   const handleAddReview = async (reviewData: Omit<TouristPointReview, 'id' | 'timestamp' | 'author' | 'userId' | 'pointId' | 'userAvatarUrl'>) => {
     if (!currentUser) {
