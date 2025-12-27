@@ -14,3 +14,9 @@ env:
     secret: GEMINI_API_KEY
   - variable: ASAAS_API_KEY
     secret: ASAAS_API_KEY
+buildConfig:
+  env:
+    - variable: GEMINI_API_KEY
+      secret: GEMINI_API_KEY
+    - variable: ASAAS_API_KEY
+      secret: ASAAS_API_KEY
