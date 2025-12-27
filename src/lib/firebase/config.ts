@@ -2,7 +2,7 @@
 // Don't put anything sensitive in here.
 
 export const firebaseConfig = {
-  apiKey: "AIzaSyBkj9LYAUrrdXXb-M80C-q9FMQxGWMWA1A",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: "grupo-br277.firebaseapp.com",
   projectId: "grupo-br277",
   storageBucket: "grupo-br277.appspot.com",
