@@ -237,12 +237,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         const userDocRef = doc(firebaseServices.firestore, 'users', currentUser.uid);
         const firestoreUpdates: any = {
+          displayName: data.displayName,
           displayName_lowercase: data.displayName?.toLowerCase(),
           bio: data.bio,
           location: data.location,
           instagramUsername: data.instagramUsername,
           photoURL: photoURL,
-          displayName: data.displayName,
         };
         await updateDoc(userDocRef, firestoreUpdates);
 
