@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -329,7 +330,7 @@ export default function TouristPointDetailPage() {
         onClose={() => setIsReviewModalOpen(false)}
         onSubmit={handleAddReview}
         pointName={point.name}
-        isSubmitting={isSubmitting}
+        isSubmitting={isSubmittingReview}
       />
       <UserProfileModal
         isOpen={isProfileModalOpen}
