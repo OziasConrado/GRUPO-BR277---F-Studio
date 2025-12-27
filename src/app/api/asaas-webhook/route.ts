@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
        return NextResponse.json({ error: 'Plan not identified' }, { status: 400 });
     }
 
-    const businessRef = firestore.collection('businesses').doc(businessId);
+    const businessRef = firestore!.collection('businesses').doc(businessId);
     const businessDoc = await businessRef.get();
 
     if (!businessDoc.exists) {
