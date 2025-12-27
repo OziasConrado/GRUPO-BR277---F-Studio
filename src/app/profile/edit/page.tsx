@@ -19,7 +19,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, UserCircle, Edit, ArrowLeft, UploadCloud, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { doc, getDoc } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/client';
 
 const MAX_FILE_SIZE_MB = 5;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
@@ -42,7 +41,7 @@ const profileSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
 export default function EditProfilePage() {
-  const { currentUser, userProfile, updateUserProfile, loading, authAction, signOutUser } = useAuth();
+  const { currentUser, userProfile, updateUserProfile, loading, authAction, signOutUser, firestore } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -91,7 +90,7 @@ export default function EditProfilePage() {
         return;
       }
       if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-        toast({ variant: "destructive", title: "Erro na Imagem", description: "Formato de foto inválido (JPG, PNG, WebP)."});
+        toast({ variant: "destructive", title: "Erro na Imagem", description: "Formato de foto inválido (aceito: JPG, PNG, WebP)."});
         if(fileInputRef.current) fileInputRef.current.value = "";
         return;
       }
