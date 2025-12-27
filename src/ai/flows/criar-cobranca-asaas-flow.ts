@@ -21,12 +21,7 @@ const planDescriptions = {
   PREMIUM: "Plano Premium (Anual) - Guia Comercial BR277",
 };
 
-// Exporta a função que será chamada pela API route
-export async function criarCobrancaAsaas(input: CriarCobrancaAsaasInput): Promise<CriarCobrancaAsaasOutput> {
-  return criarCobrancaAsaasFlow(input);
-}
-
-// Define o fluxo do Genkit
+// Define o fluxo do Genkit internamente
 const criarCobrancaAsaasFlow = ai.defineFlow(
   {
     name: 'criarCobrancaAsaasFlow',
@@ -127,3 +122,8 @@ const criarCobrancaAsaasFlow = ai.defineFlow(
     }
   }
 );
+
+// Exporta APENAS a função async que encapsula o flow
+export async function criarCobrancaAsaas(input: CriarCobrancaAsaasInput): Promise<CriarCobrancaAsaasOutput> {
+  return criarCobrancaAsaasFlow(input);
+}
