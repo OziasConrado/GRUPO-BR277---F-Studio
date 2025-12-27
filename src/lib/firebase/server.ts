@@ -1,7 +1,7 @@
 
 // --- Início da Implementação do Padrão Singleton para o Lado do Servidor ---
 
-import { initializeApp, getApp, getApps, type FirebaseApp } from 'firebase-admin/app';
+import { initializeApp, getApp, getApps, type App as FirebaseApp } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { getAuth, type Auth } from 'firebase-admin/auth';
 import { getStorage, type Storage } from 'firebase-admin/storage';
@@ -60,4 +60,5 @@ try {
 
 // Exporta as instâncias prontas para serem usadas em qualquer lugar do app (no lado do servidor).
 export { app, auth, firestore, storage };
+
 
