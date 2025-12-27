@@ -1,28 +1,29 @@
 {
   "name": "GRUPO BR277",
-  "short_name": "GRUPO BR277",
-  "description": "O aplicativo essencial para quem vive na estrada, com câmeras ao vivo, alertas de trânsito e ferramentas úteis.",
-  "start_url": "/",
+  "short_name": "BR277",
+  "description": "O aplicativo essencial para quem vive na estrada.",
+  "start_url": "/streaming",
   "display": "standalone",
-  "background_color": "#f5f5f5",
+  "background_color": "#002776",
   "theme_color": "#002776",
-  "orientation": "portrait-primary",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2F192-192-app-web.png?alt=media",
-      "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "type": "image/png"
     },
     {
       "src": "https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2F512-512-app-web.png?alt=media",
-      "type": "image/png",
-      "sizes": "512x512"
-    },
-    {
-      "src": "https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2F512-512-app-web.png?alt=media",
-      "type": "image/png",
       "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2F512-512-app-web.png?alt=media",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "badge": "https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2F192-192-app-web.png?alt=media"
 }
