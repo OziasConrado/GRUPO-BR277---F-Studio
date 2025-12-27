@@ -1,6 +1,3 @@
-
-'use server';
-
 import { NextRequest, NextResponse } from 'next/server';
 import { firestore } from '@/lib/firebase/server';
 import { add, type Duration } from 'date-fns';

@@ -1,8 +1,8 @@
-
-'use server';
 /**
  * @fileOverview A Genkit flow to create an Asaas payment link.
  */
+
+'use server';
 
 import { ai } from '@/ai'; // Import the central AI instance
 import { CriarCobrancaAsaasInputSchema, type CriarCobrancaAsaasInput, CriarCobrancaAsaasOutputSchema, type CriarCobrancaAsaasOutput } from '@/ai/schemas/criar-cobranca-asaas-schemas';
