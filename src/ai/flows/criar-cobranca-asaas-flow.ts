@@ -21,7 +21,7 @@ const planDescriptions = {
   PREMIUM: "Plano Premium (Anual) - Guia Comercial BR277",
 };
 
-// Define o fluxo do Genkit internamente
+// Define o fluxo do Genkit internamente (SEM EXPORT)
 const criarCobrancaAsaasFlow = ai.defineFlow(
   {
     name: 'criarCobrancaAsaasFlow',
