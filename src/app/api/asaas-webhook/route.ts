@@ -1,8 +1,9 @@
+
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { firestore } from '@/lib/firebase/server';
-import { add } from 'date-fns';
+import { add, type Duration } from 'date-fns';
 
 export async function POST(req: NextRequest) {
   try {
