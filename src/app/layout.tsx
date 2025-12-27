@@ -17,13 +17,13 @@ export const metadata: Metadata = {
     description: 'O aplicativo essencial para quem vive na estrada.',
     manifest: '/manifest.json',
     icons: {
-        icon: 'https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2F512-512-app-web.png?alt=media',
+        icon: 'https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2F192-192-app-web.png?alt=media',
         apple: 'https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2F192-192-app-web.png?alt=media',
     },
 };
 
 export const viewport: Viewport = {
-  themeColor: '#FFC107',
+  themeColor: '#002776',
 }
 
 export default function RootLayout({
