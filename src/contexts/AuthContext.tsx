@@ -29,6 +29,7 @@ export interface UserProfile {
     uid: string;
     email: string | null;
     displayName: string | null;
+    displayName_lowercase?: string;
     photoURL: string | null;
     location?: string;
     bio?: string;
@@ -96,6 +97,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         case 'auth/requires-recent-login': message = 'Esta operação é sensível e requer autenticação recente. Faça login novamente.'; break;
         case 'auth/too-many-requests': message = 'Muitas tentativas. Por favor, tente novamente mais tarde.'; break;
         case 'auth/network-request-failed': message = 'Erro de rede. Verifique sua conexão com a internet.'; break;
+        case 'storage/retry-limit-exceeded': message = 'O tempo para o envio do arquivo esgotou. Verifique sua conexão e as permissões de armazenamento do Firebase.'; break;
+        case 'storage/unauthorized': message = 'Você não tem permissão para enviar este arquivo. Verifique as regras de segurança do Firebase Storage.'; break;
         default: message = `Ocorreu um problema (${error.code}). Por favor, tente novamente.`; break;
     }
     toast({
@@ -132,6 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             uid: user.uid,
             email: user.email,
             displayName: displayName,
+            displayName_lowercase: displayName.toLowerCase(),
             photoURL: user.photoURL,
             lastLogin: serverTimestamp()
           };
@@ -227,16 +231,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             photoURL = await uploadFile(data.newPhotoFile, storagePath);
         }
 
-        const authUpdates: { displayName?: string, photoURL?: string } = {};
+        const authUpdates: { displayName?: string; photoURL?: string } = {};
         if (data.displayName && data.displayName !== currentUser.displayName) authUpdates.displayName = data.displayName;
         if (photoURL && photoURL !== currentUser.photoURL) authUpdates.photoURL = photoURL;
         
         if (Object.keys(authUpdates).length > 0) {
             await firebaseUpdateProfile(currentUser, authUpdates);
+            // Refresh currentUser state to get the latest from Firebase Auth
+            await currentUser.reload();
+            setCurrentUser({ ...currentUser }); // Trigger re-render
         }
         
         const userDocRef = doc(firebaseServices.firestore, 'users', currentUser.uid);
-        const firestoreUpdates: any = {
+        const firestoreUpdates: Partial<UserProfile> = {
           displayName: data.displayName,
           displayName_lowercase: data.displayName?.toLowerCase(),
           bio: data.bio,

@@ -3,44 +3,42 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    
+
     // Regra geral de leitura: qualquer um pode ler arquivos.
-    // Isso cobre as imagens de UI, logos e outros assets públicos.
+    // Isso cobre as imagens de UI, logos, fotos de perfil, etc.
     allow read: if true;
 
-    // Regras de escrita (upload/delete) são mais restritivas.
+    // A escrita (upload/delete) é restrita.
 
-    // Permite que um usuário autenticado escreva apenas em sua própria pasta de fotos de perfil.
+    // Permite que um usuário autenticado escreva APENAS em sua própria pasta de fotos de perfil.
+    // O {userId} no caminho deve corresponder ao UID do usuário autenticado.
     match /profile_pictures/{userId}/{allPaths=**} {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
-    
-    // Permite que um usuário autenticado escreva apenas em sua própria pasta de imagens para pontos turísticos.
-    match /indicated_points_images/{userId}/{allPaths=**} {
+
+    // Regra similar para outras pastas de usuário que você possa ter.
+    // Exemplo:
+    match /posts/{userId}/{allPaths=**} {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
-
-    // Permite que um usuário autenticado escreva apenas em sua própria pasta de imagens do chat.
+    
+    match /reels_media/{userId}/{allPaths=**} {
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
     match /chat_images/{userId}/{allPaths=**} {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Permite que um usuário autenticado escreva apenas em sua própria pasta de áudios do chat.
     match /chat_audio/{userId}/{allPaths=**} {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
-
-    // Permite que um usuário autenticado escreva apenas em sua própria pasta de posts.
-    match /posts/{userId}/{allPaths=**} {
+    
+    match /indicated_points_images/{userId}/{allPaths=**} {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Permite que um usuário autenticado escreva apenas em sua própria pasta de reels.
-    match /reels_media/{userId}/{allPaths=**} {
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Permite que um usuário autenticado escreva nas pastas de imagens de negócios.
+    // Regras para uploads de negócios
     match /business_images/{businessId}/{allPaths=**} {
       allow write: if request.auth != null;
     }
