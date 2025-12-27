@@ -12,9 +12,7 @@ interface AdSenseAdProps {
 
 declare global {
   interface Window {
-    adsbygoogle?: {
-      push: (props: object) => void;
-    }[];
+    adsbygoogle?: { [key: string]: unknown, push: (props: object) => void }[];
   }
 }
 
