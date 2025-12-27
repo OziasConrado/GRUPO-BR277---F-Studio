@@ -1,8 +1,8 @@
 
 'use client';
 
+import React from 'react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import React from 'react'; // Import React for React.Fragment
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, MapPin, AlertTriangle, Info, Phone, Globe } from 'lucide-react';
