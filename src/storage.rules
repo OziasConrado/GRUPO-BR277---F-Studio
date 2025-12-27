@@ -3,47 +3,14 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-
-    // Regra geral de leitura: qualquer um pode ler arquivos.
-    // Isso cobre as imagens de UI, logos, fotos de perfil, etc.
-    allow read: if true;
-
-    // A escrita (upload/delete) é restrita.
-
-    // Permite que um usuário autenticado escreva APENAS em sua própria pasta de fotos de perfil.
-    // O {userId} no caminho deve corresponder ao UID do usuário autenticado.
-    match /profile_pictures/{userId}/{allPaths=**} {
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Regra similar para outras pastas de usuário que você possa ter.
-    // Exemplo:
-    match /posts/{userId}/{allPaths=**} {
-      allow write: if request.auth != null && request.auth.uid == userId;
+    // Permite leitura por qualquer pessoa (para exibir imagens publicamente)
+    match /{allPaths=**} {
+      allow read;
     }
     
-    match /reels_media/{userId}/{allPaths=**} {
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    match /chat_images/{userId}/{allPaths=**} {
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    match /chat_audio/{userId}/{allPaths=**} {
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    match /indicated_points_images/{userId}/{allPaths=**} {
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Regras para uploads de negócios
-    match /business_images/{businessId}/{allPaths=**} {
-      allow write: if request.auth != null;
-    }
-    
-    match /business_promo_images/{businessId}/{allPaths=**} {
+    // Permite escrita (upload, update, delete) apenas para usuários autenticados.
+    // Isso é seguro e necessário para upload de fotos de perfil, posts, etc.
+    match /{allPaths=**} {
       allow write: if request.auth != null;
     }
   }
