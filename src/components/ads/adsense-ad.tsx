@@ -12,15 +12,15 @@ interface AdSenseAdProps {
 
 declare global {
   interface Window {
-    adsbygoogle?: { [key: string]: unknown, push: (props: object) => void }[];
+    adsbygoogle?: unknown[];
   }
 }
 
 const AdSenseAd = ({ adSlot, className, adKey }: AdSenseAdProps) => {
   useEffect(() => {
     try {
-      if (window.adsbygoogle) {
-        (window.adsbygoogle = window.adsbygoogle || []).push({});
+      if (typeof window !== "undefined") {
+        ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
       }
     } catch (err) {
       console.error('AdSense error:', err);
