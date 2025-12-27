@@ -4,62 +4,58 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     
-    // Regra geral: por padrão, ninguém pode ler ou escrever, a menos que uma regra mais específica permita.
     match /{allPaths=**} {
       allow read, write: if false;
     }
 
-    // --- REGRAS PÚBLICAS (LEITURA) ---
-    // Imagens de perfil, posts, reels, etc., são públicas para leitura por qualquer pessoa.
     match /profile_pictures/{userId}/{allPaths=**} {
-      allow read;
+      allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
     
     match /posts/{userId}/{allPaths=**} {
-      allow read;
+      allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
     match /reels/{userId}/{allPaths=**} {
-      allow read;
+      allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
     
     match /chat_images/{userId}/{allPaths=**} {
-      allow read;
+      allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
     match /chat_audio/{userId}/{allPaths=**} {
-      allow read;
+      allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
     
     match /indicated_points_images/{userId}/{allPaths=**} {
-      allow read;
+      allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
     match /business_images/{businessId}/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null; // Permitir que usuários autenticados enviem fotos para negócios
+      allow read: if true;
+      allow write: if request.auth != null;
     }
     
     match /business_promo_images/{businessId}/{allPaths=**} {
-      allow read;
+      allow read: if true;
       allow write: if request.auth != null;
     }
 
-    // Imagens estáticas (logos, etc.) - leitura pública
     match /images/{allPaths=**} {
-        allow read;
+        allow read: if true;
     }
-    match /Concessões de Pedágio/{allPaths=**} {
-        allow read;
+    match /Concessoes de Pedagio/{allPaths=**} {
+        allow read: if true;
     }
-    match /Ícones e Logo do app GRUPO BR277/{allPaths=**} {
-        allow read;
+    match /Icones e Logo do app GRUPO BR277/{allPaths=**} {
+        allow read: if true;
     }
   }
 }
