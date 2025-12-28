@@ -1,9 +1,9 @@
 
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useForm } from 'react-hook-form';
@@ -29,6 +29,7 @@ function LoginFormComponent() {
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get('redirect') || '/';
   const { signInWithEmail, currentUser, loading, authAction } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -61,7 +62,7 @@ function LoginFormComponent() {
       <Card className="w-full max-w-md shadow-xl rounded-2xl">
         <CardHeader className="text-center items-center">
            <img
-            src="https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2Flogo-grupobr-277-2.png?alt=media"
+            src="https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2Flogo-grupobr-277-2.png?alt=media&token=c1a3b1a8-9d57-4b7f-8c3b-7a32d1e2e7b8"
             alt="Logotipo GRUPO BR277"
             width="128"
             height="128"
@@ -83,15 +84,24 @@ function LoginFormComponent() {
               />
               {errors.email && <p className="text-sm text-destructive mt-1">{errors.email.message}</p>}
             </div>
-            <div>
+            <div className="relative">
               <Label htmlFor="password">Senha</Label>
               <Input
                 id="password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 {...register('password')}
-                className="mt-1 rounded-lg"
+                className="mt-1 rounded-lg pr-10"
               />
+               <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-7 h-8 w-8 text-muted-foreground hover:text-primary"
+                onClick={() => setShowPassword((prev) => !prev)}
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </Button>
               {errors.password && <p className="text-sm text-destructive mt-1">{errors.password.message}</p>}
             </div>
              <div className="relative flex items-center justify-center my-4">
