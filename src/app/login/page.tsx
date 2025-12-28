@@ -60,15 +60,12 @@ function LoginFormComponent() {
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)] py-12 px-4">
       <Card className="w-full max-w-md shadow-xl rounded-2xl">
         <CardHeader className="text-center items-center">
-           <Image
+           <img
             src="https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2Flogo-grupobr-277-2.png?alt=media"
             alt="Logotipo GRUPO BR277"
-            width={200}
-            height={80}
+            width="200"
+            height="80"
             className="mb-4"
-            data-ai-hint="company logo"
-            priority
-            unoptimized={true}
           />
           <CardTitle className="text-3xl font-bold font-headline">Bem-vindo(a) de volta!</CardTitle>
           <CardDescription>Faça login para continuar.</CardDescription>
