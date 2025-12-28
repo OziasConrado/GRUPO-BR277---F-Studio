@@ -68,6 +68,7 @@ function LoginFormComponent() {
             className="mb-4"
             data-ai-hint="company logo"
             priority
+            unoptimized={true}
           />
           <CardTitle className="text-3xl font-bold font-headline">Bem-vindo(a) de volta!</CardTitle>
           <CardDescription>Faça login para continuar.</CardDescription>
