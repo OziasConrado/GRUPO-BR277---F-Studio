@@ -5,7 +5,6 @@ import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -61,13 +60,7 @@ function LoginFormComponent() {
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)] py-12 px-4">
       <Card className="w-full max-w-md shadow-xl rounded-2xl">
         <CardHeader className="text-center items-center">
-           <img
-            src="https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2Flogo-grupobr-277-2.png?alt=media&token=c1a3b1a8-9d57-4b7f-8c3b-7a32d1e2e7b8"
-            alt="Logotipo GRUPO BR277"
-            width="128"
-            height="128"
-            className="mb-4 h-32 w-32 object-contain"
-          />
+          <LogIn className="mx-auto h-12 w-12 text-primary mb-2" />
           <CardTitle className="text-3xl font-bold font-headline">Bem-vindo(a) de volta!</CardTitle>
           <CardDescription>Faça login para continuar.</CardDescription>
         </CardHeader>
@@ -97,7 +90,7 @@ function LoginFormComponent() {
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="absolute right-1 top-7 bottom-0 flex items-center justify-center h-8 w-8 text-muted-foreground hover:text-primary hover:bg-transparent"
+                className="absolute right-1 top-7 h-8 w-8 text-muted-foreground hover:text-primary hover:bg-transparent"
                 onClick={() => setShowPassword((prev) => !prev)}
               >
                 {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
