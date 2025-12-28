@@ -97,7 +97,7 @@ function LoginFormComponent() {
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="absolute right-1 top-7 h-8 w-8 text-muted-foreground hover:text-primary"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-primary hover:bg-transparent"
                 onClick={() => setShowPassword((prev) => !prev)}
               >
                 {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
