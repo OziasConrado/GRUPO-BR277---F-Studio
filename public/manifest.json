@@ -2,11 +2,20 @@
   "name": "GRUPO BR277",
   "short_name": "GRUPO BR277",
   "description": "O aplicativo essencial para quem vive na estrada.",
+  "start_url": "/streaming",
+  "id": "/streaming",
   "display": "standalone",
   "background_color": "#f5f5f5",
   "theme_color": "#002776",
-  "start_url": "/streaming",
-  "scope": "/",
+  "orientation": "portrait-primary",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": [
+    "social",
+    "travel",
+    "tools",
+    "navigation"
+  ],
   "icons": [
     {
       "src": "https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2F192-192-app-web.png?alt=media",
@@ -26,5 +35,35 @@
     "sizes": "250x250",
     "type": "image/png",
     "purpose": "any"
-  }
+  },
+  "screenshots": [
+    {
+      "src": "https://picsum.photos/seed/screenshot1/540/720",
+      "type": "image/jpeg",
+      "sizes": "540x720",
+      "form_factor": "narrow",
+      "label": "Tela Inicial com Câmeras ao Vivo"
+    },
+    {
+      "src": "https://picsum.photos/seed/screenshot2/540/720",
+      "type": "image/jpeg",
+      "sizes": "540x720",
+      "form_factor": "narrow",
+      "label": "Feed da Comunidade"
+    },
+    {
+      "src": "https://picsum.photos/seed/screenshot3/540/720",
+      "type": "image/jpeg",
+      "sizes": "540x720",
+      "form_factor": "narrow",
+      "label": "Galeria de Ferramentas Úteis"
+    },
+    {
+      "src": "https://picsum.photos/seed/screenshot4/1280/800",
+      "type": "image/jpeg",
+      "sizes": "1280x800",
+      "form_factor": "wide",
+      "label": "Visualização em Tablet"
+    }
+  ]
 }
