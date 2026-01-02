@@ -297,7 +297,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAdmin,
     isProfileComplete,
     isAuthenticating,
-    loading: authAction !== null,
+    loading: isAuthenticating || authAction !== null,
     authAction,
     firestore: firebaseServices?.firestore || null,
     storage: firebaseServices?.storage || null,
