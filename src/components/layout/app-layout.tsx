@@ -7,7 +7,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Navigation from '@/components/layout/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { RefreshCcw, Moon, Sun, ArrowLeft, Bell, User, MoreVertical, LifeBuoy, FileText, Shield, Bug, Edit3, LogOut, Loader2, MessageCircle, BellRing } from 'lucide-react';
+import { RefreshCcw, Moon, Sun, ArrowLeft, Bell, User, MoreVertical, LifeBuoy, FileText, Shield, Bug, Edit3, LogOut, Loader2, MessageCircle, BellRing, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -34,7 +34,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { isChatOpen, closeChat } = useChat();
-  const { currentUser, loading, signOutUser, isAuthenticating, firestore } = useAuth();
+  const { currentUser, loading, signOutUser, isAuthenticating, firestore, isAdmin } = useAuth();
   const { notifications, unreadCount, loading: notificationsLoading } = useNotification();
 
   useEffect(() => {
@@ -329,6 +329,17 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuLabel>Menu</DropdownMenuLabel>
                     <DropdownMenuSeparator />
+                    {isAdmin && (
+                        <>
+                            <Link href="/admin/banners" passHref>
+                                <DropdownMenuItem>
+                                    <Settings className="mr-2 h-4 w-4" />
+                                    <span>Administrativo</span>
+                                </DropdownMenuItem>
+                            </Link>
+                            <DropdownMenuSeparator />
+                        </>
+                    )}
                     <DropdownMenuItem onClick={handleSupportClick}>
                       <LifeBuoy className="mr-2 h-4 w-4" />
                       <span>Suporte</span>

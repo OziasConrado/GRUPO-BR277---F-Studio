@@ -34,6 +34,7 @@ export interface UserProfile {
     bio?: string;
     instagramUsername?: string;
     lastLogin?: any;
+    isAdmin?: boolean; // Add isAdmin property
 }
 
 interface UpdateUserProfileData {
@@ -54,6 +55,7 @@ interface FirebaseServices {
 interface AuthContextType {
   currentUser: FirebaseUser | null;
   userProfile: UserProfile | null;
+  isAdmin: boolean; // Add isAdmin to context type
   isProfileComplete: boolean;
   isAuthenticating: boolean;
   loading: boolean;
@@ -77,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [firebaseServices, setFirebaseServices] = useState<FirebaseServices | null>(null);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false); // State for admin status
   const [isAuthenticating, setIsAuthenticating] = useState(true);
   const [authAction, setAuthAction] = useState<string | null>(null);
   const router = useRouter();
@@ -141,9 +144,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await setDoc(userDocRef, newUserProfile, { merge: true });
           setUserProfile(newUserProfile);
         }
+        // Check for admin claim
+        const tokenResult = await user.getIdTokenResult();
+        setIsAdmin(!!tokenResult.claims.admin);
+
       } else {
         setCurrentUser(null);
         setUserProfile(null);
+        setIsAdmin(false);
       }
       setIsAuthenticating(false);
     });
@@ -285,6 +293,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value: AuthContextType = {
     currentUser,
     userProfile,
+    isAdmin,
     isProfileComplete,
     isAuthenticating,
     loading: authAction !== null,
