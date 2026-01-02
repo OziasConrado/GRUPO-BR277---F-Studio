@@ -266,6 +266,7 @@ export default function StreamingPage() {
                 src="https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/700x155px-ver%C3%A3o-maior-paran%C3%A1-2026.gif?alt=media&token=402c7e83-c25f-472b-a173-a1cc3eae0348"
                 alt="Verão Maior Paraná 2026"
                 className="w-full h-auto"
+                crossOrigin="anonymous"
             />
         </a>
       </div>
