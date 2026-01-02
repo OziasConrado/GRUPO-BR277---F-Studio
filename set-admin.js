@@ -2,7 +2,7 @@
 const admin = require('firebase-admin');
 
 // Substitua pelo email do usuário que você quer tornar admin
-const emailDoFuturoAdmin = 'seu-email-aqui@exemplo.com'; 
+const emailDoFuturoAdmin = 'placasteell@gmail.com'; 
 
 // Carrega suas credenciais
 const serviceAccount = require('./firebase-service-account.json');
