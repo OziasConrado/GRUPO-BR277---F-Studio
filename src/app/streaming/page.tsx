@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import Banners from '@/components/banners/Banners'; // Importa o novo componente
 
 // Dados fornecidos pelo usuário
 const mockStreamsData: StreamCardProps[] = [
@@ -259,17 +260,7 @@ export default function StreamingPage() {
           </Button>
       </div>
       
-      <div className="w-full mb-6">
-        <p className="text-xs text-muted-foreground mb-1">Publicidade</p>
-        <a href="https://www.verao.pr.gov.br/calendario-eventos?field_categoria_target_id=42" target="_blank" rel="noopener noreferrer" className="block w-full">
-            <img
-                src="https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/700x155px-ver%C3%A3o-maior-paran%C3%A1-2026.gif?alt=media&token=402c7e83-c25f-472b-a173-a1cc3eae0348"
-                alt="Verão Maior Paraná 2026"
-                className="w-full h-auto"
-                crossOrigin="anonymous"
-            />
-        </a>
-      </div>
+      <Banners />
 
       <div>
         <h1 className="text-3xl font-bold font-headline text-center sm:text-left">Câmeras AO VIVO</h1>
