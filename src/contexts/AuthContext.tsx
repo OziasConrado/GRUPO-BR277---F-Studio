@@ -15,6 +15,7 @@ import {
   type AuthError,
   getAuth,
   type Auth,
+  getIdTokenResult,
 } from 'firebase/auth';
 import { initializeApp, getApp, getApps, type FirebaseApp } from 'firebase/app';
 import { getFirestore, doc, setDoc, getDoc, updateDoc, serverTimestamp, type Firestore } from 'firebase/firestore';
@@ -34,7 +35,7 @@ export interface UserProfile {
     bio?: string;
     instagramUsername?: string;
     lastLogin?: any;
-    isAdmin?: boolean; // Add isAdmin property
+    isAdmin?: boolean; // Keep for potential future use, but don't rely on it for UI
 }
 
 interface UpdateUserProfileData {
@@ -55,7 +56,7 @@ interface FirebaseServices {
 interface AuthContextType {
   currentUser: FirebaseUser | null;
   userProfile: UserProfile | null;
-  isAdmin: boolean; // Add isAdmin to context type
+  isAdmin: boolean;
   isProfileComplete: boolean;
   isAuthenticating: boolean;
   loading: boolean;
@@ -79,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [firebaseServices, setFirebaseServices] = useState<FirebaseServices | null>(null);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false); // State for admin status
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(true);
   const [authAction, setAuthAction] = useState<string | null>(null);
   const router = useRouter();
@@ -111,7 +112,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [toast]);
 
   useEffect(() => {
-    // Lazy initialization of Firebase
     if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
       console.error("Firebase config is missing from environment variables.");
       setIsAuthenticating(false);
@@ -126,13 +126,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        // --- CORRECTED ADMIN CHECK ---
+        // Force refresh the token to get latest custom claims
+        const tokenResult = await getIdTokenResult(user, true);
+        setIsAdmin(!!tokenResult.claims.admin);
+        // --- END OF CORRECTION ---
+
         const userDocRef = doc(firestore, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
         
         if (userDoc.exists()) {
             const profileData = userDoc.data() as UserProfile;
             setUserProfile(profileData);
-            setIsAdmin(!!profileData.isAdmin); // Set admin status from Firestore document
         } else {
            const displayName = user.displayName || user.email?.split('@')[0] || 'Usuário';
            const newUserProfile: UserProfile = {
@@ -142,11 +147,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             displayName_lowercase: displayName.toLowerCase(),
             photoURL: user.photoURL,
             lastLogin: serverTimestamp(),
-            isAdmin: false, // Default new users to not be admin
           };
           await setDoc(userDocRef, newUserProfile, { merge: true });
           setUserProfile(newUserProfile);
-          setIsAdmin(false);
         }
         setCurrentUser(user);
 
