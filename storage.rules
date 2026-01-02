@@ -18,7 +18,7 @@ service firebase.storage {
     
     // Apenas administradores podem fazer upload de banners.
     match /banners/{allPaths=**} {
-      allow write: if request.auth != null && request.auth.token.admin == true;
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
     // Usuários autenticados podem fazer upload de imagens para posts.
