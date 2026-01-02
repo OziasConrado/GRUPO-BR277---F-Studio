@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -262,12 +263,12 @@ export default function StreamingPage() {
         <p className="text-xs text-muted-foreground mb-1">Publicidade</p>
         <a href="https://www.verao.pr.gov.br/calendario-eventos?field_categoria_target_id=42" target="_blank" rel="noopener noreferrer" className="block w-full">
             <Image
-            src="https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/700x155px-ver%C3%A3o-maior-paran%C3%A1-2026.gif?alt=media&token=e93f6311-1317-4835-8025-b44c68832a81"
-            alt="Verão Maior Paraná 2026"
-            width={700}
-            height={155}
-            className="w-full h-auto"
-            unoptimized
+                src="https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/700x155px-ver%C3%A3o-maior-paran%C3%A1-2026.gif?alt=media&token=e93f6311-1317-4835-8025-b44c68832a81"
+                alt="Verão Maior Paraná 2026"
+                width={700}
+                height={155}
+                className="w-full h-auto"
+                unoptimized
             />
         </a>
       </div>
