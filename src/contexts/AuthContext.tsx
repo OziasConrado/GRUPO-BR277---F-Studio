@@ -126,6 +126,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        // Force refresh the token to get the latest custom claims.
+        const tokenResult = await user.getIdTokenResult(true);
         setCurrentUser(user);
         const userDocRef = doc(firestore, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
@@ -144,8 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await setDoc(userDocRef, newUserProfile, { merge: true });
           setUserProfile(newUserProfile);
         }
-        // Check for admin claim
-        const tokenResult = await user.getIdTokenResult();
+        // Check for admin claim from the freshly retrieved token
         setIsAdmin(!!tokenResult.claims.admin);
 
       } else {
