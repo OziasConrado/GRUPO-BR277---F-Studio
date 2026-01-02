@@ -4,7 +4,6 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     // Permite leitura pública de todos os arquivos.
-    // Isso é necessário para que imagens de perfil, posts, etc., sejam visíveis para todos.
     match /{allPaths=**} {
       allow read;
     }
@@ -18,11 +17,10 @@ service firebase.storage {
     
     // Apenas administradores podem fazer upload de banners.
     match /banners/{allPaths=**} {
-      allow write: if request.auth != null && request.auth.token.admin == true;
+      allow write: if request.auth != null && request.auth.token.admin == true; 
     }
 
     // Usuários autenticados podem fazer upload de imagens para posts.
-    // A segurança aqui é garantida pelo path, que inclui o ID do usuário.
     match /posts/{userId}/{allPaths=**} {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
