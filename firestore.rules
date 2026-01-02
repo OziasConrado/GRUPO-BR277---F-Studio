@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -10,8 +11,18 @@ service cloud.firestore {
 
     // Helper function to check if the user is the owner of the document
     function isOwner(userId) {
-      // Ensure request.auth.uid exists before comparing
       return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Helper function to check if the user is an admin
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+
+    // Banners: Public read for active, admin-only write
+    match /banners/{bannerId} {
+      allow read: if resource.data.isActive == true;
+      allow create, update, delete: if isAdmin();
     }
 
     // Posts: Public read, authenticated write/update/delete
@@ -30,10 +41,16 @@ service cloud.firestore {
       }
 
       // Reactions on posts
-      match /userReactions/{reactionId} {
+      match /userReactions/{userId} {
         allow read: if true;
         // Only the authenticated user can manage their own reaction
-        allow create, update, delete: if reactionId == request.auth.uid;
+        allow write: if isOwner(userId);
+      }
+      
+      // Votes on polls inside posts
+      match /userVotes/{userId} {
+         allow read: if true;
+         allow write: if isOwner(userId);
       }
     }
 
@@ -54,10 +71,10 @@ service cloud.firestore {
       }
 
       // Reactions on reels
-      match /userReactions/{reactionId} {
+      match /userReactions/{userId} {
         allow read: if true;
         // Only the authenticated user can manage their own reaction
-        allow create, update, delete: if reactionId == request.auth.uid;
+        allow write: if isOwner(userId);
       }
     }
 
@@ -105,7 +122,7 @@ service cloud.firestore {
     match /users/{userId} { 
       allow read: if isAuthenticated();
       // Only the user whose profile it is can create/update it
-      allow create, update: if isOwner(userId);
+      allow create, update: if request.auth.uid == userId;
       allow delete: if false; // Users cannot delete their own profiles via client
 
        // Notifications subcollection
@@ -119,8 +136,7 @@ service cloud.firestore {
 
     // Chat Messages: Read/write for authenticated users
     match /chatMessages/{messageId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
+      allow read, create: if isAuthenticated();
       allow update, delete: if isOwner(resource.data.userId);
 
       // Reactions on chat messages
