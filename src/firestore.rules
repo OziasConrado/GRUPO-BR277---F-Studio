@@ -19,9 +19,9 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.token.admin == true;
     }
 
-    // Banners: Public read for active, admin-only write
+    // Banners: Admin can read and write everything. Public can only read active ones.
     match /banners/{bannerId} {
-      allow read: if resource.data.isActive == true;
+      allow read: if isAdmin() || resource.data.isActive == true;
       allow create, update, delete: if isAdmin();
     }
 
