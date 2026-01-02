@@ -1,41 +1,39 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# Dependencies
+# dependencies
 /node_modules
 /.pnp
 .pnp.js
 
-# Build outputs
+# testing
+/coverage
+
+# next.js
 /.next/
 /out/
+
+# production
 /build
 
-# Misc
+# misc
 .DS_Store
 *.pem
 
-# Debug logs
+# debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
 
-# Local environment variables
-.env
+# local env files
 .env*.local
-.env*.development
-.env*.production
+.env
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
 
 # Firebase
-.firebase
-firebase-debug.log*
-firestore-debug.log*
-dataconnect-debug.log*
-database-debug.log*
-storage-debug.log*
-
-# Firebase Studio / IDX temporary files
-.modified
-
-# Accidental nested project
-/y/
+firebase-service-account.json
