@@ -2,6 +2,7 @@
 
 import { firestore } from '@/lib/firebase/server';
 import type { UserProfile } from '@/contexts/AuthContext';
+import { revalidatePath } from 'next/cache';
 
 // Cache para o perfil do usuário para evitar buscas repetidas na mesma requisição
 const userProfileCache = new Map<string, UserProfile | null>();
@@ -45,9 +46,10 @@ export async function fetchUserProfileServer(uid: string): Promise<UserProfile |
  * @returns Uma lista de banners.
  */
 export async function fetchBannersServer() {
+  console.log('--- Iniciando Action: fetchBannersServer ---');
   if (!firestore) {
-    console.error("fetchBannersServer: Firestore Admin SDK não inicializado.");
-    return [];
+    console.error("--- Erro na Action: fetchBannersServer --- Firestore Admin SDK não inicializado.");
+    return { success: false, error: "Serviço de banco de dados indisponível.", data: [] };
   }
 
   try {
@@ -56,7 +58,7 @@ export async function fetchBannersServer() {
     const snapshot = await q.get();
     
     if (snapshot.empty) {
-      return [];
+      return { success: true, data: [] };
     }
 
     const banners = snapshot.docs.map(doc => ({
@@ -64,9 +66,86 @@ export async function fetchBannersServer() {
       ...doc.data()
     }));
     
-    return banners as any[]; // Tipagem pode ser melhorada com uma interface Banner
-  } catch (error) {
-    console.error("Erro ao buscar banners via Server Action:", error);
-    return [];
+    return { success: true, data: banners as any[] };
+  } catch (error: any) {
+    console.error("--- Erro na Action: fetchBannersServer ---", error);
+    return { success: false, error: error.message || 'Falha ao buscar banners.', data: [] };
   }
+}
+
+/**
+ * Server Action para buscar TODOS os banners (ativos e inativos) para o painel de admin.
+ */
+export async function fetchAllBannersServer() {
+    console.log('--- Iniciando Action: fetchAllBannersServer ---');
+    if (!firestore) {
+        console.error("--- Erro na Action: fetchAllBannersServer --- Firestore Admin SDK não inicializado.");
+        return { success: false, error: "Serviço de banco de dados indisponível.", data: [] };
+    }
+
+    try {
+        const bannersCollection = firestore.collection('banners');
+        const q = bannersCollection.orderBy('order', 'asc');
+        const snapshot = await q.get();
+        const banners = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        return { success: true, data: banners as any[] };
+    } catch (error: any) {
+        console.error("--- Erro na Action: fetchAllBannersServer ---", error);
+        return { success: false, error: error.message || 'Falha ao buscar todos os banners.', data: [] };
+    }
+}
+
+
+/**
+ * Server Action para salvar (criar ou atualizar) um banner.
+ */
+export async function saveBannerServer(bannerData: any, bannerId: string | null) {
+  console.log('--- Iniciando Action: saveBannerServer ---', { bannerId, bannerData });
+  if (!firestore) {
+    console.error("--- Erro na Action: saveBannerServer --- Firestore Admin SDK não inicializado.");
+    return { success: false, error: "Serviço de banco de dados indisponível." };
+  }
+
+  try {
+    if (bannerId) {
+      // Atualizar banner existente
+      const bannerRef = firestore.collection('banners').doc(bannerId);
+      await bannerRef.update({ ...bannerData, updatedAt: new Date() });
+    } else {
+      // Criar novo banner
+      await firestore.collection('banners').add({ ...bannerData, createdAt: new Date() });
+    }
+    
+    // Revalida o cache do Next.js para as páginas afetadas
+    revalidatePath('/admin/banners');
+    revalidatePath('/streaming');
+    revalidatePath('/feed');
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("--- Erro na Action: saveBannerServer ---", error);
+    return { success: false, error: error.message || 'Não foi possível salvar o banner.' };
+  }
+}
+
+/**
+ * Server Action para deletar um banner.
+ */
+export async function deleteBannerServer(bannerId: string) {
+    console.log('--- Iniciando Action: deleteBannerServer ---', { bannerId });
+    if (!firestore) {
+        console.error("--- Erro na Action: deleteBannerServer --- Firestore Admin SDK não inicializado.");
+        return { success: false, error: "Serviço de banco de dados indisponível." };
+    }
+
+    try {
+        await firestore.collection('banners').doc(bannerId).delete();
+        revalidatePath('/admin/banners');
+        revalidatePath('/streaming');
+        revalidatePath('/feed');
+        return { success: true };
+    } catch (error: any) {
+        console.error("--- Erro na Action: deleteBannerServer ---", error);
+        return { success: false, error: error.message || 'Não foi possível deletar o banner.' };
+    }
 }

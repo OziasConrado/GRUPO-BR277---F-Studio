@@ -26,19 +26,18 @@ export default function Banners() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchBanners = async () => {
+    const loadBanners = async () => {
       setLoading(true);
-      try {
-        const fetchedBanners = await fetchBannersServer();
-        setBanners(fetchedBanners);
-      } catch (error) {
-        console.error("Error fetching banners via server action: ", error);
+      const result = await fetchBannersServer();
+      if (result.success) {
+        setBanners(result.data);
+      } else {
+        console.error("Falha ao buscar banners:", result.error);
         // Opcional: Adicionar um toast de erro se necessário
-      } finally {
-        setLoading(false);
       }
+      setLoading(false);
     };
-    fetchBanners();
+    loadBanners();
   }, []);
 
   if (loading) {
@@ -64,7 +63,7 @@ export default function Banners() {
         ]}
         opts={{
           align: "start",
-          loop: true,
+          loop: banners.length > 1,
         }}
         className="w-full"
       >

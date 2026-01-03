@@ -18,14 +18,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
-import {
-  collection,
-  addDoc,
-  updateDoc,
-  doc,
-  serverTimestamp,
-} from 'firebase/firestore';
 import {
   getStorage,
   ref,
@@ -35,11 +27,11 @@ import {
 } from 'firebase/storage';
 import { Loader2, UploadCloud, Link as LinkIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { saveBannerServer } from '@/app/actions/firestore';
 
 const MAX_FILE_SIZE_MB = 2;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
-// Zod schema updated to handle conditional validation
 const bannerSchema = z.object({
   name: z.string().min(3, 'O nome é obrigatório (mín. 3 caracteres).'),
   targetUrl: z.string().url('A URL de destino deve ser um link válido.'),
@@ -57,18 +49,16 @@ const bannerSchema = z.object({
   message: 'Por favor, insira uma URL de imagem válida.',
   path: ['imageUrlInput'],
 }).refine(data => {
-    // When creating a new banner (banner prop is null), one of the two must be present.
-    // For editing, this rule is relaxed in the onSubmit logic.
     if (data.imageSourceType === 'upload') {
         return data.imageFile instanceof File;
     }
     if (data.imageSourceType === 'url') {
         return !!data.imageUrlInput;
     }
-    return true; // Should not happen
+    return true;
 }, {
   message: 'Uma imagem (upload ou URL) é obrigatória para um novo banner.',
-  path: ['imageFile'], // Report error on the first tab field for visibility
+  path: ['imageFile'],
 });
 
 
@@ -90,7 +80,6 @@ interface BannerFormProps {
 }
 
 export function BannerForm({ isOpen, onClose, banner }: BannerFormProps) {
-  const { firestore } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -115,7 +104,7 @@ export function BannerForm({ isOpen, onClose, banner }: BannerFormProps) {
         targetUrl: banner.targetUrl,
         order: banner.order,
         isActive: banner.isActive,
-        imageSourceType: 'upload', // Default to upload, user can switch
+        imageSourceType: 'upload',
         imageFile: undefined,
         imageUrlInput: banner.imageUrl.startsWith('http') ? banner.imageUrl : '',
       });
@@ -139,7 +128,7 @@ export function BannerForm({ isOpen, onClose, banner }: BannerFormProps) {
         return;
       }
       form.setValue('imageFile', file);
-      form.setValue('imageUrlInput', ''); // Clear other source
+      form.setValue('imageUrlInput', '');
       setImagePreview(URL.createObjectURL(file));
     }
   };
@@ -149,17 +138,13 @@ export function BannerForm({ isOpen, onClose, banner }: BannerFormProps) {
     form.setValue('imageUrlInput', url);
     if(z.string().url().safeParse(url).success) {
         setImagePreview(url);
-        form.setValue('imageFile', undefined); // Clear other source
+        form.setValue('imageFile', undefined);
     } else {
         setImagePreview(null);
     }
   }
 
-
   const onSubmit = async (data: BannerFormValues) => {
-    if (!firestore) return;
-
-    // Manual validation for new banner image requirement
     if (!banner && !data.imageFile && !data.imageUrlInput) {
         form.setError('imageFile', { message: 'A imagem é obrigatória (upload ou URL).' });
         return;
@@ -171,8 +156,7 @@ export function BannerForm({ isOpen, onClose, banner }: BannerFormProps) {
       const storage = getStorage();
 
       if (data.imageSourceType === 'upload' && data.imageFile) {
-        // If editing and there was an old image, delete it
-        if (banner && banner.imageUrl) {
+        if (banner && banner.imageUrl && banner.imageUrl.includes('firebasestorage')) {
           try {
             const oldImageRef = ref(storage, banner.imageUrl);
             await deleteObject(oldImageRef);
@@ -183,7 +167,6 @@ export function BannerForm({ isOpen, onClose, banner }: BannerFormProps) {
           }
         }
         
-        // Upload new image
         const imagePath = `banners/${Date.now()}_${data.imageFile.name}`;
         const newImageRef = ref(storage, imagePath);
         await uploadBytes(newImageRef, data.imageFile);
@@ -196,34 +179,29 @@ export function BannerForm({ isOpen, onClose, banner }: BannerFormProps) {
           throw new Error("URL da imagem não está disponível. A imagem pode não ter sido fornecida ou o upload falhou.");
       }
 
-      const bannerData = {
+      const bannerDataToSave = {
         name: data.name,
         targetUrl: data.targetUrl,
         order: data.order,
         isActive: data.isActive,
         imageUrl: finalImageUrl,
-        updatedAt: serverTimestamp(),
       };
 
-      if (banner) {
-        const bannerRef = doc(firestore, 'banners', banner.id);
-        await updateDoc(bannerRef, bannerData);
-        toast({ title: 'Sucesso', description: 'Banner atualizado com sucesso.' });
+      const result = await saveBannerServer(bannerDataToSave, banner?.id || null);
+
+      if (result.success) {
+        toast({ title: 'Sucesso', description: `Banner ${banner ? 'atualizado' : 'criado'} com sucesso.` });
+        onClose();
       } else {
-        await addDoc(collection(firestore, 'banners'), {
-          ...bannerData,
-          createdAt: serverTimestamp(),
-        });
-        toast({ title: 'Sucesso', description: 'Novo banner criado.' });
+        throw new Error(result.error || 'Ocorreu um erro desconhecido no servidor.');
       }
 
-      onClose();
     } catch (error: any) {
       console.error('Error saving banner:', error);
       toast({
         variant: 'destructive',
         title: 'Erro ao salvar',
-        description: error.message || 'Não foi possível salvar o banner.',
+        description: error.message,
       });
     } finally {
       setIsSubmitting(false);
