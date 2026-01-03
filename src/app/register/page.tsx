@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -41,6 +40,7 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
+    control, // Use control for the Checkbox
     watch,
     formState: { errors },
   } = useForm<RegisterFormValues>({
@@ -134,7 +134,18 @@ export default function RegisterPage() {
               )}
             </div>
             <div className="items-top flex space-x-2">
-                <Checkbox id="acceptTerms" {...register('acceptTerms')} />
+                <Controller
+                  control={control}
+                  name="acceptTerms"
+                  render={({ field }) => (
+                    <Checkbox
+                      id="acceptTerms"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      className="mt-0.5"
+                    />
+                  )}
+                />
                 <div className="grid gap-1.5 leading-none">
                     <label
                     htmlFor="acceptTerms"
@@ -171,5 +182,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-
-    

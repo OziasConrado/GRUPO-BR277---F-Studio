@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
@@ -81,17 +80,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // --- Firebase Initialization ---
 function initializeFirebase() {
-  // Always use the config from the dedicated config file
-  // This ensures consistency between client and server, and local vs. prod
-  if (firebaseConfig.apiKey && firebaseConfig.projectId) {
-    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-    const auth = getAuth(app);
-    const firestore = getFirestore(app);
-    const storage = getStorage(app);
-    return { app, auth, firestore, storage };
+  if (!firebaseConfig || !firebaseConfig.apiKey) {
+    console.error("Firebase config is missing or incomplete in lib/firebase/config.ts");
+    return null;
   }
-  console.error("Firebase config is missing or incomplete in lib/firebase/config.ts");
-  return null;
+  const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+  const auth = getAuth(app);
+  const firestore = getFirestore(app);
+  const storage = getStorage(app);
+  return { app, auth, firestore, storage };
 }
 
 // --- AuthProvider Component ---
@@ -268,6 +265,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthAction('reload');
     try {
       await currentUser.reload();
+      // This is a bit of a hack to force a state update, as reload() itself doesn't trigger onAuthStateChanged
       setCurrentUser({ ...currentUser });
     } catch (error) {
       handleAuthError(error as AuthError, 'Erro ao Recarregar Usuário');
