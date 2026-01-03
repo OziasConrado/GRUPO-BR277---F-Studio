@@ -1,13 +1,15 @@
 
-// NOTE: This is for client-side code for DEVELOPMENT environment.
-// Don't put anything sensitive in here.
+// NOTE: This file is used for client-side configuration for DEVELOPMENT and PRODUCTION.
+// It relies on NEXT_PUBLIC_ environment variables.
 
-export const firebaseConfig = {
+import { FirebaseOptions } from 'firebase/app';
+
+export const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: "grupo-br277.firebaseapp.com",
-  projectId: "grupo-br277",
-  storageBucket: "grupo-br277.appspot.com",
-  messagingSenderId: "491779757123",
-  appId: "1:491779757123:web:f0c1615487eb032c17b0f6",
-  measurementId: "G-MD0VTEF82W"
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };

@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
@@ -19,12 +18,12 @@ import {
   type Auth,
   getIdTokenResult,
 } from 'firebase/auth';
-import { initializeApp, getApp, getApps, type FirebaseApp, type FirebaseOptions } from 'firebase/app';
+import { initializeApp, getApp, getApps, type FirebaseApp } from 'firebase/app';
 import { getFirestore, doc, setDoc, getDoc, updateDoc, serverTimestamp, type Firestore } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, type FirebaseStorage } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { firebaseConfig as devFirebaseConfig } from '@/lib/firebase/config';
+import { firebaseConfig } from '@/lib/firebase/config'; // Importação direta
 
 // Interfaces
 export interface UserProfile {
@@ -117,45 +116,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [toast]);
   
   useEffect(() => {
-    const initializeFirebaseServices = async () => {
-        if (firebaseServices) return;
-
+    const initializeFirebase = () => {
         try {
-            let config: FirebaseOptions;
-            if (process.env.NODE_ENV === 'production') {
-                const response = await fetch('/__/firebase/init.json');
-                if (!response.ok) {
-                   throw new Error("Falha ao buscar a configuração do Firebase em produção.");
-                }
-                config = await response.json();
-            } else {
-                config = devFirebaseConfig;
+            if (!firebaseConfig.apiKey) {
+                 throw new Error("A chave de API do Firebase não foi encontrada. Verifique a configuração do ambiente.");
             }
-
-            if (!config || !config.apiKey) {
-                throw new Error("A configuração do Firebase não pôde ser carregada.");
-            }
-
-            const app = getApps().length === 0 ? initializeApp(config) : getApp();
+            const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
             const auth = getAuth(app);
             const firestore = getFirestore(app);
             const storage = getStorage(app);
-            
             setFirebaseServices({ app, auth, firestore, storage });
-
         } catch (error: any) {
-            console.error("Falha crítica ao inicializar o Firebase:", error);
-            toast({
+             console.error("Falha crítica ao inicializar o Firebase:", error);
+             toast({
               title: "Erro Crítico de Conexão",
               description: "Não foi possível conectar aos serviços do aplicativo. Verifique sua conexão ou tente recarregar a página.",
-              variant: "destructive"
+              variant: "destructive",
+              duration: Infinity,
             });
             setIsAuthenticating(false);
         }
     };
 
-    initializeFirebaseServices();
-  }, [firebaseServices, toast]);
+    initializeFirebase();
+  }, [toast]);
+
 
   useEffect(() => {
     if (!firebaseServices) {
