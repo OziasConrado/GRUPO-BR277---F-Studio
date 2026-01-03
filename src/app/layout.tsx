@@ -11,7 +11,6 @@ const ptSans = PT_Sans({
   variable: '--font-sans',
 });
 
-// Metadata can be defined here as it's a Server Component
 export const metadata: Metadata = {
     title: 'GRUPO BR277',
     description: 'O aplicativo essencial para quem vive na estrada.',
@@ -32,7 +31,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <head />
       <body className={`${ptSans.variable} font-sans antialiased`}>
         <AppLayout>
           {children}
