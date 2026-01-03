@@ -21,7 +21,7 @@ import { getFirestore, doc, setDoc, getDoc, updateDoc, serverTimestamp, type Fir
 import { getStorage, ref, uploadBytes, getDownloadURL, type FirebaseStorage } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { firebaseConfig } from '@/lib/firebase/config'; // Import from the new config file
+import { firebaseConfig } from '@/lib/firebase/config';
 
 // Interfaces
 export interface UserProfile {
@@ -55,6 +55,7 @@ interface AuthContextType {
   currentUser: FirebaseUser | null;
   userProfile: UserProfile | null;
   isProfileComplete: boolean;
+  isAdmin: boolean;
   isAuthenticating: boolean;
   loading: boolean;
   authAction: string | null;
@@ -77,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [firebaseServices, setFirebaseServices] = useState<FirebaseServices | null>(null);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(true);
   const [authAction, setAuthAction] = useState<string | null>(null);
   const router = useRouter();
@@ -108,7 +110,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [toast]);
 
   useEffect(() => {
-    // Lazy initialization of Firebase
     if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
       console.error("Firebase config is missing from environment variables.");
       setIsAuthenticating(false);
@@ -123,6 +124,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        const idTokenResult = await user.getIdTokenResult();
+        setIsAdmin(idTokenResult.claims.admin === true);
         setCurrentUser(user);
         const userDocRef = doc(firestore, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
@@ -144,6 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setCurrentUser(null);
         setUserProfile(null);
+        setIsAdmin(false);
       }
       setIsAuthenticating(false);
     });
@@ -240,8 +244,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (Object.keys(authUpdates).length > 0) {
         await firebaseUpdateProfile(currentUser, authUpdates);
-        await currentUser.reload(); // Recarrega os dados do usuário do Firebase Auth
-        setCurrentUser({ ...currentUser }); // Força uma nova renderização com os dados atualizados
+        await currentUser.reload();
+        setCurrentUser({ ...currentUser });
       }
       
       const userDocRef = doc(firebaseServices.firestore, 'users', currentUser.uid);
@@ -286,6 +290,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     currentUser,
     userProfile,
     isProfileComplete,
+    isAdmin,
     isAuthenticating,
     loading: authAction !== null,
     authAction,
