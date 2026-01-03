@@ -81,6 +81,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // --- Firebase Initialization ---
 function initializeFirebase() {
+  // Always use the config from the dedicated config file
+  // This ensures consistency between client and server, and local vs. prod
   if (firebaseConfig.apiKey && firebaseConfig.projectId) {
     const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     const auth = getAuth(app);
@@ -88,7 +90,7 @@ function initializeFirebase() {
     const storage = getStorage(app);
     return { app, auth, firestore, storage };
   }
-  console.error("Firebase config is missing or incomplete.");
+  console.error("Firebase config is missing or incomplete in lib/firebase/config.ts");
   return null;
 }
 
