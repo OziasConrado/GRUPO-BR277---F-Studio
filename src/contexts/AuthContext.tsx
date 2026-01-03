@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const handleAuthError = useCallback((error: AuthError, customTitle?: string) => {
     console.error("Firebase Auth Error:", error.code, error.message);
     if (error.code === 'unavailable' || error.code === 'firestore/unavailable') {
-        return; // Silently ignore the "offline" error which we know happens in dev.
+        return; 
     }
     let message = "Ocorreu um erro. Tente novamente.";
      switch (error.code) {
@@ -101,58 +101,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    const fetchUserProfile = async (user: FirebaseUser, retryCount = 0) => {
+      try {
+        const idTokenResult = await getIdTokenResult(user, true);
+        const userIsAdmin = idTokenResult.claims.admin === true;
+        setIsAdmin(userIsAdmin);
+        
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDocFromServer(userDocRef);
+
+        let profileData: UserProfile;
+        if (userDoc.exists()) {
+          profileData = userDoc.data() as UserProfile;
+          if (user.displayName !== profileData.displayName || user.photoURL !== profileData.photoURL) {
+            await updateDoc(userDocRef, {
+              displayName: user.displayName,
+              displayName_lowercase: user.displayName?.toLowerCase(),
+              photoURL: user.photoURL,
+            });
+            profileData.displayName = user.displayName;
+            profileData.photoURL = user.photoURL;
+          }
+        } else {
+          const displayName = user.displayName || user.email?.split('@')[0] || 'Usuário';
+          profileData = {
+            uid: user.uid,
+            email: user.email,
+            displayName: displayName,
+            displayName_lowercase: displayName.toLowerCase(),
+            photoURL: user.photoURL,
+            lastLogin: serverTimestamp(),
+          };
+          await setDoc(userDocRef, profileData, { merge: true });
+        }
+        setUserProfile(profileData);
+      } catch (error: any) {
+        if (error.code === 'unavailable' || error.code === 'firestore/unavailable') {
+          if (retryCount < 3) { // Tenta até 3 vezes
+            console.log(`Firestore offline. Tentando buscar perfil novamente em 5 segundos... (Tentativa ${retryCount + 1})`);
+            setTimeout(() => fetchUserProfile(user, retryCount + 1), 5000);
+          } else {
+             console.warn('Could not fetch user profile because client is offline after multiple retries.');
+          }
+        } else {
+          handleAuthError(error, "Erro ao carregar perfil");
+          await signOut(auth);
+          setCurrentUser(null);
+          setUserProfile(null);
+          setIsAdmin(false);
+        }
+      }
+    };
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        setCurrentUser(user); // Set user immediately for responsiveness
-        try {
-          const idTokenResult = await getIdTokenResult(user, true);
-          const userIsAdmin = idTokenResult.claims.admin === true;
-          setIsAdmin(userIsAdmin);
-
-          const userDocRef = doc(db, 'users', user.uid);
-          const userDoc = await getDocFromServer(userDocRef); // Force server fetch
-          
-          let profileData: UserProfile;
-
-          if (userDoc.exists()) {
-              profileData = userDoc.data() as UserProfile;
-              if (user.displayName !== profileData.displayName || user.photoURL !== profileData.photoURL) {
-                await updateDoc(userDocRef, {
-                  displayName: user.displayName,
-                  displayName_lowercase: user.displayName?.toLowerCase(),
-                  photoURL: user.photoURL,
-                });
-                profileData.displayName = user.displayName;
-                profileData.photoURL = user.photoURL;
-              }
-          } else {
-             const displayName = user.displayName || user.email?.split('@')[0] || 'Usuário';
-             profileData = {
-              uid: user.uid,
-              email: user.email,
-              displayName: displayName,
-              displayName_lowercase: displayName.toLowerCase(),
-              photoURL: user.photoURL,
-              lastLogin: serverTimestamp(),
-            };
-            await setDoc(userDocRef, profileData, { merge: true });
-          }
-          
-          setUserProfile(profileData);
-
-        } catch (error: any) {
-          // If profile fetch fails due to network, user is still logged in, but profile is null.
-          if (error.code === 'unavailable' || error.code === 'firestore/unavailable') {
-            console.warn('Could not fetch user profile because client is offline. User is still logged in.');
-            setUserProfile(null);
-          } else {
-            handleAuthError(error, "Erro ao carregar perfil");
-            await signOut(auth); // Sign out if it's a more serious error
-            setCurrentUser(null);
-            setUserProfile(null);
-            setIsAdmin(false);
-          }
-        }
+        setCurrentUser(user);
+        await fetchUserProfile(user);
       } else {
         setCurrentUser(null);
         setUserProfile(null);
@@ -219,7 +223,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthAction('reload');
     try {
       await currentUser.reload();
-      setCurrentUser({ ...currentUser }); // Force re-render
+      setCurrentUser({ ...currentUser }); 
     } catch (error) { handleAuthError(error as AuthError); } 
     finally { setAuthAction(null); }
   }, [currentUser, handleAuthError]);
