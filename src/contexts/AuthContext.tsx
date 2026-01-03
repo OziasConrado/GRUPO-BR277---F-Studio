@@ -79,9 +79,22 @@ interface AuthContextType {
 // --- Context Definition ---
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// --- Firebase Initialization ---
+function initializeFirebase() {
+  if (firebaseConfig.apiKey && firebaseConfig.projectId) {
+    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+    const auth = getAuth(app);
+    const firestore = getFirestore(app);
+    const storage = getStorage(app);
+    return { app, auth, firestore, storage };
+  }
+  console.error("Firebase config is missing or incomplete.");
+  return null;
+}
+
 // --- AuthProvider Component ---
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [firebaseServices, setFirebaseServices] = useState<FirebaseServices | null>(null);
+  const [firebaseServices] = useState<FirebaseServices | null>(() => initializeFirebase());
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -116,22 +129,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [toast]);
 
   useEffect(() => {
-    if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-      console.error("Firebase config is missing from environment variables.");
+    if (!firebaseServices) {
       setIsAuthenticating(false);
       return;
     }
-
-    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-    const auth = getAuth(app);
-    const firestore = getFirestore(app);
-    const storage = getStorage(app);
-    setFirebaseServices({ app, auth, firestore, storage });
     
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(firebaseServices.auth, async (user) => {
       if (user) {
-        await user.reload(); // Always get the latest user state
-        const freshUser = auth.currentUser;
+        await user.reload();
+        const freshUser = firebaseServices.auth.currentUser;
         if (!freshUser) {
            setCurrentUser(null);
            setUserProfile(null);
@@ -144,7 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAdmin(idTokenResult.claims.admin === true);
         setCurrentUser(freshUser);
         
-        const userDocRef = doc(firestore, 'users', freshUser.uid);
+        const userDocRef = doc(firebaseServices.firestore, 'users', freshUser.uid);
         const userDoc = await getDoc(userDocRef);
         
         if (userDoc.exists()) {
@@ -172,7 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [firebaseServices]);
 
   const uploadFile = useCallback(async (file: File, path: string): Promise<string> => {
     if (!firebaseServices?.storage) {
@@ -189,7 +195,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(firebaseServices.auth, provider);
-      // Let the onAuthStateChanged handle the rest
     } catch (error) {
       handleAuthError(error as AuthError, 'Erro no Login com Google');
     } finally {
@@ -204,7 +209,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userCredential = await createUserWithEmailAndPassword(firebaseServices.auth, email, password);
       await sendEmailVerification(userCredential.user);
       toast({ title: 'Cadastro bem-sucedido!', description: 'Enviamos um link de verificação para o seu e-mail.' });
-      // onAuthStateChanged will handle the redirect to the verify-email page
     } catch (error) {
       handleAuthError(error as AuthError);
     } finally {
@@ -217,7 +221,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthAction('email');
     try {
       await signInWithEmailAndPassword(firebaseServices.auth, email, password);
-      // onAuthStateChanged will handle redirection logic
     } catch (error) {
       handleAuthError(error as AuthError);
     } finally {
@@ -263,7 +266,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthAction('reload');
     try {
       await currentUser.reload();
-      // Force a state update to trigger re-render and checks
       setCurrentUser({ ...currentUser });
     } catch (error) {
       handleAuthError(error as AuthError, 'Erro ao Recarregar Usuário');
@@ -365,5 +367,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-
-    
