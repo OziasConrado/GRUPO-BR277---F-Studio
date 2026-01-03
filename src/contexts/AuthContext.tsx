@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
@@ -17,11 +16,11 @@ import {
   type AuthError,
   getIdTokenResult,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, updateDoc, serverTimestamp, type Firestore } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, type FirebaseStorage } from 'firebase/storage';
+import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { auth, db, storage } from '@/lib/firebase/client'; // Importa as instâncias prontas
+import { auth, db, storage } from '@/lib/firebase/client'; // Importa as instâncias JÁ INICIALIZADAS
 
 // Interfaces
 export interface UserProfile {
@@ -52,9 +51,6 @@ interface AuthContextType {
   isProfileComplete: boolean;
   loading: boolean;
   authAction: string | null;
-  firestore: Firestore; // Mantém para componentes que ainda o recebem
-  storage: FirebaseStorage; // Mantém para componentes que ainda o recebem
-  uploadFile: (file: File, path: string) => Promise<string>;
   signInWithGoogle: () => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
@@ -63,6 +59,7 @@ interface AuthContextType {
   updateUserProfile: (data: UpdateUserProfileData) => Promise<void>;
   signOutUser: () => Promise<void>;
   reloadUser: () => Promise<void>;
+  uploadFile: (file: File, path: string) => Promise<string>;
 }
 
 // --- Context Definition ---
@@ -290,9 +287,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isProfileComplete,
     loading,
     authAction,
-    firestore: db,
-    storage: storage,
-    uploadFile,
     signInWithGoogle,
     signUpWithEmail,
     signInWithEmail,
@@ -301,6 +295,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     updateUserProfile,
     signOutUser,
     reloadUser,
+    uploadFile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

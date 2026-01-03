@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, type ChangeEvent } from 'react';
@@ -10,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase/client';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -107,7 +107,7 @@ const PollCreator = ({ onSave, onCancel }: { onSave: (question: string, options:
 
 
 export default function CreatePost() {
-  const { currentUser, userProfile, isProfileComplete, firestore, uploadFile } = useAuth();
+  const { currentUser, userProfile, isProfileComplete, uploadFile } = useAuth();
   const { toast } = useToast();
   
   const [postText, setPostText] = useState('');
@@ -130,7 +130,7 @@ export default function CreatePost() {
   };
 
   const handleSubmit = async () => {
-     if (!currentUser || !firestore) {
+     if (!currentUser) {
       toast({ variant: 'destructive', description: 'Você precisa estar logado para publicar.' });
       return;
     }
@@ -170,7 +170,7 @@ export default function CreatePost() {
         postPayload.poll = pollData;
       }
       
-      await addDoc(collection(firestore, 'posts'), postPayload);
+      await addDoc(collection(db, 'posts'), postPayload);
 
       toast({ title: 'Sucesso!', description: 'Sua publicação foi postada.' });
       resetForm();

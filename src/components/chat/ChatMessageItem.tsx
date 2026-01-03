@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,7 +8,8 @@ import { Paperclip, Mic, FileText, PlayCircle, Heart, MoreVertical, Edit, Trash2
 import React, { useState, useEffect, useMemo, useCallback } from "react"; 
 import { Button } from "../ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { doc, getDoc, onSnapshot, getDocs, collection, query, where, limit } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, getDocs, collection, query, where, limit, updateDoc, deleteDoc, runTransaction, serverTimestamp, writeBatch } from "firebase/firestore";
+import { db } from "@/lib/firebase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -117,7 +117,7 @@ export default function ChatMessageItem({
   onImageClick: (imageUrl: string | StaticImageData) => void;
 }) {
   const { senderName, avatarUrl, dataAIAvatarHint, text, textElements, imageUrl, dataAIImageHint, file, timestamp, isCurrentUser, reactions, replyTo, edited } = message;
-  const { currentUser, firestore } = useAuth();
+  const { currentUser } = useAuth();
   const { toast } = useToast();
   const [userHasReacted, setUserHasReacted] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -132,13 +132,13 @@ export default function ChatMessageItem({
 
 
   useEffect(() => {
-    if (!currentUser || !firestore || !message.id) return;
-    const reactionRef = doc(firestore, 'chatMessages', message.id, 'userReactions', currentUser.uid);
+    if (!currentUser || !message.id) return;
+    const reactionRef = doc(db, 'chatMessages', message.id, 'userReactions', currentUser.uid);
     const unsubscribe = onSnapshot(reactionRef, (doc) => {
         setUserHasReacted(doc.exists());
     });
     return () => unsubscribe();
-  }, [currentUser, message.id, firestore]);
+  }, [currentUser, message.id]);
   
   const handleSaveEdit = async () => {
     if (!text || editedText.trim() === text.trim() || editedText.trim() === '') {
@@ -178,10 +178,10 @@ export default function ChatMessageItem({
   };
 
   const handleUserClick = async () => {
-    if (!firestore || !message.userId) return;
+    if (!message.userId) return;
 
     try {
-        const userDocRef = doc(firestore, "users", message.userId);
+        const userDocRef = doc(db, "users", message.userId);
         const userDoc = await getDoc(userDocRef);
 
         if (userDoc.exists()) {

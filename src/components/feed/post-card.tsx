@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { StaticImageData } from 'next/image';
@@ -56,6 +55,7 @@ import {
   writeBatch,
   DocumentData
 } from 'firebase/firestore';
+import { db } from '@/lib/firebase/client';
 import { ToastAction } from '../ui/toast';
 import { useRouter } from 'next/navigation';
 import { Progress } from '@/components/ui/progress';
@@ -65,10 +65,9 @@ async function createMentions(
     text: string, 
     postId: string, 
     fromUser: { uid: string, displayName: string | null, photoURL: string | null }, 
-    type: 'mention_post' | 'mention_comment',
-    firestore: any
+    type: 'mention_post' | 'mention_comment'
 ) {
-    if (!firestore) return;
+    if (!text.includes('@')) return;
 
     const foundUsers = new Map<string, { id: string }>();
     const processedIndices = new Set<number>();
@@ -84,7 +83,7 @@ async function createMentions(
         
         const firstWord = firstWordMatch[1];
         
-        const usersRef = collection(firestore, "users");
+        const usersRef = collection(db, "users");
         const q = query(
             usersRef,
             where("displayName_lowercase", ">=", firstWord.toLowerCase()),
@@ -128,9 +127,9 @@ async function createMentions(
 
     if (foundUsers.size === 0) return;
 
-    const batch = writeBatch(firestore);
+    const batch = writeBatch(db);
     for (const user of foundUsers.values()) {
-        const notificationRef = doc(collection(firestore, 'users', user.id, 'notifications'));
+        const notificationRef = doc(collection(db, 'users', user.id, 'notifications'));
         batch.set(notificationRef, {
             type: type,
             fromUserId: fromUser.uid,
@@ -231,8 +230,8 @@ interface Mention {
 }
 
 
-async function findMentions(text: string, firestore: any): Promise<Mention[]> {
-    if (!firestore || !text) return [];
+async function findMentions(text: string): Promise<Mention[]> {
+    if (!text.includes('@')) return [];
 
     const mentions: Mention[] = [];
     const processedIndices = new Set<number>();
@@ -248,7 +247,7 @@ async function findMentions(text: string, firestore: any): Promise<Mention[]> {
         
         const firstWord = firstWordMatch[1];
         
-        const usersRef = collection(firestore, "users");
+        const usersRef = collection(db, "users");
         const q = query(
             usersRef,
             where("displayName_lowercase", ">=", firstWord.toLowerCase()),
@@ -322,7 +321,7 @@ function renderTextWithClickableMentions(text: string, mentions: Mention[], onMe
 
 
 const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData, postId: string }) => {
-    const { currentUser, firestore } = useAuth();
+    const { currentUser } = useAuth();
     const [votedOptionId, setVotedOptionId] = useState<string | null>(null);
     const [poll, setPoll] = useState(initialPollData);
     const { toast } = useToast();
@@ -341,20 +340,18 @@ const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData
 
 
     useEffect(() => {
-        if (!currentUser || !firestore) return;
-        const voteRef = doc(firestore, 'posts', postId, 'userVotes', currentUser.uid);
+        if (!currentUser) return;
+        const voteRef = doc(db, 'posts', postId, 'userVotes', currentUser.uid);
         const unsub = onSnapshot(voteRef, (doc) => {
             if (doc.exists()) {
                 setVotedOptionId(doc.data().optionId);
             }
         });
         return () => unsub();
-    }, [postId, currentUser, firestore]);
+    }, [postId, currentUser]);
 
     useEffect(() => {
-        if (!firestore || !postId) return;
-
-        const postRef = doc(firestore, 'posts', postId);
+        const postRef = doc(db, 'posts', postId);
         const unsub = onSnapshot(postRef, (doc) => {
             if (doc.exists() && doc.data().poll) {
                 const pollData = doc.data().poll as PollData;
@@ -367,10 +364,10 @@ const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData
         });
 
         return () => unsub();
-    }, [postId, firestore]);
+    }, [postId]);
 
     const handleVote = async (optionId: string) => {
-        if (!currentUser || !firestore) {
+        if (!currentUser) {
             toast({ variant: 'destructive', title: 'Você precisa estar logado para votar.' });
             return;
         }
@@ -379,11 +376,11 @@ const PollDisplay = ({ pollData: initialPollData, postId }: { pollData: PollData
             return;
         }
 
-        const postRef = doc(firestore, 'posts', postId);
-        const voteRef = doc(firestore, 'posts', postId, 'userVotes', currentUser.uid);
+        const postRef = doc(db, 'posts', postId);
+        const voteRef = doc(db, 'posts', postId, 'userVotes', currentUser.uid);
 
         try {
-            await runTransaction(firestore, async (transaction) => {
+            await runTransaction(db, async (transaction) => {
                 const postDoc = await transaction.get(postRef);
                 if (!postDoc.exists()) {
                     throw new Error("A publicação não existe mais.");
@@ -493,7 +490,7 @@ export default function PostCard({
   edited,
   poll,
 }: PostCardProps) {
-  const { currentUser, isProfileComplete, firestore } = useAuth();
+  const { currentUser, isProfileComplete } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   
@@ -553,9 +550,8 @@ export default function PostCard({
   const textToShow = isTextExpanded ? textContent : textContent.substring(0, MAX_CHARS);
 
     const handleShowUserProfile = useCallback(async (userIdToShow: string) => {
-        if (!firestore) return;
         try {
-            const userDoc = await getDoc(doc(firestore, "users", userIdToShow));
+            const userDoc = await getDoc(doc(db, "users", userIdToShow));
             if (userDoc.exists()) {
                 const userData = userDoc.data();
                 setSelectedUserProfile({
@@ -572,25 +568,24 @@ export default function PostCard({
             console.error("Error fetching user profile for modal:", error);
             toast({ variant: "destructive", title: "Erro ao carregar perfil." });
         }
-    }, [toast, firestore]);
+    }, [toast]);
 
   // Process main post text for mentions
   useEffect(() => {
     const fullText = text.replace(linkRegex, "").trim();
-    if (fullText && firestore) {
+    if (fullText) {
         const processText = async () => {
-            const mentions = await findMentions(fullText, firestore);
+            const mentions = await findMentions(fullText);
             setPostTextElements(renderTextWithClickableMentions(fullText, mentions, handleShowUserProfile));
         };
         processText();
     }
-  }, [text, handleShowUserProfile, firestore]);
+  }, [text, handleShowUserProfile]);
 
 
   // Real-time listener for the post document to update reactions
   useEffect(() => {
-    if (!firestore) return;
-    const postRef = doc(firestore, 'posts', postId);
+    const postRef = doc(db, 'posts', postId);
     const unsubscribe = onSnapshot(postRef, (doc) => {
         if (doc.exists()) {
             const data = doc.data();
@@ -598,25 +593,24 @@ export default function PostCard({
         }
     });
     return () => unsubscribe();
-  }, [postId, firestore]);
+  }, [postId]);
 
   // Fetch user's reaction on mount
   useEffect(() => {
-    if (!currentUser || !firestore) return;
+    if (!currentUser) return;
     let isMounted = true;
-    const reactionRef = doc(firestore, 'posts', postId, 'userReactions', currentUser.uid);
+    const reactionRef = doc(db, 'posts', postId, 'userReactions', currentUser.uid);
     getDoc(reactionRef).then(docSnap => {
       if (isMounted && docSnap.exists()) {
         setCurrentUserPostReaction(docSnap.data().type);
       }
     });
     return () => { isMounted = false; };
-  }, [currentUser, postId, firestore]);
+  }, [currentUser, postId]);
   
   // Fetch comments in real-time
   useEffect(() => {
-    if (!firestore) return;
-    const commentsCollection = collection(firestore, 'posts', postId, 'comments');
+    const commentsCollection = collection(db, 'posts', postId, 'comments');
     const q = query(commentsCollection, orderBy('timestamp', 'asc')); // Order by asc to build the tree correctly
 
     const unsubscribe = onSnapshot(q, async (snapshot) => {
@@ -624,7 +618,7 @@ export default function PostCard({
         const data = doc.data();
         const commentTimestamp = data.timestamp instanceof Timestamp ? formatDistanceToNow(data.timestamp.toDate(), { addSuffix: true, locale: ptBR }) : 'Agora';
         
-        const mentions = await findMentions(data.text, firestore);
+        const mentions = await findMentions(data.text);
         const textElements = renderTextWithClickableMentions(data.text || '', mentions, handleShowUserProfile);
 
         return {
@@ -645,14 +639,13 @@ export default function PostCard({
     });
 
     return () => unsubscribe();
-  }, [postId, handleShowUserProfile, firestore]);
+  }, [postId, handleShowUserProfile]);
 
   useEffect(() => {
-    if (showMentions && mentionQuery.length > 0 && firestore) {
+    if (showMentions && mentionQuery.length > 0) {
       setLoadingMentions(true);
       const fetchUsers = async () => {
-        if (!firestore) return;
-        const usersRef = collection(firestore, "users");
+        const usersRef = collection(db, "users");
         const q = query(
           usersRef,
           where("displayName_lowercase", ">=", mentionQuery.toLowerCase()),
@@ -676,7 +669,7 @@ export default function PostCard({
     } else {
       setMentionSuggestions([]);
     }
-  }, [mentionQuery, showMentions, firestore]);
+  }, [mentionQuery, showMentions]);
 
 
   // Handlers
@@ -694,17 +687,17 @@ export default function PostCard({
   };
   
   const handlePostReactionClick = async (reactionType: 'thumbsUp' | 'thumbsDown') => {
-    if (!currentUser || !firestore) {
+    if (!currentUser) {
         toast({ variant: 'destructive', title: 'Ação Requer Login', description: 'Faça login para interagir.' });
         return;
     }
 
     handleInteractionAttempt(async () => {
-        const postRef = doc(firestore, 'posts', postId);
-        const reactionRef = doc(firestore, 'posts', postId, 'userReactions', currentUser.uid);
+        const postRef = doc(db, 'posts', postId);
+        const reactionRef = doc(db, 'posts', postId, 'userReactions', currentUser.uid);
 
         try {
-            await runTransaction(firestore, async (transaction) => {
+            await runTransaction(db, async (transaction) => {
                 const reactionDoc = await transaction.get(reactionRef);
                 const storedReaction = reactionDoc.exists() ? reactionDoc.data().type : null;
                 const updates: { [key: string]: any } = {};
@@ -732,11 +725,11 @@ export default function PostCard({
   
   const handleFooterSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!newCommentText.trim() || !currentUser || !firestore) return;
+    if (!newCommentText.trim() || !currentUser) return;
     
     try {
         const commentText = newCommentText.trim();
-        const newDocRef = await addDoc(collection(firestore, 'posts', postId, 'comments'), {
+        const newDocRef = await addDoc(collection(db, 'posts', postId, 'comments'), {
             userId: currentUser.uid,
             userName: currentUser.displayName || 'Usuário Anônimo',
             userAvatarUrl: currentUser.photoURL,
@@ -747,7 +740,7 @@ export default function PostCard({
         });
 
         if (currentUser) {
-            await createMentions(commentText, postId, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL }, 'mention_comment', firestore);
+            await createMentions(commentText, postId, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL }, 'mention_comment');
         }
         
         setNewCommentText('');
@@ -761,9 +754,9 @@ export default function PostCard({
   };
   
   const handleUpdatePost = async () => {
-    if (!isAuthor || !firestore) return;
+    if (!isAuthor) return;
 
-    const postRef = doc(firestore, "posts", postId);
+    const postRef = doc(db, "posts", postId);
     try {
       await updateDoc(postRef, {
         text: editedText,
@@ -786,12 +779,12 @@ export default function PostCard({
   };
 
   const handleDeletePost = async () => {
-    if (!isAuthor || !firestore) return;
+    if (!isAuthor) return;
     
     setIsDeleteAlertOpen(false);
 
     try {
-      await updateDoc(doc(firestore, "posts", postId), {
+      await updateDoc(doc(db, "posts", postId), {
         deleted: true,
       });
       toast({
@@ -919,16 +912,16 @@ export default function PostCard({
   const displayImageAlt = (cardStyle && cardStyle.name !== 'Padrão') ? '' : (uploadedImageUrl ? (dataAIUploadedImageHint || "Imagem do post") : (dataAIImageHint || "Imagem do post"));
   
     const handleCommentReaction = async (commentId: string) => {
-        if (!currentUser || !firestore) {
+        if (!currentUser) {
             toast({ variant: 'destructive', title: 'Ação Requer Login' });
             return;
         }
 
-        const commentRef = doc(firestore, 'posts', postId, 'comments', commentId);
-        const reactionRef = doc(firestore, 'posts', postId, 'comments', commentId, 'commentReactions', currentUser.uid);
+        const commentRef = doc(db, 'posts', postId, 'comments', commentId);
+        const reactionRef = doc(db, 'posts', postId, 'comments', commentId, 'commentReactions', currentUser.uid);
 
         try {
-            await runTransaction(firestore, async (transaction) => {
+            await runTransaction(db, async (transaction) => {
                 const commentDoc = await transaction.get(commentRef);
                 if (!commentDoc.exists()) throw new Error("Comentário não existe mais.");
 
@@ -955,13 +948,13 @@ export default function PostCard({
     const [userHasReacted, setUserHasReacted] = useState(false);
 
     useEffect(() => {
-        if (!currentUser || !firestore) return;
-        const reactionRef = doc(firestore, 'posts', postId, 'comments', comment.id, 'commentReactions', currentUser.uid);
+        if (!currentUser) return;
+        const reactionRef = doc(db, 'posts', postId, 'comments', comment.id, 'commentReactions', currentUser.uid);
         const unsubscribe = onSnapshot(reactionRef, (doc) => {
             setUserHasReacted(doc.exists());
         });
         return () => unsubscribe();
-    }, [comment.id, firestore, currentUser]);
+    }, [comment.id, currentUser]);
   
     return (
       <div className="relative">

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect, type ChangeEvent, type FormEvent, useMemo } from 'react';
@@ -30,6 +29,7 @@ import {
   limit,
   DocumentData,
 } from 'firebase/firestore';
+import { db } from '@/lib/firebase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '../ui/dialog';
 import { useNotification } from '@/contexts/NotificationContext';
 import {
@@ -60,8 +60,8 @@ interface MentionUser {
     displayName: string;
 }
 
-async function createChatMentions(text: string, messageId: string, fromUser: { uid: string, displayName: string | null, photoURL: string | null }, firestore: any) {
-    if (!firestore) return;
+async function createChatMentions(text: string, messageId: string, fromUser: { uid: string, displayName: string | null, photoURL: string | null }) {
+    if (!text.includes('@')) return;
 
     const foundUsers = new Map<string, { id: string }>();
     const processedIndices = new Set<number>();
@@ -77,7 +77,7 @@ async function createChatMentions(text: string, messageId: string, fromUser: { u
         
         const firstWord = firstWordMatch[1];
         
-        const usersRef = collection(firestore, "Usuarios");
+        const usersRef = collection(db, "users");
         const q = query(
             usersRef,
             where("displayName_lowercase", ">=", firstWord.toLowerCase()),
@@ -87,7 +87,7 @@ async function createChatMentions(text: string, messageId: string, fromUser: { u
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) continue;
         
-        let longestMatchUser: { id: string; displayName: string } | null = null;
+        let longestMatchUser: MentionUser | null = null;
         
         for (const userDoc of querySnapshot.docs) {
             const userData = userDoc.data();
@@ -108,7 +108,6 @@ async function createChatMentions(text: string, messageId: string, fromUser: { u
             }
         }
 
-
         if (longestMatchUser) {
             if (longestMatchUser.id !== fromUser.uid) {
                 foundUsers.set(longestMatchUser.displayName, { id: longestMatchUser.id });
@@ -121,9 +120,9 @@ async function createChatMentions(text: string, messageId: string, fromUser: { u
 
     if (foundUsers.size === 0) return;
 
-    const batch = writeBatch(firestore);
+    const batch = writeBatch(db);
     for (const user of foundUsers.values()) {
-        const notificationRef = doc(collection(firestore, 'Usuarios', user.id, 'notifications'));
+        const notificationRef = doc(collection(db, 'users', user.id, 'notifications'));
         batch.set(notificationRef, {
             type: 'mention_chat',
             fromUserId: fromUser.uid,
@@ -143,8 +142,8 @@ async function createChatMentions(text: string, messageId: string, fromUser: { u
     }
 }
 
-async function findMentions(text: string, firestore: any): Promise<{startIndex: number, length: number}[]> {
-    if (!firestore || !text) return [];
+async function findMentions(text: string): Promise<{startIndex: number, length: number}[]> {
+    if (!text) return [];
 
     const mentions: {startIndex: number, length: number}[] = [];
     const processedIndices = new Set<number>();
@@ -160,7 +159,7 @@ async function findMentions(text: string, firestore: any): Promise<{startIndex: 
         
         const firstWord = firstWordMatch[1];
         
-        const usersRef = collection(firestore, "Usuarios");
+        const usersRef = collection(db, "users");
         const q = query(
             usersRef,
             where("displayName_lowercase", ">=", firstWord.toLowerCase()),
@@ -248,7 +247,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   const audioChunksRef = useRef<Blob[]>([]);
 
   const { toast } = useToast();
-  const { currentUser, firestore, uploadFile } = useAuth();
+  const { currentUser, uploadFile } = useAuth();
   const { notifications, unreadCount: totalUnreadCount, loading: notificationsLoading } = useNotification();
   
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
@@ -265,11 +264,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
 
 
   useEffect(() => {
-    if (!firestore) {
-        toast({ title: "Erro de Conexão", description: "Chat não pôde conectar ao servidor.", variant: "destructive" });
-        return;
-    }
-    const messagesCollection = collection(firestore, 'chatMessages');
+    const messagesCollection = collection(db, 'chatMessages');
     const q = query(messagesCollection, orderBy('timestamp', 'asc')); 
 
     const unsubscribe = onSnapshot(q, async (querySnapshot) => {
@@ -279,7 +274,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
           ? data.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           : 'Agora'; 
 
-        const mentions = await findMentions(data.text, firestore);
+        const mentions = await findMentions(data.text);
         const textElements = renderTextWithPrecomputedMentions(data.text || '', mentions);
 
         return {
@@ -309,7 +304,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     });
 
     return () => unsubscribe();
-  }, [currentUser, toast, firestore]);
+  }, [currentUser, toast]);
 
 
   useEffect(() => {
@@ -325,7 +320,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
 
   const handleSendMessage = async (e?: FormEvent) => {
     if (e) e.preventDefault();
-    if (!currentUser || !firestore) {
+    if (!currentUser) {
       toast({ title: "Não Autenticado", description: "Você precisa estar logado para enviar mensagens.", variant: "destructive" });
       return;
     }
@@ -366,10 +361,10 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
         };
       }
       
-      const docRef = await addDoc(collection(firestore, 'chatMessages'), messageData);
+      const docRef = await addDoc(collection(db, 'chatMessages'), messageData);
   
       if (messageText) {
-        await createChatMentions(messageText, docRef.id, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL }, firestore);
+        await createChatMentions(messageText, docRef.id, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL });
       }
       
     } catch (error: any) {
@@ -393,7 +388,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   };
 
   const uploadAudioAndSendMessage = async (audioBlob: Blob) => {
-    if (!currentUser || !firestore) {
+    if (!currentUser) {
         toast({ title: "Erro", description: "Não foi possível conectar para enviar o áudio.", variant: "destructive"});
         return;
     }
@@ -412,7 +407,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
             reactions: { heart: 0 },
         };
 
-        await addDoc(collection(firestore, 'chatMessages'), messageData);
+        await addDoc(collection(db, 'chatMessages'), messageData);
 
     } catch (error: any) {
         console.error("Error uploading audio or sending message:", error);
@@ -534,11 +529,10 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   };
 
   useEffect(() => {
-    if (mentionQuery.length > 0 && firestore) {
+    if (showMentions && mentionQuery.length > 0) {
       setLoadingMentions(true);
       const fetchUsers = async () => {
-        if (!firestore) return;
-        const usersRef = collection(firestore, "Usuarios");
+        const usersRef = collection(db, "users");
         const q = query(
           usersRef,
           where("displayName_lowercase", ">=", mentionQuery.toLowerCase()),
@@ -562,7 +556,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     } else {
       setMentionSuggestions([]);
     }
-  }, [mentionQuery, firestore]);
+  }, [mentionQuery, showMentions]);
 
   const handleTextareaInput = (event: ChangeEvent<HTMLTextAreaElement>) => {
     const textarea = event.target;
@@ -628,16 +622,16 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   };
 
   const handleReactionClick = async (messageId: string) => {
-    if (!currentUser || !firestore) {
+    if (!currentUser) {
       toast({ variant: 'destructive', title: 'Ação Requer Login' });
       return;
     }
 
-    const messageRef = doc(firestore, 'chatMessages', messageId);
-    const reactionRef = doc(firestore, 'chatMessages', messageId, 'userReactions', currentUser.uid);
+    const messageRef = doc(db, 'chatMessages', messageId);
+    const reactionRef = doc(db, 'chatMessages', messageId, 'userReactions', currentUser.uid);
 
     try {
-      await runTransaction(firestore, async (transaction) => {
+      await runTransaction(db, async (transaction) => {
         const messageDoc = await transaction.get(messageRef);
         if (!messageDoc.exists()) {
             throw new Error("A mensagem não existe mais.");
@@ -665,8 +659,8 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   };
 
   const handleEditMessage = async (messageId: string, newText: string) => {
-    if (!firestore || !messageId || !newText.trim()) return;
-    const messageRef = doc(firestore, 'chatMessages', messageId);
+    if (!messageId || !newText.trim()) return;
+    const messageRef = doc(db, 'chatMessages', messageId);
     try {
         await updateDoc(messageRef, {
             text: newText,
@@ -681,8 +675,8 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   };
 
   const handleDeleteMessage = async (messageId: string) => {
-    if (!firestore || !messageId) return;
-    const messageRef = doc(firestore, 'chatMessages', messageId);
+    if (!messageId) return;
+    const messageRef = doc(db, 'chatMessages', messageId);
     try {
         await deleteDoc(messageRef);
         toast({ title: "Mensagem excluída com sucesso." });
@@ -693,13 +687,13 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   };
 
   const handleMarkChatNotificationsAsRead = async () => {
-    if (!currentUser || !firestore || unreadChatCount === 0) {
+    if (!currentUser || unreadChatCount === 0) {
       return;
     }
-    const batch = writeBatch(firestore);
+    const batch = writeBatch(db);
     for (const n of chatNotifications) {
       if (!n.read) {
-        const notifRef = doc(firestore, 'users', currentUser.uid, 'notifications', n.id);
+        const notifRef = doc(db, 'users', currentUser.uid, 'notifications', n.id);
         batch.update(notifRef, { read: true });
       }
     }

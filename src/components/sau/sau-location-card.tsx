@@ -12,11 +12,15 @@ import type { SAULocation, SAUReview } from '@/types/sau';
 import SubmitReviewModal from './submit-review-modal';
 import StarDisplay from './star-display';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface SauLocationCardProps {
   sau: SAULocation;
   reviews: SAUReview[];
-  onAddReview: (reviewData: Omit<SAUReview, 'id' | 'timestamp' | 'author' | 'sauId'>) => void;
+  onAddReview: (reviewData: Omit<SAUReview, 'id' | 'timestamp' | 'author' | 'sauId'>, sauId: string) => void;
 }
 
 const concessionaireLogos: Record<string, { url: string; hint: string }> = {
@@ -34,6 +38,17 @@ const concessionaireLogos: Record<string, { url: string; hint: string }> = {
 export default function SauLocationCard({ sau, reviews, onAddReview }: SauLocationCardProps) {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const logoData = concessionaireLogos[sau.concessionaire] || { url: 'https://placehold.co/64x64.png?text=LOGO', hint: 'logo concessionaria generico' };
+  const { currentUser } = useAuth();
+  const { toast } = useToast();
+
+  const handleReviewSubmit = async (reviewData: Omit<SAUReview, 'id' | 'timestamp' | 'author' | 'sauId'>) => {
+    if (!currentUser) {
+        toast({ variant: "destructive", title: "Erro", description: "Você precisa estar logado para avaliar." });
+        return;
+    }
+    onAddReview(reviewData, sau.id);
+  };
+
 
   return (
     <>
@@ -150,7 +165,7 @@ export default function SauLocationCard({ sau, reviews, onAddReview }: SauLocati
       <SubmitReviewModal
         isOpen={isReviewModalOpen}
         onClose={() => setIsReviewModalOpen(false)}
-        onSubmit={onAddReview}
+        onSubmit={handleReviewSubmit}
         sauName={sau.name}
       />
     </>

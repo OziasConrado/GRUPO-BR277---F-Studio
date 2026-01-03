@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase/client';
 import { Loader2 } from 'lucide-react';
 import {
   Carousel,
@@ -24,17 +25,11 @@ interface Banner {
 }
 
 export default function Banners() {
-  const { firestore } = useAuth();
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!firestore) {
-      setLoading(false);
-      return;
-    }
-
-    const bannersCollection = collection(firestore, 'banners');
+    const bannersCollection = collection(db, 'banners');
     const q = query(bannersCollection, where('isActive', '==', true), orderBy('order', 'asc'));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -47,7 +42,7 @@ export default function Banners() {
     });
 
     return () => unsubscribe();
-  }, [firestore]);
+  }, []);
 
   if (loading) {
     return (

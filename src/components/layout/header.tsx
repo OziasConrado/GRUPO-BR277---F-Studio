@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -21,6 +20,7 @@ import { useChat } from '@/contexts/ChatContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { doc, writeBatch, Timestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase/client';
 import type { Notification } from '@/types/notifications';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -29,7 +29,7 @@ export default function Header() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const router = useRouter();
   const { openChat } = useChat();
-  const { currentUser, signOutUser, firestore, isAdmin, authAction } = useAuth();
+  const { currentUser, signOutUser, isAdmin, authAction } = useAuth();
   const { notifications, unreadCount, loading: notificationsLoading } = useNotification();
   
   useEffect(() => {
@@ -57,16 +57,16 @@ export default function Header() {
   };
   
   const handleMarkAsRead = async (notificationId?: string) => {
-    if (!currentUser || !firestore || unreadCount === 0) return;
+    if (!currentUser || unreadCount === 0) return;
 
-    const batch = writeBatch(firestore);
+    const batch = writeBatch(db);
     if (notificationId) {
-        const notifRef = doc(firestore, 'users', currentUser.uid, 'notifications', notificationId);
+        const notifRef = doc(db, 'users', currentUser.uid, 'notifications', notificationId);
         batch.update(notifRef, { read: true });
     } else {
         notifications.forEach(n => {
             if (!n.read) {
-                const notifRef = doc(firestore, 'users', currentUser.uid, 'notifications', n.id);
+                const notifRef = doc(db, 'users', currentUser.uid, 'notifications', n.id);
                 batch.update(notifRef, { read: true });
             }
         });
@@ -257,7 +257,7 @@ export default function Header() {
                                 />
                               ) : null}
                               <AvatarFallback>
-                                {currentUser.displayName ? currentUser.displayName.substring(0,1).toUpperCase() : <User className="h-5 w-5 sm:h-6 sm:h-6 text-muted-foreground" />}
+                                {currentUser.displayName ? currentUser.displayName.substring(0,1).toUpperCase() : <User className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />}
                               </AvatarFallback>
                             </Avatar>
                             <span className="sr-only">Meu Perfil</span>
