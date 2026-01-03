@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -18,12 +19,11 @@ import {
   type Auth,
   getIdTokenResult,
 } from 'firebase/auth';
-import { initializeApp, getApp, getApps, type FirebaseApp } from 'firebase/app';
+import { initializeApp, getApp, getApps, type FirebaseApp, type FirebaseOptions } from 'firebase/app';
 import { getFirestore, doc, setDoc, getDoc, updateDoc, serverTimestamp, type Firestore } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, type FirebaseStorage } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { firebaseConfig } from '@/lib/firebase/config';
 
 // Interfaces
 export interface UserProfile {
@@ -78,22 +78,10 @@ interface AuthContextType {
 // --- Context Definition ---
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// --- Firebase Initialization ---
-function initializeFirebase() {
-  if (!firebaseConfig || !firebaseConfig.apiKey) {
-    console.error("Firebase config is missing or incomplete in lib/firebase/config.ts");
-    return null;
-  }
-  const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-  const auth = getAuth(app);
-  const firestore = getFirestore(app);
-  const storage = getStorage(app);
-  return { app, auth, firestore, storage };
-}
 
 // --- AuthProvider Component ---
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [firebaseServices] = useState<FirebaseServices | null>(() => initializeFirebase());
+  const [firebaseServices, setFirebaseServices] = useState<FirebaseServices | null>(null);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -126,10 +114,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       variant: 'destructive',
     });
   }, [toast]);
+  
+  useEffect(() => {
+    const initializeFirebaseServices = async () => {
+        if (firebaseServices) return;
+
+        try {
+            const response = await fetch('/__/firebase/init.json');
+            const firebaseConfig: FirebaseOptions = await response.json();
+            
+            if (!firebaseConfig || !firebaseConfig.apiKey) {
+                throw new Error("A configuração do Firebase não pôde ser carregada do servidor.");
+            }
+
+            const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+            const auth = getAuth(app);
+            const firestore = getFirestore(app);
+            const storage = getStorage(app);
+            
+            setFirebaseServices({ app, auth, firestore, storage });
+
+        } catch (error) {
+            console.error("Falha crítica ao inicializar o Firebase:", error);
+            setIsAuthenticating(false); // Libera o app para mostrar um erro, se necessário
+        }
+    };
+
+    initializeFirebaseServices();
+  }, [firebaseServices]);
 
   useEffect(() => {
     if (!firebaseServices) {
-      setIsAuthenticating(false);
+      // Still waiting for initialization
       return;
     }
     
@@ -341,8 +357,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     userProfile,
     isAdmin,
     isProfileComplete,
-    isAuthenticating,
-    loading: isAuthenticating || authAction !== null,
+    isAuthenticating: isAuthenticating || !firebaseServices,
+    loading: isAuthenticating || !firebaseServices || authAction !== null,
     authAction,
     firestore: firebaseServices?.firestore || null,
     storage: firebaseServices?.storage || null,

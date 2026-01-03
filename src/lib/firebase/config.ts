@@ -1,5 +1,7 @@
 // NOTE: This is for client-side code.
 // Don't put anything sensitive in here.
+// This file is now redundant as we fetch config from /__/firebase/init.json
+// But we keep it to avoid breaking imports. It is not actively used.
 
 export const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -40,7 +41,7 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
-    control, // Use control for the Checkbox
+    control,
     watch,
     formState: { errors },
   } = useForm<RegisterFormValues>({
