@@ -24,6 +24,7 @@ import { getFirestore, doc, setDoc, getDoc, updateDoc, serverTimestamp, type Fir
 import { getStorage, ref, uploadBytes, getDownloadURL, type FirebaseStorage } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { firebaseConfig as devFirebaseConfig } from '@/lib/firebase/config';
 
 // Interfaces
 export interface UserProfile {
@@ -120,32 +121,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (firebaseServices) return;
 
         try {
-            const response = await fetch('/__/firebase/init.json');
-            const firebaseConfig: FirebaseOptions = await response.json();
-            
-            if (!firebaseConfig || !firebaseConfig.apiKey) {
-                throw new Error("A configuração do Firebase não pôde ser carregada do servidor.");
+            let config: FirebaseOptions;
+            if (process.env.NODE_ENV === 'production') {
+                const response = await fetch('/__/firebase/init.json');
+                if (!response.ok) {
+                   throw new Error("Falha ao buscar a configuração do Firebase em produção.");
+                }
+                config = await response.json();
+            } else {
+                config = devFirebaseConfig;
             }
 
-            const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+            if (!config || !config.apiKey) {
+                throw new Error("A configuração do Firebase não pôde ser carregada.");
+            }
+
+            const app = getApps().length === 0 ? initializeApp(config) : getApp();
             const auth = getAuth(app);
             const firestore = getFirestore(app);
             const storage = getStorage(app);
             
             setFirebaseServices({ app, auth, firestore, storage });
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("Falha crítica ao inicializar o Firebase:", error);
-            setIsAuthenticating(false); // Libera o app para mostrar um erro, se necessário
+            toast({
+              title: "Erro Crítico de Conexão",
+              description: "Não foi possível conectar aos serviços do aplicativo. Verifique sua conexão ou tente recarregar a página.",
+              variant: "destructive"
+            });
+            setIsAuthenticating(false);
         }
     };
 
     initializeFirebaseServices();
-  }, [firebaseServices]);
+  }, [firebaseServices, toast]);
 
   useEffect(() => {
     if (!firebaseServices) {
-      // Still waiting for initialization
       return;
     }
     
