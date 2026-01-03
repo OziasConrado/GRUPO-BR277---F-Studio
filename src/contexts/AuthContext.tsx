@@ -23,7 +23,7 @@ import { getFirestore, doc, setDoc, getDoc, updateDoc, serverTimestamp, type Fir
 import { getStorage, ref, uploadBytes, getDownloadURL, type FirebaseStorage } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { firebaseConfig } from '@/lib/firebase/config'; // Importação direta
+import { firebaseConfig } from '@/lib/firebase/config';
 
 // Interfaces
 export interface UserProfile {
@@ -59,7 +59,6 @@ interface AuthContextType {
   userProfile: UserProfile | null;
   isAdmin: boolean;
   isProfileComplete: boolean;
-  isAuthenticating: boolean;
   loading: boolean;
   authAction: string | null;
   firestore: Firestore | null;
@@ -78,14 +77,13 @@ interface AuthContextType {
 // --- Context Definition ---
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-
 // --- AuthProvider Component ---
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [firebaseServices, setFirebaseServices] = useState<FirebaseServices | null>(null);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isAuthenticating, setIsAuthenticating] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [authAction, setAuthAction] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
@@ -116,62 +114,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [toast]);
   
   useEffect(() => {
-    const initializeFirebase = () => {
-        try {
-            if (!firebaseConfig.apiKey) {
-                 throw new Error("A chave de API do Firebase não foi encontrada. Verifique a configuração do ambiente.");
-            }
-            const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-            const auth = getAuth(app);
-            const firestore = getFirestore(app);
-            const storage = getStorage(app);
-            setFirebaseServices({ app, auth, firestore, storage });
-        } catch (error: any) {
-             console.error("Falha crítica ao inicializar o Firebase:", error);
-             toast({
-              title: "Erro Crítico de Conexão",
-              description: "Não foi possível conectar aos serviços do aplicativo. Verifique sua conexão ou tente recarregar a página.",
-              variant: "destructive",
-              duration: Infinity,
-            });
-            setIsAuthenticating(false);
-        }
-    };
+    // This effect runs only once to initialize Firebase
+    if (firebaseServices) return;
 
-    initializeFirebase();
-  }, [toast]);
-
+    try {
+      const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+      const auth = getAuth(app);
+      const firestore = getFirestore(app);
+      const storage = getStorage(app);
+      setFirebaseServices({ app, auth, firestore, storage });
+    } catch (error: any) {
+        console.error("Falha crítica ao inicializar o Firebase:", error);
+        toast({
+          title: "Erro Crítico de Conexão",
+          description: "Não foi possível conectar aos serviços do aplicativo. Verifique sua conexão ou tente recarregar a página.",
+          variant: "destructive",
+          duration: Infinity,
+        });
+        setLoading(false);
+    }
+  }, [firebaseServices, toast]);
 
   useEffect(() => {
-    if (!firebaseServices) {
-      return;
-    }
-    
+    // This effect handles auth state changes once Firebase is initialized
+    if (!firebaseServices) return;
+
     const unsubscribe = onAuthStateChanged(firebaseServices.auth, async (user) => {
       if (user) {
         await user.reload();
         const freshUser = firebaseServices.auth.currentUser;
+
         if (!freshUser) {
            setCurrentUser(null);
            setUserProfile(null);
            setIsAdmin(false);
-           setIsAuthenticating(false);
+           setLoading(false);
            return;
         }
 
         const idTokenResult = await getIdTokenResult(freshUser, true);
-        setIsAdmin(idTokenResult.claims.admin === true);
-        setCurrentUser(freshUser);
+        const userIsAdmin = idTokenResult.claims.admin === true;
         
         const userDocRef = doc(firebaseServices.firestore, 'users', freshUser.uid);
         const userDoc = await getDoc(userDocRef);
         
+        let profileData: UserProfile;
         if (userDoc.exists()) {
-            const profileData = userDoc.data() as UserProfile;
-            setUserProfile(profileData);
+            profileData = userDoc.data() as UserProfile;
+            // Ensure displayName and photoURL are in sync with auth provider
+            if (freshUser.displayName !== profileData.displayName || freshUser.photoURL !== profileData.photoURL) {
+              await updateDoc(userDocRef, {
+                displayName: freshUser.displayName,
+                displayName_lowercase: freshUser.displayName?.toLowerCase(),
+                photoURL: freshUser.photoURL,
+              });
+              profileData.displayName = freshUser.displayName;
+              profileData.photoURL = freshUser.photoURL;
+            }
         } else {
            const displayName = freshUser.displayName || freshUser.email?.split('@')[0] || 'Usuário';
-           const newUserProfile: UserProfile = {
+           profileData = {
             uid: freshUser.uid,
             email: freshUser.email,
             displayName: displayName,
@@ -179,15 +181,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             photoURL: freshUser.photoURL,
             lastLogin: serverTimestamp(),
           };
-          await setDoc(userDocRef, newUserProfile, { merge: true });
-          setUserProfile(newUserProfile);
+          await setDoc(userDocRef, profileData, { merge: true });
         }
+        
+        setCurrentUser(freshUser);
+        setUserProfile(profileData);
+        setIsAdmin(userIsAdmin);
+
       } else {
         setCurrentUser(null);
         setUserProfile(null);
         setIsAdmin(false);
       }
-      setIsAuthenticating(false);
+      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -279,8 +285,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthAction('reload');
     try {
       await currentUser.reload();
-      // This is a bit of a hack to force a state update, as reload() itself doesn't trigger onAuthStateChanged
-      setCurrentUser({ ...currentUser });
+      setCurrentUser({ ...currentUser }); // Força a re-renderização
     } catch (error) {
       handleAuthError(error as AuthError, 'Erro ao Recarregar Usuário');
     } finally {
@@ -308,8 +313,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (Object.keys(authUpdates).length > 0) {
         await firebaseUpdateProfile(currentUser, authUpdates);
-        await currentUser.reload();
-        setCurrentUser({ ...currentUser });
       }
       
       const userDocRef = doc(firebaseServices.firestore, 'users', currentUser.uid);
@@ -323,8 +326,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
 
       await updateDoc(userDocRef, firestoreUpdates);
-
+      
+      // Manually update local state to reflect changes immediately
+      await currentUser.reload();
+      setCurrentUser({ ...firebaseServices.auth.currentUser! });
       setUserProfile(prev => prev ? { ...prev, ...firestoreUpdates } : firestoreUpdates as UserProfile);
+
       toast({ title: "Sucesso!", description: "Seu perfil foi atualizado." });
 
     } catch (error) {
@@ -355,8 +362,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     userProfile,
     isAdmin,
     isProfileComplete,
-    isAuthenticating: isAuthenticating || !firebaseServices,
-    loading: isAuthenticating || !firebaseServices || authAction !== null,
+    loading: loading || !firebaseServices, // Loading is true until services and auth state are ready
     authAction,
     firestore: firebaseServices?.firestore || null,
     storage: firebaseServices?.storage || null,

@@ -7284,3 +7284,5 @@ I0103 20:39:34.003389   31471 dev.go:104] Listening on address (HTTP + gRPC): 12
 [debug] [2026-01-03T20:39:34.066Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
 [debug] [2026-01-03T20:39:34.152Z] I0103 20:39:34.151604   31471 engine.go:179] [/emulator/s aff5] ExecuteGraphqlRead IntrospectionQuery: succeeded. 
  {"metadata":{"emulator":{"name":"dataconnect"},"message":"I0103 20:39:34.151604   31471 engine.go:179] [/emulator/s aff5] ExecuteGraphqlRead IntrospectionQuery: succeeded. \n"}}
+[info] [Firebase Plugin] Stopping Data Connect toolkit
+[warn] ⚠  Data Connect Emulator has exited upon receiving signal: SIGINT 
