@@ -66,7 +66,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { isFirestoreReady } = useFirestore(); // Depende do Firestore estar pronto
+  const { isFirestoreReady } = useFirestore();
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -77,6 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const handleAuthError = useCallback((error: AuthError, customTitle?: string) => {
     console.error("Firebase Auth Error:", error.code, error.message);
+    if (error.code === 'unavailable' || error.code === 'firestore/unavailable') {
+        return; // Silently ignore the "offline" error which we know happens in dev.
+    }
     let message = "Ocorreu um erro. Tente novamente.";
      switch (error.code) {
         case 'auth/wrong-password': message = 'Senha incorreta.'; break;
@@ -93,25 +96,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [toast]);
   
   useEffect(() => {
-    // Só inicia o listener de autenticação quando o Firestore estiver pronto
     if (!isFirestoreReady) {
-      setLoading(true); // Garante que o app fique em loading
+      setLoading(true);
       return;
     }
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        setCurrentUser(user); // Set user immediately for responsiveness
         try {
-          const userDocRef = doc(db, 'users', user.uid);
           const idTokenResult = await getIdTokenResult(user, true);
           const userIsAdmin = idTokenResult.claims.admin === true;
+          setIsAdmin(userIsAdmin);
+
+          const userDocRef = doc(db, 'users', user.uid);
+          const userDoc = await getDocFromServer(userDocRef); // Force server fetch
           
-          const userDoc = await getDocFromServer(userDocRef); // Força a busca do servidor
           let profileData: UserProfile;
 
           if (userDoc.exists()) {
               profileData = userDoc.data() as UserProfile;
-              // Sincroniza dados do auth para o firestore se houver mudança
               if (user.displayName !== profileData.displayName || user.photoURL !== profileData.photoURL) {
                 await updateDoc(userDocRef, {
                   displayName: user.displayName,
@@ -134,16 +138,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             await setDoc(userDocRef, profileData, { merge: true });
           }
           
-          setCurrentUser(user);
           setUserProfile(profileData);
-          setIsAdmin(userIsAdmin);
 
         } catch (error: any) {
-          handleAuthError(error, "Erro ao carregar perfil");
-          await signOut(auth);
-          setCurrentUser(null);
-          setUserProfile(null);
-          setIsAdmin(false);
+          // If profile fetch fails due to network, user is still logged in, but profile is null.
+          if (error.code === 'unavailable' || error.code === 'firestore/unavailable') {
+            console.warn('Could not fetch user profile because client is offline. User is still logged in.');
+            setUserProfile(null);
+          } else {
+            handleAuthError(error, "Erro ao carregar perfil");
+            await signOut(auth); // Sign out if it's a more serious error
+            setCurrentUser(null);
+            setUserProfile(null);
+            setIsAdmin(false);
+          }
         }
       } else {
         setCurrentUser(null);
@@ -154,7 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [isFirestoreReady, handleAuthError]); // Re-executa quando o firestore ficar pronto
+  }, [isFirestoreReady, handleAuthError]);
 
   const uploadFile = useCallback(async (file: File, path: string): Promise<string> => {
     const storageRef = ref(storage, path);
@@ -211,7 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthAction('reload');
     try {
       await currentUser.reload();
-      setCurrentUser({ ...currentUser });
+      setCurrentUser({ ...currentUser }); // Force re-render
     } catch (error) { handleAuthError(error as AuthError); } 
     finally { setAuthAction(null); }
   }, [currentUser, handleAuthError]);
@@ -282,7 +290,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     uploadFile,
   };
 
-  // Renderiza filhos apenas quando o loading inicial do auth (que agora depende do firestore) termina.
   return <AuthContext.Provider value={value}>{!loading ? children : null}</AuthContext.Provider>;
 }
 
