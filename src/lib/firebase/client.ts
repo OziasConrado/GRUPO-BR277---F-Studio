@@ -2,7 +2,7 @@
 'use client';
 
 import { initializeApp, getApp, getApps, type FirebaseApp } from 'firebase/app';
-import { getAuth, type Auth, browserLocalPersistence, setPersistence } from 'firebase/auth';
+import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, initializeFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import { firebaseConfig } from './config';
@@ -12,28 +12,25 @@ let auth: Auth;
 let db: Firestore;
 let storage: FirebaseStorage;
 
-if (!getApps().length) {
+if (getApps().length === 0) {
   try {
     app = initializeApp(firebaseConfig);
-    // 1. Inicializa o Firestore com a flag para forçar long-polling
+    auth = getAuth(app);
     db = initializeFirestore(app, {
       experimentalForceLongPolling: true,
+      useFetchStreams: false, 
     });
-    auth = getAuth(app);
     storage = getStorage(app);
-
-    // 2. Garante a persistência de autenticação local (embora seja o padrão)
-    setPersistence(auth, browserLocalPersistence);
-
   } catch (error) {
     console.error("CRITICAL: Erro ao inicializar o Firebase.", error);
+    // Em um cenário real, você poderia ter uma página de erro ou um fallback.
+    // Por enquanto, vamos lançar o erro para que fique visível no console.
     throw new Error("Falha na inicialização dos serviços essenciais do Firebase.");
   }
 } else {
   app = getApp();
-  // Garante que a instância do DB use long-polling mesmo se o app já existir.
-  db = getFirestore(app); 
   auth = getAuth(app);
+  db = getFirestore(app);
   storage = getStorage(app);
 }
 

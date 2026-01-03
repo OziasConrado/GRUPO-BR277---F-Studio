@@ -17,11 +17,10 @@ import {
   type AuthError,
   getIdTokenResult,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDocFromServer, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-// Importa as instâncias prontas e configuradas
 import { auth, db, storage } from '@/lib/firebase/client';
 
 export interface UserProfile {
@@ -76,10 +75,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const handleAuthError = useCallback((error: AuthError, customTitle?: string) => {
     console.error("Firebase Auth Error:", error.code, error.message);
-    
-    // Não vamos mais silenciar o erro "unavailable" para monitoramento.
-    // Em vez disso, a configuração de long-polling deve resolvê-lo.
-
     let message = "Ocorreu um erro. Tente novamente.";
      switch (error.code) {
         case 'auth/wrong-password': message = 'Senha incorreta.'; break;
@@ -107,7 +102,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const idTokenResult = await getIdTokenResult(user, true);
           const userIsAdmin = idTokenResult.claims.admin === true;
           
-          const userDoc = await getDoc(userDocRef);
+          // Força a busca do documento diretamente do servidor, ignorando o cache
+          const userDoc = await getDocFromServer(userDocRef);
           let profileData: UserProfile;
 
           if (userDoc.exists()) {
@@ -140,7 +136,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         } catch (error: any) {
           handleAuthError(error, "Erro ao carregar perfil");
-          // Se falhar ao buscar o perfil, deslogamos para evitar um estado inconsistente
           await signOut(auth);
           setCurrentUser(null);
           setUserProfile(null);
@@ -251,7 +246,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Sucesso!", description: "Seu perfil foi atualizado." });
     } catch (error) { handleAuthError(error as AuthError, 'Erro ao Atualizar Perfil'); } 
     finally { setAuthAction(null); }
-  }, [currentUser, db, handleAuthError, toast, uploadFile]);
+  }, [currentUser, handleAuthError, toast, uploadFile]);
 
   const signOutUser = useCallback(async () => {
     setAuthAction('signout');
