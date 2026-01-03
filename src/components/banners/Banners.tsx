@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { collection, query, where, orderBy, getDocsFromServer } from 'firebase/firestore';
+import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { Loader2 } from 'lucide-react';
 import {
@@ -34,12 +34,11 @@ export default function Banners() {
       try {
         const bannersCollection = collection(db, 'banners');
         const q = query(bannersCollection, where('isActive', '==', true), orderBy('order', 'asc'));
-        const snapshot = await getDocsFromServer(q);
+        const snapshot = await getDocs(q); // Use getDocs instead of getDocsFromServer
         const fetchedBanners = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Banner));
         setBanners(fetchedBanners);
       } catch (error) {
-        console.error("Error fetching banners from server: ", error);
-        // Não mostra toast de erro para não poluir a UI, mas loga o erro.
+        console.error("Error fetching banners: ", error);
       } finally {
         setLoading(false);
       }

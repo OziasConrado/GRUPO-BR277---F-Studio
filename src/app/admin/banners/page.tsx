@@ -5,8 +5,8 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Shield, Loader2, Image as ImageIcon, ExternalLink, CheckCircle, XCircle, Pencil, Trash2 } from "lucide-react";
-import { useAuth } from '@/contexts/AuthContext';
-import { collection, onSnapshot, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, orderBy, deleteDoc, doc, getDocs } from 'firebase/firestore'; // Changed import
+import { db } from '@/lib/firebase/client';
 import { useToast } from '@/hooks/use-toast';
 import { BannerForm } from './_components/banner-form';
 import type { Banner } from './_components/banner-form';
@@ -23,7 +23,6 @@ import {
 import { getStorage, ref, deleteObject } from "firebase/storage";
 
 export default function AdminBannersPage() {
-  const { firestore } = useAuth();
   const { toast } = useToast();
   
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -34,22 +33,29 @@ export default function AdminBannersPage() {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [bannerToDelete, setBannerToDelete] = useState<Banner | null>(null);
 
-  useEffect(() => {
-    if (!firestore) return;
+  const fetchBanners = async () => {
     setLoading(true);
-    const bannersQuery = query(collection(firestore, 'banners'), orderBy('order', 'asc'));
-    const unsubscribe = onSnapshot(bannersQuery, (snapshot) => {
-      const fetchedBanners = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Banner));
-      setBanners(fetchedBanners);
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching banners:", error);
-      toast({ variant: 'destructive', title: 'Erro ao buscar banners' });
-      setLoading(false);
-    });
+    try {
+        const bannersQuery = query(collection(db, 'banners'), orderBy('order', 'asc'));
+        const snapshot = await getDocs(bannersQuery); // Changed from getDocsFromServer
+        const fetchedBanners = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Banner));
+        setBanners(fetchedBanners);
+    } catch (error) {
+        console.error("Error fetching banners:", error);
+        toast({ variant: 'destructive', title: 'Erro ao buscar banners' });
+    } finally {
+        setLoading(false);
+    }
+  };
 
-    return () => unsubscribe();
-  }, [firestore, toast]);
+  useEffect(() => {
+    fetchBanners();
+  }, [toast]);
+  
+  const handleFormClose = () => {
+    setIsFormOpen(false);
+    fetchBanners(); // Re-fetch banners after form closes
+  }
 
   const handleEdit = (banner: Banner) => {
     setSelectedBanner(banner);
@@ -67,28 +73,28 @@ export default function AdminBannersPage() {
   };
 
   const executeDelete = async () => {
-    if (!bannerToDelete || !firestore) return;
+    if (!bannerToDelete) return;
 
     try {
       // 1. Delete image from Storage
-      if (bannerToDelete.imageUrl) {
+      if (bannerToDelete.imageUrl && bannerToDelete.imageUrl.includes('firebasestorage')) {
         const storage = getStorage();
-        // Create a reference from the full URL
         const imageRef = ref(storage, bannerToDelete.imageUrl);
         await deleteObject(imageRef);
       }
       
       // 2. Delete document from Firestore
-      await deleteDoc(doc(firestore, 'banners', bannerToDelete.id));
+      await deleteDoc(doc(db, 'banners', bannerToDelete.id));
 
       toast({ title: 'Sucesso', description: 'Banner excluído com sucesso.' });
+      fetchBanners(); // Re-fetch after delete
     } catch (error: any) {
       console.error("Error deleting banner:", error);
-      // Handle cases where the image might not exist in storage anymore
       if (error.code === 'storage/object-not-found') {
         try {
-            await deleteDoc(doc(firestore, 'banners', bannerToDelete.id));
+            await deleteDoc(doc(db, 'banners', bannerToDelete.id));
             toast({ title: 'Sucesso', description: 'Banner excluído. A imagem associada não foi encontrada no armazenamento, mas o registro foi removido.' });
+            fetchBanners(); // Re-fetch after delete
         } catch (dbError: any) {
             toast({ variant: 'destructive', title: 'Erro ao excluir do banco de dados', description: dbError.message });
         }
@@ -173,7 +179,7 @@ export default function AdminBannersPage() {
       
       <BannerForm
         isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
+        onClose={handleFormClose}
         banner={selectedBanner}
       />
       
