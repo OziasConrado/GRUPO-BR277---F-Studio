@@ -16,7 +16,6 @@ const ptSans = PT_Sans({
 export const metadata: Metadata = {
     title: 'GRUPO BR277',
     description: 'O aplicativo essencial para quem vive na estrada.',
-    // manifest: '/manifest.json', // Removido para corrigir erro de CORS no desenvolvimento
     icons: {
         icon: 'https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2F192-192-app-web.png?alt=media',
         apple: 'https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/%C3%8Dcones%20e%20Logo%20do%20app%20GRUPO%20BR277%2F192-192-app-web.png?alt=media',

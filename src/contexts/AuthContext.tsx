@@ -120,7 +120,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
       const auth = getAuth(app);
-      // ** APLICAÇÃO DA CORREÇÃO AQUI **
       const firestore = initializeFirestore(app, {
           experimentalForceLongPolling: true,
       });
@@ -146,7 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
              setCurrentUser(null);
              setUserProfile(null);
              setIsAdmin(false);
-             setIsFirebaseReady(true); // Ready for unauthenticated access
+             setIsFirebaseReady(true);
              setLoading(false);
              return;
           }
@@ -185,8 +184,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setCurrentUser(freshUser);
           setUserProfile(profileData);
           setIsAdmin(userIsAdmin);
-        } catch (error) {
+        } catch (error: any) {
           console.error("Error during auth state change:", error);
+           if (error.code !== 'firestore/unavailable') { // Avoid toast for offline error we are trying to solve
+              handleAuthError(error, "Erro ao carregar perfil");
+           }
         } finally {
             setIsFirebaseReady(true); // Always set to ready after trying
             setLoading(false);
@@ -195,13 +197,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setCurrentUser(null);
         setUserProfile(null);
         setIsAdmin(false);
-        setIsFirebaseReady(true); // Ready for unauthenticated access
+        setIsFirebaseReady(true);
         setLoading(false);
       }
     });
 
     return () => unsubscribe();
-  }, [firebaseServices]);
+  }, [firebaseServices, handleAuthError]);
 
   const uploadFile = useCallback(async (file: File, path: string): Promise<string> => {
     if (!firebaseServices?.storage) throw new Error("Firebase Storage is not initialized.");
