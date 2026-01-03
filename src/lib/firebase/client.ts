@@ -2,7 +2,7 @@
 
 import { initializeApp, getApp, getApps, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { getFirestore, initializeFirestore, type Firestore, enableNetwork } from 'firebase/firestore';
+import { getFirestore, initializeFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import { firebaseConfig } from './config';
 
@@ -11,22 +11,15 @@ let auth: Auth;
 let db: Firestore;
 let storage: FirebaseStorage;
 
-// Padrão Singleton para garantir que o Firebase seja inicializado apenas uma vez
 if (!getApps().length) {
   try {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
-    
-    // Explicitamente define a persistência de autenticação para 'local'
+    // Garante que a sessão do usuário persista entre recarregamentos
     setPersistence(auth, browserLocalPersistence);
 
-    // Configuração do Firestore com flags para ambientes de proxy
+    // Configuração simplificada do Firestore, já que as buscas principais serão via Server Actions
     db = initializeFirestore(app, {
-      host: 'firestore.googleapis.com',
-      ssl: true,
-      experimentalForceLongPolling: true,
-      experimentalAutoDetectLongPolling: false,
-      useFetchStreams: false,
       ignoreUndefinedProperties: true,
     });
 
@@ -34,7 +27,6 @@ if (!getApps().length) {
 
   } catch (error) {
     console.error("CRITICAL: Erro ao inicializar o Firebase.", error);
-    // Em um app real, poderíamos mostrar uma tela de erro aqui
     throw new Error("Falha na inicialização dos serviços essenciais do Firebase.");
   }
 } else {

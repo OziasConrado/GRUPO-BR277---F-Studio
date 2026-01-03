@@ -1,10 +1,11 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { Notification } from '@/types/notifications';
 import { useAuth } from '@/contexts/AuthContext';
-import { useFirestore } from './FirestoreContext'; // Import the new hook
+import { useFirestore } from './FirestoreContext';
 import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore';
 
 interface NotificationContextType {
@@ -17,13 +18,13 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const { currentUser } = useAuth();
-  const { db } = useFirestore(); // Get db instance from the new context
+  const { db } = useFirestore();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!currentUser || !db) { // Also check for db
+    if (!currentUser || !db) {
       setNotifications([]);
       setUnreadCount(0);
       setLoading(false);
@@ -51,7 +52,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [currentUser, db]); // Depend on db
+  }, [currentUser, db]);
 
   return (
     <NotificationContext.Provider

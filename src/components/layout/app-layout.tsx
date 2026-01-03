@@ -1,7 +1,6 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
 import { Providers } from '@/app/providers'; 
 import Header from '@/components/layout/header';
 import Navigation from '@/components/layout/navigation';
@@ -9,6 +8,7 @@ import { useChat } from '@/contexts/ChatContext';
 import ChatWindow from '@/components/chat/ChatWindow';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 // Componente interno para gerenciar a abertura do chat

@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -16,11 +17,12 @@ import {
   type AuthError,
   getIdTokenResult,
 } from 'firebase/auth';
-import { doc, setDoc, getDocFromServer, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, serverTimestamp, getDocFromServer } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db, storage } from '@/lib/firebase/client';
+import { fetchUserProfileServer } from '@/app/actions/firestore';
 import { useFirestore } from './FirestoreContext';
 
 export interface UserProfile {
@@ -65,7 +67,6 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { isFirestoreReady } = useFirestore();
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -73,12 +74,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authAction, setAuthAction] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
+  const { db: firestoreDB } = useFirestore(); // Consome o contexto do Firestore
+
 
   const handleAuthError = useCallback((error: AuthError, customTitle?: string) => {
     console.error("Firebase Auth Error:", error.code, error.message);
-    if (error.code === 'unavailable' || error.code === 'firestore/unavailable') {
-        return; 
-    }
     let message = "Ocorreu um erro. Tente novamente.";
      switch (error.code) {
         case 'auth/wrong-password': message = 'Senha incorreta.'; break;
@@ -95,73 +95,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [toast]);
   
   useEffect(() => {
-    if (!isFirestoreReady) return;
+    const fetchProfile = async (user: FirebaseUser) => {
+        try {
+            const idTokenResult = await getIdTokenResult(user, true);
+            setIsAdmin(idTokenResult.claims.admin === true);
 
-    const fetchUserProfile = async (user: FirebaseUser) => {
-      try {
-        const idTokenResult = await getIdTokenResult(user, true);
-        setIsAdmin(idTokenResult.claims.admin === true);
-        
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDocFromServer(userDocRef);
-
-        if (userDoc.exists()) {
-          const profileData = userDoc.data() as UserProfile;
-          if (user.displayName !== profileData.displayName || user.photoURL !== profileData.photoURL) {
-            await updateDoc(userDocRef, {
-              displayName: user.displayName,
-              displayName_lowercase: user.displayName?.toLowerCase(),
-              photoURL: user.photoURL,
-            });
-            profileData.displayName = user.displayName;
-            profileData.photoURL = user.photoURL;
-          }
-          setUserProfile(profileData);
-        } else {
-          const displayName = user.displayName || user.email?.split('@')[0] || 'Usuário';
-          const profileData: UserProfile = {
-            uid: user.uid,
-            email: user.email,
-            displayName: displayName,
-            displayName_lowercase: displayName.toLowerCase(),
-            photoURL: user.photoURL,
-            lastLogin: serverTimestamp(),
-          };
-          await setDoc(userDocRef, profileData, { merge: true });
-          setUserProfile(profileData);
+            const profileData = await fetchUserProfileServer(user.uid);
+            setUserProfile(profileData);
+        } catch (error: any) {
+            console.warn("Could not fetch user profile because client is offline. User is logged in but profile data is unavailable for now.");
+            setUserProfile(null); // Explicitly set to null on failure
         }
-      } catch (error: any) {
-        if (error.code === 'unavailable' || error.code === 'firestore/unavailable') {
-           console.log("Could not fetch user profile because client is offline. User is logged in but profile data is unavailable for now.");
-           // Define um perfil básico para não travar o app
-           const displayName = user.displayName || user.email?.split('@')[0] || 'Usuário';
-           setUserProfile({
-             uid: user.uid,
-             email: user.email,
-             displayName: displayName,
-             photoURL: user.photoURL,
-           });
-        } else {
-          handleAuthError(error, 'Erro ao Carregar Perfil');
-        }
-      }
     };
-
+    
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
-      setUserProfile(null);
+      
       if (user) {
         setCurrentUser(user);
-        await fetchUserProfile(user);
+        await fetchProfile(user);
       } else {
         setCurrentUser(null);
+        setUserProfile(null);
         setIsAdmin(false);
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [isFirestoreReady, handleAuthError]);
+  }, []);
 
   const uploadFile = useCallback(async (file: File, path: string): Promise<string> => {
     const storageRef = ref(storage, path);
@@ -224,7 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [currentUser, handleAuthError]);
 
   const updateUserProfile = useCallback(async (data: UpdateUserProfileData) => {
-    if (!currentUser) return;
+    if (!currentUser || !firestoreDB) return;
     setAuthAction('update');
     try {
       let photoURL = currentUser.photoURL;
@@ -238,7 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (photoURL && photoURL !== currentUser.photoURL) authUpdates.photoURL = photoURL;
       if (Object.keys(authUpdates).length > 0) await firebaseUpdateProfile(currentUser, authUpdates);
       
-      const userDocRef = doc(db, 'users', currentUser.uid);
+      const userDocRef = doc(firestoreDB, 'users', currentUser.uid);
       const firestoreUpdates: Partial<UserProfile> = {};
       if (data.displayName) firestoreUpdates.displayName = data.displayName;
       if (data.displayName) firestoreUpdates.displayName_lowercase = data.displayName.toLowerCase();
@@ -257,7 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Sucesso!", description: "Seu perfil foi atualizado." });
     } catch (error) { handleAuthError(error as AuthError, 'Erro ao Atualizar Perfil'); } 
     finally { setAuthAction(null); }
-  }, [currentUser, handleAuthError, toast, uploadFile]);
+  }, [currentUser, firestoreDB, handleAuthError, toast, uploadFile]);
 
   const signOutUser = useCallback(async () => {
     setAuthAction('signout');

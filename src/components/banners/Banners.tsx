@@ -1,10 +1,6 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
 import { Loader2 } from 'lucide-react';
 import {
   Carousel,
@@ -14,6 +10,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
+import { fetchBannersServer } from '@/app/actions/firestore'; // Import Server Action
 
 interface Banner {
   id: string;
@@ -32,13 +29,11 @@ export default function Banners() {
     const fetchBanners = async () => {
       setLoading(true);
       try {
-        const bannersCollection = collection(db, 'banners');
-        const q = query(bannersCollection, where('isActive', '==', true), orderBy('order', 'asc'));
-        const snapshot = await getDocs(q); // Use getDocs instead of getDocsFromServer
-        const fetchedBanners = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Banner));
+        const fetchedBanners = await fetchBannersServer();
         setBanners(fetchedBanners);
       } catch (error) {
-        console.error("Error fetching banners: ", error);
+        console.error("Error fetching banners via server action: ", error);
+        // Opcional: Adicionar um toast de erro se necessário
       } finally {
         setLoading(false);
       }
@@ -55,7 +50,7 @@ export default function Banners() {
   }
 
   if (banners.length === 0) {
-    return null; // Don't render anything if there are no active banners
+    return null; // Não renderiza nada se não houver banners ativos
   }
 
   return (
