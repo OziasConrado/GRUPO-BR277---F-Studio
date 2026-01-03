@@ -16,12 +16,16 @@ service cloud.firestore {
     
     // Helper function to check if the user is an admin
     function isAdmin() {
-      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      return isAuthenticated() && request.auth.token.admin == true;
     }
 
-    // Banners: Admin pode ler e escrever tudo. Público só pode ler os ativos.
+    // Banners: Admin can write. Public can read active ones. Admin can list all.
     match /banners/{bannerId} {
-      allow read: if isAdmin() || resource.data.isActive == true;
+      // Allow admin to list all banners, public can only list active banners
+      allow list: if isAdmin() || (request.query.where == null || request.query.where.isActive == true);
+      // Allow admin to read any banner, public can only read active ones
+      allow get: if isAdmin() || resource.data.isActive == true;
+      // Allow only admin to create, update, delete
       allow create, update, delete: if isAdmin();
     }
 
