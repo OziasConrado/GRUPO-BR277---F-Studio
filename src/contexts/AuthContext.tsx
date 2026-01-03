@@ -97,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isFirestoreReady) return;
 
-    const fetchUserProfile = async (user: FirebaseUser, attempt = 1) => {
+    const fetchUserProfile = async (user: FirebaseUser) => {
       try {
         const idTokenResult = await getIdTokenResult(user, true);
         setIsAdmin(idTokenResult.claims.admin === true);
@@ -105,9 +105,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDocFromServer(userDocRef);
 
-        let profileData: UserProfile;
         if (userDoc.exists()) {
-          profileData = userDoc.data() as UserProfile;
+          const profileData = userDoc.data() as UserProfile;
           if (user.displayName !== profileData.displayName || user.photoURL !== profileData.photoURL) {
             await updateDoc(userDocRef, {
               displayName: user.displayName,
@@ -117,9 +116,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             profileData.displayName = user.displayName;
             profileData.photoURL = user.photoURL;
           }
+          setUserProfile(profileData);
         } else {
           const displayName = user.displayName || user.email?.split('@')[0] || 'Usuário';
-          profileData = {
+          const profileData: UserProfile = {
             uid: user.uid,
             email: user.email,
             displayName: displayName,
@@ -128,24 +128,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             lastLogin: serverTimestamp(),
           };
           await setDoc(userDocRef, profileData, { merge: true });
+          setUserProfile(profileData);
         }
-        setUserProfile(profileData);
       } catch (error: any) {
         if (error.code === 'unavailable' || error.code === 'firestore/unavailable') {
-            console.log(`Could not fetch user profile because client is offline (Attempt ${attempt}). Will retry in background.`);
-            // Retry after a delay
-            if (attempt <= 3) {
-              setTimeout(() => fetchUserProfile(user, attempt + 1), 5000 * attempt);
-            } else {
-              console.error("Final attempt to fetch user profile failed. User is logged in but profile data is unavailable.");
-               const displayName = user.displayName || user.email?.split('@')[0] || 'Usuário';
-               setUserProfile({ // Set a default profile so the app doesn't hang
-                uid: user.uid,
-                email: user.email,
-                displayName: displayName,
-                photoURL: user.photoURL,
-              });
-            }
+           console.log("Could not fetch user profile because client is offline. User is logged in but profile data is unavailable for now.");
+           // Define um perfil básico para não travar o app
+           const displayName = user.displayName || user.email?.split('@')[0] || 'Usuário';
+           setUserProfile({
+             uid: user.uid,
+             email: user.email,
+             displayName: displayName,
+             photoURL: user.photoURL,
+           });
         } else {
           handleAuthError(error, 'Erro ao Carregar Perfil');
         }
@@ -154,12 +149,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
+      setUserProfile(null);
       if (user) {
         setCurrentUser(user);
         await fetchUserProfile(user);
       } else {
         setCurrentUser(null);
-        setUserProfile(null);
         setIsAdmin(false);
       }
       setLoading(false);

@@ -16,23 +16,25 @@ if (!getApps().length) {
   try {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
+    
+    // Explicitamente define a persistência de autenticação para 'local'
     setPersistence(auth, browserLocalPersistence);
 
     // Configuração do Firestore com flags para ambientes de proxy
     db = initializeFirestore(app, {
+      host: 'firestore.googleapis.com',
+      ssl: true,
       experimentalForceLongPolling: true,
-      experimentalAutoDetectLongPolling: false, // Garante que apenas long polling seja usado
+      experimentalAutoDetectLongPolling: false,
       useFetchStreams: false,
       ignoreUndefinedProperties: true,
     });
-    
-    // Força a tentativa de conexão de rede imediatamente
-    enableNetwork(db).catch(err => console.warn("Firebase enableNetwork failed on initial load, will retry automatically.", err));
 
     storage = getStorage(app);
 
   } catch (error) {
     console.error("CRITICAL: Erro ao inicializar o Firebase.", error);
+    // Em um app real, poderíamos mostrar uma tela de erro aqui
     throw new Error("Falha na inicialização dos serviços essenciais do Firebase.");
   }
 } else {
