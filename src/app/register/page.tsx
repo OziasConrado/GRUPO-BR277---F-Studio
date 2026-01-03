@@ -9,6 +9,7 @@ import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -20,10 +21,13 @@ const registerSchema = z
     email: z.string().email({ message: 'Por favor, insira um e-mail válido.' }),
     password: z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' }),
     confirmPassword: z.string(),
+    acceptTerms: z.boolean().refine(val => val === true, {
+      message: 'Você deve aceitar os termos e a política de privacidade.',
+    }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'As senhas não coincidem.',
-    path: ['confirmPassword'], // Path of error
+    path: ['confirmPassword'],
   });
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
@@ -37,14 +41,20 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
+    defaultValues: {
+      acceptTerms: false,
+    }
   });
+
+  const acceptTermsValue = watch('acceptTerms');
 
   useEffect(() => {
     if (!loading && currentUser) {
-      router.push('/'); // Redirect if already logged in
+      router.push('/');
     }
   }, [currentUser, loading, router]);
 
@@ -52,7 +62,7 @@ export default function RegisterPage() {
     await signUpWithEmail(data.email, data.password);
   };
   
-  if (loading || (!loading && currentUser)) {
+  if (loading || (!loading && currentUser && currentUser.emailVerified)) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -123,7 +133,27 @@ export default function RegisterPage() {
                 <p className="text-sm text-destructive mt-1">{errors.confirmPassword.message}</p>
               )}
             </div>
-            <Button type="submit" className="w-full rounded-full py-3 text-base" disabled={authAction !== null}>
+            <div className="items-top flex space-x-2">
+                <Checkbox id="acceptTerms" {...register('acceptTerms')} />
+                <div className="grid gap-1.5 leading-none">
+                    <label
+                    htmlFor="acceptTerms"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                     Li e aceito a{' '}
+                    <Link href="/politica-privacidade" target="_blank" className="font-semibold text-primary hover:underline">
+                        Política de Privacidade
+                    </Link>{' '}
+                    e os{' '}
+                    <Link href="/termos-de-uso" target="_blank" className="font-semibold text-primary hover:underline">
+                        Termos de Uso
+                    </Link>
+                    .
+                    </label>
+                    {errors.acceptTerms && <p className="text-sm text-destructive">{errors.acceptTerms.message}</p>}
+                </div>
+            </div>
+            <Button type="submit" className="w-full rounded-full py-3 text-base" disabled={authAction !== null || !acceptTermsValue}>
               {authAction === 'signup' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Cadastrar
             </Button>

@@ -12,6 +12,7 @@ import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail as firebaseSendPasswordResetEmail,
   updateProfile as firebaseUpdateProfile,
+  sendEmailVerification,
   type User as FirebaseUser,
   type AuthError,
   getAuth,
@@ -36,7 +37,7 @@ export interface UserProfile {
     bio?: string;
     instagramUsername?: string;
     lastLogin?: any;
-    isAdmin?: boolean; // Keep for potential future use, but don't rely on it for UI
+    isAdmin?: boolean; 
 }
 
 interface UpdateUserProfileData {
@@ -69,8 +70,10 @@ interface AuthContextType {
   signUpWithEmail: (email: string, password: string) => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   sendPasswordResetEmail: (email: string) => Promise<void>;
+  resendVerificationEmail: () => Promise<void>;
   updateUserProfile: (data: UpdateUserProfileData) => Promise<void>;
   signOutUser: () => Promise<void>;
+  reloadUser: () => Promise<void>;
 }
 
 // --- Context Definition ---
@@ -127,30 +130,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        const idTokenResult = await getIdTokenResult(user, true);
+        await user.reload(); // Always get the latest user state
+        const freshUser = auth.currentUser;
+        if (!freshUser) {
+           setCurrentUser(null);
+           setUserProfile(null);
+           setIsAdmin(false);
+           setIsAuthenticating(false);
+           return;
+        }
+
+        const idTokenResult = await getIdTokenResult(freshUser, true);
         setIsAdmin(idTokenResult.claims.admin === true);
-        setCurrentUser(user);
+        setCurrentUser(freshUser);
         
-        const userDocRef = doc(firestore, 'users', user.uid);
+        const userDocRef = doc(firestore, 'users', freshUser.uid);
         const userDoc = await getDoc(userDocRef);
         
         if (userDoc.exists()) {
             const profileData = userDoc.data() as UserProfile;
             setUserProfile(profileData);
         } else {
-           const displayName = user.displayName || user.email?.split('@')[0] || 'Usuário';
+           const displayName = freshUser.displayName || freshUser.email?.split('@')[0] || 'Usuário';
            const newUserProfile: UserProfile = {
-            uid: user.uid,
-            email: user.email,
+            uid: freshUser.uid,
+            email: freshUser.email,
             displayName: displayName,
             displayName_lowercase: displayName.toLowerCase(),
-            photoURL: user.photoURL,
+            photoURL: freshUser.photoURL,
             lastLogin: serverTimestamp(),
           };
           await setDoc(userDocRef, newUserProfile, { merge: true });
           setUserProfile(newUserProfile);
         }
-
       } else {
         setCurrentUser(null);
         setUserProfile(null);
@@ -177,42 +189,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(firebaseServices.auth, provider);
-      toast({ title: 'Login com Google bem-sucedido!', description: 'Bem-vindo(a) de volta!' });
-      router.push('/');
+      // Let the onAuthStateChanged handle the rest
     } catch (error) {
       handleAuthError(error as AuthError, 'Erro no Login com Google');
     } finally {
       setAuthAction(null);
     }
-  }, [firebaseServices, router, handleAuthError, toast]);
+  }, [firebaseServices, handleAuthError]);
 
   const signUpWithEmail = useCallback(async (email: string, password: string) => {
     if (!firebaseServices) return;
     setAuthAction('signup');
     try {
-      await createUserWithEmailAndPassword(firebaseServices.auth, email, password);
-      toast({ title: 'Cadastro bem-sucedido!', description: 'Sua conta foi criada.' });
-      router.push('/');
+      const userCredential = await createUserWithEmailAndPassword(firebaseServices.auth, email, password);
+      await sendEmailVerification(userCredential.user);
+      toast({ title: 'Cadastro bem-sucedido!', description: 'Enviamos um link de verificação para o seu e-mail.' });
+      // onAuthStateChanged will handle the redirect to the verify-email page
     } catch (error) {
       handleAuthError(error as AuthError);
     } finally {
       setAuthAction(null);
     }
-  }, [firebaseServices, router, handleAuthError, toast]);
+  }, [firebaseServices, handleAuthError, toast]);
 
   const signInWithEmail = useCallback(async (email: string, password: string) => {
     if (!firebaseServices) return;
     setAuthAction('email');
     try {
       await signInWithEmailAndPassword(firebaseServices.auth, email, password);
-      toast({ title: 'Login bem-sucedido!', description: 'Bem-vindo(a) de volta!' });
-      router.push('/');
+      // onAuthStateChanged will handle redirection logic
     } catch (error) {
       handleAuthError(error as AuthError);
     } finally {
       setAuthAction(null);
     }
-  }, [firebaseServices, router, handleAuthError, toast]);
+  }, [firebaseServices, handleAuthError]);
 
   const sendPasswordResetEmail = useCallback(async (email: string) => {
     if (!firebaseServices) return;
@@ -230,6 +241,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAuthAction(null);
     }
   }, [firebaseServices, handleAuthError, toast]);
+
+  const resendVerificationEmail = useCallback(async () => {
+    if (!currentUser) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Nenhum usuário logado para reenviar o e-mail.' });
+      return;
+    }
+    setAuthAction('resend-verification');
+    try {
+      await sendEmailVerification(currentUser);
+      toast({ title: 'E-mail Reenviado', description: 'Verifique sua caixa de entrada e spam.' });
+    } catch (error) {
+      handleAuthError(error as AuthError, 'Erro ao Reenviar');
+    } finally {
+      setAuthAction(null);
+    }
+  }, [currentUser, handleAuthError, toast]);
+
+  const reloadUser = useCallback(async () => {
+    if (!currentUser) return;
+    setAuthAction('reload');
+    try {
+      await currentUser.reload();
+      // Force a state update to trigger re-render and checks
+      setCurrentUser({ ...currentUser });
+    } catch (error) {
+      handleAuthError(error as AuthError, 'Erro ao Recarregar Usuário');
+    } finally {
+      setAuthAction(null);
+    }
+  }, [currentUser, handleAuthError]);
 
   const updateUserProfile = useCallback(async (data: UpdateUserProfileData) => {
     if (!currentUser || !firebaseServices) return;
@@ -308,8 +349,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signUpWithEmail,
     signInWithEmail,
     sendPasswordResetEmail,
+    resendVerificationEmail,
     updateUserProfile,
     signOutUser,
+    reloadUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

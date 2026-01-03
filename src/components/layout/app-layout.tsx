@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -28,12 +29,14 @@ import type { Notification } from '@/types/notifications';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+const protectedRoutes = ['/', '/feed', '/profile/edit', '/admin/banners', '/turismo', '/ferramentas', '/sau', '/streaming']; // Add all routes that need auth
+
 export default function AppLayout({ children }: { children: ReactNode }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const { isChatOpen, closeChat } = useChat();
-  const { currentUser, loading, signOutUser, isAuthenticating, firestore, isAdmin } = useAuth();
+  const { currentUser, isAuthenticating, signOutUser, firestore, isAdmin } = useAuth();
   const { notifications, unreadCount, loading: notificationsLoading } = useNotification();
 
   useEffect(() => {
@@ -47,6 +50,25 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       setIsDarkMode(false);
     }
   }, []);
+
+   useEffect(() => {
+    if (isAuthenticating) {
+      return; // Wait for auth state to be determined
+    }
+
+    const isProtectedRoute = protectedRoutes.includes(pathname) || /^\/turismo\/.*$/.test(pathname) || /^\/ferramentas\/.*$/.test(pathname) || /^\/guia-comercial\/.*$/.test(pathname) || /^\/cadastro\/.*$/.test(pathname);
+    const isAuthFlowPage = pathname === '/login' || pathname === '/register' || pathname === '/forgot-password' || pathname === '/verify-email';
+    
+    if (!currentUser && isProtectedRoute) {
+        router.push('/login');
+    } else if (currentUser) {
+        if (!currentUser.emailVerified && !isAuthFlowPage) {
+            router.push('/verify-email');
+        } else if (currentUser.emailVerified && isAuthFlowPage) {
+            router.push('/');
+        }
+    }
+  }, [currentUser, isAuthenticating, pathname, router]);
 
   const toggleTheme = () => {
     const newIsDarkMode = !isDarkMode;
@@ -121,9 +143,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   };
 
 
-  const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/forgot-password';
+  const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/forgot-password' || pathname === '/verify-email';
+  const showLoadingScreen = isAuthenticating || (!currentUser && protectedRoutes.includes(pathname));
 
-  if (loading) {
+  if (showLoadingScreen) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -381,7 +404,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         )}>
           {children}
         </main>
-        {!isAuthPage && (
+        {currentUser && currentUser.emailVerified && !isAuthPage && (
             <>
                 <Navigation />
                 {isChatOpen && <ChatWindow onClose={closeChat} />}
