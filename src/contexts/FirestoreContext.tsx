@@ -16,9 +16,9 @@ export function FirestoreProvider({ children }: { children: ReactNode }) {
   const [isFirestoreReady, setIsFirestoreReady] = useState(false);
 
   useEffect(() => {
-    // This effect runs only once to initialize Firestore.
     try {
       const app = getApp();
+      // Initialize with long polling for proxy/cloud environments
       const firestoreInstance = initializeFirestore(app, {
         experimentalForceLongPolling: true,
       });
@@ -26,7 +26,7 @@ export function FirestoreProvider({ children }: { children: ReactNode }) {
 
       // Perform a health check to confirm connection before setting as ready.
       const unsubscribe = onSnapshot(
-        doc(firestoreInstance, 'health_check/status'),
+        doc(firestoreInstance, 'health_check/status'), // A document that may not exist but can be listened to.
         {
           next: () => {
             if (!isFirestoreReady) setIsFirestoreReady(true);
@@ -49,7 +49,6 @@ export function FirestoreProvider({ children }: { children: ReactNode }) {
         }
       }, 7000); // 7-second timeout
 
-      // Cleanup on unmount.
       return () => {
         unsubscribe();
         clearTimeout(readyTimeout);
@@ -58,8 +57,9 @@ export function FirestoreProvider({ children }: { children: ReactNode }) {
       console.error("Failed to initialize Firestore", e);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array ensures this runs only once.
+  }, []); 
 
+  // Render children only when Firestore is ready to prevent race conditions.
   return (
     <FirestoreContext.Provider value={{ db, isFirestoreReady }}>
       {isFirestoreReady ? children : null}

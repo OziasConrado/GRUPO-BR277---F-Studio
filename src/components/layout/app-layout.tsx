@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Providers } from '@/app/providers'; 
 import Header from '@/components/layout/header';
 import Navigation from '@/components/layout/navigation';
@@ -9,6 +9,7 @@ import { useChat } from '@/contexts/ChatContext';
 import ChatWindow from '@/components/chat/ChatWindow';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
+import { useEffect } from 'react';
 
 // Componente interno para gerenciar a abertura do chat
 function ChatManager() {
@@ -21,9 +22,30 @@ function ChatManager() {
 
 function MainAppLayout({ children }: { children: ReactNode }) {
     const { currentUser, loading: authLoading } = useAuth();
+    const router = useRouter();
     const pathname = usePathname();
-    const isAuthPage = ['/login', '/register', '/forgot-password', '/verify-email'].includes(pathname);
-
+    const isAuthPage = ['/login', '/register', '/forgot-password'].includes(pathname);
+    const isVerifyPage = pathname === '/verify-email';
+    
+    // Auth-related navigation logic
+    useEffect(() => {
+        if (authLoading) return;
+        
+        if (currentUser) {
+            if (!currentUser.emailVerified && !isVerifyPage) {
+                router.push('/verify-email');
+            } else if (currentUser.emailVerified && (isAuthPage || isVerifyPage)) {
+                router.push('/'); 
+            }
+        } else {
+            const protectedRoutes = ['/', '/feed', '/profile/edit', '/admin', '/turismo', '/ferramentas', '/sau', '/streaming', '/guia-comercial', '/cadastro', '/planos'];
+            const isProtectedRoute = protectedRoutes.some(p => pathname.startsWith(p));
+            if (isProtectedRoute && !isAuthPage && !isVerifyPage) {
+                router.push('/login');
+            }
+        }
+    }, [currentUser, authLoading, pathname, router, isAuthPage, isVerifyPage]);
+    
     // This shows a global loader while auth state is being determined.
     if (authLoading) {
         return (
@@ -34,7 +56,7 @@ function MainAppLayout({ children }: { children: ReactNode }) {
     }
     
     // For auth pages, we don't render the main layout (header, nav).
-    if (isAuthPage) {
+    if (isAuthPage || (currentUser && !currentUser.emailVerified)) {
         return (
             <main className="flex-grow container mx-auto px-2 py-8">
                 {children}

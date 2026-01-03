@@ -49,7 +49,7 @@ interface AuthContextType {
   userProfile: UserProfile | null;
   isAdmin: boolean;
   isProfileComplete: boolean;
-  loading: boolean;
+  loading: boolean; // This now represents auth state loading
   authAction: string | null;
   signInWithGoogle: () => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
@@ -65,14 +65,13 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { db } = useFirestore(); // Get db instance from the FirestoreProvider
+  const { db, isFirestoreReady } = useFirestore(); 
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Loading is true until both Firestore and Auth are ready
   const [authAction, setAuthAction] = useState<string | null>(null);
   const router = useRouter();
-  const pathname = usePathname();
   const { toast } = useToast();
 
   const handleAuthError = useCallback((error: AuthError, customTitle?: string) => {
@@ -96,16 +95,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [toast]);
   
   useEffect(() => {
-    if (!db) {
-        setLoading(true);
-        return; // Wait for the db to be ready from FirestoreProvider
+    // Wait until Firestore is ready before setting up the auth listener.
+    if (!isFirestoreReady || !db) {
+        return;
     }
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
           const userDocRef = doc(db, 'users', user.uid);
-          const idTokenResult = await getIdTokenResult(user, true);
+          const idTokenResult = await getIdTokenResult(user, true); // Force refresh of the token
           const userIsAdmin = idTokenResult.claims.admin === true;
           
           const userDoc = await getDoc(userDocRef);
@@ -113,6 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           if (userDoc.exists()) {
               profileData = userDoc.data() as UserProfile;
+              // Sync potential profile changes from Google sign-in
               if (user.displayName !== profileData.displayName || user.photoURL !== profileData.photoURL) {
                 await updateDoc(userDocRef, {
                   displayName: user.displayName,
@@ -123,6 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 profileData.photoURL = user.photoURL;
               }
           } else {
+             // Create profile if it doesn't exist
              const displayName = user.displayName || user.email?.split('@')[0] || 'Usuário';
              profileData = {
               uid: user.uid,
@@ -150,33 +151,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUserProfile(null);
         setIsAdmin(false);
       }
-      setLoading(false);
+      setLoading(false); // Auth state is now determined
     });
 
     return () => unsubscribe();
-  }, [db, handleAuthError]);
-
-  // Redirect logic remains the same
-   useEffect(() => {
-    if (loading) return; 
-    
-    const isAuthPage = ['/login', '/register', '/forgot-password'].includes(pathname);
-    const isVerifyPage = pathname === '/verify-email';
-    
-    if (currentUser) {
-        if (!currentUser.emailVerified && !isVerifyPage) {
-            router.push('/verify-email');
-        } else if (currentUser.emailVerified && (isAuthPage || isVerifyPage)) {
-            router.push('/'); 
-        }
-    } else {
-        const protectedRoutes = ['/', '/feed', '/profile/edit', '/admin', '/turismo', '/ferramentas', '/sau', '/streaming', '/guia-comercial', '/cadastro', '/planos'];
-        const isProtectedRoute = protectedRoutes.some(p => pathname.startsWith(p));
-        if (isProtectedRoute && !isAuthPage && !isVerifyPage) {
-            router.push('/login');
-        }
-    }
-  }, [currentUser, loading, pathname, router]);
+  }, [isFirestoreReady, db, handleAuthError]); // Rerun this effect ONLY when isFirestoreReady changes
 
   const uploadFile = useCallback(async (file: File, path: string): Promise<string> => {
     const storageRef = ref(storage, path);
@@ -257,9 +236,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const firestoreUpdates: Partial<UserProfile> = {};
       if (data.displayName) firestoreUpdates.displayName = data.displayName;
       if (data.displayName) firestoreUpdates.displayName_lowercase = data.displayName.toLowerCase();
-      if (data.bio) firestoreUpdates.bio = data.bio;
+      if (data.bio !== undefined) firestoreUpdates.bio = data.bio;
       if (data.location) firestoreUpdates.location = data.location;
-      if (data.instagramUsername) firestoreUpdates.instagramUsername = data.instagramUsername;
+      if (data.instagramUsername !== undefined) firestoreUpdates.instagramUsername = data.instagramUsername;
       if (photoURL) firestoreUpdates.photoURL = photoURL;
 
       await updateDoc(userDocRef, firestoreUpdates);
@@ -291,7 +270,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     userProfile,
     isAdmin,
     isProfileComplete,
-    loading,
+    loading: loading || !isFirestoreReady, // The app is loading if auth OR firestore is not ready
     authAction,
     signInWithGoogle,
     signUpWithEmail,
