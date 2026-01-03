@@ -20,7 +20,7 @@ import {
   getIdTokenResult,
 } from 'firebase/auth';
 import { initializeApp, getApp, getApps, type FirebaseApp } from 'firebase/app';
-import { getFirestore, doc, setDoc, getDoc, updateDoc, serverTimestamp, type Firestore } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, updateDoc, serverTimestamp, type Firestore, initializeFirestore } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, type FirebaseStorage } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -61,7 +61,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isProfileComplete: boolean;
   loading: boolean;
-  isFirebaseReady: boolean; // Novo estado para verificar a prontidão do Firebase
+  isFirebaseReady: boolean;
   authAction: string | null;
   firestore: Firestore | null;
   storage: FirebaseStorage | null;
@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [isFirebaseReady, setIsFirebaseReady] = useState(false); // Estado de prontidão
+  const [isFirebaseReady, setIsFirebaseReady] = useState(false);
   const [authAction, setAuthAction] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
@@ -120,7 +120,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
       const auth = getAuth(app);
-      const firestore = getFirestore(app);
+      // ** APLICAÇÃO DA CORREÇÃO AQUI **
+      const firestore = initializeFirestore(app, {
+          experimentalForceLongPolling: true,
+      });
       const storage = getStorage(app);
       setFirebaseServices({ app, auth, firestore, storage });
     } catch (error: any) {
@@ -149,10 +152,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
           const userDocRef = doc(firebaseServices.firestore, 'users', freshUser.uid);
-          
-          // Firestore might be connecting. Let's wait for it to be ready.
-          await getDoc(userDocRef);
-          setIsFirebaseReady(true); // Signal that Firebase is online and ready
           
           const idTokenResult = await getIdTokenResult(freshUser, true);
           const userIsAdmin = idTokenResult.claims.admin === true;
@@ -187,17 +186,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUserProfile(profileData);
           setIsAdmin(userIsAdmin);
         } catch (error) {
-          console.error("Error during auth state change or Firestore readiness check:", error);
-          setIsFirebaseReady(false);
-          // Handle potential offline error here, maybe sign out user
+          console.error("Error during auth state change:", error);
+        } finally {
+            setIsFirebaseReady(true); // Always set to ready after trying
+            setLoading(false);
         }
       } else {
         setCurrentUser(null);
         setUserProfile(null);
         setIsAdmin(false);
         setIsFirebaseReady(true); // Ready for unauthenticated access
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -319,7 +319,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     userProfile,
     isAdmin,
     isProfileComplete,
-    loading: loading || !firebaseServices,
+    loading,
     isFirebaseReady,
     authAction,
     firestore: firebaseServices?.firestore || null,
