@@ -96,64 +96,71 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [toast]);
   
   useEffect(() => {
-    if (!isFirestoreReady) {
-      setLoading(true);
-      return;
-    }
+    if (!isFirestoreReady) return;
 
-    const fetchUserProfile = async (user: FirebaseUser, retryCount = 0) => {
-      try {
-        const idTokenResult = await getIdTokenResult(user, true);
-        const userIsAdmin = idTokenResult.claims.admin === true;
-        setIsAdmin(userIsAdmin);
-        
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDocFromServer(userDocRef);
+    const fetchUserProfile = async (user: FirebaseUser) => {
+      let retryCount = 0;
+      const maxRetries = 3;
 
-        let profileData: UserProfile;
-        if (userDoc.exists()) {
-          profileData = userDoc.data() as UserProfile;
-          if (user.displayName !== profileData.displayName || user.photoURL !== profileData.photoURL) {
-            await updateDoc(userDocRef, {
-              displayName: user.displayName,
-              displayName_lowercase: user.displayName?.toLowerCase(),
-              photoURL: user.photoURL,
-            });
-            profileData.displayName = user.displayName;
-            profileData.photoURL = user.photoURL;
-          }
-        } else {
-          const displayName = user.displayName || user.email?.split('@')[0] || 'Usuário';
-          profileData = {
-            uid: user.uid,
-            email: user.email,
-            displayName: displayName,
-            displayName_lowercase: displayName.toLowerCase(),
-            photoURL: user.photoURL,
-            lastLogin: serverTimestamp(),
-          };
-          await setDoc(userDocRef, profileData, { merge: true });
-        }
-        setUserProfile(profileData);
-      } catch (error: any) {
-        if (error.code === 'unavailable' || error.code === 'firestore/unavailable') {
-          if (retryCount < 3) { // Tenta até 3 vezes
-            console.log(`Firestore offline. Tentando buscar perfil novamente em 5 segundos... (Tentativa ${retryCount + 1})`);
-            setTimeout(() => fetchUserProfile(user, retryCount + 1), 5000);
+      const attemptFetch = async (): Promise<UserProfile | null> => {
+        try {
+          const idTokenResult = await getIdTokenResult(user, true);
+          setIsAdmin(idTokenResult.claims.admin === true);
+          
+          const userDocRef = doc(db, 'users', user.uid);
+          const userDoc = await getDocFromServer(userDocRef);
+
+          let profileData: UserProfile;
+          if (userDoc.exists()) {
+            profileData = userDoc.data() as UserProfile;
+            if (user.displayName !== profileData.displayName || user.photoURL !== profileData.photoURL) {
+              await updateDoc(userDocRef, {
+                displayName: user.displayName,
+                displayName_lowercase: user.displayName?.toLowerCase(),
+                photoURL: user.photoURL,
+              });
+              profileData.displayName = user.displayName;
+              profileData.photoURL = user.photoURL;
+            }
           } else {
-             console.warn('Could not fetch user profile because client is offline after multiple retries.');
+            const displayName = user.displayName || user.email?.split('@')[0] || 'Usuário';
+            profileData = {
+              uid: user.uid,
+              email: user.email,
+              displayName: displayName,
+              displayName_lowercase: displayName.toLowerCase(),
+              photoURL: user.photoURL,
+              lastLogin: serverTimestamp(),
+            };
+            await setDoc(userDocRef, profileData, { merge: true });
           }
-        } else {
-          handleAuthError(error, "Erro ao carregar perfil");
-          await signOut(auth);
-          setCurrentUser(null);
-          setUserProfile(null);
-          setIsAdmin(false);
+          return profileData;
+        } catch (error: any) {
+          if ((error.code === 'unavailable' || error.code === 'firestore/unavailable') && retryCount < maxRetries) {
+            retryCount++;
+            console.log(`Perfil não carregado (offline), tentando novamente em ${retryCount * 2}s... (Tentativa ${retryCount})`);
+            await new Promise(res => setTimeout(res, retryCount * 2000));
+            return attemptFetch();
+          } else {
+             // Se falhar após retries, define um perfil básico para não travar o app
+            console.warn("Falha final ao buscar perfil. Usando perfil padrão temporário.");
+            const displayName = user.displayName || user.email?.split('@')[0] || 'Usuário';
+            return {
+              uid: user.uid,
+              email: user.email,
+              displayName: displayName,
+              photoURL: user.photoURL,
+            };
+          }
         }
-      }
+      };
+      
+      const profile = await attemptFetch();
+      setUserProfile(profile);
     };
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setLoading(true);
       if (user) {
         setCurrentUser(user);
         await fetchUserProfile(user);

@@ -1,9 +1,9 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, orderBy, getDocsFromServer } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { Loader2 } from 'lucide-react';
 import {
@@ -29,19 +29,22 @@ export default function Banners() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const bannersCollection = collection(db, 'banners');
-    const q = query(bannersCollection, where('isActive', '==', true), orderBy('order', 'asc'));
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedBanners = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Banner));
-      setBanners(fetchedBanners);
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching banners: ", error);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    const fetchBanners = async () => {
+      setLoading(true);
+      try {
+        const bannersCollection = collection(db, 'banners');
+        const q = query(bannersCollection, where('isActive', '==', true), orderBy('order', 'asc'));
+        const snapshot = await getDocsFromServer(q);
+        const fetchedBanners = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Banner));
+        setBanners(fetchedBanners);
+      } catch (error) {
+        console.error("Error fetching banners from server: ", error);
+        // Não mostra toast de erro para não poluir a UI, mas loga o erro.
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBanners();
   }, []);
 
   if (loading) {

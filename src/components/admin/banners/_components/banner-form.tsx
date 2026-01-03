@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, type ChangeEvent } from 'react';
@@ -18,7 +19,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
 import {
   collection,
   addDoc,
@@ -170,7 +170,7 @@ export function BannerForm({ isOpen, onClose, banner }: BannerFormProps) {
 
       if (data.imageSourceType === 'upload' && data.imageFile) {
         // If editing and there was an old image, delete it
-        if (banner && banner.imageUrl) {
+        if (banner && banner.imageUrl && banner.imageUrl.includes('firebasestorage')) {
           try {
             const oldImageRef = ref(storage, banner.imageUrl);
             await deleteObject(oldImageRef);

@@ -22,10 +22,9 @@ if (!getApps().length) {
 
     // Configuração do Firestore com as flags de rede para ambientes de proxy
     db = initializeFirestore(app, {
-      host: "firestore.googleapis.com",
-      ssl: true,
       experimentalForceLongPolling: true,
       useFetchStreams: false,
+      ignoreUndefinedProperties: true, // Adicionado conforme solicitado
     });
     storage = getStorage(app);
   } catch (error) {
