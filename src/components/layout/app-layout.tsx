@@ -2,20 +2,20 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { NotificationProvider } from '@/contexts/NotificationContext';
-import { ChatProvider } from '@/contexts/ChatContext';
-import Header from '@/components/layout/header'; // Importa o novo componente Header
+import { Providers } from '@/app/providers'; 
+import Header from '@/components/layout/header';
 import Navigation from '@/components/layout/navigation';
-import ChatWindow from '@/components/chat/ChatWindow';
 import { useChat } from '@/contexts/ChatContext';
+import ChatWindow from '@/components/chat/ChatWindow';
 import { cn } from '@/lib/utils';
-
-
-const protectedRoutes = ['/feed', '/profile/edit', '/admin/banners', '/turismo', '/ferramentas', '/sau', '/streaming'];
+import { initializeApp, getApp, getApps, type FirebaseApp } from 'firebase/app';
+import { getAuth, type Auth } from 'firebase/auth';
+import { getFirestore, initializeFirestore, type Firestore } from 'firebase/firestore';
+import { getStorage, type FirebaseStorage } from 'firebase/storage';
+import { firebaseConfig } from '@/lib/firebase/config';
 
 // Componente interno para gerenciar a abertura do chat
 function ChatManager() {
@@ -26,79 +26,59 @@ function ChatManager() {
     return null;
 }
 
+interface FirebaseServices {
+  app: FirebaseApp;
+  auth: Auth;
+  firestore: Firestore;
+  storage: FirebaseStorage;
+}
+
 export default function AppLayout({ children }: { children: ReactNode }) {
-    const { currentUser, loading, isFirebaseReady } = useAuth();
-    const router = useRouter();
+    const [firebaseServices, setFirebaseServices] = useState<FirebaseServices | null>(null);
+    const [isFirebaseReady, setIsFirebaseReady] = useState(false);
     const pathname = usePathname();
-
-    useEffect(() => {
-        if (loading || !isFirebaseReady) return;
-
-        const isAuthFlowPage = ['/login', '/register', '/forgot-password'].includes(pathname);
-        const isVerifyPage = pathname === '/verify-email';
-        
-        let isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route)) && !isAuthFlowPage && !isVerifyPage;
-        if (pathname === '/') isProtectedRoute = true;
-        if(pathname.startsWith('/cadastro/') || pathname.startsWith('/guia-comercial/') || pathname.startsWith('/turismo/')) isProtectedRoute = true;
-
-
-        if (!currentUser && isProtectedRoute) {
-            router.replace(`/login?redirect=${pathname}`);
-        } else if (currentUser) {
-            if (!currentUser.emailVerified && !isVerifyPage) {
-                router.replace('/verify-email');
-            } else if (currentUser.emailVerified && (isAuthFlowPage || isVerifyPage)) {
-                router.replace('/streaming'); // Default page after login
-            }
-        }
-    }, [currentUser, loading, isFirebaseReady, pathname, router]);
-
-
-    const showLoadingScreen = loading || !isFirebaseReady;
     const isAuthPage = ['/login', '/register', '/forgot-password', '/verify-email'].includes(pathname);
 
-    if (showLoadingScreen) {
-        return (
-            <div className="flex justify-center items-center min-h-screen bg-background">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            </div>
-        );
-    }
-    
-    // Se for uma página de autenticação, mostra um layout simples sem header/nav
-    if (isAuthPage) {
-        return (
-             <main className="flex-grow container mx-auto px-2 py-8">
-                {children}
-            </main>
-        )
-    }
-    
-    // Se o usuário não estiver logado mas a página não for protegida (ex: publica), renderiza sem header/nav.
-     if (!currentUser) {
-        return (
-            <div className="flex justify-center items-center min-h-screen bg-background">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            </div>
-        );
-    }
+    useEffect(() => {
+        try {
+            const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+            const auth = getAuth(app);
+            const firestore = initializeFirestore(app, {
+                experimentalForceLongPolling: true,
+            });
+            const storage = getStorage(app);
+            setFirebaseServices({ app, auth, firestore, storage });
+            setIsFirebaseReady(true);
+        } catch (error) {
+            console.error("CRITICAL: Failed to initialize Firebase.", error);
+        }
+    }, []);
 
-    // Layout principal para usuários logados
+    if (!isFirebaseReady || !firebaseServices) {
+        return (
+            <div className="flex justify-center items-center min-h-screen bg-background">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <p className="ml-4 text-muted-foreground">Conectando...</p>
+            </div>
+        );
+    }
+    
     return (
-        <NotificationProvider>
-            <ChatProvider>
+        <Providers auth={firebaseServices.auth} firestore={firebaseServices.firestore} storage={firebaseServices.storage}>
+            {isAuthPage ? (
+                <main className="flex-grow container mx-auto px-2 py-8">
+                    {children}
+                </main>
+            ) : (
                 <div className="flex flex-col min-h-screen">
                     <Header />
-                    <main className={cn(
-                        "flex-grow container mx-auto px-2 py-8",
-                        !isAuthPage && "pb-20 sm:pb-8"
-                    )}>
+                    <main className="flex-grow container mx-auto px-2 py-8 pb-20 sm:pb-8">
                         {children}
                     </main>
                     <Navigation />
                     <ChatManager />
                 </div>
-            </ChatProvider>
-        </NotificationProvider>
+            )}
+        </Providers>
     );
 }

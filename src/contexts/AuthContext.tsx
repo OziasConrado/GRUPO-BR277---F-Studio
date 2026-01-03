@@ -15,16 +15,13 @@ import {
   sendEmailVerification,
   type User as FirebaseUser,
   type AuthError,
-  getAuth,
   type Auth,
   getIdTokenResult,
 } from 'firebase/auth';
-import { initializeApp, getApp, getApps, type FirebaseApp } from 'firebase/app';
-import { getFirestore, doc, setDoc, getDoc, updateDoc, serverTimestamp, type Firestore, initializeFirestore } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, updateDoc, serverTimestamp, type Firestore } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, type FirebaseStorage } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { firebaseConfig } from '@/lib/firebase/config';
 
 // Interfaces
 export interface UserProfile {
@@ -48,23 +45,15 @@ interface UpdateUserProfileData {
   location?: string;
 }
 
-interface FirebaseServices {
-  app: FirebaseApp;
-  auth: Auth;
-  firestore: Firestore;
-  storage: FirebaseStorage;
-}
-
 interface AuthContextType {
   currentUser: FirebaseUser | null;
   userProfile: UserProfile | null;
   isAdmin: boolean;
   isProfileComplete: boolean;
   loading: boolean;
-  isFirebaseReady: boolean;
   authAction: string | null;
-  firestore: Firestore | null;
-  storage: FirebaseStorage | null;
+  firestore: Firestore; // Now non-nullable
+  storage: FirebaseStorage; // Now non-nullable
   uploadFile: (file: File, path: string) => Promise<string>;
   signInWithGoogle: () => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
@@ -80,19 +69,28 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // --- AuthProvider Component ---
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [firebaseServices, setFirebaseServices] = useState<FirebaseServices | null>(null);
+interface AuthProviderProps {
+  children: ReactNode;
+  auth: Auth;
+  firestore: Firestore;
+  storage: FirebaseStorage;
+}
+
+export function AuthProvider({ children, auth, firestore, storage }: AuthProviderProps) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [isFirebaseReady, setIsFirebaseReady] = useState(false);
   const [authAction, setAuthAction] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
   
   const handleAuthError = useCallback((error: AuthError, customTitle?: string) => {
     console.error("Firebase Auth Error:", error.code, error.message);
+    // Ignore "unavailable" error as it's a known issue in some dev environments
+    if (error.code === 'unavailable' || error.code === 'firestore/unavailable') {
+        return;
+    }
     let message = "Ocorreu um erro. Tente novamente.";
      switch (error.code) {
         case 'auth/wrong-password': message = 'Senha incorreta. Verifique sua senha e tente novamente.'; break;
@@ -117,40 +115,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [toast]);
 
   useEffect(() => {
-    try {
-      const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-      const auth = getAuth(app);
-      const firestore = initializeFirestore(app, {
-          experimentalForceLongPolling: true,
-      });
-      const storage = getStorage(app);
-      setFirebaseServices({ app, auth, firestore, storage });
-    } catch (error: any) {
-        console.error("Falha crítica ao inicializar o Firebase:", error);
-        setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!firebaseServices) return;
-
-    const unsubscribe = onAuthStateChanged(firebaseServices.auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
       if (user) {
         try {
-          await user.reload(); // Always get the fresh user data
-          const freshUser = firebaseServices.auth.currentUser;
+          await user.reload(); 
+          const freshUser = auth.currentUser;
 
           if (!freshUser) {
              setCurrentUser(null);
              setUserProfile(null);
              setIsAdmin(false);
-             setIsFirebaseReady(true);
              setLoading(false);
              return;
           }
 
-          const userDocRef = doc(firebaseServices.firestore, 'users', freshUser.uid);
+          const userDocRef = doc(firestore, 'users', freshUser.uid);
           
           const idTokenResult = await getIdTokenResult(freshUser, true);
           const userIsAdmin = idTokenResult.claims.admin === true;
@@ -185,70 +165,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUserProfile(profileData);
           setIsAdmin(userIsAdmin);
         } catch (error: any) {
-          console.error("Error during auth state change:", error);
-           if (error.code !== 'firestore/unavailable') { // Avoid toast for offline error we are trying to solve
-              handleAuthError(error, "Erro ao carregar perfil");
-           }
+          handleAuthError(error, "Erro ao carregar perfil");
         } finally {
-            setIsFirebaseReady(true); // Always set to ready after trying
             setLoading(false);
         }
       } else {
         setCurrentUser(null);
         setUserProfile(null);
         setIsAdmin(false);
-        setIsFirebaseReady(true);
         setLoading(false);
       }
     });
 
     return () => unsubscribe();
-  }, [firebaseServices, handleAuthError]);
+  }, [auth, firestore, handleAuthError]);
 
   const uploadFile = useCallback(async (file: File, path: string): Promise<string> => {
-    if (!firebaseServices?.storage) throw new Error("Firebase Storage is not initialized.");
-    const storageRef = ref(firebaseServices.storage, path);
+    const storageRef = ref(storage, path);
     const uploadTask = await uploadBytes(storageRef, file);
     return await getDownloadURL(uploadTask.ref);
-  }, [firebaseServices]);
+  }, [storage]);
 
   const signInWithGoogle = useCallback(async () => {
-    if (!firebaseServices) return;
     setAuthAction('google');
     const provider = new GoogleAuthProvider();
-    try { await signInWithPopup(firebaseServices.auth, provider); } 
+    try { await signInWithPopup(auth, provider); } 
     catch (error) { handleAuthError(error as AuthError, 'Erro no Login com Google'); } 
     finally { setAuthAction(null); }
-  }, [firebaseServices, handleAuthError]);
+  }, [auth, handleAuthError]);
 
   const signUpWithEmail = useCallback(async (email: string, password: string) => {
-    if (!firebaseServices) return;
     setAuthAction('signup');
     try {
-      const userCredential = await createUserWithEmailAndPassword(firebaseServices.auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await sendEmailVerification(userCredential.user);
       toast({ title: 'Cadastro bem-sucedido!', description: 'Enviamos um link de verificação para o seu e-mail.' });
     } catch (error) { handleAuthError(error as AuthError); } 
     finally { setAuthAction(null); }
-  }, [firebaseServices, handleAuthError, toast]);
+  }, [auth, handleAuthError, toast]);
 
   const signInWithEmail = useCallback(async (email: string, password: string) => {
-    if (!firebaseServices) return;
     setAuthAction('email');
-    try { await signInWithEmailAndPassword(firebaseServices.auth, email, password); } 
+    try { await signInWithEmailAndPassword(auth, email, password); } 
     catch (error) { handleAuthError(error as AuthError); } 
     finally { setAuthAction(null); }
-  }, [firebaseServices, handleAuthError]);
+  }, [auth, handleAuthError]);
 
   const sendPasswordResetEmail = useCallback(async (email: string) => {
-    if (!firebaseServices) return;
     setAuthAction('reset');
     try {
-      await firebaseSendPasswordResetEmail(firebaseServices.auth, email);
+      await firebaseSendPasswordResetEmail(auth, email);
       toast({ title: 'Link de Redefinição Enviado', description: 'Verifique seu e-mail para as instruções.' });
     } catch (error) { handleAuthError(error as AuthError, 'Erro ao Enviar E-mail'); throw error; } 
     finally { setAuthAction(null); }
-  }, [firebaseServices, handleAuthError, toast]);
+  }, [auth, handleAuthError, toast]);
 
   const resendVerificationEmail = useCallback(async () => {
     if (!currentUser) { toast({ variant: 'destructive', title: 'Erro', description: 'Nenhum usuário logado para reenviar o e-mail.' }); return; }
@@ -271,7 +241,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [currentUser, handleAuthError]);
 
   const updateUserProfile = useCallback(async (data: UpdateUserProfileData) => {
-    if (!currentUser || !firebaseServices) return;
+    if (!currentUser) return;
     setAuthAction('update');
     try {
       let photoURL = currentUser.photoURL;
@@ -284,7 +254,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (photoURL && photoURL !== currentUser.photoURL) authUpdates.photoURL = photoURL;
       if (Object.keys(authUpdates).length > 0) await firebaseUpdateProfile(currentUser, authUpdates);
       
-      const userDocRef = doc(firebaseServices.firestore, 'users', currentUser.uid);
+      const userDocRef = doc(firestore, 'users', currentUser.uid);
       const firestoreUpdates: Partial<UserProfile> = {
         displayName: data.displayName,
         displayName_lowercase: data.displayName?.toLowerCase(),
@@ -296,23 +266,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await updateDoc(userDocRef, firestoreUpdates);
       
       await currentUser.reload();
-      setCurrentUser({ ...firebaseServices.auth.currentUser! });
+      const freshUser = auth.currentUser;
+      if (freshUser) setCurrentUser({ ...freshUser });
+
       setUserProfile(prev => prev ? { ...prev, ...firestoreUpdates } : firestoreUpdates as UserProfile);
       toast({ title: "Sucesso!", description: "Seu perfil foi atualizado." });
     } catch (error) { handleAuthError(error as AuthError, 'Erro ao Atualizar Perfil'); } 
     finally { setAuthAction(null); }
-  }, [currentUser, firebaseServices, handleAuthError, toast, uploadFile]);
+  }, [currentUser, auth, firestore, handleAuthError, toast, uploadFile]);
 
   const signOutUser = useCallback(async () => {
-    if (!firebaseServices) return;
     setAuthAction('signout');
     try {
-      await signOut(firebaseServices.auth);
+      await signOut(auth);
       router.push('/login');
       toast({ title: 'Logout realizado com sucesso.' });
     } catch (error) { handleAuthError(error as AuthError); } 
     finally { setAuthAction(null); }
-  }, [firebaseServices, router, handleAuthError, toast]);
+  }, [auth, router, handleAuthError, toast]);
 
   const isProfileComplete = !!(userProfile?.displayName && userProfile?.location);
 
@@ -322,10 +293,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAdmin,
     isProfileComplete,
     loading,
-    isFirebaseReady,
     authAction,
-    firestore: firebaseServices?.firestore || null,
-    storage: firebaseServices?.storage || null,
+    firestore,
+    storage,
     uploadFile,
     signInWithGoogle,
     signUpWithEmail,

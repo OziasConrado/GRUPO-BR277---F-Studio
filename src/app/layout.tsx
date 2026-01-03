@@ -3,8 +3,7 @@ import type { Metadata, Viewport } from 'next';
 import { PT_Sans } from 'next/font/google';
 import '@/app/globals.css';
 import { Toaster } from "@/components/ui/toaster";
-import Script from 'next/script';
-import { Providers } from './providers'; // Import the new Providers component
+import AppLayout from '@/components/layout/app-layout';
 
 const ptSans = PT_Sans({
   subsets: ['latin'],
@@ -33,18 +32,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <head>
-        <Script
-          async
-          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3646331718909935`}
-          crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
-      </head>
+      <head />
       <body className={`${ptSans.variable} font-sans antialiased`}>
-        <Providers>
+        <AppLayout>
           {children}
-        </Providers>
+        </AppLayout>
         <Toaster />
       </body>
     </html>
