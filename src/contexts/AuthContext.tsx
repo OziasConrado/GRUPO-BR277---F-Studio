@@ -22,7 +22,7 @@ import { getFirestore, doc, setDoc, getDoc, updateDoc, serverTimestamp, type Fir
 import { getStorage, ref, uploadBytes, getDownloadURL, type FirebaseStorage } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { firebaseConfig } from '@/lib/firebase/config'; // Import from the new config file
+import { firebaseConfig } from '@/lib/firebase/config';
 
 // Interfaces
 export interface UserProfile {
@@ -126,12 +126,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // --- CORRECTED ADMIN CHECK ---
         // Force refresh the token to get latest custom claims
         const tokenResult = await getIdTokenResult(user, true);
         setIsAdmin(!!tokenResult.claims.admin);
-        // --- END OF CORRECTION ---
-
+        
         const userDocRef = doc(firestore, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
         
@@ -253,8 +251,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (Object.keys(authUpdates).length > 0) {
         await firebaseUpdateProfile(currentUser, authUpdates);
-        await currentUser.reload(); // Recarrega os dados do usuário do Firebase Auth
-        setCurrentUser({ ...currentUser }); // Força uma nova renderização com os dados atualizados
+        await currentUser.reload();
+        setCurrentUser({ ...currentUser });
       }
       
       const userDocRef = doc(firebaseServices.firestore, 'users', currentUser.uid);

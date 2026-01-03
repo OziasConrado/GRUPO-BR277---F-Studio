@@ -291,6 +291,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                           <span>Editar Perfil</span>
                         </DropdownMenuItem>
                       </Link>
+                      {isAdmin && (
+                        <Link href="/admin/banners" passHref>
+                          <DropdownMenuItem>
+                            <Settings className="mr-2 h-4 w-4" />
+                            <span>Administrativo</span>
+                          </DropdownMenuItem>
+                        </Link>
+                      )}
                       <DropdownMenuItem onClick={signOutUser} disabled={isAuthenticating}>
                         <LogOut className="mr-2 h-4 w-4" />
                         <span>Sair</span>

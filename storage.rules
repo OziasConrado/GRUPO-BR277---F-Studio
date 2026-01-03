@@ -19,22 +19,34 @@ service firebase.storage {
       allow write: if request.auth != null && request.auth.token.admin == true; 
     }
 
+<<<<<<< HEAD
     // Usuários autenticados podem fazer upload de imagens para posts.
+=======
+>>>>>>> 0538a4f5ad6dbfd4d734ab1f85ddcbef9397e196
     match /posts/{userId}/{allPaths=**} {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
     
+<<<<<<< HEAD
     // Usuários autenticados podem fazer upload de imagens para o chat.
+=======
+>>>>>>> 0538a4f5ad6dbfd4d734ab1f85ddcbef9397e196
     match /chat_images/{userId}/{allPaths=**} {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
     
+<<<<<<< HEAD
     // Usuários autenticados podem fazer upload de áudios para o chat.
+=======
+>>>>>>> 0538a4f5ad6dbfd4d734ab1f85ddcbef9397e196
     match /chat_audio/{userId}/{allPaths=**} {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
+<<<<<<< HEAD
     // Usuários autenticados podem fazer upload de imagens de negócios.
+=======
+>>>>>>> 0538a4f5ad6dbfd4d734ab1f85ddcbef9397e196
     match /business_images/{businessId}/{allPaths=**} {
       allow write: if request.auth != null;
     }
@@ -43,7 +55,10 @@ service firebase.storage {
       allow write: if request.auth != null;
     }
 
+<<<<<<< HEAD
     // Usuários autenticados podem fazer upload de imagens de pontos turísticos indicados.
+=======
+>>>>>>> 0538a4f5ad6dbfd4d734ab1f85ddcbef9397e196
     match /indicated_points_images/{userId}/{allPaths=**} {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
