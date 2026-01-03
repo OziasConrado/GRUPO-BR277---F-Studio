@@ -36,4 +36,6 @@ yarn-error.log*
 next-env.d.ts
 
 # Firebase
+# MUITO IMPORTANTE: Não remova esta linha.
+# Este arquivo contém chaves secretas e NUNCA deve ser enviado para o GitHub.
 firebase-service-account.json
