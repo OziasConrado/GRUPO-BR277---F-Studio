@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -60,6 +61,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isProfileComplete: boolean;
   loading: boolean;
+  isFirebaseReady: boolean; // Novo estado para verificar a prontidão do Firebase
   authAction: string | null;
   firestore: Firestore | null;
   storage: FirebaseStorage | null;
@@ -84,10 +86,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isFirebaseReady, setIsFirebaseReady] = useState(false); // Estado de prontidão
   const [authAction, setAuthAction] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
-
+  
   const handleAuthError = useCallback((error: AuthError, customTitle?: string) => {
     console.error("Firebase Auth Error:", error.code, error.message);
     let message = "Ocorreu um erro. Tente novamente.";
@@ -112,11 +115,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       variant: 'destructive',
     });
   }, [toast]);
-  
-  useEffect(() => {
-    // This effect runs only once to initialize Firebase
-    if (firebaseServices) return;
 
+  useEffect(() => {
     try {
       const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
       const auth = getAuth(app);
@@ -125,73 +125,77 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setFirebaseServices({ app, auth, firestore, storage });
     } catch (error: any) {
         console.error("Falha crítica ao inicializar o Firebase:", error);
-        toast({
-          title: "Erro Crítico de Conexão",
-          description: "Não foi possível conectar aos serviços do aplicativo. Verifique sua conexão ou tente recarregar a página.",
-          variant: "destructive",
-          duration: Infinity,
-        });
         setLoading(false);
     }
-  }, [firebaseServices, toast]);
+  }, []);
 
   useEffect(() => {
-    // This effect handles auth state changes once Firebase is initialized
     if (!firebaseServices) return;
 
     const unsubscribe = onAuthStateChanged(firebaseServices.auth, async (user) => {
+      setLoading(true);
       if (user) {
-        await user.reload();
-        const freshUser = firebaseServices.auth.currentUser;
+        try {
+          await user.reload(); // Always get the fresh user data
+          const freshUser = firebaseServices.auth.currentUser;
 
-        if (!freshUser) {
-           setCurrentUser(null);
-           setUserProfile(null);
-           setIsAdmin(false);
-           setLoading(false);
-           return;
+          if (!freshUser) {
+             setCurrentUser(null);
+             setUserProfile(null);
+             setIsAdmin(false);
+             setIsFirebaseReady(true); // Ready for unauthenticated access
+             setLoading(false);
+             return;
+          }
+
+          const userDocRef = doc(firebaseServices.firestore, 'users', freshUser.uid);
+          
+          // Firestore might be connecting. Let's wait for it to be ready.
+          await getDoc(userDocRef);
+          setIsFirebaseReady(true); // Signal that Firebase is online and ready
+          
+          const idTokenResult = await getIdTokenResult(freshUser, true);
+          const userIsAdmin = idTokenResult.claims.admin === true;
+          
+          const userDoc = await getDoc(userDocRef);
+          let profileData: UserProfile;
+          if (userDoc.exists()) {
+              profileData = userDoc.data() as UserProfile;
+              if (freshUser.displayName !== profileData.displayName || freshUser.photoURL !== profileData.photoURL) {
+                await updateDoc(userDocRef, {
+                  displayName: freshUser.displayName,
+                  displayName_lowercase: freshUser.displayName?.toLowerCase(),
+                  photoURL: freshUser.photoURL,
+                });
+                profileData.displayName = freshUser.displayName;
+                profileData.photoURL = freshUser.photoURL;
+              }
+          } else {
+             const displayName = freshUser.displayName || freshUser.email?.split('@')[0] || 'Usuário';
+             profileData = {
+              uid: freshUser.uid,
+              email: freshUser.email,
+              displayName: displayName,
+              displayName_lowercase: displayName.toLowerCase(),
+              photoURL: freshUser.photoURL,
+              lastLogin: serverTimestamp(),
+            };
+            await setDoc(userDocRef, profileData, { merge: true });
+          }
+          
+          setCurrentUser(freshUser);
+          setUserProfile(profileData);
+          setIsAdmin(userIsAdmin);
+        } catch (error) {
+          console.error("Error during auth state change or Firestore readiness check:", error);
+          setIsFirebaseReady(false);
+          // Handle potential offline error here, maybe sign out user
         }
-
-        const idTokenResult = await getIdTokenResult(freshUser, true);
-        const userIsAdmin = idTokenResult.claims.admin === true;
-        
-        const userDocRef = doc(firebaseServices.firestore, 'users', freshUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        
-        let profileData: UserProfile;
-        if (userDoc.exists()) {
-            profileData = userDoc.data() as UserProfile;
-            // Ensure displayName and photoURL are in sync with auth provider
-            if (freshUser.displayName !== profileData.displayName || freshUser.photoURL !== profileData.photoURL) {
-              await updateDoc(userDocRef, {
-                displayName: freshUser.displayName,
-                displayName_lowercase: freshUser.displayName?.toLowerCase(),
-                photoURL: freshUser.photoURL,
-              });
-              profileData.displayName = freshUser.displayName;
-              profileData.photoURL = freshUser.photoURL;
-            }
-        } else {
-           const displayName = freshUser.displayName || freshUser.email?.split('@')[0] || 'Usuário';
-           profileData = {
-            uid: freshUser.uid,
-            email: freshUser.email,
-            displayName: displayName,
-            displayName_lowercase: displayName.toLowerCase(),
-            photoURL: freshUser.photoURL,
-            lastLogin: serverTimestamp(),
-          };
-          await setDoc(userDocRef, profileData, { merge: true });
-        }
-        
-        setCurrentUser(freshUser);
-        setUserProfile(profileData);
-        setIsAdmin(userIsAdmin);
-
       } else {
         setCurrentUser(null);
         setUserProfile(null);
         setIsAdmin(false);
+        setIsFirebaseReady(true); // Ready for unauthenticated access
       }
       setLoading(false);
     });
@@ -200,9 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [firebaseServices]);
 
   const uploadFile = useCallback(async (file: File, path: string): Promise<string> => {
-    if (!firebaseServices?.storage) {
-      throw new Error("Firebase Storage is not initialized.");
-    }
+    if (!firebaseServices?.storage) throw new Error("Firebase Storage is not initialized.");
     const storageRef = ref(firebaseServices.storage, path);
     const uploadTask = await uploadBytes(storageRef, file);
     return await getDownloadURL(uploadTask.ref);
@@ -212,13 +214,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!firebaseServices) return;
     setAuthAction('google');
     const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(firebaseServices.auth, provider);
-    } catch (error) {
-      handleAuthError(error as AuthError, 'Erro no Login com Google');
-    } finally {
-      setAuthAction(null);
-    }
+    try { await signInWithPopup(firebaseServices.auth, provider); } 
+    catch (error) { handleAuthError(error as AuthError, 'Erro no Login com Google'); } 
+    finally { setAuthAction(null); }
   }, [firebaseServices, handleAuthError]);
 
   const signUpWithEmail = useCallback(async (email: string, password: string) => {
@@ -228,23 +226,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userCredential = await createUserWithEmailAndPassword(firebaseServices.auth, email, password);
       await sendEmailVerification(userCredential.user);
       toast({ title: 'Cadastro bem-sucedido!', description: 'Enviamos um link de verificação para o seu e-mail.' });
-    } catch (error) {
-      handleAuthError(error as AuthError);
-    } finally {
-      setAuthAction(null);
-    }
+    } catch (error) { handleAuthError(error as AuthError); } 
+    finally { setAuthAction(null); }
   }, [firebaseServices, handleAuthError, toast]);
 
   const signInWithEmail = useCallback(async (email: string, password: string) => {
     if (!firebaseServices) return;
     setAuthAction('email');
-    try {
-      await signInWithEmailAndPassword(firebaseServices.auth, email, password);
-    } catch (error) {
-      handleAuthError(error as AuthError);
-    } finally {
-      setAuthAction(null);
-    }
+    try { await signInWithEmailAndPassword(firebaseServices.auth, email, password); } 
+    catch (error) { handleAuthError(error as AuthError); } 
+    finally { setAuthAction(null); }
   }, [firebaseServices, handleAuthError]);
 
   const sendPasswordResetEmail = useCallback(async (email: string) => {
@@ -252,32 +243,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthAction('reset');
     try {
       await firebaseSendPasswordResetEmail(firebaseServices.auth, email);
-      toast({
-        title: 'Link de Redefinição Enviado',
-        description: 'Verifique seu e-mail para as instruções.',
-      });
-    } catch (error) {
-      handleAuthError(error as AuthError, 'Erro ao Enviar E-mail');
-      throw error;
-    } finally {
-      setAuthAction(null);
-    }
+      toast({ title: 'Link de Redefinição Enviado', description: 'Verifique seu e-mail para as instruções.' });
+    } catch (error) { handleAuthError(error as AuthError, 'Erro ao Enviar E-mail'); throw error; } 
+    finally { setAuthAction(null); }
   }, [firebaseServices, handleAuthError, toast]);
 
   const resendVerificationEmail = useCallback(async () => {
-    if (!currentUser) {
-      toast({ variant: 'destructive', title: 'Erro', description: 'Nenhum usuário logado para reenviar o e-mail.' });
-      return;
-    }
+    if (!currentUser) { toast({ variant: 'destructive', title: 'Erro', description: 'Nenhum usuário logado para reenviar o e-mail.' }); return; }
     setAuthAction('resend-verification');
     try {
       await sendEmailVerification(currentUser);
       toast({ title: 'E-mail Reenviado', description: 'Verifique sua caixa de entrada e spam.' });
-    } catch (error) {
-      handleAuthError(error as AuthError, 'Erro ao Reenviar');
-    } finally {
-      setAuthAction(null);
-    }
+    } catch (error) { handleAuthError(error as AuthError, 'Erro ao Reenviar'); } 
+    finally { setAuthAction(null); }
   }, [currentUser, handleAuthError, toast]);
 
   const reloadUser = useCallback(async () => {
@@ -285,12 +263,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthAction('reload');
     try {
       await currentUser.reload();
-      setCurrentUser({ ...currentUser }); // Força a re-renderização
-    } catch (error) {
-      handleAuthError(error as AuthError, 'Erro ao Recarregar Usuário');
-    } finally {
-      setAuthAction(null);
-    }
+      setCurrentUser({ ...currentUser });
+    } catch (error) { handleAuthError(error as AuthError, 'Erro ao Recarregar Usuário'); } 
+    finally { setAuthAction(null); }
   }, [currentUser, handleAuthError]);
 
   const updateUserProfile = useCallback(async (data: UpdateUserProfileData) => {
@@ -302,18 +277,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const storagePath = `profile_pictures/${currentUser.uid}/${Date.now()}_${data.newPhotoFile.name}`;
         photoURL = await uploadFile(data.newPhotoFile, storagePath);
       }
-
       const authUpdates: { displayName?: string; photoURL?: string } = {};
-      if (data.displayName && data.displayName !== currentUser.displayName) {
-        authUpdates.displayName = data.displayName;
-      }
-      if (photoURL && photoURL !== currentUser.photoURL) {
-        authUpdates.photoURL = photoURL;
-      }
-
-      if (Object.keys(authUpdates).length > 0) {
-        await firebaseUpdateProfile(currentUser, authUpdates);
-      }
+      if (data.displayName && data.displayName !== currentUser.displayName) authUpdates.displayName = data.displayName;
+      if (photoURL && photoURL !== currentUser.photoURL) authUpdates.photoURL = photoURL;
+      if (Object.keys(authUpdates).length > 0) await firebaseUpdateProfile(currentUser, authUpdates);
       
       const userDocRef = doc(firebaseServices.firestore, 'users', currentUser.uid);
       const firestoreUpdates: Partial<UserProfile> = {
@@ -324,21 +291,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         instagramUsername: data.instagramUsername,
         photoURL: photoURL,
       };
-
       await updateDoc(userDocRef, firestoreUpdates);
       
-      // Manually update local state to reflect changes immediately
       await currentUser.reload();
       setCurrentUser({ ...firebaseServices.auth.currentUser! });
       setUserProfile(prev => prev ? { ...prev, ...firestoreUpdates } : firestoreUpdates as UserProfile);
-
       toast({ title: "Sucesso!", description: "Seu perfil foi atualizado." });
-
-    } catch (error) {
-      handleAuthError(error as AuthError, 'Erro ao Atualizar Perfil');
-    } finally {
-      setAuthAction(null);
-    }
+    } catch (error) { handleAuthError(error as AuthError, 'Erro ao Atualizar Perfil'); } 
+    finally { setAuthAction(null); }
   }, [currentUser, firebaseServices, handleAuthError, toast, uploadFile]);
 
   const signOutUser = useCallback(async () => {
@@ -348,11 +308,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await signOut(firebaseServices.auth);
       router.push('/login');
       toast({ title: 'Logout realizado com sucesso.' });
-    } catch (error) {
-      handleAuthError(error as AuthError);
-    } finally {
-      setAuthAction(null);
-    }
+    } catch (error) { handleAuthError(error as AuthError); } 
+    finally { setAuthAction(null); }
   }, [firebaseServices, router, handleAuthError, toast]);
 
   const isProfileComplete = !!(userProfile?.displayName && userProfile?.location);
@@ -362,7 +319,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     userProfile,
     isAdmin,
     isProfileComplete,
-    loading: loading || !firebaseServices, // Loading is true until services and auth state are ready
+    loading: loading || !firebaseServices,
+    isFirebaseReady,
     authAction,
     firestore: firebaseServices?.firestore || null,
     storage: firebaseServices?.storage || null,

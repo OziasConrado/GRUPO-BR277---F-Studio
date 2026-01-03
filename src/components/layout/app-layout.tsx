@@ -29,13 +29,13 @@ import type { Notification } from '@/types/notifications';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-const protectedRoutes = ['/', '/feed', '/profile/edit', '/admin/banners', '/turismo', '/ferramentas', '/sau', '/streaming']; // Add all routes that need auth
+const protectedRoutes = ['/feed', '/profile/edit', '/admin/banners', '/turismo', '/ferramentas', '/sau', '/streaming'];
 
 function HeaderAndNav({ isAuthPage }: { isAuthPage: boolean }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const router = useRouter();
   const { isChatOpen, closeChat } = useChat();
-  const { currentUser, isAuthenticating, signOutUser, firestore, isAdmin } = useAuth();
+  const { currentUser, isAuthenticating, signOutUser, firestore, isAdmin, authAction } = useAuth();
   const { notifications, unreadCount, loading: notificationsLoading } = useNotification();
   
   useEffect(() => {
@@ -89,9 +89,11 @@ function HeaderAndNav({ isAuthPage }: { isAuthPage: boolean }) {
       if (!notification.read) {
           await handleMarkAsRead(notification.id);
       }
-      let targetPath = '/';
-      if (notification.type === 'mention_post') {
-        targetPath = `/#post-${notification.postId}`;
+      let targetPath = '/feed'; // Default to feed
+      if (notification.type === 'mention_post' || notification.type === 'mention_comment') {
+        targetPath = `/feed#post-${notification.postId}`;
+      } else if (notification.type === 'mention_chat') {
+        // Chat logic might need a different approach, e.g., opening chat and highlighting message
       }
       
       router.push(targetPath);
@@ -261,7 +263,7 @@ function HeaderAndNav({ isAuthPage }: { isAuthPage: boolean }) {
                                 />
                               ) : null}
                               <AvatarFallback>
-                                {currentUser.displayName ? currentUser.displayName.substring(0,1).toUpperCase() : <User className="h-5 w-5 sm:h-6 smh-6 text-muted-foreground" />}
+                                {currentUser.displayName ? currentUser.displayName.substring(0,1).toUpperCase() : <User className="h-5 w-5 sm:h-6 sm:h-6 text-muted-foreground" />}
                               </AvatarFallback>
                             </Avatar>
                             <span className="sr-only">Meu Perfil</span>
@@ -289,7 +291,7 @@ function HeaderAndNav({ isAuthPage }: { isAuthPage: boolean }) {
                         </DropdownMenuItem>
                       </Link>
                     )}
-                    <DropdownMenuItem onClick={signOutUser} disabled={isAuthenticating}>
+                    <DropdownMenuItem onClick={signOutUser} disabled={authAction === 'signout'}>
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Sair</span>
                     </DropdownMenuItem>
@@ -376,36 +378,32 @@ function HeaderAndNav({ isAuthPage }: { isAuthPage: boolean }) {
 }
 
 export default function AppLayout({ children }: { children: ReactNode }) {
-    const { currentUser, isAuthenticating, loading } = useAuth();
+    const { currentUser, isFirebaseReady, loading } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
 
     useEffect(() => {
         if (loading) return;
-
-        const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route)) && pathname !== '/';
-        const isGuestRoute = ['/login', '/register', '/forgot-password', '/verify-email'].includes(pathname);
-        const rootRedirect = pathname === '/';
         
-        if (rootRedirect) {
-            router.replace('/streaming');
-            return;
-        }
+        const isAuthFlowPage = ['/login', '/register', '/forgot-password'].includes(pathname);
+        const isVerifyPage = pathname === '/verify-email';
+        let isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route)) && !isAuthFlowPage && !isVerifyPage;
+        if(pathname === '/') isProtectedRoute = true;
 
         if (!currentUser && isProtectedRoute) {
-            router.replace(`/login?redirect=${pathname}`);
+            router.replace('/login');
         } else if (currentUser) {
-            if (!currentUser.emailVerified && !isGuestRoute && pathname !== '/verify-email') {
+            if (!currentUser.emailVerified && !isVerifyPage) {
                 router.replace('/verify-email');
-            } else if (currentUser.emailVerified && isGuestRoute) {
-                router.replace('/streaming');
+            } else if (currentUser.emailVerified && (isAuthFlowPage || isVerifyPage)) {
+                router.replace('/streaming'); // Default page after login
             }
         }
     }, [currentUser, loading, pathname, router]);
 
-    const showLoadingScreen = isAuthenticating || loading;
+    const showLoadingScreen = loading || !isFirebaseReady;
     const isAuthPage = ['/login', '/register', '/forgot-password', '/verify-email'].includes(pathname);
-    const isAuthenticated = !!currentUser && currentUser.emailVerified;
+    const isAuthenticatedAndReady = !!currentUser && currentUser.emailVerified && isFirebaseReady;
 
     if (showLoadingScreen) {
         return (
@@ -415,34 +413,35 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         );
     }
     
-    // The main content and layout providers
     const mainContent = (
-      <div className="flex flex-col min-h-screen">
-          <main className={cn(
-              "flex-grow container mx-auto px-2 py-8",
-              !isAuthPage && "pb-20 sm:pb-8"
-          )}>
-              {children}
-          </main>
-      </div>
+      <main className={cn(
+          "flex-grow container mx-auto px-2 py-8",
+          !isAuthPage && "pb-20 sm:pb-8"
+      )}>
+          {children}
+      </main>
     );
-    
-    if (isAuthenticated && !isAuthPage) {
-        return (
-          <NotificationProvider>
-            <ChatProvider>
-              <HeaderAndNav isAuthPage={isAuthPage} />
-              {mainContent}
-            </ChatProvider>
-          </NotificationProvider>
-        );
-    }
 
-    // For unauthenticated users or auth pages
-    return (
+    const layoutWithProviders = (
+        <NotificationProvider>
+            <ChatProvider>
+                <HeaderAndNav isAuthPage={isAuthPage} />
+                {mainContent}
+            </ChatProvider>
+        </NotificationProvider>
+    );
+
+    const layoutWithoutProviders = (
       <>
         <HeaderAndNav isAuthPage={isAuthPage} />
         {mainContent}
       </>
     );
+
+    return (
+        <div className="flex flex-col min-h-screen">
+            {isAuthenticatedAndReady && !isAuthPage ? layoutWithProviders : layoutWithoutProviders}
+        </div>
+    );
 }
+
