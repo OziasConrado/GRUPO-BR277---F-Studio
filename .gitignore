@@ -25,8 +25,10 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env*.local
-.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # vercel
 .vercel
@@ -36,6 +38,4 @@ yarn-error.log*
 next-env.d.ts
 
 # Firebase
-# MUITO IMPORTANTE: Não remova esta linha.
-# Este arquivo contém chaves secretas e NUNCA deve ser enviado para o GitHub.
 firebase-service-account.json
