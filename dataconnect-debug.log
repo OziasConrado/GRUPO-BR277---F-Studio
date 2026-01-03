@@ -1,9 +1,9 @@
-I0103 02:10:52.766917   43333 load.go:31] Reloading schema and connectors...
-I0103 02:10:52.863032   43333 control.go:94] [/emulator/s 1d8e] UpdateResources(): done
+I0103 02:53:38.227940   47364 load.go:31] Reloading schema and connectors...
+I0103 02:53:38.339627   47364 control.go:94] [/emulator/s 0bec] UpdateResources(): done
 Main schema: sources: schema/schema.gql [2088B] 
 Connector "default": sources: connector/mutations.gql [1233B] connector/queries.gql [1802B] 
-I0103 02:10:53.088621   43333 collector.go:107] schema extensions wrote into "/home/user/studio/dataconnect/.dataconnect/schema"
+I0103 02:53:38.413166   47364 collector.go:107] schema extensions wrote into "/home/user/studio/dataconnect/.dataconnect/schema"
 Generated sources: prelude.gql [73219B] 
-I0103 02:10:53.088816   43333 load.go:109] Finished reloading
-I0103 02:10:53.107535   43333 dev.go:104] Listening on address (HTTP + gRPC): 127.0.0.1:50001
-I0103 02:10:53.580840   43333 engine.go:179] [/emulator/s 1d8e] ExecuteGraphqlRead IntrospectionQuery: succeeded. 
+I0103 02:53:38.414990   47364 load.go:109] Finished reloading
+I0103 02:53:38.426855   47364 dev.go:104] Listening on address (HTTP + gRPC): 127.0.0.1:50001
+I0103 02:53:38.499363   47364 engine.go:179] [/emulator/s 0bec] ExecuteGraphqlRead IntrospectionQuery: succeeded. 
