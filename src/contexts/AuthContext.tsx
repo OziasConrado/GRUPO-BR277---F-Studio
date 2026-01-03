@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -18,10 +19,10 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { auth, storage } from '@/lib/firebase/client';
-import { useFirestore } from './FirestoreContext';
+// Importa as instâncias prontas e configuradas
+import { auth, db, storage } from '@/lib/firebase/client';
 
 export interface UserProfile {
     uid: string;
@@ -49,7 +50,7 @@ interface AuthContextType {
   userProfile: UserProfile | null;
   isAdmin: boolean;
   isProfileComplete: boolean;
-  loading: boolean; // This now represents auth state loading
+  loading: boolean;
   authAction: string | null;
   signInWithGoogle: () => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
@@ -65,20 +66,20 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { db, isFirestoreReady } = useFirestore(); 
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true); // Loading is true until both Firestore and Auth are ready
+  const [loading, setLoading] = useState(true);
   const [authAction, setAuthAction] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
 
   const handleAuthError = useCallback((error: AuthError, customTitle?: string) => {
     console.error("Firebase Auth Error:", error.code, error.message);
-    if (error.code === 'unavailable' || error.code === 'firestore/unavailable') {
-        return; // Silently ignore the "offline" error which we know happens in dev.
-    }
+    
+    // Não vamos mais silenciar o erro "unavailable" para monitoramento.
+    // Em vez disso, a configuração de long-polling deve resolvê-lo.
+
     let message = "Ocorreu um erro. Tente novamente.";
      switch (error.code) {
         case 'auth/wrong-password': message = 'Senha incorreta.'; break;
@@ -89,22 +90,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         case 'auth/popup-closed-by-user': message = 'A janela de login foi fechada.'; break;
         case 'auth/too-many-requests': message = 'Muitas tentativas. Tente novamente mais tarde.'; break;
         case 'auth/network-request-failed': message = 'Erro de rede. Verifique sua conexão.'; break;
+        case 'unavailable':
+        case 'firestore/unavailable':
+             message = "Não foi possível conectar ao servidor. Verifique sua conexão ou tente mais tarde.";
+             break;
         default: message = `Ocorreu um problema (${error.code}).`; break;
     }
     toast({ title: customTitle || 'Erro de Autenticação', description: message, variant: 'destructive' });
   }, [toast]);
   
   useEffect(() => {
-    // Wait until Firestore is ready before setting up the auth listener.
-    if (!isFirestoreReady || !db) {
-        return;
-    }
-
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
           const userDocRef = doc(db, 'users', user.uid);
-          const idTokenResult = await getIdTokenResult(user, true); // Force refresh of the token
+          const idTokenResult = await getIdTokenResult(user, true);
           const userIsAdmin = idTokenResult.claims.admin === true;
           
           const userDoc = await getDoc(userDocRef);
@@ -112,7 +112,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           if (userDoc.exists()) {
               profileData = userDoc.data() as UserProfile;
-              // Sync potential profile changes from Google sign-in
               if (user.displayName !== profileData.displayName || user.photoURL !== profileData.photoURL) {
                 await updateDoc(userDocRef, {
                   displayName: user.displayName,
@@ -123,7 +122,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 profileData.photoURL = user.photoURL;
               }
           } else {
-             // Create profile if it doesn't exist
              const displayName = user.displayName || user.email?.split('@')[0] || 'Usuário';
              profileData = {
               uid: user.uid,
@@ -142,6 +140,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         } catch (error: any) {
           handleAuthError(error, "Erro ao carregar perfil");
+          // Se falhar ao buscar o perfil, deslogamos para evitar um estado inconsistente
+          await signOut(auth);
           setCurrentUser(null);
           setUserProfile(null);
           setIsAdmin(false);
@@ -151,11 +151,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUserProfile(null);
         setIsAdmin(false);
       }
-      setLoading(false); // Auth state is now determined
+      setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [isFirestoreReady, db, handleAuthError]); // Rerun this effect ONLY when isFirestoreReady changes
+  }, [handleAuthError]);
 
   const uploadFile = useCallback(async (file: File, path: string): Promise<string> => {
     const storageRef = ref(storage, path);
@@ -218,7 +218,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [currentUser, handleAuthError]);
 
   const updateUserProfile = useCallback(async (data: UpdateUserProfileData) => {
-    if (!currentUser || !db) return;
+    if (!currentUser) return;
     setAuthAction('update');
     try {
       let photoURL = currentUser.photoURL;
@@ -270,7 +270,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     userProfile,
     isAdmin,
     isProfileComplete,
-    loading: loading || !isFirestoreReady, // The app is loading if auth OR firestore is not ready
+    loading,
     authAction,
     signInWithGoogle,
     signUpWithEmail,
