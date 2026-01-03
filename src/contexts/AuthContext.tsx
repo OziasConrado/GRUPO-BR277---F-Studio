@@ -21,7 +21,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter, usePathname } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { auth, storage } from '@/lib/firebase/client';
-import { useFirestore } from './FirestoreContext'; // Import the new hook
+import { useFirestore } from './FirestoreContext';
 
 export interface UserProfile {
     uid: string;
@@ -65,7 +65,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { db, isFirestoreReady } = useFirestore(); // Get db instance and readiness state
+  const { db } = useFirestore(); // Get db instance from the FirestoreProvider
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const handleAuthError = useCallback((error: AuthError, customTitle?: string) => {
     console.error("Firebase Auth Error:", error.code, error.message);
     if (error.code === 'unavailable' || error.code === 'firestore/unavailable') {
-        return; 
+        return; // Silently ignore the "offline" error which we know happens in dev.
     }
     let message = "Ocorreu um erro. Tente novamente.";
      switch (error.code) {
@@ -96,9 +96,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [toast]);
   
   useEffect(() => {
-    // Wait until firestore is ready before setting up the auth listener
-    if (!isFirestoreReady || !db) {
-        return;
+    if (!db) {
+        setLoading(true);
+        return; // Wait for the db to be ready from FirestoreProvider
     }
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -113,7 +113,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           if (userDoc.exists()) {
               profileData = userDoc.data() as UserProfile;
-              // Sync Firebase Auth profile changes (like from Google Sign-In) to Firestore
               if (user.displayName !== profileData.displayName || user.photoURL !== profileData.photoURL) {
                 await updateDoc(userDocRef, {
                   displayName: user.displayName,
@@ -155,9 +154,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [isFirestoreReady, db, handleAuthError]);
+  }, [db, handleAuthError]);
 
-  // Redirect logic
+  // Redirect logic remains the same
    useEffect(() => {
     if (loading) return; 
     
@@ -292,7 +291,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     userProfile,
     isAdmin,
     isProfileComplete,
-    loading: loading || !isFirestoreReady, // The app is loading until both are ready
+    loading,
     authAction,
     signInWithGoogle,
     signUpWithEmail,

@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { getFirestore, initializeFirestore, onSnapshot, doc, type Firestore } from 'firebase/firestore';
 import { getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
 
 interface FirestoreContextType {
   db: Firestore | null;
@@ -17,58 +16,53 @@ export function FirestoreProvider({ children }: { children: ReactNode }) {
   const [isFirestoreReady, setIsFirestoreReady] = useState(false);
 
   useEffect(() => {
+    // This effect runs only once to initialize Firestore.
     try {
       const app = getApp();
-      // Initialize Firestore with long polling enabled.
-      // This is crucial for environments with proxies like Cloud Workstations.
       const firestoreInstance = initializeFirestore(app, {
         experimentalForceLongPolling: true,
       });
       setDb(firestoreInstance);
 
-      // To confirm connection, we can try to listen to a non-existent document.
-      // The '.info/serverTimeOffset' is a good candidate but requires RTDB.
-      // A simple onSnapshot on a known path (like a user doc, but that creates dependency)
-      // or even a non-existent one can trigger the connection.
-      // Let's use a simple, low-impact check. We'll monitor the auth state change as
-      // an indirect signal that Firebase services are up. A more direct Firestore
-      // health check could be a snapshot on a metadata document if one existed.
-      
-      const auth = getAuth(app);
-      const unsubscribe = onSnapshot(doc(firestoreInstance, 'health_check/status'), {
+      // Perform a health check to confirm connection before setting as ready.
+      const unsubscribe = onSnapshot(
+        doc(firestoreInstance, 'health_check/status'),
+        {
           next: () => {
-             // Successfully got a response (or non-response) from Firestore, meaning connection is up.
-             if (!isFirestoreReady) setIsFirestoreReady(true);
+            if (!isFirestoreReady) setIsFirestoreReady(true);
+            unsubscribe(); // We only need one signal, then we can stop listening.
           },
-          error: (err) => {
-             // Even an error (like permission-denied) means we are connected.
-             if (!isFirestoreReady) setIsFirestoreReady(true);
+          error: () => {
+            // An error (like permission-denied) still means we are connected to the backend.
+            if (!isFirestoreReady) setIsFirestoreReady(true);
+            unsubscribe();
           }
-      });
-      
-      // As a fallback, we'll set it to ready after a timeout, assuming the connection
-      // is established but the health check didn't resolve for some reason.
+        }
+      );
+
+      // As a final fallback, if the health check takes too long, we'll assume readiness.
       const readyTimeout = setTimeout(() => {
-          if (!isFirestoreReady) {
-              console.warn("Firestore readiness check timed out. Proceeding as ready.");
-              setIsFirestoreReady(true);
-          }
-      }, 5000);
+        if (!isFirestoreReady) {
+            console.warn("Firestore readiness check timed out. Proceeding as ready.");
+            setIsFirestoreReady(true);
+            unsubscribe();
+        }
+      }, 7000); // 7-second timeout
 
-
+      // Cleanup on unmount.
       return () => {
         unsubscribe();
         clearTimeout(readyTimeout);
       };
-
     } catch (e) {
       console.error("Failed to initialize Firestore", e);
     }
-  }, [isFirestoreReady]); // Rerun if readiness changes (for fallback)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array ensures this runs only once.
 
   return (
     <FirestoreContext.Provider value={{ db, isFirestoreReady }}>
-      {children}
+      {isFirestoreReady ? children : null}
     </FirestoreContext.Provider>
   );
 }
