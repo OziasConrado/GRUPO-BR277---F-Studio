@@ -18,11 +18,11 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { auth, db, storage } from '@/lib/firebase/client'; // Importa as instâncias JÁ INICIALIZADAS
+import { auth, storage } from '@/lib/firebase/client';
+import { useFirestore } from './FirestoreContext'; // Import the new hook
 
-// Interfaces
 export interface UserProfile {
     uid: string;
     email: string | null;
@@ -62,116 +62,122 @@ interface AuthContextType {
   uploadFile: (file: File, path: string) => Promise<string>;
 }
 
-// --- Context Definition ---
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// --- AuthProvider Component ---
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export function AuthProvider({ children }: AuthProviderProps) {
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const { db, isFirestoreReady } = useFirestore(); // Get db instance and readiness state
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [authAction, setAuthAction] = useState<string | null>(null);
   const router = useRouter();
+  const pathname = usePathname();
   const { toast } = useToast();
-  
+
   const handleAuthError = useCallback((error: AuthError, customTitle?: string) => {
     console.error("Firebase Auth Error:", error.code, error.message);
     if (error.code === 'unavailable' || error.code === 'firestore/unavailable') {
-        return; // Silencia o erro "offline" que já sabemos que pode ocorrer no dev
+        return; 
     }
     let message = "Ocorreu um erro. Tente novamente.";
      switch (error.code) {
-        case 'auth/wrong-password': message = 'Senha incorreta. Verifique sua senha e tente novamente.'; break;
-        case 'auth/user-not-found': message = 'Usuário não encontrado. Verifique o e-mail digitado ou crie uma nova conta.'; break;
-        case 'auth/email-already-in-use': message = 'Este e-mail já está em uso. Tente fazer login ou use um e-mail diferente.'; break;
-        case 'auth/weak-password': message = 'Senha muito fraca. A senha deve ter pelo menos 6 caracteres.'; break;
+        case 'auth/wrong-password': message = 'Senha incorreta.'; break;
+        case 'auth/user-not-found': message = 'Usuário não encontrado.'; break;
+        case 'auth/email-already-in-use': message = 'Este e-mail já está em uso.'; break;
+        case 'auth/weak-password': message = 'Senha muito fraca. Mínimo 6 caracteres.'; break;
         case 'auth/invalid-email': message = 'O formato do e-mail é inválido.'; break;
-        case 'auth/popup-closed-by-user': message = 'A janela de login foi fechada. Por favor, tente novamente.'; break;
-        case 'auth/cancelled-popup-request': message = 'A janela de login foi cancelada. Por favor, tente novamente.'; break;
-        case 'auth/requires-recent-login': message = 'Esta operação é sensível e requer autenticação recente. Faça login novamente.'; break;
-        case 'auth/too-many-requests': message = 'Muitas tentativas. Por favor, tente novamente mais tarde.'; break;
-        case 'auth/network-request-failed': message = 'Erro de rede. Verifique sua conexão com a internet.'; break;
-        case 'storage/retry-limit-exceeded': message = 'O tempo para o envio do arquivo esgotou. Verifique sua conexão e as permissões de armazenamento do Firebase.'; break;
-        case 'storage/unauthorized': message = 'Você não tem permissão para enviar este arquivo. Verifique as regras de segurança do Firebase Storage.'; break;
-        default: message = `Ocorreu um problema (${error.code}). Por favor, tente novamente.`; break;
+        case 'auth/popup-closed-by-user': message = 'A janela de login foi fechada.'; break;
+        case 'auth/too-many-requests': message = 'Muitas tentativas. Tente novamente mais tarde.'; break;
+        case 'auth/network-request-failed': message = 'Erro de rede. Verifique sua conexão.'; break;
+        default: message = `Ocorreu um problema (${error.code}).`; break;
     }
-    toast({
-      title: customTitle || 'Erro de Autenticação',
-      description: message,
-      variant: 'destructive',
-    });
+    toast({ title: customTitle || 'Erro de Autenticação', description: message, variant: 'destructive' });
   }, [toast]);
-
+  
   useEffect(() => {
+    // Wait until firestore is ready before setting up the auth listener
+    if (!isFirestoreReady || !db) {
+        return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setLoading(true);
       if (user) {
         try {
-          await user.reload(); 
-          const freshUser = auth.currentUser;
-
-          if (!freshUser) {
-             setCurrentUser(null);
-             setUserProfile(null);
-             setIsAdmin(false);
-             setLoading(false);
-             return;
-          }
-
-          const userDocRef = doc(db, 'users', freshUser.uid);
-          
-          const idTokenResult = await getIdTokenResult(freshUser, true);
+          const userDocRef = doc(db, 'users', user.uid);
+          const idTokenResult = await getIdTokenResult(user, true);
           const userIsAdmin = idTokenResult.claims.admin === true;
           
           const userDoc = await getDoc(userDocRef);
           let profileData: UserProfile;
+
           if (userDoc.exists()) {
               profileData = userDoc.data() as UserProfile;
-              if (freshUser.displayName !== profileData.displayName || freshUser.photoURL !== profileData.photoURL) {
+              // Sync Firebase Auth profile changes (like from Google Sign-In) to Firestore
+              if (user.displayName !== profileData.displayName || user.photoURL !== profileData.photoURL) {
                 await updateDoc(userDocRef, {
-                  displayName: freshUser.displayName,
-                  displayName_lowercase: freshUser.displayName?.toLowerCase(),
-                  photoURL: freshUser.photoURL,
+                  displayName: user.displayName,
+                  displayName_lowercase: user.displayName?.toLowerCase(),
+                  photoURL: user.photoURL,
                 });
-                profileData.displayName = freshUser.displayName;
-                profileData.photoURL = freshUser.photoURL;
+                profileData.displayName = user.displayName;
+                profileData.photoURL = user.photoURL;
               }
           } else {
-             const displayName = freshUser.displayName || freshUser.email?.split('@')[0] || 'Usuário';
+             const displayName = user.displayName || user.email?.split('@')[0] || 'Usuário';
              profileData = {
-              uid: freshUser.uid,
-              email: freshUser.email,
+              uid: user.uid,
+              email: user.email,
               displayName: displayName,
               displayName_lowercase: displayName.toLowerCase(),
-              photoURL: freshUser.photoURL,
+              photoURL: user.photoURL,
               lastLogin: serverTimestamp(),
             };
             await setDoc(userDocRef, profileData, { merge: true });
           }
           
-          setCurrentUser(freshUser);
+          setCurrentUser(user);
           setUserProfile(profileData);
           setIsAdmin(userIsAdmin);
+
         } catch (error: any) {
           handleAuthError(error, "Erro ao carregar perfil");
-        } finally {
-            setLoading(false);
+          setCurrentUser(null);
+          setUserProfile(null);
+          setIsAdmin(false);
         }
       } else {
         setCurrentUser(null);
         setUserProfile(null);
         setIsAdmin(false);
-        setLoading(false);
       }
+      setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [handleAuthError]);
+  }, [isFirestoreReady, db, handleAuthError]);
+
+  // Redirect logic
+   useEffect(() => {
+    if (loading) return; 
+    
+    const isAuthPage = ['/login', '/register', '/forgot-password'].includes(pathname);
+    const isVerifyPage = pathname === '/verify-email';
+    
+    if (currentUser) {
+        if (!currentUser.emailVerified && !isVerifyPage) {
+            router.push('/verify-email');
+        } else if (currentUser.emailVerified && (isAuthPage || isVerifyPage)) {
+            router.push('/'); 
+        }
+    } else {
+        const protectedRoutes = ['/', '/feed', '/profile/edit', '/admin', '/turismo', '/ferramentas', '/sau', '/streaming', '/guia-comercial', '/cadastro', '/planos'];
+        const isProtectedRoute = protectedRoutes.some(p => pathname.startsWith(p));
+        if (isProtectedRoute && !isAuthPage && !isVerifyPage) {
+            router.push('/login');
+        }
+    }
+  }, [currentUser, loading, pathname, router]);
 
   const uploadFile = useCallback(async (file: File, path: string): Promise<string> => {
     const storageRef = ref(storage, path);
@@ -183,7 +189,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setAuthAction('google');
     const provider = new GoogleAuthProvider();
     try { await signInWithPopup(auth, provider); } 
-    catch (error) { handleAuthError(error as AuthError, 'Erro no Login com Google'); } 
+    catch (error) { handleAuthError(error as AuthError); } 
     finally { setAuthAction(null); }
   }, [handleAuthError]);
 
@@ -192,7 +198,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await sendEmailVerification(userCredential.user);
-      toast({ title: 'Cadastro bem-sucedido!', description: 'Enviamos um link de verificação para o seu e-mail.' });
+      toast({ title: 'Cadastro realizado!', description: 'Enviamos um link de verificação para o seu e-mail.' });
     } catch (error) { handleAuthError(error as AuthError); } 
     finally { setAuthAction(null); }
   }, [handleAuthError, toast]);
@@ -208,18 +214,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setAuthAction('reset');
     try {
       await firebaseSendPasswordResetEmail(auth, email);
-      toast({ title: 'Link de Redefinição Enviado', description: 'Verifique seu e-mail para as instruções.' });
-    } catch (error) { handleAuthError(error as AuthError, 'Erro ao Enviar E-mail'); throw error; } 
+      toast({ title: 'E-mail Enviado', description: 'Verifique sua caixa de entrada para redefinir a senha.' });
+    } catch (error) { handleAuthError(error as AuthError); throw error; } 
     finally { setAuthAction(null); }
   }, [handleAuthError, toast]);
 
   const resendVerificationEmail = useCallback(async () => {
-    if (!currentUser) { toast({ variant: 'destructive', title: 'Erro', description: 'Nenhum usuário logado para reenviar o e-mail.' }); return; }
+    if (!currentUser) return;
     setAuthAction('resend-verification');
     try {
       await sendEmailVerification(currentUser);
       toast({ title: 'E-mail Reenviado', description: 'Verifique sua caixa de entrada e spam.' });
-    } catch (error) { handleAuthError(error as AuthError, 'Erro ao Reenviar'); } 
+    } catch (error) { handleAuthError(error as AuthError); } 
     finally { setAuthAction(null); }
   }, [currentUser, handleAuthError, toast]);
 
@@ -229,12 +235,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       await currentUser.reload();
       setCurrentUser({ ...currentUser });
-    } catch (error) { handleAuthError(error as AuthError, 'Erro ao Recarregar Usuário'); } 
+    } catch (error) { handleAuthError(error as AuthError); } 
     finally { setAuthAction(null); }
   }, [currentUser, handleAuthError]);
 
   const updateUserProfile = useCallback(async (data: UpdateUserProfileData) => {
-    if (!currentUser) return;
+    if (!currentUser || !db) return;
     setAuthAction('update');
     try {
       let photoURL = currentUser.photoURL;
@@ -242,20 +248,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const storagePath = `profile_pictures/${currentUser.uid}/${Date.now()}_${data.newPhotoFile.name}`;
         photoURL = await uploadFile(data.newPhotoFile, storagePath);
       }
+      
       const authUpdates: { displayName?: string; photoURL?: string } = {};
       if (data.displayName && data.displayName !== currentUser.displayName) authUpdates.displayName = data.displayName;
       if (photoURL && photoURL !== currentUser.photoURL) authUpdates.photoURL = photoURL;
       if (Object.keys(authUpdates).length > 0) await firebaseUpdateProfile(currentUser, authUpdates);
       
       const userDocRef = doc(db, 'users', currentUser.uid);
-      const firestoreUpdates: Partial<UserProfile> = {
-        displayName: data.displayName,
-        displayName_lowercase: data.displayName?.toLowerCase(),
-        bio: data.bio,
-        location: data.location,
-        instagramUsername: data.instagramUsername,
-        photoURL: photoURL,
-      };
+      const firestoreUpdates: Partial<UserProfile> = {};
+      if (data.displayName) firestoreUpdates.displayName = data.displayName;
+      if (data.displayName) firestoreUpdates.displayName_lowercase = data.displayName.toLowerCase();
+      if (data.bio) firestoreUpdates.bio = data.bio;
+      if (data.location) firestoreUpdates.location = data.location;
+      if (data.instagramUsername) firestoreUpdates.instagramUsername = data.instagramUsername;
+      if (photoURL) firestoreUpdates.photoURL = photoURL;
+
       await updateDoc(userDocRef, firestoreUpdates);
       
       await currentUser.reload();
@@ -266,14 +273,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       toast({ title: "Sucesso!", description: "Seu perfil foi atualizado." });
     } catch (error) { handleAuthError(error as AuthError, 'Erro ao Atualizar Perfil'); } 
     finally { setAuthAction(null); }
-  }, [currentUser, handleAuthError, toast, uploadFile]);
+  }, [currentUser, db, handleAuthError, toast, uploadFile]);
 
   const signOutUser = useCallback(async () => {
     setAuthAction('signout');
     try {
       await signOut(auth);
       router.push('/login');
-      toast({ title: 'Logout realizado com sucesso.' });
+      toast({ title: 'Você saiu da sua conta.' });
     } catch (error) { handleAuthError(error as AuthError); } 
     finally { setAuthAction(null); }
   }, [router, handleAuthError, toast]);
@@ -285,7 +292,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     userProfile,
     isAdmin,
     isProfileComplete,
-    loading,
+    loading: loading || !isFirestoreReady, // The app is loading until both are ready
     authAction,
     signInWithGoogle,
     signUpWithEmail,

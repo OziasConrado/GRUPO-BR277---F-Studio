@@ -2,8 +2,9 @@
 
 import type { ReactNode } from 'react';
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import type { Notification } from '@/types/notifications'; // New type
+import type { Notification } from '@/types/notifications';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFirestore } from './FirestoreContext'; // Import the new hook
 import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore';
 
 interface NotificationContextType {
@@ -15,13 +16,14 @@ interface NotificationContextType {
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
-  const { currentUser, firestore } = useAuth();
+  const { currentUser } = useAuth();
+  const { db } = useFirestore(); // Get db instance from the new context
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!currentUser || !firestore) {
+    if (!currentUser || !db) { // Also check for db
       setNotifications([]);
       setUnreadCount(0);
       setLoading(false);
@@ -29,7 +31,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
 
     setLoading(true);
-    const notificationsCollection = collection(firestore, 'users', currentUser.uid, 'notifications');
+    const notificationsCollection = collection(db, 'users', currentUser.uid, 'notifications');
     const q = query(notificationsCollection, orderBy('timestamp', 'desc'), limit(20));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -49,7 +51,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [currentUser, firestore]);
+  }, [currentUser, db]); // Depend on db
 
   return (
     <NotificationContext.Provider

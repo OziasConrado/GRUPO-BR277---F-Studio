@@ -1,10 +1,10 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { ChatProvider } from '@/contexts/ChatContext';
+import { FirestoreProvider } from '@/contexts/FirestoreContext';
 
 interface ProvidersProps {
     children: ReactNode;
@@ -12,12 +12,14 @@ interface ProvidersProps {
 
 export function Providers({ children }: ProvidersProps) {
   return (
-    <AuthProvider>
-        <NotificationProvider>
-            <ChatProvider>
-                {children}
-            </ChatProvider>
-        </NotificationProvider>
-    </AuthProvider>
+    <FirestoreProvider>
+        <AuthProvider>
+            <NotificationProvider>
+                <ChatProvider>
+                    {children}
+                </ChatProvider>
+            </NotificationProvider>
+        </AuthProvider>
+    </FirestoreProvider>
   );
 }
