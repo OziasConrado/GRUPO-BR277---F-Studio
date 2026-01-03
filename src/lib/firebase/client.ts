@@ -12,19 +12,19 @@ let auth: Auth;
 let db: Firestore;
 let storage: FirebaseStorage;
 
-if (getApps().length === 0) {
+// Padrão Singleton para garantir que o Firebase seja inicializado apenas uma vez
+if (!getApps().length) {
   try {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
+    // Configuração do Firestore com as flags de rede para ambientes de proxy
     db = initializeFirestore(app, {
       experimentalForceLongPolling: true,
-      useFetchStreams: false, 
+      useFetchStreams: false,
     });
     storage = getStorage(app);
   } catch (error) {
     console.error("CRITICAL: Erro ao inicializar o Firebase.", error);
-    // Em um cenário real, você poderia ter uma página de erro ou um fallback.
-    // Por enquanto, vamos lançar o erro para que fique visível no console.
     throw new Error("Falha na inicialização dos serviços essenciais do Firebase.");
   }
 } else {

@@ -22,6 +22,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db, storage } from '@/lib/firebase/client';
+import { useFirestore } from './FirestoreContext';
 
 export interface UserProfile {
     uid: string;
@@ -65,6 +66,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { isFirestoreReady } = useFirestore(); // Depende do Firestore estar pronto
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -85,16 +87,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         case 'auth/popup-closed-by-user': message = 'A janela de login foi fechada.'; break;
         case 'auth/too-many-requests': message = 'Muitas tentativas. Tente novamente mais tarde.'; break;
         case 'auth/network-request-failed': message = 'Erro de rede. Verifique sua conexão.'; break;
-        case 'unavailable':
-        case 'firestore/unavailable':
-             message = "Não foi possível conectar ao servidor. Verifique sua conexão ou tente mais tarde.";
-             break;
         default: message = `Ocorreu um problema (${error.code}).`; break;
     }
     toast({ title: customTitle || 'Erro de Autenticação', description: message, variant: 'destructive' });
   }, [toast]);
   
   useEffect(() => {
+    // Só inicia o listener de autenticação quando o Firestore estiver pronto
+    if (!isFirestoreReady) {
+      setLoading(true); // Garante que o app fique em loading
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
@@ -102,12 +106,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const idTokenResult = await getIdTokenResult(user, true);
           const userIsAdmin = idTokenResult.claims.admin === true;
           
-          // Força a busca do documento diretamente do servidor, ignorando o cache
-          const userDoc = await getDocFromServer(userDocRef);
+          const userDoc = await getDocFromServer(userDocRef); // Força a busca do servidor
           let profileData: UserProfile;
 
           if (userDoc.exists()) {
               profileData = userDoc.data() as UserProfile;
+              // Sincroniza dados do auth para o firestore se houver mudança
               if (user.displayName !== profileData.displayName || user.photoURL !== profileData.photoURL) {
                 await updateDoc(userDocRef, {
                   displayName: user.displayName,
@@ -150,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [handleAuthError]);
+  }, [isFirestoreReady, handleAuthError]); // Re-executa quando o firestore ficar pronto
 
   const uploadFile = useCallback(async (file: File, path: string): Promise<string> => {
     const storageRef = ref(storage, path);
@@ -278,7 +282,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     uploadFile,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  // Renderiza filhos apenas quando o loading inicial do auth (que agora depende do firestore) termina.
+  return <AuthContext.Provider value={value}>{!loading ? children : null}</AuthContext.Provider>;
 }
 
 export const useAuth = (): AuthContextType => {

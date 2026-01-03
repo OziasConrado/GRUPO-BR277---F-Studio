@@ -1,8 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { getFirestore, initializeFirestore, onSnapshot, doc, type Firestore } from 'firebase/firestore';
-import { getApp } from 'firebase/app';
+import { onSnapshot, doc, type Firestore } from 'firebase/firestore';
+import { db as firestoreInstance } from '@/lib/firebase/client'; // Importa a instância única
 
 interface FirestoreContextType {
   db: Firestore | null;
@@ -12,56 +12,46 @@ interface FirestoreContextType {
 const FirestoreContext = createContext<FirestoreContextType | undefined>(undefined);
 
 export function FirestoreProvider({ children }: { children: ReactNode }) {
-  const [db, setDb] = useState<Firestore | null>(null);
   const [isFirestoreReady, setIsFirestoreReady] = useState(false);
 
   useEffect(() => {
-    try {
-      const app = getApp();
-      // Initialize with long polling for proxy/cloud environments
-      const firestoreInstance = initializeFirestore(app, {
-        experimentalForceLongPolling: true,
-      });
-      setDb(firestoreInstance);
-
-      // Perform a health check to confirm connection before setting as ready.
+    if (firestoreInstance) {
+      // Realiza uma verificação de saúde para confirmar a conexão de rede.
       const unsubscribe = onSnapshot(
-        doc(firestoreInstance, 'health_check/status'), // A document that may not exist but can be listened to.
+        doc(firestoreInstance, 'health_check/status'), // Um documento que não precisa existir.
         {
           next: () => {
             if (!isFirestoreReady) setIsFirestoreReady(true);
-            unsubscribe(); // We only need one signal, then we can stop listening.
+            unsubscribe();
           },
-          error: () => {
-            // An error (like permission-denied) still means we are connected to the backend.
+          error: (err) => {
+            // Um erro de permissão ainda confirma a conectividade de rede.
+            console.warn("Firestore health check resulted in a permission error (this is okay):", err.code);
             if (!isFirestoreReady) setIsFirestoreReady(true);
             unsubscribe();
           }
         }
       );
 
-      // As a final fallback, if the health check takes too long, we'll assume readiness.
+      // Fallback de timeout para garantir que o app não fique preso.
       const readyTimeout = setTimeout(() => {
         if (!isFirestoreReady) {
-            console.warn("Firestore readiness check timed out. Proceeding as ready.");
+            console.warn("Firestore readiness check timed out. Proceeding...");
             setIsFirestoreReady(true);
             unsubscribe();
         }
-      }, 7000); // 7-second timeout
+      }, 8000); // 8 segundos
 
       return () => {
         unsubscribe();
         clearTimeout(readyTimeout);
       };
-    } catch (e) {
-      console.error("Failed to initialize Firestore", e);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); 
+  }, []);
 
-  // Render children only when Firestore is ready to prevent race conditions.
   return (
-    <FirestoreContext.Provider value={{ db, isFirestoreReady }}>
+    <FirestoreContext.Provider value={{ db: firestoreInstance, isFirestoreReady }}>
       {isFirestoreReady ? children : null}
     </FirestoreContext.Provider>
   );
