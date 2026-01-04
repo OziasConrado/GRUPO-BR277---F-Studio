@@ -20,24 +20,28 @@ export async function fetchUserProfileServer(uid: string): Promise<UserProfile |
   }
   
   if (!firestore) {
-    console.error("fetchUserProfileServer: Firestore Admin SDK não inicializado.");
+    console.error("--- Erro Crítico na Action: fetchUserProfileServer --- Firestore Admin SDK não inicializado.");
     return null;
   }
 
   try {
+    console.log(`--- Iniciando Action: fetchUserProfileServer para UID: ${uid} ---`);
     const userDocRef = firestore.collection('users').doc(uid);
     const userDoc = await userDocRef.get();
 
     if (userDoc.exists) {
       const profile = userDoc.data() as UserProfile;
       userProfileCache.set(uid, profile);
+       console.log(`--- Sucesso na Action: fetchUserProfileServer para UID: ${uid} ---`);
       return profile;
     } else {
       userProfileCache.set(uid, null);
       return null;
     }
-  } catch (error) {
-    console.error(`Erro ao buscar perfil do usuário (UID: ${uid}) via Server Action:`, error);
+  } catch (error: any) {
+    console.error(`--- Erro na Action: fetchUserProfileServer (UID: ${uid}) ---`, error.stack || error);
+    // Não lança o erro para o cliente, apenas loga no servidor.
+    // O cliente tratará o retorno nulo.
     return null;
   }
 }
@@ -59,6 +63,7 @@ export async function fetchBannersServer() {
     const snapshot = await q.get();
     
     if (snapshot.empty) {
+      console.log('--- Action: fetchBannersServer - Nenhum banner ativo encontrado. ---');
       return { success: true, data: [] };
     }
 
@@ -67,9 +72,10 @@ export async function fetchBannersServer() {
       ...doc.data()
     }));
     
+    console.log(`--- Sucesso na Action: fetchBannersServer - ${banners.length} banners encontrados. ---`);
     return { success: true, data: banners as any[] };
   } catch (error: any) {
-    console.error("--- Erro na Action: fetchBannersServer ---", error);
+    console.error("--- Erro na Action: fetchBannersServer ---", error.stack || error);
     return { success: false, error: error.message || 'Falha ao buscar banners.', data: [] };
   }
 }
@@ -89,9 +95,10 @@ export async function fetchAllBannersServer() {
         const q = bannersCollection.orderBy('order', 'asc');
         const snapshot = await q.get();
         const banners = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        console.log(`--- Sucesso na Action: fetchAllBannersServer - ${banners.length} banners encontrados. ---`);
         return { success: true, data: banners as any[] };
     } catch (error: any) {
-        console.error("--- Erro na Action: fetchAllBannersServer ---", error);
+        console.error("--- Erro na Action: fetchAllBannersServer ---", error.stack || error);
         return { success: false, error: error.message || 'Falha ao buscar todos os banners.', data: [] };
     }
 }
@@ -112,9 +119,11 @@ export async function saveBannerServer(bannerData: any, bannerId: string | null)
       // Atualizar banner existente
       const bannerRef = firestore.collection('banners').doc(bannerId);
       await bannerRef.update({ ...bannerData, updatedAt: new Date() });
+       console.log(`--- Sucesso na Action: saveBannerServer - Banner ${bannerId} atualizado. ---`);
     } else {
       // Criar novo banner
-      await firestore.collection('banners').add({ ...bannerData, createdAt: new Date() });
+      const newBanner = await firestore.collection('banners').add({ ...bannerData, createdAt: new Date() });
+       console.log(`--- Sucesso na Action: saveBannerServer - Novo banner criado com ID: ${newBanner.id}. ---`);
     }
     
     // Revalida o cache do Next.js para as páginas afetadas
@@ -141,6 +150,7 @@ export async function deleteBannerServer(bannerId: string) {
 
     try {
         await firestore.collection('banners').doc(bannerId).delete();
+        console.log(`--- Sucesso na Action: deleteBannerServer - Banner ${bannerId} deletado. ---`);
         revalidatePath('/admin/banners');
         revalidatePath('/streaming');
         revalidatePath('/feed');

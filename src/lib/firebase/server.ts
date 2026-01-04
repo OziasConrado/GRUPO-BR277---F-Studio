@@ -5,7 +5,6 @@ import { initializeApp, getApp, getApps, type App as FirebaseApp } from 'firebas
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { getAuth, type Auth } from 'firebase-admin/auth';
 import { getStorage, type Storage } from 'firebase-admin/storage';
-import * as admin from 'firebase-admin';
 
 // Variáveis para armazenar as instâncias dos serviços
 let app: FirebaseApp;
@@ -20,9 +19,9 @@ if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
     if (!getApps().length) {
        console.log("--- Inicializando Firebase Admin SDK com credenciais padrão ---");
        // No ambiente do Google Cloud (incluindo Workstations), o SDK usa as
-       // credenciais do ambiente automaticamente. Não é necessário serviceAccount.
+       // credenciais do ambiente automaticamente.
        app = initializeApp({
-         projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+         projectId: 'grupobr277-v2-d85f5', // ID explícito do projeto
          storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
        });
     } else {
@@ -35,8 +34,13 @@ if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
     firestore = getFirestore(app);
     storage = getStorage(app);
 
+    // **[NOVO]** Força o SDK do Firestore a usar REST/HTTP em vez de gRPC
+    firestore.settings({ preferRest: true });
+    console.log("--- Firestore Admin SDK configurado para usar REST/HTTP. ---");
+
+
   } catch (e: any) {
-    console.error("--- Erro CRÍTICO ao inicializar Firebase Admin SDK ---:", e);
+    console.error("--- Erro CRÍTICO ao inicializar Firebase Admin SDK ---:", e.stack || e);
     // Em caso de falha, deixamos as instâncias como undefined
   }
 } else {
