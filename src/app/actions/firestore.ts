@@ -1,7 +1,7 @@
 
 'use server';
 
-import { firestore } from '@/lib/firebase/client'; // Alterado para usar a instância do CLIENTE
+import { firestore } from '@/lib/firebase/client'; // Usado para operações de escrita
 import type { UserProfile } from '@/contexts/AuthContext';
 import { revalidatePath } from 'next/cache';
 import { getDoc, doc, collection, where, query, orderBy, getDocs, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
@@ -60,39 +60,110 @@ export async function fetchUserProfileServer(uid: string): Promise<UserProfile |
 }
 
 /**
- * Server Action para buscar os banners ativos no Firestore.
+ * Mapeia a resposta da API REST do Firestore para um formato de objeto simples.
+ */
+function mapFirestoreRestResponse(documents: any[]): any[] {
+  if (!documents) return [];
+  
+  return documents.map(doc => {
+    const fields = doc.fields;
+    const mappedDoc: { [key: string]: any } = {};
+
+    // Extrai o ID do documento a partir do campo 'name'
+    const nameParts = doc.name.split('/');
+    mappedDoc.id = nameParts[nameParts.length - 1];
+
+    for (const key in fields) {
+      if (Object.prototype.hasOwnProperty.call(fields, key)) {
+        const valueObject = fields[key];
+        const valueType = Object.keys(valueObject)[0];
+        
+        // Converte para o tipo de dado correto
+        switch (valueType) {
+          case 'stringValue':
+            mappedDoc[key] = valueObject.stringValue;
+            break;
+          case 'integerValue':
+            mappedDoc[key] = parseInt(valueObject.integerValue, 10);
+            break;
+          case 'doubleValue':
+            mappedDoc[key] = valueObject.doubleValue;
+            break;
+          case 'booleanValue':
+            mappedDoc[key] = valueObject.booleanValue;
+            break;
+          case 'timestampValue':
+            mappedDoc[key] = new Date(valueObject.timestampValue).toISOString();
+            break;
+          case 'mapValue':
+             // Recursivamente mapeia objetos aninhados (não implementado profundamente aqui por simplicidade)
+            mappedDoc[key] = valueObject.mapValue.fields; 
+            break;
+          case 'arrayValue':
+            // Mapeia arrays (não implementado profundamente aqui por simplicidade)
+            mappedDoc[key] = valueObject.arrayValue.values; 
+            break;
+          default:
+            mappedDoc[key] = valueObject[valueType];
+        }
+      }
+    }
+    return mappedDoc;
+  });
+}
+
+/**
+ * Server Action para buscar os banners ativos usando a API REST do Firestore.
+ * Isso contorna bloqueios de proxy/firewall ao evitar o SDK do Firebase para leitura.
  * @returns Uma lista de banners.
  */
 export async function fetchBannersServer() {
-  console.log('--- Iniciando Action: fetchBannersServer ---');
-  if (!firestore) {
-    console.error("--- Erro na Action: fetchBannersServer --- Firestore não inicializado.");
-    return { success: false, error: "Serviço de banco de dados indisponível.", data: [] };
+  console.log('--- Iniciando Action: fetchBannersServer via REST API ---');
+  
+  const projectId = 'grupo-br277';
+  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  const collectionName = 'banners';
+
+  if (!apiKey) {
+    console.error("--- Erro na Action: fetchBannersServer --- Chave de API do Firebase não encontrada.");
+    return { success: false, error: "Configuração do servidor incompleta.", data: [] };
   }
-  console.log('>>> [SERVER ACTION] Tentando conectar ao projeto (Banners):', firestore.app.options.projectId)
+
+  // A API REST não suporta filtros complexos como `where('isActive', '==', true)` diretamente em uma única chamada de `get` sem um índice composto.
+  // A maneira mais simples é buscar todos e filtrar no servidor. Para coleções grandes, um índice seria necessário.
+  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/${collectionName}?key=${apiKey}`;
 
   try {
-    const bannersCollection = collection(firestore, 'banners');
-    const q = query(bannersCollection, where('isActive', '==', true), orderBy('order', 'asc'));
-    const snapshot = await getDocs(q);
-    
-    if (snapshot.empty) {
-      console.log('--- Action: fetchBannersServer - Nenhum banner ativo encontrado. ---');
-      return { success: true, data: [] };
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json'
+        },
+        cache: 'no-store' // Garante que estamos sempre buscando os dados mais recentes
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.json();
+      throw new Error(`Erro de rede: ${response.statusText} - ${JSON.stringify(errorBody)}`);
     }
 
-    const banners = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const json = await response.json();
+    const allBanners = mapFirestoreRestResponse(json.documents);
+
+    // Filtra e ordena no servidor, pois a API REST simples não permite isso facilmente
+    const activeBanners = allBanners
+      .filter(banner => banner.isActive === true)
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
     
-    console.log(`--- Sucesso na Action: fetchBannersServer - ${banners.length} banners encontrados. ---`);
-    return { success: true, data: banners as any[] };
+    console.log(`--- Sucesso na Action: fetchBannersServer - ${activeBanners.length} banners ativos encontrados. ---`);
+    return { success: true, data: activeBanners as any[] };
+
   } catch (error: any) {
-    console.error("--- Erro na Action: fetchBannersServer ---", error.stack || error);
-    return { success: false, error: error.message || 'Falha ao buscar banners.', data: [] };
+    console.error("--- Erro na Action: fetchBannersServer (REST) ---", error.stack || error);
+    return { success: false, error: error.message || 'Falha ao buscar banners via API REST.', data: [] };
   }
 }
+
 
 /**
  * Server Action para buscar TODOS os banners (ativos e inativos) para o painel de admin.
@@ -103,7 +174,6 @@ export async function fetchAllBannersServer() {
         console.error("--- Erro na Action: fetchAllBannersServer --- Firestore não inicializado.");
         return { success: false, error: "Serviço de banco de dados indisponível.", data: [] };
     }
-    console.log('>>> [SERVER ACTION] Tentando conectar ao projeto (Todos Banners):', firestore.app.options.projectId)
 
     try {
         const bannersCollection = collection(firestore, 'banners');
@@ -128,7 +198,6 @@ export async function saveBannerServer(bannerData: any, bannerId: string | null)
     console.error("--- Erro na Action: saveBannerServer --- Firestore não inicializado.");
     return { success: false, error: "Serviço de banco de dados indisponível." };
   }
-  console.log('>>> [SERVER ACTION] Tentando conectar ao projeto (Salvar Banner):', firestore.app.options.projectId)
 
   try {
     if (bannerId) {
@@ -163,7 +232,6 @@ export async function deleteBannerServer(bannerId: string) {
         console.error("--- Erro na Action: deleteBannerServer --- Firestore não inicializado.");
         return { success: false, error: "Serviço de banco de dados indisponível." };
     }
-    console.log('>>> [SERVER ACTION] Tentando conectar ao projeto (Deletar Banner):', firestore.app.options.projectId)
 
     try {
         await deleteDoc(doc(firestore, 'banners', bannerId));
@@ -177,3 +245,5 @@ export async function deleteBannerServer(bannerId: string) {
         return { success: false, error: error.message || 'Não foi possível deletar o banner.' };
     }
 }
+
+    
