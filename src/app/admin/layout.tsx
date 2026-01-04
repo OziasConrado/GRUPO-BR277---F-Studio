@@ -7,16 +7,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
-  const { isAuthenticating, isAdmin } = useAuth();
+  const { loading, isAdmin } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isAuthenticating && !isAdmin) {
+    if (!loading && !isAdmin) {
       router.replace('/'); 
     }
-  }, [isAuthenticating, isAdmin, router]);
+  }, [loading, isAdmin, router]);
 
-  if (isAuthenticating || !isAdmin) {
+  if (loading || !isAdmin) {
     return (
       <div className="flex justify-center items-center h-screen">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
