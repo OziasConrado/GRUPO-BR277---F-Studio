@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -13,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import Banners from '@/components/banners/Banners';
 
 // Dados fornecidos pelo usuário
 const mockStreamsData: StreamCardProps[] = [
@@ -244,6 +244,7 @@ export default function StreamingPage() {
 
   return (
     <div className="w-full space-y-6">
+       <Banners />
       <div className="grid grid-cols-2 gap-3 mb-6">
           <Button asChild variant="destructive" className="h-auto py-3 text-base rounded-lg">
               <Link href="/emergencia">

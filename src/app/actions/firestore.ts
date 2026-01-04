@@ -1,37 +1,98 @@
-
 'use server';
 
-import { firestore } from '@/lib/firebase/client'; // Usado para operações de escrita
 import type { UserProfile } from '@/contexts/AuthContext';
 import { revalidatePath } from 'next/cache';
 import { getDoc, doc, collection, where, query, orderBy, getDocs, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
 
+const projectId = 'grupo-br277';
+const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 
-// Cache para o perfil do usuário para evitar buscas repetidas na mesma requisição
-const userProfileCache = new Map<string, UserProfile | null>();
+function mapFirestoreRestResponse(documents: any[]): any[] {
+  if (!documents) {
+    return [];
+  }
+  return documents.map(doc => {
+    const fields = doc.fields;
+    const mappedDoc: { [key: string]: any } = { id: doc.name.split('/').pop() };
+    for (const key in fields) {
+      const valueObject = fields[key];
+      const valueType = Object.keys(valueObject)[0];
+      
+      if (valueType === 'stringValue') {
+        mappedDoc[key] = valueObject.stringValue;
+      } else if (valueType === 'integerValue') {
+        mappedDoc[key] = parseInt(valueObject.integerValue, 10);
+      } else if (valueType === 'doubleValue') {
+        mappedDoc[key] = valueObject.doubleValue;
+      } else if (valueType === 'booleanValue') {
+        mappedDoc[key] = valueObject.booleanValue;
+      } else if (valueType === 'timestampValue') {
+        mappedDoc[key] = new Date(valueObject.timestampValue).toISOString();
+      } else if (valueType === 'mapValue') {
+         // This is a simplification. A real implementation would recurse.
+         mappedDoc[key] = valueObject.mapValue.fields;
+      } else if (valueType === 'arrayValue') {
+          // This is a simplification.
+          mappedDoc[key] = valueObject.arrayValue.values?.map((v: any) => Object.values(v)[0]) || [];
+      } else {
+        mappedDoc[key] = valueObject[valueType];
+      }
+    }
+    return mappedDoc;
+  });
+}
+
+/**
+ * Server Action para buscar banners ativos usando a API REST do Firestore.
+ * @returns Um objeto com sucesso/erro e os dados dos banners.
+ */
+export async function fetchBannersServer() {
+  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/banners?key=${apiKey}&orderBy=order`;
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+      next: {
+        revalidate: 300, // Revalida a cada 5 minutos
+      }
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.json();
+      console.error("--- Erro na API REST do Firestore ---", JSON.stringify(errorBody, null, 2));
+      throw new Error(`Falha ao buscar banners: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const mappedData = mapFirestoreRestResponse(data.documents);
+    const activeBanners = mappedData.filter(b => b.isActive === true);
+    
+    console.log(`--- Sucesso na Action REST: fetchBannersServer - ${activeBanners.length} banners ativos encontrados. ---`);
+    return { success: true, data: activeBanners as any[] };
+
+  } catch (error: any) {
+    console.error("--- Erro CRÍTICO na Action REST: fetchBannersServer ---", error.stack || error);
+    return { success: false, error: error.message || 'Falha ao buscar banners via REST.', data: [] };
+  }
+}
+
+// Manter as outras actions que ainda não foram refatoradas para REST
+import { firestore as firestoreAdmin } from '@/lib/firebase/server';
 
 const TIMEOUT_DURATION = 5000; // 5 segundos
 
-/**
- * Server Action para buscar o perfil de um usuário no Firestore com timeout.
- * Utiliza o SDK Admin do Firebase no lado do servidor.
- * @param uid - O ID do usuário a ser buscado.
- * @returns Os dados do perfil do usuário ou null se não encontrado ou se ocorrer timeout.
- */
 export async function fetchUserProfileServer(uid: string): Promise<UserProfile | null> {
-  if (userProfileCache.has(uid)) {
-    return userProfileCache.get(uid) ?? null;
-  }
-  
-  if (!firestore) {
-    console.error("--- Erro Crítico na Action: fetchUserProfileServer --- Firestore não inicializado.");
+  if (!firestoreAdmin) {
+    console.error("--- Erro Crítico na Action: fetchUserProfileServer --- Firestore Admin não inicializado.");
     return null;
   }
 
   console.log(`>>> [SERVER ACTION] Iniciando busca de PERFIL no Firestore para UID: ${uid}...`);
-  console.log('>>> [SERVER ACTION] Tentando conectar ao projeto:', firestore.app.options.projectId)
   
-  const firestorePromise = getDoc(doc(firestore, 'users', uid));
+  const firestorePromise = getDoc(doc(firestoreAdmin, 'users', uid));
 
   const timeoutPromise = new Promise<never>((_, reject) =>
     setTimeout(() => reject(new Error('Firestore timeout')), TIMEOUT_DURATION)
@@ -39,38 +100,31 @@ export async function fetchUserProfileServer(uid: string): Promise<UserProfile |
 
   try {
     const userDoc = await Promise.race([firestorePromise, timeoutPromise]);
-
     console.log('<<< [SERVER ACTION] Busca de PERFIL concluída!');
 
     if (userDoc.exists()) {
       const profile = userDoc.data() as UserProfile;
-      userProfileCache.set(uid, profile);
       console.log(`--- Sucesso na Action: fetchUserProfileServer para UID: ${uid} ---`);
       return profile;
     } else {
-      userProfileCache.set(uid, null);
       console.warn(`--- Perfil não encontrado para UID: ${uid} ---`);
       return null;
     }
   } catch (error: any) {
     console.error(`--- Erro na Action: fetchUserProfileServer (UID: ${uid}) ---`, error.message, error.stack || '');
-    // Se ocorrer timeout ou outro erro, retorna null, mas não deixa a Promise pendente.
     return null;
   }
 }
 
-/**
- * Server Action para buscar TODOS os banners (ativos e inativos) para o painel de admin.
- */
 export async function fetchAllBannersServer() {
     console.log('--- Iniciando Action: fetchAllBannersServer ---');
-    if (!firestore) {
-        console.error("--- Erro na Action: fetchAllBannersServer --- Firestore não inicializado.");
+    if (!firestoreAdmin) {
+        console.error("--- Erro na Action: fetchAllBannersServer --- Firestore Admin não inicializado.");
         return { success: false, error: "Serviço de banco de dados indisponível.", data: [] };
     }
 
     try {
-        const bannersCollection = collection(firestore, 'banners');
+        const bannersCollection = collection(firestoreAdmin, 'banners');
         const q = query(bannersCollection, orderBy('order', 'asc'));
         const snapshot = await getDocs(q);
         const banners = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -82,34 +136,26 @@ export async function fetchAllBannersServer() {
     }
 }
 
-
-/**
- * Server Action para salvar (criar ou atualizar) um banner.
- */
 export async function saveBannerServer(bannerData: any, bannerId: string | null) {
-  console.log('--- Iniciando Action: saveBannerServer ---', { bannerId, bannerData });
-  if (!firestore) {
-    console.error("--- Erro na Action: saveBannerServer --- Firestore não inicializado.");
+  console.log('--- Iniciando Action: Salvar Banner ---', { bannerId, bannerData });
+  if (!firestoreAdmin) {
+    console.error("--- Erro na Action: saveBannerServer --- Firestore Admin não inicializado.");
     return { success: false, error: "Serviço de banco de dados indisponível." };
   }
 
   try {
     if (bannerId) {
-      // Atualizar banner existente
-      const bannerRef = doc(firestore, 'banners', bannerId);
+      const bannerRef = doc(firestoreAdmin, 'banners', bannerId);
       await updateDoc(bannerRef, { ...bannerData, updatedAt: new Date() });
-       console.log(`--- Sucesso na Action: saveBannerServer - Banner ${bannerId} atualizado. ---`);
+      console.log(`--- Sucesso na Action: saveBannerServer - Banner ${bannerId} atualizado. ---`);
     } else {
-      // Criar novo banner
-      const newBanner = await addDoc(collection(firestore, 'banners'), { ...bannerData, createdAt: new Date() });
-       console.log(`--- Sucesso na Action: saveBannerServer - Novo banner criado com ID: ${newBanner.id}. ---`);
+      const newBanner = await addDoc(collection(firestoreAdmin, 'banners'), { ...bannerData, createdAt: new Date() });
+      console.log(`--- Sucesso na Action: saveBannerServer - Novo banner criado com ID: ${newBanner.id}. ---`);
     }
     
-    // Revalida o cache do Next.js para as páginas afetadas
     revalidatePath('/admin/banners');
     revalidatePath('/streaming');
-    revalidatePath('/feed');
-
+    
     return { success: true };
   } catch (error: any) {
     console.error("--- Erro na Action: saveBannerServer ---", error.stack || error);
@@ -117,22 +163,18 @@ export async function saveBannerServer(bannerData: any, bannerId: string | null)
   }
 }
 
-/**
- * Server Action para deletar um banner.
- */
 export async function deleteBannerServer(bannerId: string) {
     console.log('--- Iniciando Action: deleteBannerServer ---', { bannerId });
-    if (!firestore) {
-        console.error("--- Erro na Action: deleteBannerServer --- Firestore não inicializado.");
+    if (!firestoreAdmin) {
+        console.error("--- Erro na Action: deleteBannerServer --- Firestore Admin não inicializado.");
         return { success: false, error: "Serviço de banco de dados indisponível." };
     }
 
     try {
-        await deleteDoc(doc(firestore, 'banners', bannerId));
+        await deleteDoc(doc(firestoreAdmin, 'banners', bannerId));
         console.log(`--- Sucesso na Action: deleteBannerServer - Banner ${bannerId} deletado. ---`);
         revalidatePath('/admin/banners');
         revalidatePath('/streaming');
-        revalidatePath('/feed');
         return { success: true };
     } catch (error: any) {
         console.error("--- Erro na Action: deleteBannerServer ---", error.stack || error);

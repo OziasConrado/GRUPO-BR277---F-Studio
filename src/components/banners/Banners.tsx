@@ -30,6 +30,7 @@ export default function Banners() {
       setLoading(true);
       const result = await fetchBannersServer();
       if (result.success) {
+        // A API REST retorna os banners ativos, não precisa filtrar aqui
         setBanners(result.data);
       } else {
         console.error("Falha ao buscar banners:", result.error);
@@ -49,7 +50,7 @@ export default function Banners() {
   }
 
   if (banners.length === 0) {
-    return null; // Não renderiza nada se não houver banners ativos
+    return null; // Não renderiza nada se não houver banners
   }
 
   return (
