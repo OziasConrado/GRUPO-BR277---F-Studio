@@ -17,7 +17,7 @@ import {
   type AuthError,
   getIdTokenResult,
 } from 'firebase/auth';
-import { doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, serverTimestamp, getDocFromServer } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -95,47 +95,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
+      setUserProfile(null); // Reset profile on auth state change
+      setIsAdmin(false);
+
       if (user) {
         setCurrentUser(user);
         try {
-          const idTokenResult = await getIdTokenResult(user, true); // Força a atualização do token
+          const idTokenResult = await getIdTokenResult(user, true); // Force token refresh
           setIsAdmin(idTokenResult.claims.admin === true);
           
-          console.log(`Buscando perfil para o usuário ${user.uid}...`);
           const profileData = await fetchUserProfileServer(user.uid);
           
           if (profileData) {
             setUserProfile(profileData);
-            console.log(`Perfil de ${user.uid} carregado com sucesso.`);
           } else {
-             // Se o perfil não existe, cria um perfil básico.
+             console.log(`Could not fetch user profile for ${user.uid} immediately. Will rely on client-side cache or subsequent fetches.`);
+             // Perfil pode não estar disponível imediatamente. O app continua.
              const newUserProfile: UserProfile = {
                 uid: user.uid,
                 email: user.email,
                 displayName: user.displayName,
                 photoURL: user.photoURL,
              };
-             // Tenta salvar o novo perfil no Firestore.
-             await setDoc(doc(db, 'users', user.uid), {
-                ...newUserProfile,
-                displayName_lowercase: user.displayName?.toLowerCase(),
-                createdAt: serverTimestamp(),
-                lastLogin: serverTimestamp(),
-             }, { merge: true });
-             setUserProfile(newUserProfile);
-             console.log(`Novo perfil básico criado para ${user.uid}.`);
+             setUserProfile(newUserProfile); // Define um perfil básico para evitar quebras
           }
-
-        } catch (error: any) {
-          console.error("Erro ao buscar ou criar perfil no AuthContext:", error);
-          setUserProfile(null); // Define como nulo em caso de erro de rede.
+        } catch (error) {
+          console.error("Error fetching user profile during auth state change:", error);
+           const basicProfile: UserProfile = {
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName,
+                photoURL: user.photoURL,
+           };
+           setUserProfile(basicProfile);
+        } finally {
+          setLoading(false);
         }
       } else {
         setCurrentUser(null);
-        setUserProfile(null);
-        setIsAdmin(false);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => unsubscribe();

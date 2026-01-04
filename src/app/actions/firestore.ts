@@ -8,11 +8,13 @@ import { revalidatePath } from 'next/cache';
 // Cache para o perfil do usuário para evitar buscas repetidas na mesma requisição
 const userProfileCache = new Map<string, UserProfile | null>();
 
+const TIMEOUT_DURATION = 5000; // 5 segundos
+
 /**
- * Server Action para buscar o perfil de um usuário no Firestore.
+ * Server Action para buscar o perfil de um usuário no Firestore com timeout.
  * Utiliza o SDK Admin do Firebase no lado do servidor.
  * @param uid - O ID do usuário a ser buscado.
- * @returns Os dados do perfil do usuário ou null se não encontrado.
+ * @returns Os dados do perfil do usuário ou null se não encontrado ou se ocorrer timeout.
  */
 export async function fetchUserProfileServer(uid: string): Promise<UserProfile | null> {
   if (userProfileCache.has(uid)) {
@@ -24,10 +26,18 @@ export async function fetchUserProfileServer(uid: string): Promise<UserProfile |
     return null;
   }
 
+  console.log(`>>> [SERVER] Iniciando busca no Firestore para UID: ${uid}...`);
+  
+  const firestorePromise = firestore.collection('users').doc(uid).get();
+
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error('Firestore timeout')), TIMEOUT_DURATION)
+  );
+
   try {
-    console.log(`--- Iniciando Action: fetchUserProfileServer para UID: ${uid} ---`);
-    const userDocRef = firestore.collection('users').doc(uid);
-    const userDoc = await userDocRef.get();
+    const userDoc = await Promise.race([firestorePromise, timeoutPromise]);
+
+    console.log('<<< [SERVER] Busca concluída!');
 
     if (userDoc.exists) {
       const profile = userDoc.data() as UserProfile;
@@ -40,9 +50,8 @@ export async function fetchUserProfileServer(uid: string): Promise<UserProfile |
       return null;
     }
   } catch (error: any) {
-    console.error(`--- Erro na Action: fetchUserProfileServer (UID: ${uid}) ---`, error.stack || error);
-    // Não lança o erro para o cliente, apenas loga no servidor.
-    // O cliente tratará o retorno nulo.
+    console.error(`--- Erro na Action: fetchUserProfileServer (UID: ${uid}) ---`, error.message, error.stack || '');
+    // Se ocorrer timeout ou outro erro, retorna null, mas não deixa a Promise pendente.
     return null;
   }
 }
