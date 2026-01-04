@@ -93,6 +93,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [toast]);
   
   useEffect(() => {
+    // Guard Clause: If Firebase isn't initialized, do nothing.
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
       setUserProfile(null); // Reset profile on auth state change
@@ -110,14 +116,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUserProfile(profileData);
           } else {
              console.log(`Could not fetch user profile for ${user.uid} immediately. Will rely on client-side cache or subsequent fetches.`);
-             // Perfil pode não estar disponível imediatamente. O app continua.
              const newUserProfile: UserProfile = {
                 uid: user.uid,
                 email: user.email,
                 displayName: user.displayName,
                 photoURL: user.photoURL,
              };
-             setUserProfile(newUserProfile); // Define um perfil básico para evitar quebras
+             setUserProfile(newUserProfile);
           }
         } catch (error) {
           console.error("Error fetching user profile during auth state change:", error);
@@ -142,12 +147,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   const uploadFile = useCallback(async (file: File, path: string): Promise<string> => {
+    if (!storage) throw new Error("Serviço de armazenamento não disponível.");
     const storageRef = ref(storage, path);
     const uploadTask = await uploadBytes(storageRef, file);
     return await getDownloadURL(uploadTask.ref);
   }, []);
 
   const signInWithGoogle = useCallback(async () => {
+    if (!auth || !db) return;
     setAuthAction('google');
     const provider = new GoogleAuthProvider();
     try { 
@@ -155,7 +162,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const user = result.user;
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDocFromServer(userDocRef);
-        // Cria perfil apenas se não existir
         if (!userDoc.exists()) {
             await setDoc(userDocRef, {
                 uid: user.uid,
@@ -175,17 +181,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [handleAuthError]);
 
   const signUpWithEmail = useCallback(async (email: string, password: string) => {
+    if (!auth || !db) return;
     setAuthAction('signup');
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       await sendEmailVerification(user);
 
-      // Cria um perfil básico no Firestore
       await setDoc(doc(db, 'users', user.uid), {
         uid: user.uid,
         email: user.email,
-        displayName: user.email?.split('@')[0], // Default display name
+        displayName: user.email?.split('@')[0],
         displayName_lowercase: user.email?.split('@')[0].toLowerCase(),
         photoURL: null,
         createdAt: serverTimestamp(),
@@ -198,16 +204,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [handleAuthError, toast]);
 
   const signInWithEmail = useCallback(async (email: string, password: string) => {
+    if (!auth) return;
     setAuthAction('email');
     try { 
         await signInWithEmailAndPassword(auth, email, password);
-        // A lógica do onAuthStateChanged cuidará de buscar o perfil
     } 
     catch (error) { handleAuthError(error as AuthError); } 
     finally { setAuthAction(null); }
   }, [handleAuthError]);
 
   const sendPasswordResetEmail = useCallback(async (email: string) => {
+    if (!auth) return;
     setAuthAction('reset');
     try {
       await firebaseSendPasswordResetEmail(auth, email);
@@ -275,6 +282,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [currentUser, db, handleAuthError, toast, uploadFile]);
 
   const signOutUser = useCallback(async () => {
+    if (!auth) return;
     setAuthAction('signout');
     try {
       await signOut(auth);
