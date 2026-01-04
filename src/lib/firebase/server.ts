@@ -1,5 +1,5 @@
 
-import { initializeApp, getApps, type App as FirebaseApp } from 'firebase-admin/app';
+import { initializeApp, getApps, getApp, type App as FirebaseApp } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { getAuth, type Auth } from 'firebase-admin/auth';
 import { getStorage, type Storage } from 'firebase-admin/storage';
@@ -40,5 +40,3 @@ if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
 }
 
 export { app, auth, firestore, storage };
-
-    
