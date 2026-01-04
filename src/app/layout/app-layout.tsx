@@ -36,7 +36,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { isChatOpen, closeChat } = useChat();
-  const { currentUser, loading, signOutUser, firestore, isAdmin } = useAuth();
+  const { currentUser, loading, signOutUser, firestore, isAdmin, authAction } = useAuth();
   const { notifications, unreadCount, loading: notificationsLoading } = useNotification();
 
   useEffect(() => {
@@ -322,7 +322,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                           </DropdownMenuItem>
                         </Link>
                       )}
-                      <DropdownMenuItem onClick={signOutUser} disabled={loading && authAction === 'signout'}>
+                      <DropdownMenuItem onClick={signOutUser} disabled={authAction === 'signout'}>
                         <LogOut className="mr-2 h-4 w-4" />
                         <span>Sair</span>
                       </DropdownMenuItem>
