@@ -1,8 +1,9 @@
+
 'use client';
 
 import { initializeApp, getApp, getApps, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { getFirestore, initializeFirestore, type Firestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore, type Firestore, enableNetwork } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import { firebaseConfig } from './config';
 
@@ -18,10 +19,15 @@ if (!getApps().length) {
     // Garante que a sessão do usuário persista entre recarregamentos
     setPersistence(auth, browserLocalPersistence);
 
-    // Configuração simplificada do Firestore, já que as buscas principais serão via Server Actions
+    // Configuração do Firestore com long polling para contornar problemas de proxy
     db = initializeFirestore(app, {
+      experimentalForceLongPolling: true,
+      useFetchStreams: false,
       ignoreUndefinedProperties: true,
     });
+    
+    // Força a tentativa de conexão de rede imediatamente
+    enableNetwork(db);
 
     storage = getStorage(app);
 
