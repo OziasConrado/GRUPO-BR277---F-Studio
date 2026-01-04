@@ -22,7 +22,6 @@ if (!getApps().length) {
     // Configuração do Firestore com long polling para contornar problemas de proxy
     db = initializeFirestore(app, {
       experimentalForceLongPolling: true,
-      useFetchStreams: false,
       ignoreUndefinedProperties: true,
     });
     
