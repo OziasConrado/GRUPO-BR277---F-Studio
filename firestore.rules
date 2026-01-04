@@ -19,9 +19,9 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.token.admin == true;
     }
 
-    // Banners: Admin can write. Authenticated users can read.
+    // Banners: Public read is allowed, Admin can write.
     match /banners/{bannerId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
@@ -148,5 +148,4 @@ service cloud.firestore {
     }
   }
 }
-
     
