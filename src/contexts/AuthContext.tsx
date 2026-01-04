@@ -93,21 +93,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [toast]);
   
   useEffect(() => {
-    // Guard Clause: If Firebase isn't initialized, do nothing.
     if (!auth) {
+      console.warn("Auth service not available, skipping onAuthStateChanged listener.");
       setLoading(false);
       return;
     }
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
-      setUserProfile(null); // Reset profile on auth state change
+      setUserProfile(null);
       setIsAdmin(false);
 
       if (user) {
         setCurrentUser(user);
         try {
-          const idTokenResult = await getIdTokenResult(user, true); // Force token refresh
+          const idTokenResult = await getIdTokenResult(user, true);
           setIsAdmin(idTokenResult.claims.admin === true);
           
           const profileData = await fetchUserProfileServer(user.uid);

@@ -81,7 +81,6 @@ export async function fetchBannersServer(): Promise<{ success: boolean; data: an
 
 // Manter as outras actions que ainda não foram refatoradas para REST
 import { firestore as firestoreAdmin } from '@/lib/firebase/server';
-import { collection, query, orderBy, getDocs, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
 
 const TIMEOUT_DURATION = 5000; // 5 segundos
 
