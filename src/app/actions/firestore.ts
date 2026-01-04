@@ -32,10 +32,11 @@ export async function fetchUserProfileServer(uid: string): Promise<UserProfile |
     if (userDoc.exists) {
       const profile = userDoc.data() as UserProfile;
       userProfileCache.set(uid, profile);
-       console.log(`--- Sucesso na Action: fetchUserProfileServer para UID: ${uid} ---`);
+      console.log(`--- Sucesso na Action: fetchUserProfileServer para UID: ${uid} ---`);
       return profile;
     } else {
       userProfileCache.set(uid, null);
+      console.warn(`--- Perfil não encontrado para UID: ${uid} ---`);
       return null;
     }
   } catch (error: any) {

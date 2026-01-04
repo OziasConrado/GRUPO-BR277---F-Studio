@@ -1,7 +1,6 @@
-
 // --- Início da Implementação do Padrão Singleton para o Lado do Servidor ---
 
-import { initializeApp, getApp, getApps, type App as FirebaseApp } from 'firebase-admin/app';
+import { initializeApp, getApps, type App as FirebaseApp } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { getAuth, type Auth } from 'firebase-admin/auth';
 import { getStorage, type Storage } from 'firebase-admin/storage';
@@ -19,9 +18,9 @@ if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
     if (!getApps().length) {
        console.log("--- Inicializando Firebase Admin SDK com credenciais padrão ---");
        // No ambiente do Google Cloud (incluindo Workstations), o SDK usa as
-       // credenciais do ambiente automaticamente.
+       // credenciais do ambiente automaticamente. O Project ID é crucial.
        app = initializeApp({
-         projectId: 'grupobr277-v2-d85f5', // ID explícito do projeto
+         projectId: 'grupo-br277', // CORREÇÃO: Usando o Project ID correto.
          storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
        });
     } else {
@@ -34,7 +33,7 @@ if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
     firestore = getFirestore(app);
     storage = getStorage(app);
 
-    // **[NOVO]** Força o SDK do Firestore a usar REST/HTTP em vez de gRPC
+    // **[MANTER]** Força o SDK do Firestore a usar REST/HTTP em vez de gRPC
     firestore.settings({ preferRest: true });
     console.log("--- Firestore Admin SDK configurado para usar REST/HTTP. ---");
 
