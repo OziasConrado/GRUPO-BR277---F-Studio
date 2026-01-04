@@ -1,3 +1,4 @@
+
 'use server';
 
 import { firestore } from '@/lib/firebase/server';
@@ -123,7 +124,7 @@ export async function saveBannerServer(bannerData: any, bannerId: string | null)
 
     return { success: true };
   } catch (error: any) {
-    console.error("--- Erro na Action: saveBannerServer ---", error);
+    console.error("--- Erro na Action: saveBannerServer ---", error.stack || error);
     return { success: false, error: error.message || 'Não foi possível salvar o banner.' };
   }
 }
@@ -145,7 +146,7 @@ export async function deleteBannerServer(bannerId: string) {
         revalidatePath('/feed');
         return { success: true };
     } catch (error: any) {
-        console.error("--- Erro na Action: deleteBannerServer ---", error);
+        console.error("--- Erro na Action: deleteBannerServer ---", error.stack || error);
         return { success: false, error: error.message || 'Não foi possível deletar o banner.' };
     }
 }

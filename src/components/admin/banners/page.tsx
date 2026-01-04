@@ -1,12 +1,10 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Shield, Loader2, Image as ImageIcon, ExternalLink, CheckCircle, XCircle, Pencil, Trash2 } from "lucide-react";
-import { collection, query, orderBy, deleteDoc, doc, getDocsFromServer } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
+import { PlusCircle, Shield, Loader2, ExternalLink, CheckCircle, XCircle, Pencil, Trash2 } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { BannerForm } from './_components/banner-form';
 import type { Banner } from './_components/banner-form';
@@ -21,6 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { getStorage, ref, deleteObject } from "firebase/storage";
+import { fetchAllBannersServer, deleteBannerServer } from '@/app/actions/firestore';
 
 export default function AdminBannersPage() {
   const { toast } = useToast();
@@ -32,28 +31,26 @@ export default function AdminBannersPage() {
   
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [bannerToDelete, setBannerToDelete] = useState<Banner | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const fetchBanners = async () => {
+  const fetchBanners = useCallback(async () => {
     setLoading(true);
-    try {
-        const bannersQuery = query(collection(db, 'banners'), orderBy('order', 'asc'));
-        const snapshot = await getDocsFromServer(bannersQuery);
-        const fetchedBanners = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Banner));
-        setBanners(fetchedBanners);
-    } catch (error) {
-        console.error("Error fetching banners:", error);
-        toast({ variant: 'destructive', title: 'Erro ao buscar banners' });
-    } finally {
-        setLoading(false);
+    const result = await fetchAllBannersServer();
+    if (result.success) {
+      setBanners(result.data);
+    } else {
+      toast({ variant: 'destructive', title: 'Erro ao buscar banners', description: result.error });
     }
-  };
+    setLoading(false);
+  }, [toast]);
 
   useEffect(() => {
     fetchBanners();
-  }, [toast]);
+  }, [fetchBanners]);
   
   const handleFormClose = () => {
     setIsFormOpen(false);
+    setSelectedBanner(null);
     fetchBanners(); // Re-fetch banners after form closes
   }
 
@@ -74,37 +71,39 @@ export default function AdminBannersPage() {
 
   const executeDelete = async () => {
     if (!bannerToDelete) return;
+    setIsDeleting(true);
 
     try {
-      // 1. Delete image from Storage
-      if (bannerToDelete.imageUrl) {
-        const storage = getStorage();
-        // Create a reference from the full URL
-        const imageRef = ref(storage, bannerToDelete.imageUrl);
-        await deleteObject(imageRef);
+      // 1. Delete image from Storage if it's a Firebase URL
+      if (bannerToDelete.imageUrl && bannerToDelete.imageUrl.includes('firebasestorage')) {
+        try {
+            const storage = getStorage();
+            const imageRef = ref(storage, bannerToDelete.imageUrl);
+            await deleteObject(imageRef);
+        } catch (storageError: any) {
+            // If the object doesn't exist, we can ignore it and proceed.
+            if (storageError.code !== 'storage/object-not-found') {
+                throw storageError; // Re-throw other storage errors
+            }
+            console.warn("Imagem do banner não encontrada no Storage, prosseguindo com a exclusão do registro.");
+        }
       }
       
-      // 2. Delete document from Firestore
-      await deleteDoc(doc(db, 'banners', bannerToDelete.id));
+      // 2. Delete document from Firestore via Server Action
+      const result = await deleteBannerServer(bannerToDelete.id);
+      if (!result.success) {
+        throw new Error(result.error || 'Falha ao deletar o registro do banner.');
+      }
 
       toast({ title: 'Sucesso', description: 'Banner excluído com sucesso.' });
       fetchBanners(); // Re-fetch after delete
     } catch (error: any) {
       console.error("Error deleting banner:", error);
-      if (error.code === 'storage/object-not-found') {
-        try {
-            await deleteDoc(doc(db, 'banners', bannerToDelete.id));
-            toast({ title: 'Sucesso', description: 'Banner excluído. A imagem associada não foi encontrada no armazenamento, mas o registro foi removido.' });
-            fetchBanners(); // Re-fetch after delete
-        } catch (dbError: any) {
-            toast({ variant: 'destructive', title: 'Erro ao excluir do banco de dados', description: dbError.message });
-        }
-      } else {
-        toast({ variant: 'destructive', title: 'Erro ao excluir', description: error.message });
-      }
+      toast({ variant: 'destructive', title: 'Erro ao excluir', description: error.message });
     } finally {
       setBannerToDelete(null);
       setIsDeleteAlertOpen(false);
+      setIsDeleting(false);
     }
   };
 
@@ -194,7 +193,8 @@ export default function AdminBannersPage() {
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={executeDelete} className="bg-destructive hover:bg-destructive/90">
+                <AlertDialogAction onClick={executeDelete} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
+                  {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Excluir
                 </AlertDialogAction>
             </AlertDialogFooter>
