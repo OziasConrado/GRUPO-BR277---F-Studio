@@ -12,33 +12,35 @@ let auth: Auth;
 let db: Firestore;
 let storage: FirebaseStorage;
 
-if (!getApps().length) {
-  try {
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    // Garante que a sessão do usuário persista entre recarregamentos
-    setPersistence(auth, browserLocalPersistence);
-
-    // Configuração do Firestore com long polling para contornar problemas de proxy
-    db = initializeFirestore(app, {
-      experimentalForceLongPolling: true,
-      ignoreUndefinedProperties: true,
-    });
-    
-    // Força a tentativa de conexão de rede imediatamente
-    enableNetwork(db);
-
-    storage = getStorage(app);
-
-  } catch (error) {
-    console.error("CRITICAL: Erro ao inicializar o Firebase.", error);
-    throw new Error("Falha na inicialização dos serviços essenciais do Firebase.");
-  }
+// Build-safe initialization
+if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+  console.warn("Firebase client config not found. Firebase services will be unavailable.");
 } else {
-  app = getApp();
-  auth = getAuth(app);
-  db = getFirestore(app);
-  storage = getStorage(app);
+  if (!getApps().length) {
+    try {
+      app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      setPersistence(auth, browserLocalPersistence);
+
+      db = initializeFirestore(app, {
+        experimentalForceLongPolling: true,
+        ignoreUndefinedProperties: true,
+      });
+      
+      enableNetwork(db);
+
+      storage = getStorage(app);
+
+    } catch (error) {
+      console.error("CRITICAL: Erro ao inicializar o Firebase.", error);
+    }
+  } else {
+    app = getApp();
+    auth = getAuth(app);
+    db = getFirestore(app);
+    storage = getStorage(app);
+  }
 }
 
+// @ts-ignore
 export { app, auth, db, storage };

@@ -4,39 +4,35 @@ import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { getAuth, type Auth } from 'firebase-admin/auth';
 import { getStorage, type Storage } from 'firebase-admin/storage';
 
-// Variáveis para armazenar as instâncias dos serviços
 let app: FirebaseApp;
 let auth: Auth;
 let firestore: Firestore;
 let storage: Storage;
 
-// Verifica se a variável de ambiente do Google está presente (indicativo de ambiente de servidor)
+// Build-safe initialization
 if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
   try {
-    // Evita reinicialização do app
     if (!getApps().length) {
-       console.log("--- Inicializando Firebase Admin SDK com credenciais padrão ---");
        app = initializeApp({
-         projectId: 'grupo-br277',
+         projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
          storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
        });
+       console.log("--- Firebase Admin SDK inicializado. ---");
     } else {
        app = getApp();
-       console.log("--- Reutilizando instância existente do Firebase Admin SDK ---");
     }
 
     auth = getAuth(app);
     firestore = getFirestore(app);
     storage = getStorage(app);
-
     firestore.settings({ preferRest: true });
-    console.log("--- Firestore Admin SDK configurado para usar REST/HTTP. ---");
 
   } catch (e: any) {
     console.error("--- Erro CRÍTICO ao inicializar Firebase Admin SDK ---:", e.stack || e);
   }
 } else {
-  console.warn("--- Aviso: NEXT_PUBLIC_FIREBASE_PROJECT_ID ausente. Firebase Admin SDK não inicializado. ---");
+  console.warn("--- Aviso: Variáveis de ambiente do Firebase ausentes. Admin SDK não foi inicializado. ---");
 }
 
+// @ts-ignore
 export { app, auth, firestore, storage };
