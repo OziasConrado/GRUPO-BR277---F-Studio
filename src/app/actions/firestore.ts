@@ -3,6 +3,7 @@
 
 import type { UserProfile } from '@/contexts/AuthContext';
 import { revalidatePath } from 'next/cache';
+import type { Timestamp } from 'firebase-admin/firestore'; // Import Timestamp type for checking
 
 const projectId = 'grupo-br277';
 const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
@@ -84,6 +85,20 @@ import { firestore as firestoreAdmin } from '@/lib/firebase/server';
 
 const TIMEOUT_DURATION = 5000; // 5 segundos
 
+// Helper function to serialize Firestore Timestamps
+function serializeFirestoreObject(obj: { [key: string]: any }): { [key: string]: any } {
+    const newObj: { [key: string]: any } = {};
+    for (const key in obj) {
+        const value = obj[key];
+        if (value && typeof value.toDate === 'function') { // Check if it's a Firestore Timestamp-like object
+            newObj[key] = value.toDate().toISOString();
+        } else {
+            newObj[key] = value;
+        }
+    }
+    return newObj;
+}
+
 export async function fetchUserProfileServer(uid: string): Promise<UserProfile | null> {
   if (!firestoreAdmin) {
     console.error("--- Erro Crítico na Action: fetchUserProfileServer --- Firestore Admin não inicializado.");
@@ -103,9 +118,15 @@ export async function fetchUserProfileServer(uid: string): Promise<UserProfile |
     console.log('<<< [SERVER ACTION] Busca de PERFIL concluída!');
 
     if (userDoc.exists) {
-      const profile = userDoc.data() as UserProfile;
+      const profileData = userDoc.data();
+      if (!profileData) {
+        console.warn(`--- Perfil vazio para UID: ${uid} ---`);
+        return null;
+      }
+      
+      const serializableProfile = serializeFirestoreObject(profileData) as UserProfile;
       console.log(`--- Sucesso na Action: fetchUserProfileServer para UID: ${uid} ---`);
-      return profile;
+      return serializableProfile;
     } else {
       console.warn(`--- Perfil não encontrado para UID: ${uid} ---`);
       return null;
@@ -127,7 +148,11 @@ export async function fetchAllBannersServer() {
         const bannersCollection = firestoreAdmin.collection('banners');
         const q = bannersCollection.orderBy('order', 'asc');
         const snapshot = await q.get();
-        const banners = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const banners = snapshot.docs.map(doc => {
+            const data = doc.data();
+            const serializedData = serializeFirestoreObject(data);
+            return { id: doc.id, ...serializedData };
+        });
         console.log(`--- Sucesso na Action: fetchAllBannersServer - ${banners.length} banners encontrados. ---`);
         return { success: true, data: banners as any[] };
     } catch (error: any) {
