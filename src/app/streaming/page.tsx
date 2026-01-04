@@ -13,7 +13,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
-import Banners from '@/components/banners/Banners'; // Importa o novo componente
 
 // Dados fornecidos pelo usuário
 const mockStreamsData: StreamCardProps[] = [
@@ -259,8 +258,6 @@ export default function StreamingPage() {
               </Link>
           </Button>
       </div>
-      
-      <Banners />
 
       <div>
         <h1 className="text-3xl font-bold font-headline text-center sm:text-left">Câmeras AO VIVO</h1>
