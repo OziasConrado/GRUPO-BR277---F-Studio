@@ -1,8 +1,8 @@
+
 'use server';
 
 import type { UserProfile } from '@/contexts/AuthContext';
 import { revalidatePath } from 'next/cache';
-import { getDoc, doc, collection, where, query, orderBy, getDocs, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
 
 const projectId = 'grupo-br277';
 const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
@@ -46,7 +46,7 @@ function mapFirestoreRestResponse(documents: any[]): any[] {
  * Server Action para buscar banners ativos usando a API REST do Firestore.
  * @returns Um objeto com sucesso/erro e os dados dos banners.
  */
-export async function fetchBannersServer() {
+export async function fetchBannersServer(): Promise<{ success: boolean; data: any[]; error?: string; }> {
   const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/banners?key=${apiKey}&orderBy=order`;
 
   try {
@@ -71,7 +71,7 @@ export async function fetchBannersServer() {
     const activeBanners = mappedData.filter(b => b.isActive === true);
     
     console.log(`--- Sucesso na Action REST: fetchBannersServer - ${activeBanners.length} banners ativos encontrados. ---`);
-    return { success: true, data: activeBanners as any[] };
+    return { success: true, data: activeBanners };
 
   } catch (error: any) {
     console.error("--- Erro CRÍTICO na Action REST: fetchBannersServer ---", error.stack || error);
@@ -81,6 +81,7 @@ export async function fetchBannersServer() {
 
 // Manter as outras actions que ainda não foram refatoradas para REST
 import { firestore as firestoreAdmin } from '@/lib/firebase/server';
+import { collection, query, orderBy, getDocs, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
 
 const TIMEOUT_DURATION = 5000; // 5 segundos
 
@@ -92,7 +93,7 @@ export async function fetchUserProfileServer(uid: string): Promise<UserProfile |
 
   console.log(`>>> [SERVER ACTION] Iniciando busca de PERFIL no Firestore para UID: ${uid}...`);
   
-  const firestorePromise = getDoc(doc(firestoreAdmin, 'users', uid));
+  const firestorePromise = firestoreAdmin.collection('users').doc(uid).get();
 
   const timeoutPromise = new Promise<never>((_, reject) =>
     setTimeout(() => reject(new Error('Firestore timeout')), TIMEOUT_DURATION)
@@ -102,7 +103,7 @@ export async function fetchUserProfileServer(uid: string): Promise<UserProfile |
     const userDoc = await Promise.race([firestorePromise, timeoutPromise]);
     console.log('<<< [SERVER ACTION] Busca de PERFIL concluída!');
 
-    if (userDoc.exists()) {
+    if (userDoc.exists) {
       const profile = userDoc.data() as UserProfile;
       console.log(`--- Sucesso na Action: fetchUserProfileServer para UID: ${uid} ---`);
       return profile;
@@ -124,9 +125,9 @@ export async function fetchAllBannersServer() {
     }
 
     try {
-        const bannersCollection = collection(firestoreAdmin, 'banners');
-        const q = query(bannersCollection, orderBy('order', 'asc'));
-        const snapshot = await getDocs(q);
+        const bannersCollection = firestoreAdmin.collection('banners');
+        const q = bannersCollection.orderBy('order', 'asc');
+        const snapshot = await q.get();
         const banners = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         console.log(`--- Sucesso na Action: fetchAllBannersServer - ${banners.length} banners encontrados. ---`);
         return { success: true, data: banners as any[] };
@@ -145,11 +146,11 @@ export async function saveBannerServer(bannerData: any, bannerId: string | null)
 
   try {
     if (bannerId) {
-      const bannerRef = doc(firestoreAdmin, 'banners', bannerId);
-      await updateDoc(bannerRef, { ...bannerData, updatedAt: new Date() });
+      const bannerRef = firestoreAdmin.collection('banners').doc(bannerId);
+      await bannerRef.update({ ...bannerData, updatedAt: new Date() });
       console.log(`--- Sucesso na Action: saveBannerServer - Banner ${bannerId} atualizado. ---`);
     } else {
-      const newBanner = await addDoc(collection(firestoreAdmin, 'banners'), { ...bannerData, createdAt: new Date() });
+      const newBanner = await firestoreAdmin.collection('banners').add({ ...bannerData, createdAt: new Date() });
       console.log(`--- Sucesso na Action: saveBannerServer - Novo banner criado com ID: ${newBanner.id}. ---`);
     }
     
@@ -171,7 +172,7 @@ export async function deleteBannerServer(bannerId: string) {
     }
 
     try {
-        await deleteDoc(doc(firestoreAdmin, 'banners', bannerId));
+        await firestoreAdmin.collection('banners').doc(bannerId).delete();
         console.log(`--- Sucesso na Action: deleteBannerServer - Banner ${bannerId} deletado. ---`);
         revalidatePath('/admin/banners');
         revalidatePath('/streaming');
