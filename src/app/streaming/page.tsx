@@ -244,8 +244,7 @@ export default function StreamingPage() {
 
   return (
     <div className="w-full space-y-6">
-       <Banners />
-      <div className="grid grid-cols-2 gap-3 mb-6">
+      <div className="grid grid-cols-2 gap-3">
           <Button asChild variant="destructive" className="h-auto py-3 text-base rounded-lg">
               <Link href="/emergencia">
                   <Phone className="mr-2 h-5 w-5" />
@@ -259,6 +258,8 @@ export default function StreamingPage() {
               </Link>
           </Button>
       </div>
+
+       <Banners />
 
       <div>
         <h1 className="text-3xl font-bold font-headline text-center sm:text-left">Câmeras AO VIVO</h1>

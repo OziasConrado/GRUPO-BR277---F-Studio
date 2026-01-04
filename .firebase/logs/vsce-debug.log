@@ -7368,3 +7368,5 @@ I0104 01:12:47.812687   39348 dev.go:104] Listening on address (HTTP + gRPC): 12
  {"metadata":{"emulator":{"name":"dataconnect"},"message":"I0104 01:12:47.790441   39348 collector.go:107] schema extensions wrote into \"/home/user/studio/dataconnect/.dataconnect/schema\"\nGenerated sources: prelude.gql [73219B] \nI0104 01:12:47.790645   39348 load.go:109] Finished reloading\nI0104 01:12:47.812687   39348 dev.go:104] Listening on address (HTTP + gRPC): 127.0.0.1:50001\n"}}
 [debug] [2026-01-04T01:12:48.050Z] I0104 01:12:48.047667   39348 engine.go:179] [/emulator/s 2638] ExecuteGraphqlRead IntrospectionQuery: succeeded. 
  {"metadata":{"emulator":{"name":"dataconnect"},"message":"I0104 01:12:48.047667   39348 engine.go:179] [/emulator/s 2638] ExecuteGraphqlRead IntrospectionQuery: succeeded. \n"}}
+[info] [Firebase Plugin] Stopping Data Connect toolkit
+[warn] ⚠  Data Connect Emulator has exited upon receiving signal: SIGINT 
