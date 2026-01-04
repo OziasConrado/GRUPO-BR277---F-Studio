@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -21,7 +22,7 @@ function ChatManager() {
 }
 
 function MainAppLayout({ children }: { children: ReactNode }) {
-    const { currentUser, loading: authLoading } = useAuth();
+    const { currentUser, loading } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
     const isAuthPage = ['/login', '/register', '/forgot-password'].includes(pathname);
@@ -29,7 +30,7 @@ function MainAppLayout({ children }: { children: ReactNode }) {
     
     // Auth-related navigation logic
     useEffect(() => {
-        if (authLoading) return;
+        if (loading) return;
         
         if (currentUser) {
             if (!currentUser.emailVerified && !isVerifyPage) {
@@ -44,10 +45,10 @@ function MainAppLayout({ children }: { children: ReactNode }) {
                 router.push('/login');
             }
         }
-    }, [currentUser, authLoading, pathname, router, isAuthPage, isVerifyPage]);
+    }, [currentUser, loading, pathname, router, isAuthPage, isVerifyPage]);
     
     // This shows a global loader while auth state is being determined.
-    if (authLoading) {
+    if (loading) {
         return (
             <div className="flex justify-center items-center min-h-screen bg-background">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -88,3 +89,5 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </Providers>
     );
 }
+
+    

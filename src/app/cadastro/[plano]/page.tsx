@@ -65,7 +65,7 @@ export default function RegisterBusinessPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { currentUser, isAuthenticating, userProfile, firestore, uploadFile } = useAuth();
+  const { currentUser, loading, userProfile, firestore, uploadFile } = useAuth();
   const planoParam = params.plano as string;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -93,7 +93,7 @@ export default function RegisterBusinessPage() {
   const currentPlanFeatures = planFeatures[formattedPlano as keyof typeof planFeatures] || planFeatures.GRATUITO;
 
   useEffect(() => {
-    if (!isAuthenticating) {
+    if (!loading) {
       if (!currentUser) {
         toast({
           title: "Login Necessário",
@@ -111,7 +111,7 @@ export default function RegisterBusinessPage() {
         }
       }
     }
-  }, [isAuthenticating, currentUser, formattedPlano, planoParam, router, toast, setValue, currentPlanFeatures.photo, form]);
+  }, [loading, currentUser, formattedPlano, planoParam, router, toast, setValue, currentPlanFeatures.photo, form]);
 
   useEffect(() => {
     const sessionId = searchParams.get('session_id');
@@ -212,7 +212,7 @@ export default function RegisterBusinessPage() {
   };
 
 
-  if (isAuthenticating || !currentUser || !formattedPlano) {
+  if (loading || !currentUser || !formattedPlano) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -383,3 +383,5 @@ export default function RegisterBusinessPage() {
     </div>
   );
 }
+
+    

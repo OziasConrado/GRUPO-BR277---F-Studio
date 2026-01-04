@@ -253,9 +253,9 @@ function FeedContent() {
 
 
 export default function FeedPage() {
-    const { isAuthenticating } = useAuth();
+    const { loading } = useAuth();
   
-    if (isAuthenticating) {
+    if (loading) {
       return (
         <div className="flex justify-center items-center h-[calc(100vh-150px)]">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -266,3 +266,5 @@ export default function FeedPage() {
   
     return <FeedContent />;
 }
+
+    

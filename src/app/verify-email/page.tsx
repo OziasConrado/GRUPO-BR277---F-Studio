@@ -10,12 +10,12 @@ import { MailCheck, Loader2, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function VerifyEmailPage() {
-  const { currentUser, isAuthenticating, reloadUser, signOutUser, resendVerificationEmail, authAction } = useAuth();
+  const { currentUser, loading, reloadUser, signOutUser, resendVerificationEmail, authAction } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (isAuthenticating) {
+    if (loading) {
       return; 
     }
     if (!currentUser) {
@@ -23,7 +23,7 @@ export default function VerifyEmailPage() {
     } else if (currentUser.emailVerified) {
       router.push('/');
     }
-  }, [currentUser, isAuthenticating, router]);
+  }, [currentUser, loading, router]);
 
   const handleCheckVerification = async () => {
     await reloadUser();
@@ -35,7 +35,7 @@ export default function VerifyEmailPage() {
     }
   };
 
-  if (isAuthenticating || !currentUser || currentUser.emailVerified) {
+  if (loading || !currentUser || currentUser.emailVerified) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -86,5 +86,6 @@ export default function VerifyEmailPage() {
     </div>
   );
 }
+
 
     
