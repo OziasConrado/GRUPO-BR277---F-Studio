@@ -12,6 +12,7 @@ import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { createAlertServer } from '@/app/actions/firestore';
+import { cn } from '@/lib/utils';
 
 const alertTypes = [
   "Acidente",
@@ -42,7 +43,17 @@ export default function ReportAlertSheet({ isOpen, onOpenChange, onAlertCreated 
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const canSubmit = description.trim().length >= 20 && description.trim().length <= 1100 && type;
+  const MIN_CHARS = 20;
+  const MAX_CHARS = 1100;
+  const charCount = description.trim().length;
+  
+  const canSubmit = charCount >= MIN_CHARS && charCount <= MAX_CHARS && type;
+
+  const getCounterColor = () => {
+    if (charCount > MAX_CHARS * 0.9) return 'text-red-500';
+    if (charCount >= MIN_CHARS) return 'text-green-500';
+    return 'text-muted-foreground';
+  };
   
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -123,9 +134,11 @@ export default function ReportAlertSheet({ isOpen, onOpenChange, onAlertCreated 
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Descreva o que está acontecendo."
                 className="mt-1 min-h-[120px]"
-                maxLength={1100}
+                maxLength={MAX_CHARS}
               />
-               <p className="text-xs text-muted-foreground mt-1 text-right">{description.length} / 1100 (mín 20)</p>
+               <p className={cn("text-xs mt-1 text-right font-medium", getCounterColor())}>
+                {charCount} / {MAX_CHARS} (mín {MIN_CHARS})
+               </p>
             </div>
           </div>
           <div className="p-4 border-t sticky bottom-0 bg-background">

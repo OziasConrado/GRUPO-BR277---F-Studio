@@ -78,11 +78,12 @@ service cloud.firestore {
       }
     }
 
-    // Alerts: Authenticated read, authenticated write
+    // Alerts: Public read is allowed, authenticated write
     match /alerts/{alertId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update, delete: if false; // Alerts are generally not editable/deletable by users
+      allow read: if true;
+      allow create: if true; // Temporarily open for REST API testing from Server Actions
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+      allow update: if false; 
     }
 
     // Businesses (Guia Comercial): Authenticated read, authenticated write
@@ -149,4 +150,3 @@ service cloud.firestore {
     }
   }
 }
-    

@@ -2,18 +2,20 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import UserProfileModal, { type UserProfileData } from '@/components/profile/UserProfileModal';
-import { AlertTriangle, Car, Ambulance, Construction, CloudFog, Clock, UserCircle, Flame, Wrench, Droplets, Mountain, Siren, Users, Dog } from "lucide-react";
+import { AlertTriangle, Car, Ambulance, Construction, CloudFog, Clock, UserCircle, Flame, Wrench, Droplets, Mountain, Siren, Users, Dog, Trash2 } from "lucide-react";
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 export interface AlertProps {
   id: string;
+  userId: string;
   type: string;
   location: string;
   description: string;
@@ -27,6 +29,7 @@ export interface AlertProps {
 
 interface AlertCardProps {
   alert: AlertProps;
+  onDelete: (alertId: string) => void;
 }
 
 const iconMap: Record<string, React.ElementType> = {
@@ -41,6 +44,9 @@ const iconMap: Record<string, React.ElementType> = {
     'Queimada/Fumaça': Flame,
     'Ocorrência Policial': Siren,
     'Manifestação Popular': Users,
+    'Veículo Quebrado/Acidentado': Wrench,
+    'Manifestação': Users,
+    'Outro': AlertTriangle,
 };
 
 const colorMap: Record<string, string> = {
@@ -48,13 +54,13 @@ const colorMap: Record<string, string> = {
     'Obras na Pista': "text-yellow-500",
     'Congestionamento': "text-orange-500",
     'Neblina/Cond. Climática': "text-blue-500",
-    'Remoção/Veículo Acidentado': "text-blue-500",
-    'Óleo na Pista': "text-slate-600",
+    'Veículo Quebrado/Acidentado': "text-blue-500",
     'Queda de Barreira': "text-gray-500",
     'Animal na Pista': "text-yellow-600",
     'Queimada/Fumaça': "text-orange-600",
     'Ocorrência Policial': "text-red-600",
-    'Manifestação Popular': "text-blue-600",
+    'Manifestação': "text-blue-600",
+    'Outro': "text-slate-500",
 };
 
 const getAlertIcon = (type: AlertProps['type']) => {
@@ -65,7 +71,14 @@ const getAlertIcon = (type: AlertProps['type']) => {
   return <IconComponent className={finalClassName} />;
 };
 
-export default function AlertCard({ alert }: AlertCardProps) {
+export default function AlertCard({ alert, onDelete }: AlertCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [selectedUserProfile, setSelectedUserProfile] = useState<UserProfileData | null>(null);
+  const { currentUser } = useAuth();
+  
+  const isAuthor = currentUser?.uid === alert.userId;
+
   const timeAgo = formatDistanceToNow(parseISO(alert.timestamp), { addSuffix: true, locale: ptBR })
       .replace('cerca de ', '')
       .replace(' minuto', ' min')
@@ -78,12 +91,10 @@ export default function AlertCard({ alert }: AlertCardProps) {
       .replace('meses', 'm')
       .replace(' ano', 'a')
       .replace(' anos', 'a');
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [selectedUserProfile, setSelectedUserProfile] = useState<UserProfileData | null>(null);
 
   const handleReporterClick = () => {
     setSelectedUserProfile({
-      id: alert.id,
+      id: alert.userId,
       name: alert.userName,
       avatarUrl: alert.userAvatarUrl,
       location: alert.userLocation,
@@ -93,14 +104,37 @@ export default function AlertCard({ alert }: AlertCardProps) {
     setIsProfileModalOpen(true);
   };
 
-  const defaultAvatar = 'https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/images%2FImagem%20Gen%C3%A9rica%20-%20Foto%20de%20Perfil%20Feed%20BR277.png?alt=media';
+  const defaultAvatar = 'https://firebasestorage.googleapis.com/v0/b/grupobr277-v2-d85f5.appspot.com/o/images%2FImagem%20Gen%C3%A9rica%20-%20Foto%20de%20Perfil%20Feed%20BR277.png?alt=media&token=e25d36e2-2a29-45aa-872f-c57317589d31';
   
   const MAX_CHARS = 300;
   const needsTruncation = alert.description.length > MAX_CHARS;
 
   return (
     <>
-      <Card className="w-full shadow-md rounded-lg overflow-hidden bg-card">
+      <Card className="w-full shadow-md rounded-lg overflow-hidden bg-card relative">
+        {isAuthor && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-8 w-8 text-muted-foreground hover:text-destructive z-10">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tem certeza que deseja excluir seu alerta? Esta ação é permanente.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={() => onDelete(alert.id)} className="bg-destructive hover:bg-destructive/90">
+                  Excluir
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-3">
@@ -112,12 +146,10 @@ export default function AlertCard({ alert }: AlertCardProps) {
         </CardHeader>
         <CardContent className="pb-3">
           <p className="text-sm leading-relaxed whitespace-pre-line">
-            {needsTruncation ? `${alert.description.substring(0, MAX_CHARS)}...` : alert.description}
+            {needsTruncation && !isExpanded ? `${alert.description.substring(0, MAX_CHARS)}...` : alert.description}
             {needsTruncation && (
-              <Button asChild variant="link" size="sm" className="p-0 h-auto ml-1">
-                <Link href={`/alertas/${alert.id}`}>
-                  Ler mais
-                </Link>
+              <Button variant="link" size="sm" className="p-0 h-auto ml-1" onClick={() => setIsExpanded(!isExpanded)}>
+                {isExpanded ? 'Ver menos' : 'Ler mais'}
               </Button>
             )}
           </p>

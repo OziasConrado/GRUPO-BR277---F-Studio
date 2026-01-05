@@ -7,10 +7,16 @@ import AlertCard, { type AlertProps } from '@/components/alerts/alert-card';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import React from 'react';
-import { collection, query, orderBy, Timestamp, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, Timestamp, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import AdPlaceholder from '@/components/common/AdPlaceholder';
+import { deleteAlertServer } from '@/app/actions/firestore';
+
+const AdPlaceholder = ({ className }: { className?: string }) => (
+  <div className={cn("my-6 p-4 rounded-xl bg-muted/30 border border-dashed h-24 flex items-center justify-center", className)}>
+    <p className="text-muted-foreground text-sm">Publicidade</p>
+  </div>
+);
 
 export default function AlertasPage() {
   const [alerts, setAlerts] = useState<AlertProps[]>([]);
@@ -43,6 +49,7 @@ export default function AlertasPage() {
           bio: data.bio || 'Usuário da comunidade Rota Segura.',
           instagramUsername: data.instagramUsername,
           userLocation: data.userLocation || 'Localização Desconhecida',
+          userId: data.userId || null,
         } as AlertProps;
       });
       setAlerts(fetchedAlerts);
@@ -55,6 +62,27 @@ export default function AlertasPage() {
 
     return () => unsubscribe();
   }, [firestore, toast]);
+  
+  const handleDeleteAlert = async (alertId: string) => {
+    const originalAlerts = [...alerts];
+    setAlerts(prevAlerts => prevAlerts.filter(alert => alert.id !== alertId)); // Optimistic update
+
+    const result = await deleteAlertServer(alertId);
+
+    if (!result.success) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao Excluir",
+        description: result.error || "Não foi possível remover o alerta.",
+      });
+      setAlerts(originalAlerts); // Revert on failure
+    } else {
+      toast({
+        title: "Alerta Excluído",
+        description: "Seu alerta foi removido com sucesso.",
+      });
+    }
+  };
 
 
   return (
@@ -83,7 +111,7 @@ export default function AlertasPage() {
             <div className="space-y-4">
               {alerts.map((alert, index) => (
                 <React.Fragment key={alert.id}>
-                  <AlertCard alert={alert} />
+                  <AlertCard alert={alert} onDelete={handleDeleteAlert} />
                   {(index === 2 && alerts.length > 3) && <AdPlaceholder className="my-6" />}
                 </React.Fragment>
               ))}
