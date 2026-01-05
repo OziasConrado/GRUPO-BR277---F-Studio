@@ -22,7 +22,6 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db, storage } from '@/lib/firebase/client';
-import { fetchUserProfileServer } from '@/app/actions/firestore';
 
 export interface UserProfile {
     uid: string;
@@ -35,6 +34,7 @@ export interface UserProfile {
     instagramUsername?: string;
     lastLogin?: any;
     isAdmin?: boolean; 
+    favorites?: string[]; // Array of camera IDs
 }
 
 interface UpdateUserProfileData {
@@ -52,6 +52,7 @@ interface AuthContextType {
   isProfileComplete: boolean;
   loading: boolean;
   authAction: string | null;
+  setUserProfile: React.Dispatch<React.SetStateAction<UserProfile | null>>;
   signInWithGoogle: () => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
@@ -110,10 +111,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const idTokenResult = await getIdTokenResult(user, true);
           setIsAdmin(idTokenResult.claims.admin === true);
           
-          const profileData = await fetchUserProfileServer(user.uid);
+          const userDoc = await getDocFromServer(doc(db, 'users', user.uid));
           
-          if (profileData) {
-            setUserProfile(profileData);
+          if (userDoc.exists()) {
+            setUserProfile({ uid: user.uid, ...userDoc.data() } as UserProfile);
           } else {
              console.log(`Could not fetch user profile for ${user.uid} immediately. Will rely on client-side cache or subsequent fetches.`);
              const newUserProfile: UserProfile = {
@@ -121,6 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 email: user.email,
                 displayName: user.displayName,
                 photoURL: user.photoURL,
+                favorites: [],
              };
              setUserProfile(newUserProfile);
           }
@@ -131,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 email: user.email,
                 displayName: user.displayName,
                 photoURL: user.photoURL,
+                favorites: [],
            };
            setUserProfile(basicProfile);
         } finally {
@@ -171,6 +174,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 photoURL: user.photoURL,
                 createdAt: serverTimestamp(),
                 lastLogin: serverTimestamp(),
+                favorites: [],
             }, { merge: true });
         } else {
             await updateDoc(userDocRef, { lastLogin: serverTimestamp() });
@@ -196,6 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         photoURL: null,
         createdAt: serverTimestamp(),
         lastLogin: serverTimestamp(),
+        favorites: [],
       });
       
       toast({ title: 'Cadastro realizado!', description: 'Enviamos um link de verificação para o seu e-mail.' });
@@ -301,6 +306,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isProfileComplete,
     loading,
     authAction,
+    setUserProfile,
     signInWithGoogle,
     signUpWithEmail,
     signInWithEmail,

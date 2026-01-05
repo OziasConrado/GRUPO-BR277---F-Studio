@@ -1,7 +1,10 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { ListFilter } from 'lucide-react';
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+
 
 interface StreamFiltersProps {
   currentFilter: string;
@@ -16,23 +19,25 @@ export default function StreamFilters({ currentFilter, onFilterChange, streamCat
   };
 
   return (
-    <div className="mb-4">
-      <div className="flex items-center mb-2">
-        <ListFilter className="h-4 w-4 mr-2 text-muted-foreground" />
-        <h3 className="text-sm font-medium text-muted-foreground">Filtrar por região:</h3>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {streamCategories.map((category) => (
-          <Button
-            key={category}
-            variant={currentFilter === category ? 'default' : 'outline'}
-            onClick={() => handleFilterClick(category)}
-            className="rounded-full text-xs px-3 py-1 h-auto"
-          >
-            {category}
-          </Button>
-        ))}
-      </div>
+    <div className="relative">
+       <div className="absolute left-3 top-1/2 -translate-y-1/2">
+         <ListFilter className="h-4 w-4 text-muted-foreground" />
+       </div>
+       <ScrollArea className="w-full whitespace-nowrap">
+        <div className="flex w-max space-x-2 pl-10">
+          {streamCategories.map((category) => (
+            <Button
+              key={category}
+              variant={currentFilter === category ? "default" : "outline"}
+              onClick={() => handleFilterClick(category)}
+              className="rounded-full text-xs px-3 py-1 h-auto"
+            >
+              {category}
+            </Button>
+          ))}
+        </div>
+        <ScrollBar orientation="horizontal" className="h-0" />
+      </ScrollArea>
     </div>
   );
 }

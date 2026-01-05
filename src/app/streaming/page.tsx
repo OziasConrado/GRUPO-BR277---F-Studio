@@ -1,18 +1,33 @@
+
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { PlayCircle, Cctv, Search, Phone, Route } from 'lucide-react';
+import { PlayCircle, Cctv, Search, Phone, Route, Star, Loader2 } from 'lucide-react';
 import StreamFilters from '@/components/streaming/stream-filters';
 import StreamViewerModal from '@/components/streaming/StreamViewerModal';
-import type { StreamCardProps } from '@/components/streaming/stream-card'; 
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import Banners from '@/components/banners/Banners';
+import { useAuth } from '@/contexts/AuthContext';
+import { toggleFavoriteServer } from '@/app/actions/firestore';
+import { useToast } from '@/hooks/use-toast';
+
+
+export interface StreamCardProps {
+  id: string;
+  title: string;
+  description: string;
+  thumbnailUrl: string;
+  dataAIThumbnailHint?: string;
+  category: string;
+  isLive: boolean;
+  streamUrl: string;
+}
 
 // Dados fornecidos pelo usuário
 const mockStreamsData: StreamCardProps[] = [
@@ -222,6 +237,41 @@ export default function StreamingPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedStream, setSelectedStream] = useState<StreamCardProps | null>(null);
+  const { currentUser, userProfile, setUserProfile } = useAuth();
+  const { toast } = useToast();
+  const [isFavoriting, setIsFavoriting] = useState<string | null>(null);
+
+  const favorites = useMemo(() => userProfile?.favorites || [], [userProfile]);
+
+  const handleToggleFavorite = useCallback(async (e: React.MouseEvent, cameraId: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    if (!currentUser) {
+      toast({ variant: 'destructive', title: 'Login Necessário', description: 'Você precisa estar logado para favoritar câmeras.' });
+      return;
+    }
+    setIsFavoriting(cameraId);
+
+    const currentFavorites = userProfile?.favorites || [];
+    const isFavorite = currentFavorites.includes(cameraId);
+    
+    // Optimistic UI update
+    const newFavorites = isFavorite
+      ? currentFavorites.filter(id => id !== cameraId)
+      : [...currentFavorites, cameraId];
+    setUserProfile(prev => prev ? { ...prev, favorites: newFavorites } : null);
+
+    const result = await toggleFavoriteServer(currentUser.uid, cameraId, currentFavorites);
+    
+    if (!result.success) {
+      // Revert UI on failure
+      toast({ variant: 'destructive', title: 'Erro', description: result.error || 'Não foi possível atualizar seus favoritos.' });
+      setUserProfile(prev => prev ? { ...prev, favorites: currentFavorites } : null);
+    }
+    setIsFavoriting(null);
+
+  }, [currentUser, userProfile, toast, setUserProfile]);
 
   const filteredStreams = useMemo(() => {
     const lowercasedSearch = searchTerm.toLowerCase();
@@ -234,6 +284,10 @@ export default function StreamingPage() {
         stream.description.toLowerCase().includes(lowercasedSearch)
       );
   }, [currentFilter, searchTerm]);
+  
+  const favoriteStreams = useMemo(() => {
+    return mockStreamsData.filter(stream => favorites.includes(stream.id));
+  }, [favorites]);
 
   const handleWatchStream = (stream: StreamCardProps) => {
     setSelectedStream(stream);
@@ -271,10 +325,10 @@ export default function StreamingPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Buscar câmera por local, rodovia ou cidade..."
+            placeholder="Buscar por local, rodovia ou cidade..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 w-full rounded-full h-11 bg-background/70"
+            className="pl-10 w-full rounded-full h-10 text-sm bg-background/70"
           />
         </div>
         <StreamFilters 
@@ -283,37 +337,79 @@ export default function StreamingPage() {
           streamCategories={streamCategories}
         />
       </Card>
+      
+      {favoriteStreams.length > 0 && (
+        <section>
+          <h2 className="text-xl font-bold font-headline mb-3">Favoritos ⭐</h2>
+          <div className="grid grid-cols-2 gap-3">
+            {favoriteStreams.map(stream => (
+               <Card 
+                key={`fav-${stream.id}`}
+                onClick={() => handleWatchStream(stream)}
+                className="bg-card/70 dark:bg-card/70 backdrop-blur-sm border rounded-lg overflow-hidden cursor-pointer group relative"
+               >
+                <button
+                    onClick={(e) => handleToggleFavorite(e, stream.id)}
+                    className="absolute top-1 right-1 z-10 p-1.5 bg-black/30 rounded-full text-white hover:bg-black/50 transition-colors"
+                    aria-label="Remover dos favoritos"
+                >
+                    {isFavoriting === stream.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Star className="h-4 w-4 text-amber-400 fill-amber-400" />}
+                </button>
+                 <CardContent className="p-2 flex flex-col items-center text-center">
+                   <div className="w-full aspect-video flex-shrink-0 bg-muted rounded-md flex items-center justify-center mb-2">
+                       <Cctv className="h-8 w-8 text-primary"/>
+                   </div>
+                   <div className="flex-grow flex flex-col justify-center self-stretch">
+                       <h3 className="text-sm font-semibold line-clamp-1">{stream.title}</h3>
+                       <p className="text-xs text-muted-foreground leading-tight line-clamp-1">{stream.description}</p>
+                   </div>
+                 </CardContent>
+               </Card>
+            ))}
+          </div>
+        </section>
+      )}
 
       {filteredStreams.length > 0 ? (
         <div className="space-y-3">
-          {filteredStreams.map((stream) => (
-            <Card 
-              key={stream.id} 
-              className="bg-card/70 dark:bg-card/70 backdrop-blur-sm border rounded-lg overflow-hidden"
-            >
-              <CardContent className="p-3 flex flex-row items-center gap-4">
-                <div className="w-16 h-16 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center">
-                    <Cctv className="h-8 w-8 text-primary"/>
-                </div>
-                <div className="flex-grow flex flex-col justify-center self-stretch">
-                    <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold font-headline line-clamp-1">{stream.title}</h3>
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{stream.description}</p>
-                </div>
-                <div className="flex-shrink-0 self-center"> 
-                  <Button 
-                    variant="default" 
-                    size="sm" 
-                    onClick={() => handleWatchStream(stream)}
-                    className="rounded-full text-xs py-1 px-3 h-auto"
-                  >
-                    <PlayCircle className="mr-1 h-4 w-4" /> Assistir
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          <h2 className="text-xl font-bold font-headline mt-6">Todas as Câmeras</h2>
+          {filteredStreams.map((stream) => {
+            const isFavorite = favorites.includes(stream.id);
+            return (
+              <Card 
+                key={stream.id} 
+                className="bg-card/70 dark:bg-card/70 backdrop-blur-sm border rounded-lg overflow-hidden group relative"
+              >
+                <button
+                  onClick={(e) => handleToggleFavorite(e, stream.id)}
+                  className="absolute top-2 right-2 z-10 p-1.5 bg-black/30 rounded-full text-white hover:bg-black/50 transition-colors"
+                  aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                >
+                   {isFavoriting === stream.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Star className={cn("h-4 w-4", isFavorite ? "text-amber-400 fill-amber-400" : "text-white/80")}/>}
+                </button>
+                <CardContent className="p-3 flex flex-row items-center gap-4" onClick={() => handleWatchStream(stream)}>
+                  <div className="w-16 h-16 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center">
+                      <Cctv className="h-8 w-8 text-primary"/>
+                  </div>
+                  <div className="flex-grow flex flex-col justify-center self-stretch">
+                      <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold font-headline line-clamp-1">{stream.title}</h3>
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{stream.description}</p>
+                  </div>
+                  <div className="flex-shrink-0 self-center"> 
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      className="rounded-full text-xs py-1 px-3 h-auto"
+                    >
+                      <PlayCircle className="mr-1 h-4 w-4" /> Assistir
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       ) : (
         <p className="mt-6 text-center text-muted-foreground">Nenhuma câmera encontrada para sua busca.</p>

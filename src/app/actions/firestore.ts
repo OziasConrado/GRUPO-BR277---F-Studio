@@ -3,7 +3,6 @@
 
 import type { UserProfile } from '@/contexts/AuthContext';
 import { revalidatePath } from 'next/cache';
-import type { Timestamp } from 'firebase-admin/firestore'; // Import Timestamp type for checking
 
 const projectId = 'grupo-br277';
 const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
@@ -30,11 +29,12 @@ function mapFirestoreRestResponse(documents: any[]): any[] {
       } else if (valueType === 'timestampValue') {
         mappedDoc[key] = new Date(valueObject.timestampValue).toISOString();
       } else if (valueType === 'mapValue') {
-         // This is a simplification. A real implementation would recurse.
          mappedDoc[key] = valueObject.mapValue.fields;
       } else if (valueType === 'arrayValue') {
-          // This is a simplification.
+          // Simplificado: extrai os valores do array. Assume tipos primitivos.
           mappedDoc[key] = valueObject.arrayValue.values?.map((v: any) => Object.values(v)[0]) || [];
+      } else if (valueType === 'nullValue') {
+          mappedDoc[key] = null;
       } else {
         mappedDoc[key] = valueObject[valueType];
       }
@@ -42,6 +42,7 @@ function mapFirestoreRestResponse(documents: any[]): any[] {
     return mappedDoc;
   });
 }
+
 
 /**
  * Server Action para buscar banners ativos usando a API REST do Firestore.
@@ -57,7 +58,7 @@ export async function fetchBannersServer(): Promise<{ success: boolean; data: an
         'Accept': 'application/json',
       },
       next: {
-        revalidate: 300, // Revalida a cada 5 minutos
+        revalidate: 300, 
       }
     });
 
@@ -71,7 +72,6 @@ export async function fetchBannersServer(): Promise<{ success: boolean; data: an
     const mappedData = mapFirestoreRestResponse(data.documents);
     const activeBanners = mappedData.filter(b => b.isActive === true);
     
-    console.log(`--- Sucesso na Action REST: fetchBannersServer - ${activeBanners.length} banners ativos encontrados. ---`);
     return { success: true, data: activeBanners };
 
   } catch (error: any) {
@@ -80,129 +80,59 @@ export async function fetchBannersServer(): Promise<{ success: boolean; data: an
   }
 }
 
-// Manter as outras actions que ainda não foram refatoradas para REST
-import { firestore as firestoreAdmin } from '@/lib/firebase/server';
+/**
+ * Server Action para alternar um favorito de câmera para um usuário via API REST.
+ * @param userId - O UID do usuário.
+ * @param cameraId - O ID da câmera a ser adicionada/removida.
+ * @param currentFavorites - A lista atual de favoritos do usuário.
+ * @returns Um objeto com sucesso/erro.
+ */
+export async function toggleFavoriteServer(userId: string, cameraId: string, currentFavorites: string[]): Promise<{ success: boolean; error?: string; }> {
+    if (!userId || !cameraId) {
+        return { success: false, error: 'User ID e Camera ID são obrigatórios.' };
+    }
+    if (!apiKey) {
+       return { success: false, error: 'Configuração do servidor incompleta (API Key).' };
+    }
 
-const TIMEOUT_DURATION = 5000; // 5 segundos
+    const isFavorite = currentFavorites.includes(cameraId);
+    const updatedFavorites = isFavorite
+        ? currentFavorites.filter(id => id !== cameraId)
+        : [...currentFavorites, cameraId];
 
-// Helper function to serialize Firestore Timestamps
-function serializeFirestoreObject(obj: { [key: string]: any }): { [key: string]: any } {
-    const newObj: { [key: string]: any } = {};
-    for (const key in obj) {
-        const value = obj[key];
-        if (value && typeof value.toDate === 'function') { // Check if it's a Firestore Timestamp-like object
-            newObj[key] = value.toDate().toISOString();
-        } else {
-            newObj[key] = value;
+    const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}?updateMask.fieldPaths=favorites&key=${apiKey}`;
+
+    const payload = {
+        fields: {
+            favorites: {
+                arrayValue: {
+                    values: updatedFavorites.map(id => ({ stringValue: id }))
+                }
+            }
         }
-    }
-    return newObj;
-}
-
-export async function fetchUserProfileServer(uid: string): Promise<UserProfile | null> {
-  if (!firestoreAdmin) {
-    console.error("--- Erro Crítico na Action: fetchUserProfileServer --- Firestore Admin não inicializado.");
-    return null;
-  }
-
-  console.log(`>>> [SERVER ACTION] Iniciando busca de PERFIL no Firestore para UID: ${uid}...`);
-  
-  const firestorePromise = firestoreAdmin.collection('users').doc(uid).get();
-
-  const timeoutPromise = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error('Firestore timeout')), TIMEOUT_DURATION)
-  );
-
-  try {
-    const userDoc = await Promise.race([firestorePromise, timeoutPromise]);
-    console.log('<<< [SERVER ACTION] Busca de PERFIL concluída!');
-
-    if (userDoc.exists) {
-      const profileData = userDoc.data();
-      if (!profileData) {
-        console.warn(`--- Perfil vazio para UID: ${uid} ---`);
-        return null;
-      }
-      
-      const serializableProfile = serializeFirestoreObject(profileData) as UserProfile;
-      console.log(`--- Sucesso na Action: fetchUserProfileServer para UID: ${uid} ---`);
-      return serializableProfile;
-    } else {
-      console.warn(`--- Perfil não encontrado para UID: ${uid} ---`);
-      return null;
-    }
-  } catch (error: any) {
-    console.error(`--- Erro na Action: fetchUserProfileServer (UID: ${uid}) ---`, error.message, error.stack || '');
-    return null;
-  }
-}
-
-export async function fetchAllBannersServer() {
-    console.log('--- Iniciando Action: fetchAllBannersServer ---');
-    if (!firestoreAdmin) {
-        console.error("--- Erro na Action: fetchAllBannersServer --- Firestore Admin não inicializado.");
-        return { success: false, error: "Serviço de banco de dados indisponível.", data: [] };
-    }
-
+    };
+    
     try {
-        const bannersCollection = firestoreAdmin.collection('banners');
-        const q = bannersCollection.orderBy('order', 'asc');
-        const snapshot = await q.get();
-        const banners = snapshot.docs.map(doc => {
-            const data = doc.data();
-            const serializedData = serializeFirestoreObject(data);
-            return { id: doc.id, ...serializedData };
+        const response = await fetch(url, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify(payload),
         });
-        console.log(`--- Sucesso na Action: fetchAllBannersServer - ${banners.length} banners encontrados. ---`);
-        return { success: true, data: banners as any[] };
-    } catch (error: any) {
-        console.error("--- Erro na Action: fetchAllBannersServer ---", error.stack || error);
-        return { success: false, error: error.message || 'Falha ao buscar todos os banners.', data: [] };
-    }
-}
 
-export async function saveBannerServer(bannerData: any, bannerId: string | null) {
-  console.log('--- Iniciando Action: Salvar Banner ---', { bannerId, bannerData });
-  if (!firestoreAdmin) {
-    console.error("--- Erro na Action: saveBannerServer --- Firestore Admin não inicializado.");
-    return { success: false, error: "Serviço de banco de dados indisponível." };
-  }
-
-  try {
-    if (bannerId) {
-      const bannerRef = firestoreAdmin.collection('banners').doc(bannerId);
-      await bannerRef.update({ ...bannerData, updatedAt: new Date() });
-      console.log(`--- Sucesso na Action: saveBannerServer - Banner ${bannerId} atualizado. ---`);
-    } else {
-      const newBanner = await firestoreAdmin.collection('banners').add({ ...bannerData, createdAt: new Date() });
-      console.log(`--- Sucesso na Action: saveBannerServer - Novo banner criado com ID: ${newBanner.id}. ---`);
-    }
-    
-    revalidatePath('/admin/banners');
-    revalidatePath('/streaming');
-    
-    return { success: true };
-  } catch (error: any) {
-    console.error("--- Erro na Action: saveBannerServer ---", error.stack || error);
-    return { success: false, error: error.message || 'Não foi possível salvar o banner.' };
-  }
-}
-
-export async function deleteBannerServer(bannerId: string) {
-    console.log('--- Iniciando Action: deleteBannerServer ---', { bannerId });
-    if (!firestoreAdmin) {
-        console.error("--- Erro na Action: deleteBannerServer --- Firestore Admin não inicializado.");
-        return { success: false, error: "Serviço de banco de dados indisponível." };
-    }
-
-    try {
-        await firestoreAdmin.collection('banners').doc(bannerId).delete();
-        console.log(`--- Sucesso na Action: deleteBannerServer - Banner ${bannerId} deletado. ---`);
-        revalidatePath('/admin/banners');
+        if (!response.ok) {
+            const errorBody = await response.json();
+            console.error("--- Erro no PATCH da API REST do Firestore (toggleFavorite) ---", JSON.stringify(errorBody, null, 2));
+            throw new Error(`Falha ao atualizar favoritos: ${response.statusText}`);
+        }
+        
         revalidatePath('/streaming');
         return { success: true };
+
     } catch (error: any) {
-        console.error("--- Erro na Action: deleteBannerServer ---", error.stack || error);
-        return { success: false, error: error.message || 'Não foi possível deletar o banner.' };
+        console.error("--- Erro CRÍTICO na Action REST: toggleFavoriteServer ---", error.stack || error);
+        return { success: false, error: error.message || 'Falha ao atualizar favoritos via REST.' };
     }
 }
