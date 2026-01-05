@@ -379,35 +379,34 @@ export default function StreamingPage() {
               <Card 
                 key={stream.id} 
                 className="bg-card/70 dark:bg-card/70 backdrop-blur-sm border rounded-lg overflow-hidden group relative"
+                onClick={() => handleWatchStream(stream)}
               >
-                <button
-                  onClick={(e) => handleToggleFavorite(e, stream.id)}
-                  className="absolute top-2 right-2 z-10 p-1.5 bg-black/30 rounded-full text-white hover:bg-black/50 transition-colors"
-                  aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-                >
-                   {isFavoriting === stream.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Star className={cn("h-4 w-4", isFavorite ? "text-amber-400 fill-amber-400" : "text-white/80")}/>}
-                </button>
-                <CardContent className="p-3" onClick={() => handleWatchStream(stream)}>
-                  <div className="flex flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-4 min-w-0">
-                      <div className="w-16 h-16 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center">
-                          <Cctv className="h-8 w-8 text-primary"/>
-                      </div>
-                      <div className="flex-grow flex flex-col justify-center self-stretch">
-                          <h3 className="font-semibold font-headline line-clamp-1">{stream.title}</h3>
-                          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{stream.description}</p>
-                      </div>
-                    </div>
-                    <div className="flex-shrink-0">
-                      <Button 
-                        variant="default" 
-                        size="sm" 
-                        className="rounded-full text-xs py-1 px-3 h-auto"
-                      >
-                        <PlayCircle className="mr-1 h-4 w-4" /> Assistir
-                      </Button>
-                    </div>
+                <CardContent className="p-3 flex items-center gap-4">
+                  <div className="w-16 h-16 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center">
+                    <Cctv className="h-8 w-8 text-primary"/>
                   </div>
+                  <div className="flex-grow min-w-0">
+                    <h3 className="font-semibold font-headline line-clamp-1">{stream.title}</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{stream.description}</p>
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      onClick={(e) => {
+                          e.stopPropagation();
+                          handleWatchStream(stream);
+                      }}
+                      className="rounded-full text-xs py-1 px-3 h-auto mt-2"
+                    >
+                      <PlayCircle className="mr-1 h-4 w-4" /> Assistir
+                    </Button>
+                  </div>
+                  <button
+                    onClick={(e) => handleToggleFavorite(e, stream.id)}
+                    className="absolute top-1.5 right-1.5 z-10 p-2 bg-black/10 rounded-full text-white hover:bg-black/30 transition-colors"
+                    aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                  >
+                     {isFavoriting === stream.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <Star className={cn("h-5 w-5", isFavorite ? "text-amber-400 fill-amber-400" : "text-white/80")}/>}
+                  </button>
                 </CardContent>
               </Card>
             )
