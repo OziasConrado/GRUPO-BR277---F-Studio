@@ -1,28 +1,20 @@
 
 'use client';
 
-import { useState } from 'react';
 import type { StaticImageData } from 'next/image';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import UserProfileModal, { type UserProfileData } from '@/components/profile/UserProfileModal';
-import { AlertTriangle, Construction, Car, Ambulance, Flame, CloudFog, Clock, UserCircle, MapPin, Wrench, Droplets, Mountain, Siren, Users, Dog } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { AlertTriangle, Construction, Car, Ambulance, Flame, CloudFog, Clock, Wrench, Droplets, Mountain, Siren, Users, Dog } from "lucide-react";
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import Image from 'next/image';
+import Link from 'next/link';
+import { Button } from '../ui/button';
 
 export interface HomeAlertCardData {
   id: string;
   type: string;
-  description: string; // Location should be part of this
+  description: string;
   timestamp: string; // ISO 8601 string
-  userNameReportedBy: string;
-  userAvatarUrl?: string | StaticImageData;
-  dataAIAvatarHint?: string;
-  bio?: string;
-  instagramUsername?: string;
-  userLocation?: string;
 }
 
 interface HomeAlertCardProps {
@@ -67,88 +59,41 @@ const AlertTypeIcon = ({ type, className }: { type: string, className?: string }
   return <IconComponent className={finalClassName} />;
 };
 
-
 export default function HomeAlertCard({ alert }: HomeAlertCardProps) {
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [selectedUserProfile, setSelectedUserProfile] = useState<UserProfileData | null>(null);
-
   const timeAgo = formatDistanceToNow(parseISO(alert.timestamp), { addSuffix: true, locale: ptBR })
       .replace('cerca de ', '')
       .replace(' minuto', ' min')
       .replace(' minutos', ' min')
       .replace(' hora', ' h')
-      .replace(' horas', ' h')
-      .replace(' dia', ' d')
-      .replace(' dias', ' d')
-      .replace('mês', 'm')
-      .replace('meses', 'm')
-      .replace(' ano', 'a')
-      .replace(' anos', 'a');
+      .replace(' horas', ' h');
 
-  const handleReporterClick = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent navigation if card is wrapped in Link
-    e.stopPropagation(); // Prevent navigation
-    setSelectedUserProfile({
-      id: alert.id, 
-      name: alert.userNameReportedBy,
-      avatarUrl: alert.userAvatarUrl,
-      dataAIAvatarHint: alert.dataAIAvatarHint,
-      location: alert.userLocation,
-      bio: alert.bio || "Usuário da comunidade GRUPO BR277.",
-      instagramUsername: alert.instagramUsername,
-    });
-    setIsProfileModalOpen(true);
-  };
+  const MAX_CHARS = 300;
+  const needsTruncation = alert.description.length > MAX_CHARS;
 
   return (
-    <>
-      <Card className="w-[150px] h-[250px] flex flex-col rounded-xl shadow-lg overflow-hidden bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-muted/20 transition-colors duration-150 cursor-pointer">
-        <CardHeader className="p-3 pb-1.5">
-          <div className="flex items-center gap-2">
-            <AlertTypeIcon type={alert.type} />
-            <CardTitle className="text-base font-headline truncate">{alert.type}</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="p-3 pt-1 flex-grow">
-          <CardDescription className="text-sm text-foreground/80 line-clamp-4">
-            {alert.description}
-          </CardDescription>
-        </CardContent>
-        <CardFooter className="p-3 pt-1.5 border-t border-border/50 flex justify-between items-center text-xs text-muted-foreground">
-          <button
-            onClick={handleReporterClick}
-            className="flex items-center cursor-pointer hover:underline focus:outline-none group min-w-0" // Added min-w-0 for flex truncation
-            aria-label={`Ver perfil de ${alert.userNameReportedBy}`}
-          >
-            <Avatar className="h-5 w-5 mr-1.5 border border-primary/20 group-hover:border-primary/40 transition-all flex-shrink-0">
-               {alert.userAvatarUrl ? (
-                  <AvatarImage
-                    src={alert.userAvatarUrl as string}
-                    alt={alert.userNameReportedBy}
-                    data-ai-hint={alert.dataAIAvatarHint}
-                  />
-                ) : null}
-                <AvatarFallback className="text-[10px]">
-                  {alert.userNameReportedBy ? alert.userNameReportedBy.substring(0,1).toUpperCase() : <UserCircle className="h-3 w-3"/>}
-                </AvatarFallback>
-            </Avatar>
-            <span className="group-hover:text-primary transition-colors truncate"> {/* Added truncate here */}
-              {alert.userNameReportedBy}
-            </span>
-          </button>
-          <div className="flex items-center flex-shrink-0 ml-2"> {/* Added ml-2 for spacing */}
+    <Card className="w-full flex flex-col rounded-xl shadow-md overflow-hidden bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-muted/20 transition-colors duration-150 cursor-pointer">
+      <CardHeader className="p-3 pb-1.5 flex-row items-center gap-2">
+        <AlertTypeIcon type={alert.type} className="h-6 w-6" />
+        <CardTitle className="text-base font-headline truncate">{alert.type}</CardTitle>
+      </CardHeader>
+      <CardContent className="p-3 pt-1 flex-grow">
+        <p className="text-sm text-foreground/80 line-clamp-4">
+            {needsTruncation ? `${alert.description.substring(0, MAX_CHARS)}...` : alert.description}
+            {needsTruncation && (
+              <Button asChild variant="link" size="sm" className="p-0 h-auto ml-1 text-primary">
+                <Link href={`/alertas`}>
+                  Ler mais
+                </Link>
+              </Button>
+            )}
+        </p>
+      </CardContent>
+      <div className="p-3 pt-1.5 border-t border-border/50 flex justify-end items-center text-xs text-muted-foreground">
+        <div className="flex items-center">
             <Clock className="h-3 w-3 mr-1" />
-            <span className="whitespace-nowrap">{timeAgo}</span> {/* Added whitespace-nowrap */}
-          </div>
-        </CardFooter>
-      </Card>
-      {selectedUserProfile && (
-        <UserProfileModal
-            isOpen={isProfileModalOpen}
-            onClose={() => setIsProfileModalOpen(false)}
-            user={selectedUserProfile}
-        />
-      )}
-    </>
+            <span>{timeAgo}</span>
+        </div>
+      </div>
+    </Card>
   );
 }

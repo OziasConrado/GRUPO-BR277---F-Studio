@@ -2,23 +2,24 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { UserProfileData, default as UserProfileModal } from '@/components/profile/UserProfileModal';
+import UserProfileModal, { type UserProfileData } from '@/components/profile/UserProfileModal';
 import { AlertTriangle, Car, Ambulance, Construction, CloudFog, Clock, UserCircle, Flame, Wrench, Droplets, Mountain, Siren, Users, Dog } from "lucide-react";
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { Button } from '../ui/button';
 
 export interface AlertProps {
   id: string;
-  type: string; // Tipos customizáveis
+  type: string;
   location: string;
   description: string;
   timestamp: string; // ISO 8601 string
-  userNameReportedBy: string; // Nome do usuário que reportou
+  userName: string;
   userAvatarUrl?: string;
-  dataAIAvatarHint?: string;
   bio?: string;
   instagramUsername?: string;
   userLocation?: string;
@@ -82,22 +83,24 @@ export default function AlertCard({ alert }: AlertCardProps) {
 
   const handleReporterClick = () => {
     setSelectedUserProfile({
-      id: alert.id, // Usando o ID do alerta como ID do perfil (simulação)
-      name: alert.userNameReportedBy,
+      id: alert.id,
+      name: alert.userName,
       avatarUrl: alert.userAvatarUrl,
-      dataAIAvatarHint: alert.dataAIAvatarHint,
       location: alert.userLocation,
-      bio: alert.bio || "Usuário da comunidade GRUPO BR277.",
+      bio: alert.bio || "Usuário da comunidade Rota Segura.",
       instagramUsername: alert.instagramUsername,
     });
     setIsProfileModalOpen(true);
   };
 
   const defaultAvatar = 'https://firebasestorage.googleapis.com/v0/b/grupo-br277.appspot.com/o/images%2FImagem%20Gen%C3%A9rica%20-%20Foto%20de%20Perfil%20Feed%20BR277.png?alt=media';
+  
+  const MAX_CHARS = 300;
+  const needsTruncation = alert.description.length > MAX_CHARS;
 
   return (
     <>
-      <Card className="w-full shadow-md rounded-lg overflow-hidden bg-white dark:bg-card">
+      <Card className="w-full shadow-md rounded-lg overflow-hidden bg-card">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-3">
@@ -108,22 +111,31 @@ export default function AlertCard({ alert }: AlertCardProps) {
           <CardDescription className="text-xs pt-1">{alert.location}</CardDescription>
         </CardHeader>
         <CardContent className="pb-3">
-          <p className="text-sm leading-relaxed">{alert.description}</p>
+          <p className="text-sm leading-relaxed whitespace-pre-line">
+            {needsTruncation ? `${alert.description.substring(0, MAX_CHARS)}...` : alert.description}
+            {needsTruncation && (
+              <Button asChild variant="link" size="sm" className="p-0 h-auto ml-1">
+                <Link href={`/alertas/${alert.id}`}>
+                  Ler mais
+                </Link>
+              </Button>
+            )}
+          </p>
         </CardContent>
         <CardFooter className="flex justify-between items-center text-xs text-muted-foreground pt-2 pb-3">
-          {alert.userNameReportedBy && (
+          {alert.userName && (
             <button
               onClick={handleReporterClick}
               className="flex items-center cursor-pointer hover:underline focus:outline-none"
-              aria-label={`Ver perfil de ${alert.userNameReportedBy}`}
+              aria-label={`Ver perfil de ${alert.userName}`}
             >
               <Avatar className="h-6 w-6 mr-1.5 border-2 border-primary/30">
-                <AvatarImage src={alert.userAvatarUrl || defaultAvatar} alt={alert.userNameReportedBy} data-ai-hint={alert.dataAIAvatarHint} />
+                <AvatarImage src={alert.userAvatarUrl || defaultAvatar} alt={alert.userName}/>
                 <AvatarFallback className="text-xs">
-                  {alert.userNameReportedBy ? alert.userNameReportedBy.substring(0,1).toUpperCase() : <UserCircle className="h-4 w-4"/>}
+                  {alert.userName ? alert.userName.substring(0,1).toUpperCase() : <UserCircle className="h-4 w-4"/>}
                 </AvatarFallback>
               </Avatar>
-              <span>{alert.userNameReportedBy}</span>
+              <span>{alert.userName}</span>
             </button>
           )}
            <div className="flex items-center">

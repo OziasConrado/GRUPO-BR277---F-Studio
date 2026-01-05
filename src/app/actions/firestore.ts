@@ -19,14 +19,11 @@ function mapFirestoreRestResponse(documents: any[]): any[] {
       const valueObject = fields[key];
       const valueType = Object.keys(valueObject)[0];
       
-      // Convert Timestamps to ISO strings
       if (valueType === 'timestampValue') {
           mappedDoc[key] = new Date(valueObject.timestampValue).toISOString();
       } else if (valueType === 'mapValue') {
-          // This is a simplified recursive call. For deeper nesting, a more robust solution would be needed.
           const innerFields = valueObject.mapValue.fields || {};
           const mappedFields = mapFirestoreRestResponse([ { fields: innerFields } ])[0] || {};
-          // Remove the dummy 'id' if it exists from the recursive call
           delete mappedFields.id;
           mappedDoc[key] = mappedFields;
       } else if (valueType === 'arrayValue') {
@@ -41,7 +38,6 @@ function mapFirestoreRestResponse(documents: any[]): any[] {
               return v[innerValueType];
           });
       } else if (valueType !== 'nullValue') {
-        // Handle other primitive types
         mappedDoc[key] = valueObject[valueType];
       } else {
         mappedDoc[key] = null;
@@ -54,7 +50,6 @@ function mapFirestoreRestResponse(documents: any[]): any[] {
 
 /**
  * Server Action para buscar banners ativos usando a API REST do Firestore.
- * @returns Um objeto com sucesso/erro e os dados dos banners.
  */
 export async function fetchAllBannersServer(): Promise<{ success: boolean; data: any[]; error?: string; }> {
   const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/banners?key=${apiKey}&orderBy=order`;
@@ -84,9 +79,6 @@ export async function fetchAllBannersServer(): Promise<{ success: boolean; data:
 
 /**
  * Server Action para salvar (criar ou atualizar) um banner usando a API REST do Firestore.
- * @param bannerData - Os dados do banner a serem salvos.
- * @param bannerId - O ID do banner (se for uma atualização) ou null (se for uma criação).
- * @returns Um objeto com sucesso/erro.
  */
 export async function saveBannerServer(
   bannerData: { name: string; targetUrl: string; order: number; isActive: boolean; imageUrl: string; },
@@ -143,8 +135,6 @@ export async function saveBannerServer(
 
 /**
  * Server Action para deletar um banner usando a API REST do Firestore.
- * @param bannerId - O ID do banner a ser deletado.
- * @returns Um objeto com sucesso/erro.
  */
 export async function deleteBannerServer(bannerId: string): Promise<{ success: boolean; error?: string; }> {
   if (!apiKey) {
@@ -163,12 +153,11 @@ export async function deleteBannerServer(bannerId: string): Promise<{ success: b
     });
     
     if (!response.ok) {
-        // Firestore DELETE returns an empty object {} on success, so a 404 might mean it's already gone.
         if (response.status === 404) {
              console.warn(`Banner com ID ${bannerId} não encontrado para deletar (pode já ter sido removido).`);
              revalidatePath('/admin/banners');
              revalidatePath('/streaming');
-             return { success: true }; // Consider it a success if not found
+             return { success: true };
         }
         const errorBody = await response.json();
         console.error("--- Erro na API REST do Firestore (deleteBanner) ---", JSON.stringify(errorBody, null, 2));
@@ -187,8 +176,6 @@ export async function deleteBannerServer(bannerId: string): Promise<{ success: b
 
 /**
  * Server Action para buscar um perfil de usuário pelo UID (Admin SDK).
- * @param uid - O UID do usuário a ser buscado.
- * @returns Um objeto com sucesso/erro e os dados do perfil.
  */
 export async function fetchUserProfileServer(uid: string): Promise<{ success: boolean; data?: any; error?: string; }> {
   if (!firestoreAdmin) {
@@ -201,9 +188,8 @@ export async function fetchUserProfileServer(uid: string): Promise<{ success: bo
     if (docSnap.exists) {
         const data = docSnap.data();
         if (data) {
-            // Serialize Timestamp fields
             for (const key in data) {
-                if (data[key] instanceof Timestamp) { // Use 'instanceof Timestamp' from 'firebase-admin/firestore'
+                if (data[key] instanceof Timestamp) {
                     data[key] = data[key].toDate().toISOString();
                 }
             }
@@ -221,10 +207,6 @@ export async function fetchUserProfileServer(uid: string): Promise<{ success: bo
 
 /**
  * Server Action para alternar um favorito de câmera para um usuário via API REST.
- * @param userId - O UID do usuário.
- * @param cameraId - O ID da câmera a ser adicionada/removida.
- * @param currentFavorites - A lista atual de favoritos do usuário.
- * @returns Um objeto com sucesso/erro.
  */
 export async function toggleFavoriteServer(userId: string, cameraId: string, currentFavorites: string[]): Promise<{ success: boolean; error?: string; }> {
     if (!userId || !cameraId) {
@@ -236,7 +218,6 @@ export async function toggleFavoriteServer(userId: string, cameraId: string, cur
 
     const isFavorite = currentFavorites.includes(cameraId);
     
-    // Regra: Limite de 4 favoritos ao tentar adicionar um novo.
     if (!isFavorite && currentFavorites.length >= 4) {
       return { success: false, error: 'Limite atingido: você pode favoritar no máximo 4 câmeras.' };
     }
@@ -280,4 +261,102 @@ export async function toggleFavoriteServer(userId: string, cameraId: string, cur
         console.error("--- Erro CRÍTICO na Action REST: toggleFavoriteServer ---", error.stack || error);
         return { success: false, error: error.message || 'Falha ao atualizar favoritos via REST.' };
     }
+}
+
+/**
+ * Server Action para criar um novo alerta via API REST.
+ */
+export async function createAlertServer(
+  alertData: { type: string; location: string; description: string; userId: string; userName: string; userAvatarUrl: string | null; userLocation: string | undefined, instagramUsername: string | undefined, bio: string | undefined }
+): Promise<{ success: boolean; error?: string }> {
+  if (!apiKey) {
+    return { success: false, error: 'Configuração do servidor incompleta (API Key).' };
+  }
+
+  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/alerts?key=${apiKey}`;
+  
+  const payload = {
+    fields: {
+      type: { stringValue: alertData.type },
+      location: { stringValue: alertData.location },
+      description: { stringValue: alertData.description },
+      userId: { stringValue: alertData.userId },
+      userName: { stringValue: alertData.userName },
+      userAvatarUrl: alertData.userAvatarUrl ? { stringValue: alertData.userAvatarUrl } : { nullValue: null },
+      userLocation: alertData.userLocation ? { stringValue: alertData.userLocation } : { nullValue: null },
+      instagramUsername: alertData.instagramUsername ? { stringValue: alertData.instagramUsername } : { nullValue: null },
+      bio: alertData.bio ? { stringValue: alertData.bio } : { nullValue: null },
+      timestamp: { timestampValue: new Date().toISOString() },
+    }
+  };
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.json();
+      console.error("--- Erro na API REST do Firestore (createAlert) ---", JSON.stringify(errorBody, null, 2));
+      throw new Error(`Falha ao criar alerta: ${response.statusText}`);
+    }
+
+    revalidatePath('/streaming');
+    revalidatePath('/alertas');
+    return { success: true };
+
+  } catch (error: any) {
+    console.error("--- Erro CRÍTICO na Action REST: createAlertServer ---", error.stack || error);
+    return { success: false, error: error.message || 'Falha ao criar alerta via REST.' };
+  }
+}
+
+/**
+ * Server Action para buscar os últimos alertas via API REST.
+ */
+export async function fetchAlertsServer(limit: number = 6): Promise<{ success: boolean; data: any[]; error?: string; }> {
+  if (!apiKey) {
+    return { success: false, error: 'Configuração do servidor incompleta (API Key).', data: [] };
+  }
+
+  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery?key=${apiKey}`;
+  
+  const queryPayload = {
+    structuredQuery: {
+      from: [{ collectionId: 'alerts' }],
+      orderBy: [{ field: { fieldPath: 'timestamp' }, direction: 'DESCENDING' }],
+      limit: limit
+    }
+  };
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(queryPayload),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.json();
+      console.error("--- Erro na API REST do Firestore (fetchAlerts) ---", JSON.stringify(errorBody, null, 2));
+      throw new Error(`Falha ao buscar alertas: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const documents = data.map((item: any) => item.document).filter(Boolean);
+    const mappedData = mapFirestoreRestResponse(documents);
+    return { success: true, data: mappedData };
+
+  } catch (error: any) {
+    console.error("--- Erro CRÍTICO na Action REST: fetchAlertsServer ---", error.stack || error);
+    return { success: false, error: error.message || 'Falha ao buscar alertas via REST.', data: [] };
+  }
 }

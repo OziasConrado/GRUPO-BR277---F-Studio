@@ -38,9 +38,8 @@ export default function AlertasPage() {
           description: data.description || '',
           location: data.location || 'Localização não especificada',
           timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
-          userNameReportedBy: data.userNameReportedBy || 'Usuário Anônimo',
-          userAvatarUrl: data.userAvatarUrl, // Let the component handle the default
-          dataAIAvatarHint: data.dataAIAvatarHint || 'user avatar',
+          userName: data.userName || 'Usuário Anônimo',
+          userAvatarUrl: data.userAvatarUrl,
           bio: data.bio || 'Usuário da comunidade Rota Segura.',
           instagramUsername: data.instagramUsername,
           userLocation: data.userLocation || 'Localização Desconhecida',
@@ -54,15 +53,15 @@ export default function AlertasPage() {
       setLoading(false);
     });
 
-    return () => unsubscribe(); // Cleanup listener on component unmount
+    return () => unsubscribe();
   }, [firestore, toast]);
 
 
   return (
     <div className="w-full space-y-6">
-      <Link href="/feed" className="inline-flex items-center text-sm text-primary hover:underline mb-0">
+      <Link href="/streaming" className="inline-flex items-center text-sm text-primary hover:underline mb-0">
         <ArrowLeft className="w-4 h-4 mr-1" />
-        Voltar para o Feed
+        Voltar para o Início
       </Link>
 
       <div className="text-center">
