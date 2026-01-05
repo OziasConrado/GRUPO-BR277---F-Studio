@@ -29,19 +29,25 @@ service cloud.firestore {
     match /posts/{postId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
+      // Only the owner of the post can update/delete it
       allow update, delete: if isOwner(resource.data.userId);
 
+      // Comments on posts
       match /comments/{commentId} {
         allow read: if isAuthenticated();
         allow create: if isAuthenticated();
+        // Only the owner of the comment can update/delete it
         allow update, delete: if isOwner(resource.data.userId);
       }
 
+      // Reactions on posts
       match /userReactions/{userId} {
         allow read: if isAuthenticated();
+        // Only the authenticated user can manage their own reaction
         allow write: if isOwner(userId);
       }
       
+      // Votes on polls inside posts
       match /userVotes/{userId} {
          allow read: if isAuthenticated();
          allow write: if isOwner(userId);
@@ -50,76 +56,94 @@ service cloud.firestore {
 
     // Reels: Authenticated read, authenticated write/update/delete
     match /reels/{reelId} {
+      // Only read if 'deleted' field is not explicitly true
       allow read: if isAuthenticated() && resource.data.deleted != true;
       allow create: if isAuthenticated();
+      // Only the author of the reel can update/delete it
       allow update, delete: if isOwner(resource.data.authorId);
 
+      // Comments on reels
       match /comments/{commentId} {
         allow read: if isAuthenticated();
         allow create: if isAuthenticated();
+        // Only the owner of the comment can update/delete it
         allow update, delete: if isOwner(resource.data.userId);
       }
 
+      // Reactions on reels
       match /userReactions/{userId} {
         allow read: if isAuthenticated();
+        // Only the authenticated user can manage their own reaction
         allow write: if isOwner(userId);
       }
     }
 
-    // Alerts: Authenticated read, authenticated write
+    // Alerts: Public read is allowed, authenticated write.
     match /alerts/{alertId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow create: if isAuthenticated();
-      allow update, delete: if false;
+      allow update, delete: if false; // Alerts are generally not editable/deletable by users
     }
 
-    // Businesses: Authenticated read, authenticated write
+    // Businesses (Guia Comercial): Authenticated read, authenticated write
     match /businesses/{businessId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
+      // Only the owner of the business can update it
       allow update: if isOwner(resource.data.ownerId);
-      allow delete: if false;
+      allow delete: if false; // Prevent deletion
     }
 
-    // SAU Reviews: Authenticated read/write
+    // SAU Reviews: Authenticated read, authenticated write
     match /sau_reviews/{reviewId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
+      // Only the owner of the review can update/delete it
       allow update, delete: if isOwner(resource.data.userId);
     }
     
-    // Tourist Points: Authenticated read/write
+    // Tourist Points: Authenticated read, authenticated write
     match /tourist_points_indicated/{pointId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
+      // Only the user who indicated the point can update/delete it
       allow update, delete: if isOwner(resource.data.indicatedByUserId);
     }
 
+    // Tourist Point Reviews: Authenticated read, authenticated write
     match /tourist_point_reviews/{reviewId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
+      // Only the owner of the review can update/delete it
       allow update, delete: if isOwner(resource.data.userId);
     }
 
     // User Profiles: Read for any authenticated user, write only for the owner.
     match /users/{userId} { 
       allow read: if isAuthenticated();
-      allow create, update: if isOwner(userId);
-      allow delete: if false;
+      // Allow update if owner OR if only the 'favorites' field is being changed by the server action
+      allow update: if isOwner(userId) || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['favorites']));
+      allow create: if isOwner(userId);
+      allow delete: if false; // Users cannot delete their own profiles via client
 
+       // Notifications subcollection
       match /notifications/{notificationId} {
+        // Only the profile owner can read/update/delete their notifications
         allow read, update, delete: if isOwner(userId);
+        // Any authenticated user can create a notification (e.g., server could create it for another user)
         allow create: if isAuthenticated(); 
       }
     }
 
-    // Chat Messages: Authenticated read/write
+    // Chat Messages: Read/write for authenticated users
     match /chatMessages/{messageId} {
       allow read, create: if isAuthenticated();
       allow update, delete: if isOwner(resource.data.userId);
 
+      // Reactions on chat messages
       match /userReactions/{reactionId} {
         allow read: if isAuthenticated();
+        // Only the authenticated user can manage their own reaction
         allow create, update, delete: if reactionId == request.auth.uid;
       }
     }
