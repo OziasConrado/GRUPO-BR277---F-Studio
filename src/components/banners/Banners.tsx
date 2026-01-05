@@ -10,7 +10,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
-import { fetchBannersServer } from '@/app/actions/firestore'; // Import Server Action
+import { fetchAllBannersServer } from '@/app/actions/firestore'; // Import Server Action
 
 interface Banner {
   id: string;
@@ -28,7 +28,7 @@ export default function Banners() {
   useEffect(() => {
     const loadBanners = async () => {
       setLoading(true);
-      const result = await fetchBannersServer();
+      const result = await fetchAllBannersServer();
       if (result.success) {
         // A API REST retorna os banners ativos, não precisa filtrar aqui
         setBanners(result.data);
