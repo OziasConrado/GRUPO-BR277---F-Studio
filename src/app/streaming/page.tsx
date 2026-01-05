@@ -276,13 +276,14 @@ export default function StreamingPage() {
                 key={stream.id} 
                 className="bg-card/70 dark:bg-card/70 backdrop-blur-sm border rounded-lg overflow-hidden group relative"
               >
-                <button
+                 <button
                   onClick={(e) => handleToggleFavorite(e, stream.id)}
-                  className="absolute top-1.5 right-1.5 z-10 h-9 w-9 flex items-center justify-center bg-black/10 rounded-full text-white hover:bg-black/30 transition-colors"
+                  className="absolute top-2 left-2 z-10 h-9 w-9 flex items-center justify-center bg-black/10 rounded-full text-white hover:bg-black/30 transition-colors"
                   aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
                 >
                   {isFavoriting === stream.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <Star className={cn("h-5 w-5", isFavorite ? "text-amber-400 fill-amber-400" : "text-white/80")}/>}
                 </button>
+
                 <CardContent className="p-3 flex items-center gap-4">
                   <div className="w-16 h-16 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center">
                     <Cctv className="h-8 w-8 text-primary"/>

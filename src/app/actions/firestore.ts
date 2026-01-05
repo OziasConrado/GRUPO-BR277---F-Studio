@@ -267,7 +267,7 @@ export async function toggleFavoriteServer(userId: string, cameraId: string, cur
  * Server Action para criar um novo alerta via API REST.
  */
 export async function createAlertServer(
-  alertData: { type: string; location: string; description: string; userId: string; userName: string; userAvatarUrl: string | null; userLocation: string | undefined, instagramUsername: string | undefined, bio: string | undefined }
+  alertData: { type: string; location?: string | null; description: string; userId: string; userName: string; userAvatarUrl: string | null; userLocation: string | undefined, instagramUsername: string | undefined, bio: string | undefined }
 ): Promise<{ success: boolean; error?: string }> {
   if (!apiKey) {
     return { success: false, error: 'Configuração do servidor incompleta (API Key).' };
@@ -278,15 +278,16 @@ export async function createAlertServer(
   const payload = {
     fields: {
       type: { stringValue: alertData.type },
-      location: { stringValue: alertData.location },
       description: { stringValue: alertData.description },
       userId: { stringValue: alertData.userId },
       userName: { stringValue: alertData.userName },
+      timestamp: { timestampValue: new Date().toISOString() },
+      // Optional fields
+      location: alertData.location ? { stringValue: alertData.location } : { nullValue: null },
       userAvatarUrl: alertData.userAvatarUrl ? { stringValue: alertData.userAvatarUrl } : { nullValue: null },
       userLocation: alertData.userLocation ? { stringValue: alertData.userLocation } : { nullValue: null },
       instagramUsername: alertData.instagramUsername ? { stringValue: alertData.instagramUsername } : { nullValue: null },
       bio: alertData.bio ? { stringValue: alertData.bio } : { nullValue: null },
-      timestamp: { timestampValue: new Date().toISOString() },
     }
   };
 
@@ -303,7 +304,7 @@ export async function createAlertServer(
     if (!response.ok) {
       const errorBody = await response.json();
       console.error("--- Erro na API REST do Firestore (createAlert) ---", JSON.stringify(errorBody, null, 2));
-      throw new Error(`Falha ao criar alerta: ${response.statusText}`);
+      throw new Error(`Falha ao criar alerta: ${errorBody.error?.message || response.statusText}`);
     }
 
     revalidatePath('/streaming');
@@ -317,18 +318,29 @@ export async function createAlertServer(
 }
 
 /**
- * Server Action para buscar os últimos alertas via API REST.
+ * Server Action para buscar os últimos alertas via API REST (últimos 5 dias).
  */
 export async function fetchAlertsServer(limit: number = 6): Promise<{ success: boolean; data: any[]; error?: string; }> {
   if (!apiKey) {
     return { success: false, error: 'Configuração do servidor incompleta (API Key).', data: [] };
   }
 
+  const fiveDaysAgo = new Date();
+  fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+  const fiveDaysAgoISO = fiveDaysAgo.toISOString();
+
   const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery?key=${apiKey}`;
   
   const queryPayload = {
     structuredQuery: {
       from: [{ collectionId: 'alerts' }],
+      where: {
+        fieldFilter: {
+          field: { fieldPath: 'timestamp' },
+          op: 'GREATER_THAN_OR_EQUAL',
+          value: { timestampValue: fiveDaysAgoISO }
+        }
+      },
       orderBy: [{ field: { fieldPath: 'timestamp' }, direction: 'DESCENDING' }],
       limit: limit
     }
@@ -347,7 +359,7 @@ export async function fetchAlertsServer(limit: number = 6): Promise<{ success: b
     if (!response.ok) {
       const errorBody = await response.json();
       console.error("--- Erro na API REST do Firestore (fetchAlerts) ---", JSON.stringify(errorBody, null, 2));
-      throw new Error(`Falha ao buscar alertas: ${response.statusText}`);
+      throw new Error(`Falha ao buscar alertas: ${errorBody.error?.message || response.statusText}`);
     }
 
     const data = await response.json();
@@ -359,4 +371,40 @@ export async function fetchAlertsServer(limit: number = 6): Promise<{ success: b
     console.error("--- Erro CRÍTICO na Action REST: fetchAlertsServer ---", error.stack || error);
     return { success: false, error: error.message || 'Falha ao buscar alertas via REST.', data: [] };
   }
+}
+
+
+/**
+ * Server Action para deletar um alerta via API REST.
+ */
+export async function deleteAlertServer(alertId: string): Promise<{ success: boolean; error?: string; }> {
+    if (!apiKey) {
+        return { success: false, error: 'Configuração do servidor incompleta (API Key).' };
+    }
+    if (!alertId) {
+        return { success: false, error: 'ID do alerta é obrigatório.' };
+    }
+
+    const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/alerts/${alertId}?key=${apiKey}`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'DELETE',
+            headers: { 'Accept': 'application/json' },
+        });
+
+        if (!response.ok) {
+            const errorBody = await response.json();
+            console.error("--- Erro na API REST do Firestore (deleteAlertServer) ---", JSON.stringify(errorBody, null, 2));
+            throw new Error(`Falha ao deletar alerta: ${errorBody.error?.message || response.statusText}`);
+        }
+
+        revalidatePath('/streaming');
+        revalidatePath('/alertas');
+        return { success: true };
+
+    } catch (error: any) {
+        console.error("--- Erro CRÍTICO na Action REST: deleteAlertServer ---", error.stack || error);
+        return { success: false, error: error.message || 'Falha ao deletar alerta via REST.' };
+    }
 }

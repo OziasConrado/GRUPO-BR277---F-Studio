@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, type FormEvent } from 'react';
@@ -41,7 +42,7 @@ export default function ReportAlertSheet({ isOpen, onOpenChange, onAlertCreated 
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const canSubmit = description.trim().length >= 20 && type && location.trim().length > 3;
+  const canSubmit = description.trim().length >= 20 && description.trim().length <= 1100 && type;
   
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -58,7 +59,7 @@ export default function ReportAlertSheet({ isOpen, onOpenChange, onAlertCreated 
     setIsSubmitting(true);
     const result = await createAlertServer({
       type,
-      location,
+      location: location.trim() || null,
       description,
       userId: currentUser.uid,
       userName: userProfile?.displayName || 'Usuário Anônimo',
@@ -105,7 +106,7 @@ export default function ReportAlertSheet({ isOpen, onOpenChange, onAlertCreated 
               </Select>
             </div>
             <div>
-              <Label htmlFor="alert-location">Localização</Label>
+              <Label htmlFor="alert-location">Localização (Opcional)</Label>
               <Input
                 id="alert-location"
                 value={location}
@@ -120,10 +121,11 @@ export default function ReportAlertSheet({ isOpen, onOpenChange, onAlertCreated 
                 id="alert-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Descreva o que está acontecendo. Mínimo de 20 caracteres."
+                placeholder="Descreva o que está acontecendo."
                 className="mt-1 min-h-[120px]"
+                maxLength={1100}
               />
-               <p className="text-xs text-muted-foreground mt-1 text-right">{description.length}/20 (mín)</p>
+               <p className="text-xs text-muted-foreground mt-1 text-right">{description.length} / 1100 (mín 20)</p>
             </div>
           </div>
           <div className="p-4 border-t sticky bottom-0 bg-background">
