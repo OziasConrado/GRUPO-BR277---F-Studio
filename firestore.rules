@@ -121,8 +121,9 @@ service cloud.firestore {
     // User Profiles: Read for any authenticated user, write only for the owner.
     match /users/{userId} { 
       allow read: if isAuthenticated();
-      // Only the user whose profile it is can create/update it
-      allow create, update: if isOwner(userId);
+      // Allow update if owner OR if only the 'favorites' field is being changed by the server action
+      allow update: if isOwner(userId) || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['favorites']));
+      allow create: if isOwner(userId);
       allow delete: if false; // Users cannot delete their own profiles via client
 
        // Notifications subcollection
