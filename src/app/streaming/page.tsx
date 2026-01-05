@@ -174,42 +174,43 @@ export default function StreamingPage() {
               )}
             </div>
         </div>
-        {loadingAlerts ? (
-          <div className="flex justify-center items-center h-48 bg-muted/30 rounded-lg">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          </div>
-        ) : (
-          <Carousel opts={{ align: "start", loop: false }} className="w-full">
-            <CarouselContent className="-ml-2">
-              {alerts.length > 0 ? (
-                alerts.map((alert) => (
-                  <CarouselItem key={alert.id} className="pl-2 basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/5">
-                    <HomeAlertCard alert={alert}/>
-                  </CarouselItem>
-                ))
-              ) : (
-                <CarouselItem className="pl-2 basis-full">
-                    <div className="h-32 flex flex-col items-center justify-center bg-muted/20 rounded-lg border border-dashed">
-                        <p className="text-muted-foreground text-sm font-medium">Nenhuma ocorrência reportada no momento.</p>
-                        <p className="text-muted-foreground text-xs mt-1">Seja o primeiro a alertar a comunidade!</p>
-                    </div>
+        
+        <Carousel opts={{ align: "start", loop: false }} className="w-full">
+          <CarouselContent className="-ml-2">
+            {loadingAlerts ? (
+              <CarouselItem className="pl-2 basis-full">
+                <div className="flex justify-center items-center h-32 bg-muted/30 rounded-lg">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              </CarouselItem>
+            ) : alerts.length > 0 ? (
+              alerts.map((alert) => (
+                <CarouselItem key={alert.id} className="pl-2 basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/5">
+                  <HomeAlertCard alert={alert}/>
                 </CarouselItem>
-              )}
-            </CarouselContent>
-            {alerts.length > 3 && (
-              <>
-                <CarouselPrevious className="left-2 hidden sm:flex" />
-                <CarouselNext className="right-2 hidden sm:flex" />
-              </>
+              ))
+            ) : (
+              <CarouselItem className="pl-2 basis-full">
+                  <div className="h-32 flex flex-col items-center justify-center bg-muted/20 rounded-lg border border-dashed">
+                      <p className="text-muted-foreground text-sm font-medium">Nenhuma ocorrência reportada no momento.</p>
+                      <p className="text-muted-foreground text-xs mt-1">Seja o primeiro a alertar a comunidade!</p>
+                  </div>
+              </CarouselItem>
             )}
-          </Carousel>
-        )}
+          </CarouselContent>
+          {alerts.length > 3 && (
+            <>
+              <CarouselPrevious className="left-2 hidden sm:flex" />
+              <CarouselNext className="right-2 hidden sm:flex" />
+            </>
+          )}
+        </Carousel>
       </section>
 
       <div>
         <div className="flex items-center gap-2">
           <Cctv className="h-7 w-7 text-primary" />
-          <h1 className="text-2xl font-bold font-headline">Câmeras AO VIVO</h1>
+          <h1 className="text-xl font-bold font-headline">Câmeras AO VIVO</h1>
         </div>
         <p className="text-muted-foreground text-sm">Acompanhe o trânsito 24h, locais e pontos turísticos.</p>
       </div>
@@ -276,14 +277,6 @@ export default function StreamingPage() {
                 key={stream.id} 
                 className="bg-card/70 dark:bg-card/70 backdrop-blur-sm border rounded-lg overflow-hidden group relative"
               >
-                 <button
-                  onClick={(e) => handleToggleFavorite(e, stream.id)}
-                  className="absolute top-2 left-2 z-10 h-9 w-9 flex items-center justify-center bg-black/10 rounded-full text-white hover:bg-black/30 transition-colors"
-                  aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-                >
-                  {isFavoriting === stream.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <Star className={cn("h-5 w-5", isFavorite ? "text-amber-400 fill-amber-400" : "text-white/80")}/>}
-                </button>
-
                 <CardContent className="p-3 flex items-center gap-4">
                   <div className="w-16 h-16 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center">
                     <Cctv className="h-8 w-8 text-primary"/>
@@ -292,7 +285,14 @@ export default function StreamingPage() {
                     <h3 className="font-semibold font-headline line-clamp-1">{stream.title}</h3>
                     <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{stream.description}</p>
                   </div>
-                   <div className="flex items-center ml-2">
+                   <div className="flex flex-col items-end justify-center ml-auto pl-2">
+                      <button
+                        onClick={(e) => handleToggleFavorite(e, stream.id)}
+                        className="h-9 w-9 flex items-center justify-center bg-black/10 rounded-full text-white hover:bg-black/30 transition-colors mb-2"
+                        aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                      >
+                        {isFavoriting === stream.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <Star className={cn("h-5 w-5", isFavorite ? "text-amber-400 fill-amber-400" : "text-white/80")}/>}
+                      </button>
                      <Button 
                         variant="default" 
                         size="sm" 

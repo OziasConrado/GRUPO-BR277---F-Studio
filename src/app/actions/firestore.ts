@@ -17,21 +17,27 @@ function mapFirestoreRestResponse(documents: any[]): any[] {
     const mappedDoc: { [key: string]: any } = { id: doc.name.split('/').pop() };
     for (const key in fields) {
       const valueObject = fields[key];
+      if (!valueObject) {
+        mappedDoc[key] = null;
+        continue;
+      }
+      
       const valueType = Object.keys(valueObject)[0];
       
       if (valueType === 'timestampValue') {
           mappedDoc[key] = new Date(valueObject.timestampValue).toISOString();
       } else if (valueType === 'mapValue') {
           const innerFields = valueObject.mapValue.fields || {};
-          const mappedFields = mapFirestoreRestResponse([ { fields: innerFields } ])[0] || {};
+          const mappedFields = mapFirestoreRestResponse([ { name: doc.name, fields: innerFields } ])[0] || {};
           delete mappedFields.id;
           mappedDoc[key] = mappedFields;
       } else if (valueType === 'arrayValue') {
           mappedDoc[key] = (valueObject.arrayValue.values || []).map((v: any) => {
+              if (!v) return null;
               const innerValueType = Object.keys(v)[0];
               if (innerValueType === 'mapValue') {
                 const innerFields = v.mapValue.fields || {};
-                const mappedFields = mapFirestoreRestResponse([ { fields: innerFields } ])[0] || {};
+                const mappedFields = mapFirestoreRestResponse([ { name: doc.name, fields: innerFields } ])[0] || {};
                 delete mappedFields.id;
                 return mappedFields;
               }
