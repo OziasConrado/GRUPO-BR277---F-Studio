@@ -388,23 +388,25 @@ export default function StreamingPage() {
                    {isFavoriting === stream.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Star className={cn("h-4 w-4", isFavorite ? "text-amber-400 fill-amber-400" : "text-white/80")}/>}
                 </button>
                 <CardContent className="p-3" onClick={() => handleWatchStream(stream)}>
-                  <div className="flex flex-row items-center gap-4">
-                    <div className="w-16 h-16 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center">
-                        <Cctv className="h-8 w-8 text-primary"/>
+                  <div className="flex flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="w-16 h-16 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center">
+                          <Cctv className="h-8 w-8 text-primary"/>
+                      </div>
+                      <div className="flex-grow flex flex-col justify-center self-stretch">
+                          <h3 className="font-semibold font-headline line-clamp-1">{stream.title}</h3>
+                          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{stream.description}</p>
+                      </div>
                     </div>
-                    <div className="flex-grow flex flex-col justify-center self-stretch min-w-0">
-                        <h3 className="font-semibold font-headline line-clamp-1">{stream.title}</h3>
-                        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{stream.description}</p>
+                    <div className="flex-shrink-0">
+                      <Button 
+                        variant="default" 
+                        size="sm" 
+                        className="rounded-full text-xs py-1 px-3 h-auto"
+                      >
+                        <PlayCircle className="mr-1 h-4 w-4" /> Assistir
+                      </Button>
                     </div>
-                  </div>
-                  <div className="flex justify-end mt-2">
-                    <Button 
-                      variant="default" 
-                      size="sm" 
-                      className="rounded-full text-xs py-1 px-3 h-auto"
-                    >
-                      <PlayCircle className="mr-1 h-4 w-4" /> Assistir
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
