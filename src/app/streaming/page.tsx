@@ -163,42 +163,42 @@ export default function StreamingPage() {
       <section>
         <div className="flex justify-between items-center mb-3">
             <h2 className="text-xl font-bold font-headline flex items-center gap-2"><Shield className="h-6 w-6 text-primary"/> Alertas da Comunidade</h2>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="rounded-full h-auto py-1 px-3 text-xs" onClick={() => setIsReportSheetOpen(true)}>
-                <PlusCircle className="mr-1 h-3 w-3"/> Novo alerta
-              </Button>
-              {alerts.length > 0 && (
-                <Link href="/alertas" className="text-sm text-primary font-semibold hover:underline">
-                  Ver Todos &rarr;
-                </Link>
-              )}
+             <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="rounded-full h-auto py-1 px-3 text-xs" onClick={() => setIsReportSheetOpen(true)}>
+                    <PlusCircle className="mr-1 h-3 w-3"/> Novo alerta
+                </Button>
+                {alerts.length > 0 && (
+                    <Link href="/alertas" className="text-sm text-primary font-semibold hover:underline">
+                        Ver Todos &rarr;
+                    </Link>
+                )}
             </div>
         </div>
         
         <Carousel opts={{ align: "start", loop: false }} className="w-full">
-          <CarouselContent className="-ml-2">
+          <CarouselContent className="-ml-3">
             {loadingAlerts ? (
-              <CarouselItem className="pl-2 basis-full">
+              <CarouselItem className="pl-3 basis-full">
                 <div className="flex justify-center items-center h-32 bg-muted/30 rounded-lg">
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
               </CarouselItem>
             ) : alerts.length > 0 ? (
               alerts.map((alert) => (
-                <CarouselItem key={alert.id} className="pl-2 basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/5">
+                <CarouselItem key={alert.id} className="pl-3 basis-[85%] sm:basis-1/3 md:basis-1/4 lg:basis-1/5">
                   <HomeAlertCard alert={alert}/>
                 </CarouselItem>
               ))
             ) : (
-              <CarouselItem className="pl-2 basis-full">
-                  <div className="h-32 flex flex-col items-center justify-center bg-muted/20 rounded-lg border border-dashed">
-                      <p className="text-muted-foreground text-sm font-medium">Nenhuma ocorrência reportada no momento.</p>
-                      <p className="text-muted-foreground text-xs mt-1">Seja o primeiro a alertar a comunidade!</p>
+              <CarouselItem className="pl-3 basis-full">
+                  <div className="h-32 flex flex-col items-center justify-center bg-muted/20 rounded-lg border border-dashed p-4">
+                      <p className="text-muted-foreground text-sm font-medium text-center">Nenhuma ocorrência reportada no momento.</p>
+                      <p className="text-muted-foreground text-xs mt-1 text-center">Seja o primeiro a alertar a comunidade!</p>
                   </div>
               </CarouselItem>
             )}
           </CarouselContent>
-          {alerts.length > 3 && (
+           {alerts.length > 3 && (
             <>
               <CarouselPrevious className="left-2 hidden sm:flex" />
               <CarouselNext className="right-2 hidden sm:flex" />
@@ -247,7 +247,7 @@ export default function StreamingPage() {
                >
                 <button
                     onClick={(e) => handleToggleFavorite(e, stream.id)}
-                    className="absolute top-1 right-1 z-10 p-1.5 bg-black/30 rounded-full text-white hover:bg-black/50 transition-colors"
+                    className="absolute top-1.5 right-1.5 z-10 p-2 bg-black/20 rounded-full text-white hover:bg-black/40 transition-colors"
                     aria-label="Remover dos favoritos"
                 >
                     {isFavoriting === stream.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Star className="h-4 w-4 text-amber-400 fill-amber-400" />}
@@ -275,29 +275,28 @@ export default function StreamingPage() {
             return (
               <Card 
                 key={stream.id} 
-                className="bg-card/70 dark:bg-card/70 backdrop-blur-sm border rounded-lg overflow-hidden group relative"
+                className="bg-card/70 dark:bg-card/70 backdrop-blur-sm border rounded-lg overflow-hidden group relative cursor-pointer"
+                onClick={() => handleWatchStream(stream)}
               >
+                <button
+                  onClick={(e) => handleToggleFavorite(e, stream.id)}
+                  className="absolute top-2 right-2 z-10 h-10 w-10 flex items-center justify-center bg-black/10 rounded-full text-white hover:bg-black/30 transition-colors"
+                  aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                >
+                  {isFavoriting === stream.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <Star className={cn("h-5 w-5", isFavorite ? "text-amber-400 fill-amber-400" : "text-white/80")}/>}
+                </button>
                 <CardContent className="p-3 flex items-center gap-4">
-                  <div className="w-16 h-16 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center">
+                  <div className="w-20 h-20 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center">
                     <Cctv className="h-8 w-8 text-primary"/>
                   </div>
-                  <div className="flex-grow min-w-0">
+                  <div className="flex-grow min-w-0 pr-8">
                     <h3 className="font-semibold font-headline line-clamp-1">{stream.title}</h3>
                     <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{stream.description}</p>
-                  </div>
-                   <div className="flex flex-col items-end justify-center ml-auto pl-2">
-                      <button
-                        onClick={(e) => handleToggleFavorite(e, stream.id)}
-                        className="h-9 w-9 flex items-center justify-center bg-black/10 rounded-full text-white hover:bg-black/30 transition-colors mb-2"
-                        aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-                      >
-                        {isFavoriting === stream.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <Star className={cn("h-5 w-5", isFavorite ? "text-amber-400 fill-amber-400" : "text-white/80")}/>}
-                      </button>
                      <Button 
                         variant="default" 
                         size="sm" 
-                        onClick={() => handleWatchStream(stream)}
-                        className="rounded-full text-xs py-1 px-3 h-auto"
+                        onClick={(e) => { e.stopPropagation(); handleWatchStream(stream); }}
+                        className="rounded-full text-xs py-1 px-3 h-auto mt-2"
                      >
                         <PlayCircle className="mr-1 h-4 w-4" /> Assistir
                      </Button>

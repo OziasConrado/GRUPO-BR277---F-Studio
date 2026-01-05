@@ -78,10 +78,10 @@ service cloud.firestore {
       }
     }
 
-    // Alerts: Public read is allowed, authenticated write
+    // Alerts: Public read is allowed, authenticated write/delete
     match /alerts/{alertId} {
       allow read: if true;
-      allow create: if true; // Temporarily open for REST API testing from Server Actions
+      allow create: if isAuthenticated();
       allow delete: if isOwner(resource.data.userId) || isAdmin();
       allow update: if false; 
     }
@@ -119,10 +119,9 @@ service cloud.firestore {
       allow update, delete: if isOwner(resource.data.userId);
     }
 
-    // User Profiles: Read for any authenticated user, write only for the owner.
+    // User Profiles: Read for any authenticated user, write only for the owner or for specific server actions.
     match /users/{userId} { 
       allow read: if isAuthenticated();
-      // Allow update if owner OR if only the 'favorites' field is being changed by the server action
       allow update: if isOwner(userId) || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['favorites']));
       allow create: if isOwner(userId);
       allow delete: if false; // Users cannot delete their own profiles via client
