@@ -8,7 +8,7 @@ export const firebaseConfig: FirebaseOptions = {
   apiKey: 'AIzaSyBkj9LYAUrrdXXb-M80C-q9FMQxGWMWA1A',
   authDomain: 'grupo-br277.firebaseapp.com',
   projectId: 'grupo-br277',
-  storageBucket: 'grupo-br277.firebasestorage.app',
+  storageBucket: 'grupo-br277.appspot.com',
   messagingSenderId: '491779757123',
   appId: '1:491779757123:web:48eae01a02fa2b3617b0f6',
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,

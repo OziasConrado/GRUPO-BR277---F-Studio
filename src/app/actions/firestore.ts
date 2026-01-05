@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { firestore as firestoreAdmin } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
 
-const projectId = 'grupobr277-v2-d85f5';
+const projectId = 'grupo-br277'; // CORREÇÃO: Usando o Project ID correto
 const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 
 function mapFirestoreRestResponse(documents: any[]): any[] {
