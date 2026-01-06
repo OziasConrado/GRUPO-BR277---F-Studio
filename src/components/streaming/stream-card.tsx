@@ -29,19 +29,20 @@ export default function StreamCard({ stream, isFavorite, isFavoriting, onWatch, 
   return (
     <Card 
       className="bg-card/70 dark:bg-card/70 backdrop-blur-sm border rounded-lg overflow-hidden group relative cursor-pointer"
+      onClick={() => onWatch(stream)}
     >
       <button
         onClick={(e) => onToggleFavorite(e, stream.id)}
-        className="absolute top-2 right-2 z-10 h-10 w-10 flex items-center justify-center rounded-full text-white"
+        className="absolute top-2 right-2 z-10 h-10 w-10 flex items-center justify-center rounded-full"
         aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
       >
         {isFavoriting ? (
-          <Loader2 className="h-5 w-5 animate-spin" />
+          <Loader2 className="h-5 w-5 animate-spin text-white" />
         ) : (
-          <Star className={cn("h-5 w-5 transition-colors duration-200", isFavorite ? "text-amber-400 fill-amber-400" : "text-white/70 hover:text-amber-300")} />
+          <Star className={cn("h-5 w-5 transition-all duration-200 ease-in-out", isFavorite ? "text-amber-400 fill-amber-400" : "text-white/70 hover:text-amber-300")} />
         )}
       </button>
-      <CardContent className="p-3 flex items-center gap-4" onClick={() => onWatch(stream)}>
+      <CardContent className="p-3 flex items-center gap-4">
         <div className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center">
           <Cctv className="h-8 w-8 text-primary"/>
         </div>

@@ -169,12 +169,12 @@ export default function StreamingPage() {
        <Banners />
 
       <section>
-        <div className="flex justify-between items-center mb-3 gap-2">
-            <div className="flex items-center gap-2">
+        <div className="flex flex-row flex-nowrap items-center justify-between mb-3 gap-2">
+            <div className="flex items-center gap-2 flex-shrink min-w-0">
                 <Shield className="h-6 w-6 text-primary"/>
-                <div>
-                <h2 className="text-xl font-bold font-headline">Alertas</h2>
-                <p className="text-xs text-muted-foreground -mt-1">Reporte e consulte eventos nas rodovias.</p>
+                <div className="min-w-0">
+                    <h2 className="text-xl font-bold font-headline truncate">Alertas</h2>
+                    <p className="text-xs text-muted-foreground -mt-1 truncate">Reporte e consulte eventos.</p>
                 </div>
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -287,14 +287,17 @@ export default function StreamingPage() {
       )}
       
       <div id="lista-cameras" ref={cameraListRef} className="scroll-mt-4">
-        <h2 className="text-xl font-bold font-headline mt-6 mb-3">
-          Todas as Câmeras
-          {currentFilter !== 'Todos' && (
-            <span className="text-base font-medium text-primary ml-2">
-              › {currentFilter}
-            </span>
-          )}
-        </h2>
+        <div className="flex items-center gap-2 mb-3">
+          <Cctv className="h-6 w-6 text-primary" />
+          <h2 className="text-xl font-bold font-headline">
+            Todas as Câmeras
+            {currentFilter !== 'Todos' && (
+              <span className="text-base font-medium text-primary ml-2">
+                › {currentFilter}
+              </span>
+            )}
+          </h2>
+        </div>
         <div className="space-y-3">
           {filteredStreams.length > 0 ? (
             filteredStreams.map((stream) => {
@@ -307,10 +310,14 @@ export default function StreamingPage() {
                 >
                   <button
                     onClick={(e) => handleToggleFavorite(e, stream.id)}
-                    className="absolute top-2 right-2 z-10 h-10 w-10 flex items-center justify-center rounded-full text-white"
+                    className="absolute top-2 right-2 z-10 h-10 w-10 flex items-center justify-center rounded-full"
                     aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
                   >
-                    {isFavoriting === stream.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <Star className={cn("h-5 w-5 transition-colors duration-200", isFavorite ? "text-amber-400 fill-amber-400" : "text-white/70 hover:text-amber-300")} />}
+                    {isFavoriting === stream.id ? (
+                      <Loader2 className="h-5 w-5 animate-spin text-white" />
+                    ) : (
+                      <Star className={cn("h-5 w-5 transition-all duration-200 ease-in-out", isFavorite ? "text-amber-400 fill-amber-400" : "text-white/70 hover:text-amber-300")} />
+                    )}
                   </button>
                   <CardContent className="p-3 flex items-center gap-4">
                     <div className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center">
