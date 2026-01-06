@@ -1,9 +1,10 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, ListFilter, Star, Frown, HeartPulse, Truck, ClipboardCopy, Flame, Droplets, Scale, Dumbbell, ActivitySquare, Bed, Fuel, ClipboardCheck, ClipboardSignature, Cloud, Route, UserSquare, Send, QrCode, Clock, Camera, ThumbsUp, ThumbsDown, MessageCircle, Loader2, CarFront } from "lucide-react";
+import { Search, ListFilter, Star, Frown, HeartPulse, Truck, ClipboardCopy, Flame, Droplets, Scale, Dumbbell, ActivitySquare, Bed, Fuel, ClipboardCheck, ClipboardSignature, Cloud, Route, UserSquare, Send, QrCode, Clock, Camera, ThumbsUp, ThumbsDown, MessageCircle, Loader2, CarFront, Dices } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
@@ -52,6 +53,7 @@ const allTools: Tool[] = [
   { id: 'gestao-tempo', title: 'Gestão do Tempo', Icon: Clock, href: '/ferramentas/gestao-tempo', description: 'Matriz de Eisenhower.', category: 'Geradores e Úteis' },
   { id: 'scanner', title: 'Scanner de Documentos', Icon: Camera, href: '/ferramentas/scanner', description: 'Digitalize docs com a câmera.', category: 'Geradores e Úteis' },
   { id: 'horas-extras', title: 'Calculadora de Horas Extras', Icon: Clock, href: '/ferramentas/horas-extras', description: 'Calcule o valor das suas horas.', category: 'Geradores e Úteis' },
+  { id: 'sorteador', title: 'Sorteador', Icon: Dices, href: '/ferramentas/sorteador', description: 'Sorteie números ou nomes.', category: 'Geradores e Úteis' },
 ];
 
 const categoryInfo = {
