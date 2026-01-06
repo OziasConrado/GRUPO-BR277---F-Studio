@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -117,12 +118,19 @@ service cloud.firestore {
       // Only the owner of the review can update/delete it
       allow update, delete: if isOwner(resource.data.userId);
     }
+    
+    // Feedbacks: Public read/create for REST API testing
+    match /feedbacks/{feedbackId} {
+        allow read: if true;
+        allow create: if true;
+        allow update, delete: if false;
+    }
 
     // User Profiles: Read for any authenticated user, write only for the owner.
     match /users/{userId} { 
       allow read: if isAuthenticated();
-      // Allow update if owner OR if only the 'favorites' field is being changed by the server action
-      allow update: if isOwner(userId) || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['favorites']));
+      // Allow update if owner OR if only the 'favorites' or 'favoriteTools' fields are being changed by a server action
+      allow update: if isOwner(userId) || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['favorites', 'favoriteTools']));
       allow create: if isOwner(userId);
       allow delete: if false; // Users cannot delete their own profiles via client
 

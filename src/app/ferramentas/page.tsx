@@ -4,7 +4,7 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, ListFilter, Star, Frown, HeartPulse, Truck, ClipboardCopy, Flame, Droplets, Scale, Dumbbell, ActivitySquare, Bed, Fuel, ClipboardCheck, ClipboardSignature, Cloud, Route, UserSquare, Send, QrCode, Clock, Camera, ThumbsUp, ThumbsDown, MessageCircle } from "lucide-react";
+import { Search, ListFilter, Star, Frown, HeartPulse, Truck, ClipboardCopy, Flame, Droplets, Scale, Dumbbell, ActivitySquare, Bed, Fuel, ClipboardCheck, ClipboardSignature, Cloud, Route, UserSquare, Send, QrCode, Clock, Camera, ThumbsUp, ThumbsDown, MessageCircle, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';

@@ -182,6 +182,7 @@ export async function deleteBannerServer(bannerId: string): Promise<{ success: b
 
 /**
  * Server Action para buscar um perfil de usuário pelo UID (Admin SDK).
+ * MANTIDO como Admin SDK pois é uma operação interna e não pública.
  */
 export async function fetchUserProfileServer(uid: string): Promise<{ success: boolean; data?: any; error?: string; }> {
   if (!firestoreAdmin) {
@@ -474,51 +475,93 @@ export async function deleteAlertServer(alertId: string): Promise<{ success: boo
 
 
 /**
- * Server Action para enviar um feedback do usuário para o Firestore.
+ * Server Action para enviar um feedback do usuário para o Firestore via API REST.
  */
 export async function sendFeedbackServer(
   feedbackData: { tipo: string; valor: string; autorUid: string; autorNome: string; }
 ): Promise<{ success: boolean; error?: string }> {
-  if (!firestoreAdmin) {
-    return { success: false, error: "Serviço de banco de dados indisponível no servidor." };
+  if (!apiKey) {
+    return { success: false, error: 'Configuração do servidor incompleta (API Key).' };
   }
 
+  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/feedbacks?key=${apiKey}`;
+
+  const payload = {
+    fields: {
+      tipo: { stringValue: feedbackData.tipo },
+      valor: { stringValue: feedbackData.valor },
+      autorUid: { stringValue: feedbackData.autorUid },
+      autorNome: { stringValue: feedbackData.autorNome },
+      timestamp: { timestampValue: new Date().toISOString() },
+    },
+  };
+
   try {
-    const feedbackCollection = firestoreAdmin.collection('feedbacks');
-    await feedbackCollection.add({
-      ...feedbackData,
-      timestamp: Timestamp.now(),
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(payload),
     });
+
+    if (!response.ok) {
+      const errorBody = await response.json();
+      console.error("--- Erro na API REST do Firestore (sendFeedbackServer) ---", JSON.stringify(errorBody, null, 2));
+      throw new Error(`Falha ao enviar feedback: ${errorBody.error?.message || response.statusText}`);
+    }
+    
+    revalidatePath('/admin/feedbacks');
     return { success: true };
+
   } catch (error: any) {
-    console.error("--- Erro CRÍTICO na Action de Feedback ---", error.stack || error);
-    return { success: false, error: error.message || 'Falha ao enviar feedback.' };
+    console.error("--- Erro CRÍTICO na Action REST: sendFeedbackServer ---", error.stack || error);
+    return { success: false, error: error.message || 'Falha ao enviar feedback via REST.' };
   }
 }
 
 /**
- * Server Action para buscar feedbacks (admin).
+ * Server Action para buscar feedbacks (admin) via API REST.
  */
 export async function fetchFeedbacksServer(): Promise<{ success: boolean; data: any[]; error?: string; }> {
-    if (!firestoreAdmin) {
-        return { success: false, data: [], error: 'Serviço de banco de dados indisponível no servidor.' };
+    if (!apiKey) {
+        return { success: false, data: [], error: 'Configuração do servidor incompleta (API Key).' };
     }
+
+    const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery?key=${apiKey}`;
+    
+    const queryPayload = {
+      structuredQuery: {
+        from: [{ collectionId: 'feedbacks' }],
+        orderBy: [{ field: { fieldPath: 'timestamp' }, direction: 'DESCENDING' }]
+      }
+    };
+  
     try {
-        const snapshot = await firestoreAdmin.collection('feedbacks').orderBy('timestamp', 'desc').get();
-        if (snapshot.empty) {
-            return { success: true, data: [] };
-        }
-        const feedbacks = snapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                ...data,
-                timestamp: data.timestamp.toDate().toISOString(), // Convertendo para string ISO
-            };
-        });
-        return { success: true, data: feedbacks };
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(queryPayload),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json();
+        console.error("--- Erro na API REST do Firestore (fetchFeedbacksServer) ---", JSON.stringify(errorBody, null, 2));
+        throw new Error(`Falha ao buscar feedbacks: ${errorBody.error?.message || response.statusText}`);
+      }
+
+      const data = await response.json();
+      const documents = data.map((item: any) => item.document).filter(Boolean);
+      const mappedData = mapFirestoreRestResponse(documents);
+      
+      return { success: true, data: mappedData };
+
     } catch (error: any) {
-        console.error("--- Erro ao buscar feedbacks ---", error.stack || error);
-        return { success: false, data: [], error: error.message || 'Falha ao buscar feedbacks.' };
+      console.error("--- Erro CRÍTICO na Action REST: fetchFeedbacksServer ---", error.stack || error);
+      return { success: false, data: [], error: error.message || 'Falha ao buscar feedbacks via REST.' };
     }
 }
