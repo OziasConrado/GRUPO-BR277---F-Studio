@@ -162,11 +162,9 @@ export default function StreamingPage() {
 
       <section>
         <div className="flex justify-between items-center mb-3">
-            <div>
-              <h2 className="text-xl font-bold font-headline flex items-center gap-2">
-                <Shield className="h-6 w-6 text-primary"/> Alertas
-              </h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Reporte e consulte eventos nas rodovias em tempo real.</p>
+            <div className="flex items-center gap-2">
+              <Shield className="h-6 w-6 text-primary"/>
+              <h2 className="text-lg font-bold font-headline">Alertas</h2>
             </div>
              <div className="flex items-center gap-2 flex-shrink-0">
                 <Button variant="outline" size="sm" className="rounded-full h-auto py-1 px-3 text-xs" onClick={() => setIsReportSheetOpen(true)}>
@@ -179,6 +177,7 @@ export default function StreamingPage() {
                 )}
             </div>
         </div>
+        <p className="text-xs text-muted-foreground -mt-3 mb-3 pl-8">Reporte e consulte eventos nas rodovias.</p>
         
         <Carousel opts={{ align: "start", loop: false }} className="w-full">
           <CarouselContent className="-ml-3">
@@ -214,10 +213,10 @@ export default function StreamingPage() {
 
       <div>
         <div className="flex items-center gap-2">
-          <Cctv className="h-7 w-7 text-primary" />
-          <h1 className="text-2xl font-bold font-headline">Câmeras AO VIVO</h1>
+          <Cctv className="h-6 w-6 text-primary" />
+          <h1 className="text-lg font-bold font-headline">Câmeras AO VIVO</h1>
         </div>
-        <p className="text-muted-foreground text-sm">Acompanhe o trânsito 24h, locais e pontos turísticos.</p>
+        <p className="text-xs text-muted-foreground pl-8">Acompanhe o trânsito 24h, locais e pontos turísticos.</p>
       </div>
       
       <Card className="p-2 sm:p-4 rounded-xl">
