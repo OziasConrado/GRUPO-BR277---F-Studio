@@ -1,10 +1,9 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, ListFilter, Star, Frown, HeartPulse, Truck, ClipboardCopy, Flame, Droplets, Scale, Dumbbell, ActivitySquare, Bed, Fuel, ClipboardCheck, ClipboardSignature, Cloud, Route, UserSquare, Send, QrCode, Clock, Camera, ThumbsUp, ThumbsDown, MessageCircle, Loader2 } from "lucide-react";
+import { Search, ListFilter, Star, Frown, HeartPulse, Truck, ClipboardCopy, Flame, Droplets, Scale, Dumbbell, ActivitySquare, Bed, Fuel, ClipboardCheck, ClipboardSignature, Cloud, Route, UserSquare, Send, QrCode, Clock, Camera, ThumbsUp, ThumbsDown, MessageCircle, Loader2, CarFront } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
@@ -38,6 +37,7 @@ const allTools: Tool[] = [
   { id: 'zonas-frequencia-cardiaca', title: 'Zonas de Frequência Cardíaca', Icon: HeartPulse, href: '/ferramentas/zonas-frequencia-cardiaca', description: 'Calcule suas zonas de treino.', category: 'Saúde e Bem Estar' },
   
   { id: 'etanol-gasolina', title: 'Álcool ou Gasolina?', Icon: Fuel, href: '/ferramentas/etanol-gasolina', description: 'Descubra qual vale mais.', category: 'Logística e Trânsito' },
+  { id: 'tabela-fipe', title: 'Tabela FIPE', Icon: CarFront, href: '/ferramentas/tabela-fipe', description: 'Consulte o valor de veículos.', category: 'Logística e Trânsito' },
   { id: 'calculadora-frete', title: 'Calculadora de Frete', Icon: Truck, href: '/ferramentas/calculadora-frete', description: 'Estime os custos do seu frete.', category: 'Logística e Trânsito' },
   { id: 'checklist', title: 'Checklist de Viagem', Icon: ClipboardCheck, href: '/ferramentas/checklist', description: 'Não esqueça nada importante.', category: 'Logística e Trânsito' },
   { id: 'custo-viagem', title: 'Custo de Viagem', Icon: Fuel, href: '/ferramentas/custo-viagem', description: 'Calcule diesel, Arla32 e mais.', category: 'Logística e Trânsito' },
