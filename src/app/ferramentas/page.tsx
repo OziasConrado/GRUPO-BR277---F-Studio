@@ -51,6 +51,7 @@ const allTools: Tool[] = [
   { id: 'gerador-qr-code', title: 'Gerador de QR Code', Icon: QrCode, href: '/ferramentas/gerador-qr-code', description: 'Transforme links em QR Codes.', category: 'Geradores e Úteis' },
   { id: 'gestao-tempo', title: 'Gestão do Tempo', Icon: Clock, href: '/ferramentas/gestao-tempo', description: 'Matriz de Eisenhower.', category: 'Geradores e Úteis' },
   { id: 'scanner', title: 'Scanner de Documentos', Icon: Camera, href: '/ferramentas/scanner', description: 'Digitalize docs com a câmera.', category: 'Geradores e Úteis' },
+  { id: 'horas-extras', title: 'Calculadora de Horas Extras', Icon: Clock, href: '/ferramentas/horas-extras', description: 'Calcule o valor das suas horas.', category: 'Geradores e Úteis' },
 ];
 
 const categoryInfo = {
