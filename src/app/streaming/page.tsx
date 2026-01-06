@@ -20,6 +20,7 @@ import type { HomeAlertCardData } from '@/components/alerts/home-alert-card';
 import HomeAlertCard from '@/components/alerts/home-alert-card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import ReportAlertSheet from '@/components/alerts/report-alert-sheet';
+import StreamCard from '@/components/streaming/stream-card';
 
 export interface StreamCardProps {
   id: string;
@@ -259,28 +260,14 @@ export default function StreamingPage() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             {favoriteStreams.map(stream => (
-               <Card 
+               <StreamCard
                 key={`fav-${stream.id}`}
-                onClick={() => handleWatchStream(stream)}
-                className="bg-card/70 dark:bg-card/70 backdrop-blur-sm border rounded-lg overflow-hidden cursor-pointer group relative"
-               >
-                <button
-                    onClick={(e) => handleToggleFavorite(e, stream.id)}
-                    className="absolute top-1.5 right-1.5 z-10 p-2 text-white"
-                    aria-label="Remover dos favoritos"
-                >
-                    {isFavoriting === stream.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Star className="h-4 w-4 text-amber-400 fill-amber-400" />}
-                </button>
-                 <CardContent className="p-2 flex flex-col items-center text-center">
-                   <div className="w-full aspect-video flex-shrink-0 bg-muted rounded-md flex items-center justify-center mb-2">
-                       <Cctv className="h-8 w-8 text-primary"/>
-                   </div>
-                   <div className="flex-grow flex flex-col justify-center self-stretch">
-                       <h3 className="text-sm font-semibold line-clamp-1">{stream.title}</h3>
-                       <p className="text-xs text-muted-foreground leading-tight line-clamp-1">{stream.description}</p>
-                   </div>
-                 </CardContent>
-               </Card>
+                stream={stream}
+                isFavorite={true}
+                isFavoriting={isFavoriting === stream.id}
+                onWatch={handleWatchStream}
+                onToggleFavorite={handleToggleFavorite}
+              />
             ))}
           </div>
         </section>
@@ -303,40 +290,14 @@ export default function StreamingPage() {
             filteredStreams.map((stream) => {
               const isFavorite = favorites.includes(stream.id);
               return (
-                <Card 
-                  key={stream.id} 
-                  className="bg-card/70 dark:bg-card/70 backdrop-blur-sm border rounded-lg overflow-hidden group relative cursor-pointer"
-                  onClick={() => handleWatchStream(stream)}
-                >
-                  <button
-                    onClick={(e) => handleToggleFavorite(e, stream.id)}
-                    className="absolute top-2 right-2 z-10 h-10 w-10 flex items-center justify-center rounded-full"
-                    aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-                  >
-                    {isFavoriting === stream.id ? (
-                      <Loader2 className="h-5 w-5 animate-spin text-white" />
-                    ) : (
-                      <Star className={cn("h-5 w-5 transition-all duration-200 ease-in-out", isFavorite ? "text-amber-400 fill-amber-400" : "text-white/70 hover:text-amber-300")} />
-                    )}
-                  </button>
-                  <CardContent className="p-3 flex items-center gap-4">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center">
-                      <Cctv className="h-8 w-8 text-primary"/>
-                    </div>
-                    <div className="flex-grow min-w-0">
-                      <h3 className="font-semibold font-headline line-clamp-1">{stream.title}</h3>
-                      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{stream.description}</p>
-                       <Button 
-                          variant="default" 
-                          size="sm" 
-                          onClick={(e) => { e.stopPropagation(); handleWatchStream(stream); }}
-                          className="rounded-full text-xs py-1 px-3 h-auto mt-2"
-                       >
-                          <PlayCircle className="mr-1 h-4 w-4" /> Assistir
-                       </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <StreamCard
+                  key={stream.id}
+                  stream={stream}
+                  isFavorite={isFavorite}
+                  isFavoriting={isFavoriting === stream.id}
+                  onWatch={handleWatchStream}
+                  onToggleFavorite={handleToggleFavorite}
+                />
               )
             })
           ) : (
