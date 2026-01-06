@@ -35,6 +35,7 @@ export interface UserProfile {
     lastLogin?: any;
     isAdmin?: boolean; 
     favorites?: string[]; // Array of camera IDs
+    favoriteTools?: string[]; // Array of tool IDs
 }
 
 interface UpdateUserProfileData {
@@ -123,6 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 displayName: user.displayName,
                 photoURL: user.photoURL,
                 favorites: [],
+                favoriteTools: [],
              };
              setUserProfile(newUserProfile);
           }
@@ -134,6 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 displayName: user.displayName,
                 photoURL: user.photoURL,
                 favorites: [],
+                favoriteTools: [],
            };
            setUserProfile(basicProfile);
         } finally {
@@ -175,6 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 createdAt: serverTimestamp(),
                 lastLogin: serverTimestamp(),
                 favorites: [],
+                favoriteTools: [],
             }, { merge: true });
         } else {
             await updateDoc(userDocRef, { lastLogin: serverTimestamp() });
@@ -201,6 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         createdAt: serverTimestamp(),
         lastLogin: serverTimestamp(),
         favorites: [],
+        favoriteTools: [],
       });
       
       toast({ title: 'Cadastro realizado!', description: 'Enviamos um link de verificação para o seu e-mail.' });

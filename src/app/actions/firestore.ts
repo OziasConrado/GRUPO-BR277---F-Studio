@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { firestore as firestoreAdmin } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
 
-const projectId = 'grupo-br277'; // CORREÇÃO: Usando o Project ID correto
+const projectId = 'grupo-br277'; 
 const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 
 function mapFirestoreRestResponse(documents: any[]): any[] {
@@ -270,6 +270,64 @@ export async function toggleFavoriteServer(userId: string, cameraId: string, cur
 }
 
 /**
+ * Server Action para alternar uma ferramenta favorita de um usuário via API REST.
+ */
+export async function toggleToolFavoriteServer(userId: string, toolId: string, currentFavorites: string[]): Promise<{ success: boolean; error?: string; }> {
+    if (!userId || !toolId) {
+        return { success: false, error: 'User ID e Tool ID são obrigatórios.' };
+    }
+    if (!apiKey) {
+       return { success: false, error: 'Configuração do servidor incompleta (API Key).' };
+    }
+
+    const isFavorite = currentFavorites.includes(toolId);
+    
+    if (!isFavorite && currentFavorites.length >= 4) {
+      return { success: false, error: 'Limite atingido: você pode favoritar no máximo 4 ferramentas.' };
+    }
+
+    const updatedFavorites = isFavorite
+        ? currentFavorites.filter(id => id !== toolId)
+        : [...currentFavorites, toolId];
+
+    const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}?updateMask.fieldPaths=favoriteTools&key=${apiKey}`;
+
+    const payload = {
+        fields: {
+            favoriteTools: {
+                arrayValue: {
+                    values: updatedFavorites.map(id => ({ stringValue: id }))
+                }
+            }
+        }
+    };
+    
+    try {
+        const response = await fetch(url, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            const errorBody = await response.json();
+            console.error("--- Erro no PATCH da API REST do Firestore (toggleToolFavorite) ---", JSON.stringify(errorBody, null, 2));
+            throw new Error(`Falha ao atualizar ferramentas favoritas: ${response.statusText}`);
+        }
+        
+        revalidatePath('/ferramentas');
+        return { success: true };
+
+    } catch (error: any) {
+        console.error("--- Erro CRÍTICO na Action REST: toggleToolFavoriteServer ---", error.stack || error);
+        return { success: false, error: error.message || 'Falha ao atualizar ferramentas favoritas via REST.' };
+    }
+}
+
+/**
  * Server Action para criar um novo alerta via API REST.
  */
 export async function createAlertServer(
@@ -288,7 +346,6 @@ export async function createAlertServer(
       userId: { stringValue: alertData.userId },
       userName: { stringValue: alertData.userName },
       timestamp: { timestampValue: new Date().toISOString() },
-      // Optional fields
       location: alertData.location ? { stringValue: alertData.location } : { nullValue: null },
       userAvatarUrl: alertData.userAvatarUrl ? { stringValue: alertData.userAvatarUrl } : { nullValue: null },
       userLocation: alertData.userLocation ? { stringValue: alertData.userLocation } : { nullValue: null },
