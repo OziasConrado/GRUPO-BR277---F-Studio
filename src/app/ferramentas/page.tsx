@@ -56,7 +56,6 @@ const categoryInfo = {
     'Geradores e Úteis': { Icon: ClipboardCopy, className: 'bg-slate-100 text-slate-800' },
 };
 
-
 const AdPlaceholder = ({ className }: { className?: string }) => (
   <div className={cn("my-6 p-4 rounded-xl bg-muted/30 border border-dashed h-24 flex items-center justify-center", className)}>
     <p className="text-muted-foreground text-sm">Publicidade</p>
@@ -64,13 +63,12 @@ const AdPlaceholder = ({ className }: { className?: string }) => (
 );
 
 const ToolCard = ({ tool, isFavorite, onToggleFavorite }: { tool: Tool; isFavorite: boolean; onToggleFavorite: (e: React.MouseEvent, toolId: string) => void; }) => {
-    const categoryStyle = categoryInfo[tool.category];
     return (
         <div className="relative group h-full">
             <Link href={tool.href} passHref className="block h-full">
                 <Card className="rounded-xl overflow-hidden h-full hover:shadow-lg transition-shadow duration-200 bg-card hover:bg-card/90">
                     <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
-                        <div className={cn("p-3 mb-2 rounded-full group-hover:bg-primary/5 transition-colors", categoryStyle.className)}>
+                        <div className={cn("p-3 mb-2 rounded-full group-hover:bg-primary/5 transition-colors", categoryInfo[tool.category].className)}>
                             <tool.Icon className="h-7 w-7" />
                         </div>
                         <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors leading-tight">{tool.title}</h3>
@@ -211,12 +209,13 @@ export default function FerramentasPage() {
         </section>
       )}
 
-      {Object.keys(categoryInfo).map(category => (
-        (activeCategory === 'Todas' || activeCategory === category) && filteredToolsByCategory[category as Tool['category']].length > 0 && (
+      {Object.keys(categoryInfo).map(category => {
+        const IconComponent = categoryInfo[category as Tool['category']].Icon;
+        return (activeCategory === 'Todas' || activeCategory === category) && filteredToolsByCategory[category as Tool['category']].length > 0 && (
           <section key={category} ref={el => categoryRefs.current[category] = el} className="scroll-mt-4">
             <div className="flex items-center gap-2 mb-4">
                 <div className={cn("p-1.5 rounded-full", categoryInfo[category as Tool['category']].className)}>
-                    <categoryInfo[category as Tool['category']].Icon className="h-4 w-4" />
+                    <IconComponent className="h-4 w-4" />
                 </div>
                 <h2 className="text-xl font-bold font-headline">{category}</h2>
             </div>
@@ -227,7 +226,7 @@ export default function FerramentasPage() {
             </div>
           </section>
         )
-      ))}
+      })}
 
       {searchTerm && useMemo(() => Object.values(filteredToolsByCategory).flat().length === 0, [filteredToolsByCategory]) && (
          <div className="text-center py-10 px-4 rounded-lg bg-muted/30 border border-dashed">
