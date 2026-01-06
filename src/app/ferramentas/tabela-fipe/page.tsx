@@ -198,6 +198,7 @@ export default function TabelaFipePage() {
 
           {result && (
             <div className="mt-8 pt-6 border-t">
+              <AdPlaceholder />
               <h3 className="text-lg font-semibold text-center mb-4">Resultado da Consulta</h3>
               <Alert className="border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400">
                 <CarFront className="h-5 w-5 text-green-600" />
