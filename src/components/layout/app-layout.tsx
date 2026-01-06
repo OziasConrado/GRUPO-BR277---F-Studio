@@ -39,7 +39,7 @@ function MainAppLayout({ children }: { children: ReactNode }) {
                 router.push('/'); 
             }
         } else {
-            const protectedRoutes = ['/', '/feed', '/profile/edit', '/admin', '/turismo', '/ferramentas', '/sau', '/streaming', '/guia-comercial', '/cadastro', '/planos'];
+            const protectedRoutes = ['/', '/profile/edit', '/admin', '/turismo', '/ferramentas', '/sau', '/streaming', '/guia-comercial', '/cadastro', '/planos'];
             const isProtectedRoute = protectedRoutes.some(p => pathname.startsWith(p));
             if (isProtectedRoute && !isAuthPage && !isVerifyPage) {
                 router.push('/login');
