@@ -110,36 +110,36 @@ export default function HomeAlertCard({ alert }: HomeAlertCardProps) {
   
   return (
     <>
-        <Card className="w-full h-full flex flex-col rounded-xl shadow-md overflow-hidden bg-card hover:bg-muted/30 transition-colors duration-150 group">
-          <Link href={`/alertas#${alert.id}`} passHref className="flex-grow flex flex-col">
-            <CardHeader className="p-3 pb-1.5 flex-row items-center gap-2">
-              <AlertTypeIcon type={alert.type} className="h-6 w-6" />
-              <CardTitle className="text-base font-headline truncate group-hover:text-primary">{alert.type}</CardTitle>
-            </CardHeader>
-            <CardContent className="p-3 pt-1 flex-grow">
-              <p className="text-sm text-foreground/80 line-clamp-3">
-                  {alert.description}
-              </p>
-            </CardContent>
-          </Link>
-          <CardFooter className="p-3 pt-1.5 border-t border-border/50 flex justify-between items-center text-xs text-muted-foreground">
-             <button
-              onClick={handleAuthorClick}
-              className="flex items-center gap-1.5 cursor-pointer hover:underline focus:outline-none"
-              aria-label={`Ver perfil de ${alert.userName}`}
-            >
-                <Avatar className="h-5 w-5 border">
-                    <AvatarImage src={alert.userAvatarUrl || defaultAvatar} alt={alert.userName}/>
-                    <AvatarFallback className="text-[10px]"><UserCircle /></AvatarFallback>
-                </Avatar>
-                <span className="font-medium truncate">{alert.userName}</span>
-            </button>
-            <div className="flex items-center">
-                <Clock className="h-3 w-3 mr-1" />
-                <span>{timeAgo}</span>
-            </div>
-          </CardFooter>
-        </Card>
+      <Card className="w-full h-full flex flex-col rounded-xl shadow-md overflow-hidden bg-card hover:bg-muted/30 transition-colors duration-150 group">
+        <Link href={`/alertas#${alert.id}`} passHref className="flex-grow flex flex-col">
+          <CardHeader className="p-3 pb-1.5 flex-row items-center gap-2">
+            <AlertTypeIcon type={alert.type} className="h-6 w-6" />
+            <CardTitle className="text-base font-headline truncate group-hover:text-primary">{alert.type}</CardTitle>
+          </CardHeader>
+          <CardContent className="p-3 pt-1 flex-grow">
+            <p className="text-sm text-foreground/80 line-clamp-3">
+                {alert.description}
+            </p>
+          </CardContent>
+        </Link>
+        <CardFooter className="p-3 pt-1.5 border-t border-border/50 flex justify-between items-center text-xs text-muted-foreground">
+           <button
+            onClick={handleAuthorClick}
+            className="flex items-center gap-1.5 cursor-pointer hover:underline focus:outline-none focus:ring-1 focus:ring-ring rounded-full p-1 -m-1"
+            aria-label={`Ver perfil de ${alert.userName}`}
+          >
+              <Avatar className="h-5 w-5 border">
+                  <AvatarImage src={alert.userAvatarUrl || defaultAvatar} alt={alert.userName}/>
+                  <AvatarFallback className="text-[10px]"><UserCircle /></AvatarFallback>
+              </Avatar>
+              <span className="font-medium truncate">{alert.userName}</span>
+          </button>
+          <div className="flex items-center">
+              <Clock className="h-3 w-3 mr-1" />
+              <span>{timeAgo}</span>
+          </div>
+        </CardFooter>
+      </Card>
 
       <UserProfileModal
         isOpen={isProfileModalOpen}

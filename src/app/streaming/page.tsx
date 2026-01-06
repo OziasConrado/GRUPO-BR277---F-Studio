@@ -162,14 +162,19 @@ export default function StreamingPage() {
 
       <section>
         <div className="flex justify-between items-center mb-3">
-            <h2 className="text-xl font-bold font-headline flex items-center gap-2"><Shield className="h-6 w-6 text-primary"/> Alertas da Comunidade</h2>
-             <div className="flex items-center gap-2">
+            <div>
+              <h2 className="text-xl font-bold font-headline flex items-center gap-2">
+                <Shield className="h-6 w-6 text-primary"/> Alertas
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Reporte e consulte eventos nas rodovias em tempo real.</p>
+            </div>
+             <div className="flex items-center gap-2 flex-shrink-0">
                 <Button variant="outline" size="sm" className="rounded-full h-auto py-1 px-3 text-xs" onClick={() => setIsReportSheetOpen(true)}>
                     <PlusCircle className="mr-1 h-3 w-3"/> Novo alerta
                 </Button>
                 {alerts.length > 0 && (
                     <Link href="/alertas" className="text-sm text-primary font-semibold hover:underline">
-                        Ver Todos &rarr;
+                        Ver Todos
                     </Link>
                 )}
             </div>
@@ -210,7 +215,7 @@ export default function StreamingPage() {
       <div>
         <div className="flex items-center gap-2">
           <Cctv className="h-7 w-7 text-primary" />
-          <h1 className="text-xl font-bold font-headline">Câmeras AO VIVO</h1>
+          <h1 className="text-2xl font-bold font-headline">Câmeras AO VIVO</h1>
         </div>
         <p className="text-muted-foreground text-sm">Acompanhe o trânsito 24h, locais e pontos turísticos.</p>
       </div>
@@ -280,7 +285,7 @@ export default function StreamingPage() {
               >
                 <button
                   onClick={(e) => handleToggleFavorite(e, stream.id)}
-                  className="absolute top-2 right-2 z-10 h-10 w-10 flex items-center justify-center bg-black/10 rounded-full text-white hover:bg-black/30 transition-colors"
+                  className="absolute top-4 right-4 z-10 h-10 w-10 flex items-center justify-center bg-black/10 rounded-full text-white hover:bg-black/30 transition-colors"
                   aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
                 >
                   {isFavoriting === stream.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <Star className={cn("h-5 w-5", isFavorite ? "text-amber-400 fill-amber-400" : "text-white/80")}/>}

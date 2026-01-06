@@ -63,6 +63,25 @@ export default function AlertasPage() {
     return () => unsubscribe();
   }, [firestore, toast]);
   
+  useEffect(() => {
+    if (!loading && alerts.length > 0 && window.location.hash) {
+      const id = window.location.hash.substring(1); // Remove o '#'
+      if (id) {
+        setTimeout(() => {
+          const element = document.getElementById(id);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Opcional: Adicionar um destaque visual
+            element.classList.add('bg-primary/10', 'ring-2', 'ring-primary/50', 'transition-all', 'duration-1000', 'ease-out', 'rounded-xl');
+            setTimeout(() => {
+                element.classList.remove('bg-primary/10', 'ring-2', 'ring-primary/50', 'rounded-xl');
+            }, 2500);
+          }
+        }, 500); // Atraso para garantir que tudo esteja renderizado
+      }
+    }
+  }, [loading, alerts]);
+
   const handleDeleteAlert = async (alertId: string) => {
     const originalAlerts = [...alerts];
     setAlerts(prevAlerts => prevAlerts.filter(alert => alert.id !== alertId)); // Optimistic update
