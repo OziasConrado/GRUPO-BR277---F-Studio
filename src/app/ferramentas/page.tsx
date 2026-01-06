@@ -70,7 +70,7 @@ export default function FerramentasPage() {
   const [activeCategory, setActiveCategory] = useState<Tool['category'] | 'Todas'>('Todas');
   const { currentUser, userProfile, setUserProfile } = useAuth();
   const { toast } = useToast();
-  const categoryRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const categoryRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
@@ -240,7 +240,7 @@ export default function FerramentasPage() {
       {Object.keys(categoryInfo).map(category => {
         const IconComponent = categoryInfo[category as Tool['category']].Icon;
         return (activeCategory === 'Todas' || activeCategory === category) && filteredToolsByCategory[category as Tool['category']].length > 0 && (
-          <section key={category} ref={el => categoryRefs.current[category] = el} className="scroll-mt-4">
+          <section key={category} ref={(el) => { categoryRefs.current[category] = el; }} className="scroll-mt-4">
             <div className="flex items-center gap-2 mb-4">
                 <div className={cn("p-1.5 rounded-full", categoryInfo[category as Tool['category']].className)}>
                     <IconComponent className="h-4 w-4" />
