@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -62,10 +62,11 @@ export default function StreamingPage() {
   const { currentUser, userProfile, setUserProfile, isProfileComplete } = useAuth();
   const { toast } = useToast();
   const [isFavoriting, setIsFavoriting] = useState<string | null>(null);
-
   const [alerts, setAlerts] = useState<HomeAlertCardData[]>([]);
   const [loadingAlerts, setLoadingAlerts] = useState(true);
   const [isReportSheetOpen, setIsReportSheetOpen] = useState(false);
+  
+  const cameraListRef = useRef<HTMLDivElement>(null);
 
   const favorites = useMemo(() => userProfile?.favorites || [], [userProfile]);
 
@@ -79,10 +80,17 @@ export default function StreamingPage() {
     }
     setLoadingAlerts(false);
   }, [toast]);
-
+  
   useEffect(() => {
     fetchAndSetAlerts();
   }, [fetchAndSetAlerts]);
+
+  useEffect(() => {
+    if (currentFilter !== 'Todos' && cameraListRef.current) {
+        cameraListRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [currentFilter]);
+
 
   const handleToggleFavorite = useCallback(async (e: React.MouseEvent, cameraId: string) => {
     e.stopPropagation();
@@ -162,25 +170,27 @@ export default function StreamingPage() {
 
       <section>
         <div className="flex justify-between items-center mb-3">
-            <div className="flex items-center gap-2">
-              <Shield className="h-6 w-6 text-primary"/>
-              <h2 className="text-lg font-bold font-headline">Alertas</h2>
+          <div className="flex items-center gap-2">
+            <Shield className="h-6 w-6 text-primary"/>
+            <div>
+              <h2 className="text-xl font-bold font-headline">Alertas</h2>
+              <p className="text-xs text-muted-foreground -mt-1">Reporte e consulte eventos nas rodovias.</p>
             </div>
-             <div className="flex items-center gap-2 flex-shrink-0">
-                <Button variant="outline" size="sm" className="rounded-full h-auto py-1 px-3 text-xs" onClick={() => setIsReportSheetOpen(true)}>
-                    <PlusCircle className="mr-1 h-3 w-3"/> Novo alerta
-                </Button>
-                {alerts.length > 0 && (
-                    <Link href="/alertas" className="text-sm text-primary font-semibold hover:underline">
-                        Ver Todos
-                    </Link>
-                )}
-            </div>
+          </div>
+           <div className="flex items-center gap-2 flex-shrink-0">
+              <Button variant="outline" size="sm" className="rounded-full h-auto py-1 px-3 text-xs" onClick={() => setIsReportSheetOpen(true)}>
+                  <PlusCircle className="mr-1 h-3 w-3"/> Novo alerta
+              </Button>
+              {alerts.length > 0 && (
+                  <Link href="/alertas" className="text-sm text-primary font-semibold hover:underline">
+                      Ver Todos
+                  </Link>
+              )}
+          </div>
         </div>
-        <p className="text-xs text-muted-foreground -mt-3 mb-3 pl-8">Reporte e consulte eventos nas rodovias.</p>
         
         <Carousel opts={{ align: "start", loop: false }} className="w-full">
-          <CarouselContent className="-ml-3">
+           <CarouselContent className="-ml-3">
             {loadingAlerts ? (
               <CarouselItem className="pl-3 basis-full">
                 <div className="flex justify-center items-center h-32 bg-muted/30 rounded-lg">
@@ -214,9 +224,11 @@ export default function StreamingPage() {
       <div>
         <div className="flex items-center gap-2">
           <Cctv className="h-6 w-6 text-primary" />
-          <h1 className="text-lg font-bold font-headline">Câmeras AO VIVO</h1>
+          <div>
+            <h1 className="text-xl font-bold font-headline">Câmeras AO VIVO</h1>
+            <p className="text-xs text-muted-foreground -mt-1">Acompanhe o trânsito 24h, locais e pontos turísticos.</p>
+          </div>
         </div>
-        <p className="text-xs text-muted-foreground pl-8">Acompanhe o trânsito 24h, locais e pontos turísticos.</p>
       </div>
       
       <Card className="p-2 sm:p-4 rounded-xl">
@@ -270,49 +282,58 @@ export default function StreamingPage() {
           </div>
         </section>
       )}
-
-      {filteredStreams.length > 0 ? (
+      
+      <div id="lista-cameras" ref={cameraListRef} className="scroll-mt-4">
+        <h2 className="text-xl font-bold font-headline mt-6 mb-3">
+          Todas as Câmeras
+          {currentFilter !== 'Todos' && (
+            <span className="text-base font-medium text-primary ml-2">
+              › {currentFilter}
+            </span>
+          )}
+        </h2>
         <div className="space-y-3">
-          <h2 className="text-xl font-bold font-headline mt-6">Todas as Câmeras</h2>
-          {filteredStreams.map((stream) => {
-            const isFavorite = favorites.includes(stream.id);
-            return (
-              <Card 
-                key={stream.id} 
-                className="bg-card/70 dark:bg-card/70 backdrop-blur-sm border rounded-lg overflow-hidden group relative cursor-pointer"
-                onClick={() => handleWatchStream(stream)}
-              >
-                <button
-                  onClick={(e) => handleToggleFavorite(e, stream.id)}
-                  className="absolute top-4 right-4 z-10 h-10 w-10 flex items-center justify-center bg-black/10 rounded-full text-white hover:bg-black/30 transition-colors"
-                  aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+          {filteredStreams.length > 0 ? (
+            filteredStreams.map((stream) => {
+              const isFavorite = favorites.includes(stream.id);
+              return (
+                <Card 
+                  key={stream.id} 
+                  className="bg-card/70 dark:bg-card/70 backdrop-blur-sm border rounded-lg overflow-hidden group relative cursor-pointer"
+                  onClick={() => handleWatchStream(stream)}
                 >
-                  {isFavoriting === stream.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <Star className={cn("h-5 w-5", isFavorite ? "text-amber-400 fill-amber-400" : "text-white/80")}/>}
-                </button>
-                <CardContent className="p-3 flex items-center gap-4">
-                  <div className="w-20 h-20 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center">
-                    <Cctv className="h-8 w-8 text-primary"/>
-                  </div>
-                  <div className="flex-grow min-w-0 pr-8">
-                    <h3 className="font-semibold font-headline line-clamp-1">{stream.title}</h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{stream.description}</p>
-                     <Button 
-                        variant="default" 
-                        size="sm" 
-                        onClick={(e) => { e.stopPropagation(); handleWatchStream(stream); }}
-                        className="rounded-full text-xs py-1 px-3 h-auto mt-2"
-                     >
-                        <PlayCircle className="mr-1 h-4 w-4" /> Assistir
-                     </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
+                  <button
+                    onClick={(e) => handleToggleFavorite(e, stream.id)}
+                    className="absolute top-2 right-2 z-10 h-10 w-10 flex items-center justify-center bg-black/10 rounded-full text-white hover:bg-black/30 transition-colors"
+                    aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                  >
+                    {isFavoriting === stream.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <Star className={cn("h-5 w-5", isFavorite ? "text-amber-400 fill-amber-400" : "text-white/80")}/>}
+                  </button>
+                  <CardContent className="p-3 flex items-center gap-4">
+                    <div className="w-20 h-20 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center">
+                      <Cctv className="h-8 w-8 text-primary"/>
+                    </div>
+                    <div className="flex-grow min-w-0">
+                      <h3 className="font-semibold font-headline line-clamp-1">{stream.title}</h3>
+                      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{stream.description}</p>
+                       <Button 
+                          variant="default" 
+                          size="sm" 
+                          onClick={(e) => { e.stopPropagation(); handleWatchStream(stream); }}
+                          className="rounded-full text-xs py-1 px-3 h-auto mt-2"
+                       >
+                          <PlayCircle className="mr-1 h-4 w-4" /> Assistir
+                       </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })
+          ) : (
+            <p className="mt-6 text-center text-muted-foreground">Nenhuma câmera encontrada para sua busca.</p>
+          )}
         </div>
-      ) : (
-        <p className="mt-6 text-center text-muted-foreground">Nenhuma câmera encontrada para sua busca.</p>
-      )}
+      </div>
 
       <StreamViewerModal
         isOpen={isModalOpen}
@@ -330,3 +351,5 @@ export default function StreamingPage() {
     </div>
   );
 }
+
+    
