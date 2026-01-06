@@ -111,7 +111,7 @@ export default function AlertCard({ alert, onDelete }: AlertCardProps) {
 
   return (
     <>
-      <Card className="w-full shadow-md rounded-lg overflow-hidden bg-card relative">
+      <Card id={alert.id} className="w-full shadow-md rounded-lg overflow-hidden bg-card relative scroll-mt-20">
         {isAuthor && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
