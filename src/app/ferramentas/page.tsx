@@ -12,8 +12,11 @@ import Link from 'next/link';
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { toggleToolFavoriteServer } from '@/app/actions/firestore';
+import { toggleToolFavoriteServer, sendFeedbackServer } from '@/app/actions/firestore';
 import FeatureCard from '@/components/common/FeatureCard';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 interface Tool {
   id: string;
@@ -62,38 +65,16 @@ const AdPlaceholder = ({ className }: { className?: string }) => (
   </div>
 );
 
-const ToolCard = ({ tool, isFavorite, onToggleFavorite }: { tool: Tool; isFavorite: boolean; onToggleFavorite: (e: React.MouseEvent, toolId: string) => void; }) => {
-    return (
-        <div className="relative group h-full">
-            <Link href={tool.href} passHref className="block h-full">
-                <Card className="rounded-xl overflow-hidden h-full hover:shadow-lg transition-shadow duration-200 bg-card hover:bg-card/90">
-                    <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
-                        <div className={cn("p-3 mb-2 rounded-full group-hover:bg-primary/5 transition-colors", categoryInfo[tool.category].className)}>
-                            <tool.Icon className="h-7 w-7" />
-                        </div>
-                        <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors leading-tight">{tool.title}</h3>
-                        <p className="text-xs text-muted-foreground mt-1">{tool.description}</p>
-                    </CardContent>
-                </Card>
-            </Link>
-            <button
-                onClick={(e) => onToggleFavorite(e, tool.id)}
-                className="absolute top-1.5 right-1.5 z-10 p-2 text-white"
-                aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-            >
-                <Star className={cn("h-5 w-5 transition-all duration-200 ease-in-out", isFavorite ? "text-amber-400 fill-amber-400 scale-110" : "text-slate-400/70 hover:text-amber-400 hover:scale-125")} />
-            </button>
-        </div>
-    );
-};
-
-
 export default function FerramentasPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState<Tool['category'] | 'Todas'>('Todas');
   const { currentUser, userProfile, setUserProfile } = useAuth();
   const { toast } = useToast();
   const categoryRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
   useEffect(() => {
     if (activeCategory !== 'Todas' && categoryRefs.current[activeCategory]) {
@@ -159,6 +140,53 @@ export default function FerramentasPage() {
     return allTools.filter(tool => favoriteTools.includes(tool.id));
   }, [favoriteTools]);
 
+  const handleFeedbackSubmit = async (tipo: 'opiniao_ferramentas', valor: string) => {
+    if (!currentUser) {
+      toast({ variant: 'destructive', title: 'Login Necessário', description: 'Você precisa estar logado para enviar feedback.' });
+      return;
+    }
+    
+    const result = await sendFeedbackServer({
+      tipo,
+      valor,
+      autorUid: currentUser.uid,
+      autorNome: currentUser.displayName || 'Anônimo',
+    });
+
+    if (result.success) {
+      toast({ title: 'Obrigado!', description: 'Seu feedback foi enviado com sucesso.' });
+    } else {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível enviar seu feedback.' });
+    }
+  };
+
+  const handleSuggestionSubmit = async () => {
+    if (!currentUser) {
+      toast({ variant: 'destructive', title: 'Login Necessário' });
+      return;
+    }
+    if (!feedbackText.trim()) {
+        toast({ variant: 'destructive', title: 'Campo Vazio', description: 'Escreva sua ideia ou sugestão.' });
+        return;
+    }
+    setIsSubmittingFeedback(true);
+    const result = await sendFeedbackServer({
+      tipo: 'sugestao_ferramentas',
+      valor: feedbackText,
+      autorUid: currentUser.uid,
+      autorNome: currentUser.displayName || 'Anônimo',
+    });
+    if (result.success) {
+      toast({ title: 'Obrigado!', description: 'Sua sugestão foi enviada com sucesso.' });
+      setIsFeedbackModalOpen(false);
+      setFeedbackText('');
+    } else {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível enviar sua sugestão.' });
+    }
+    setIsSubmittingFeedback(false);
+  };
+
+
   return (
     <div className="w-full space-y-8">
       <div className="text-center sm:text-left">
@@ -203,7 +231,7 @@ export default function FerramentasPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             {favoriteToolsList.map(tool => (
-              <ToolCard key={tool.id} tool={tool} isFavorite={true} onToggleFavorite={handleToggleFavorite} />
+              <FeatureCard key={tool.id} tool={tool} isFavorite={true} onToggleFavorite={handleToggleFavorite} />
             ))}
           </div>
         </section>
@@ -221,7 +249,7 @@ export default function FerramentasPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               {filteredToolsByCategory[category as Tool['category']].map(tool => (
-                <ToolCard key={tool.id} tool={tool} isFavorite={favoriteTools.includes(tool.id)} onToggleFavorite={handleToggleFavorite} />
+                <FeatureCard key={tool.id} tool={tool} isFavorite={favoriteTools.includes(tool.id)} onToggleFavorite={handleToggleFavorite} />
               ))}
             </div>
           </section>
@@ -247,21 +275,53 @@ export default function FerramentasPage() {
                     O que você achou da nossa galeria de ferramentas?
                 </p>
                 <div className="grid grid-cols-2 gap-3">
-                    <Button variant="outline" className="h-auto py-2 flex-col">
+                    <Button variant="outline" className="h-auto py-2 flex-col" onClick={() => handleFeedbackSubmit('opiniao_ferramentas', 'sim')}>
                         <ThumbsUp className="h-6 w-6 mb-1 text-green-500"/>
                         <span className="text-xs">Sim, está ótima!</span>
                     </Button>
-                     <Button variant="outline" className="h-auto py-2 flex-col">
+                     <Button variant="outline" className="h-auto py-2 flex-col" onClick={() => handleFeedbackSubmit('opiniao_ferramentas', 'nao')}>
                         <ThumbsDown className="h-6 w-6 mb-1 text-red-500"/>
                         <span className="text-xs">Não, pode melhorar</span>
                     </Button>
                 </div>
-                 <Button variant="secondary" className="w-full mt-3">
+                 <Button variant="secondary" className="w-full mt-3" onClick={() => setIsFeedbackModalOpen(true)}>
                     <MessageCircle className="h-4 w-4 mr-2"/>
                     Enviar Ideias ou Sugestões
                 </Button>
             </CardContent>
        </Card>
+
+        <Dialog open={isFeedbackModalOpen} onOpenChange={setIsFeedbackModalOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Enviar Ideias ou Sugestões</DialogTitle>
+                    <DialogDescription>
+                        Tem alguma ferramenta que gostaria de ver aqui? Ou alguma sugestão de melhoria? Conte para nós!
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                        <Label htmlFor="feedback-text">Sua mensagem</Label>
+                        <Textarea
+                            id="feedback-text"
+                            value={feedbackText}
+                            onChange={(e) => setFeedbackText(e.target.value)}
+                            placeholder="Descreva sua sugestão aqui..."
+                            className="min-h-[100px]"
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button type="button" variant="secondary">Cancelar</Button>
+                    </DialogClose>
+                    <Button type="button" onClick={handleSuggestionSubmit} disabled={isSubmittingFeedback}>
+                        {isSubmittingFeedback && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Enviar
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
   );
 }

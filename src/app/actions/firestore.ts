@@ -212,7 +212,7 @@ export async function fetchUserProfileServer(uid: string): Promise<{ success: bo
 
 
 /**
- * Server Action para alternar um favorito de câmera para um usuário via API REST.
+ * Server Action para alternar uma favorito de câmera para um usuário via API REST.
  */
 export async function toggleFavoriteServer(userId: string, cameraId: string, currentFavorites: string[]): Promise<{ success: boolean; error?: string; }> {
     if (!userId || !cameraId) {
@@ -469,5 +469,56 @@ export async function deleteAlertServer(alertId: string): Promise<{ success: boo
     } catch (error: any) {
         console.error("--- Erro CRÍTICO na Action REST: deleteAlertServer ---", error.stack || error);
         return { success: false, error: error.message || 'Falha ao deletar alerta via REST.' };
+    }
+}
+
+
+/**
+ * Server Action para enviar um feedback do usuário para o Firestore.
+ */
+export async function sendFeedbackServer(
+  feedbackData: { tipo: string; valor: string; autorUid: string; autorNome: string; }
+): Promise<{ success: boolean; error?: string }> {
+  if (!firestoreAdmin) {
+    return { success: false, error: "Serviço de banco de dados indisponível no servidor." };
+  }
+
+  try {
+    const feedbackCollection = firestoreAdmin.collection('feedbacks');
+    await feedbackCollection.add({
+      ...feedbackData,
+      timestamp: Timestamp.now(),
+    });
+    return { success: true };
+  } catch (error: any) {
+    console.error("--- Erro CRÍTICO na Action de Feedback ---", error.stack || error);
+    return { success: false, error: error.message || 'Falha ao enviar feedback.' };
+  }
+}
+
+/**
+ * Server Action para buscar feedbacks (admin).
+ */
+export async function fetchFeedbacksServer(): Promise<{ success: boolean; data: any[]; error?: string; }> {
+    if (!firestoreAdmin) {
+        return { success: false, data: [], error: 'Serviço de banco de dados indisponível no servidor.' };
+    }
+    try {
+        const snapshot = await firestoreAdmin.collection('feedbacks').orderBy('timestamp', 'desc').get();
+        if (snapshot.empty) {
+            return { success: true, data: [] };
+        }
+        const feedbacks = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                ...data,
+                timestamp: data.timestamp.toDate().toISOString(), // Convertendo para string ISO
+            };
+        });
+        return { success: true, data: feedbacks };
+    } catch (error: any) {
+        console.error("--- Erro ao buscar feedbacks ---", error.stack || error);
+        return { success: false, data: [], error: error.message || 'Falha ao buscar feedbacks.' };
     }
 }
