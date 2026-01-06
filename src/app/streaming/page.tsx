@@ -5,7 +5,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { PlayCircle, Cctv, Search, Phone, Route, Star, Loader2, Shield, PlusCircle, AlertCircle } from 'lucide-react';
+import { PlayCircle, Cctv, Search, Phone, Route, Star, Loader2, Shield, PlusCircle, AlertCircle, ArrowRight } from 'lucide-react';
 import StreamFilters from '@/components/streaming/stream-filters';
 import StreamViewerModal from '@/components/streaming/StreamViewerModal';
 import { Input } from '@/components/ui/input';
@@ -169,24 +169,26 @@ export default function StreamingPage() {
        <Banners />
 
       <section>
-        <div className="flex justify-between items-center mb-3">
-          <div className="flex items-center gap-2">
-            <Shield className="h-6 w-6 text-primary"/>
-            <div>
-              <h2 className="text-xl font-bold font-headline">Alertas</h2>
-              <p className="text-xs text-muted-foreground -mt-1">Reporte e consulte eventos nas rodovias.</p>
+        <div className="flex justify-between items-center mb-3 gap-2">
+            <div className="flex items-center gap-2">
+                <Shield className="h-6 w-6 text-primary"/>
+                <div>
+                <h2 className="text-xl font-bold font-headline">Alertas</h2>
+                <p className="text-xs text-muted-foreground -mt-1">Reporte e consulte eventos nas rodovias.</p>
+                </div>
             </div>
-          </div>
-           <div className="flex items-center gap-2 flex-shrink-0">
-              <Button variant="outline" size="sm" className="rounded-full h-auto py-1 px-3 text-xs" onClick={() => setIsReportSheetOpen(true)}>
-                  <PlusCircle className="mr-1 h-3 w-3"/> Novo alerta
-              </Button>
-              {alerts.length > 0 && (
-                  <Link href="/alertas" className="text-sm text-primary font-semibold hover:underline">
-                      Ver Todos
-                  </Link>
-              )}
-          </div>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+                <Button variant="outline" size="sm" className="rounded-full h-auto py-1 px-3 text-xs" onClick={() => setIsReportSheetOpen(true)}>
+                    <PlusCircle className="mr-1 h-3 w-3"/> Novo alerta
+                </Button>
+                {alerts.length > 0 && (
+                    <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-primary">
+                        <Link href="/alertas">
+                            <ArrowRight className="h-5 w-5" />
+                        </Link>
+                    </Button>
+                )}
+            </div>
         </div>
         
         <Carousel opts={{ align: "start", loop: false }} className="w-full">
@@ -251,9 +253,10 @@ export default function StreamingPage() {
       
       {favoriteStreams.length > 0 && (
         <section>
-          <h2 className="text-xl font-bold font-headline mb-3 flex items-center gap-2">
-            <Star className="h-6 w-6 text-amber-400 fill-amber-400" /> Favoritos
-          </h2>
+          <div className="flex items-center gap-2 mb-3">
+            <Star className="h-6 w-6 text-amber-400" />
+            <h2 className="text-xl font-bold font-headline">Minhas Preferidas</h2>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             {favoriteStreams.map(stream => (
                <Card 
@@ -263,7 +266,7 @@ export default function StreamingPage() {
                >
                 <button
                     onClick={(e) => handleToggleFavorite(e, stream.id)}
-                    className="absolute top-1.5 right-1.5 z-10 p-2 bg-black/20 rounded-full text-white hover:bg-black/40 transition-colors"
+                    className="absolute top-1.5 right-1.5 z-10 p-2 text-white"
                     aria-label="Remover dos favoritos"
                 >
                     {isFavoriting === stream.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Star className="h-4 w-4 text-amber-400 fill-amber-400" />}
@@ -304,13 +307,13 @@ export default function StreamingPage() {
                 >
                   <button
                     onClick={(e) => handleToggleFavorite(e, stream.id)}
-                    className="absolute top-2 right-2 z-10 h-10 w-10 flex items-center justify-center bg-black/10 rounded-full text-white hover:bg-black/30 transition-colors"
+                    className="absolute top-2 right-2 z-10 h-10 w-10 flex items-center justify-center rounded-full text-white"
                     aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
                   >
-                    {isFavoriting === stream.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <Star className={cn("h-5 w-5", isFavorite ? "text-amber-400 fill-amber-400" : "text-white/80")}/>}
+                    {isFavoriting === stream.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <Star className={cn("h-5 w-5 transition-colors duration-200", isFavorite ? "text-amber-400 fill-amber-400" : "text-white/70 hover:text-amber-300")} />}
                   </button>
                   <CardContent className="p-3 flex items-center gap-4">
-                    <div className="w-20 h-20 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center">
                       <Cctv className="h-8 w-8 text-primary"/>
                     </div>
                     <div className="flex-grow min-w-0">
@@ -351,5 +354,3 @@ export default function StreamingPage() {
     </div>
   );
 }
-
-    

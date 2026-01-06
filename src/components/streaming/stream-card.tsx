@@ -28,33 +28,35 @@ interface StreamCardComponentProps {
 export default function StreamCard({ stream, isFavorite, isFavoriting, onWatch, onToggleFavorite }: StreamCardComponentProps) {
   return (
     <Card 
-      className="bg-card/70 dark:bg-card/70 backdrop-blur-sm border rounded-lg overflow-hidden group relative"
+      className="bg-card/70 dark:bg-card/70 backdrop-blur-sm border rounded-lg overflow-hidden group relative cursor-pointer"
     >
-      <CardContent className="p-3 flex items-center gap-4">
-        <div className="w-16 h-16 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center">
+      <button
+        onClick={(e) => onToggleFavorite(e, stream.id)}
+        className="absolute top-2 right-2 z-10 h-10 w-10 flex items-center justify-center rounded-full text-white"
+        aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+      >
+        {isFavoriting ? (
+          <Loader2 className="h-5 w-5 animate-spin" />
+        ) : (
+          <Star className={cn("h-5 w-5 transition-colors duration-200", isFavorite ? "text-amber-400 fill-amber-400" : "text-white/70 hover:text-amber-300")} />
+        )}
+      </button>
+      <CardContent className="p-3 flex items-center gap-4" onClick={() => onWatch(stream)}>
+        <div className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center">
           <Cctv className="h-8 w-8 text-primary"/>
         </div>
         <div className="flex-grow min-w-0">
           <h3 className="font-semibold font-headline line-clamp-1">{stream.title}</h3>
           <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{stream.description}</p>
-        </div>
-        <div className="flex flex-col items-end gap-2 ml-2">
-            <Button 
+           <Button 
               variant="default" 
               size="sm" 
-              onClick={() => onWatch(stream)}
-              className="rounded-full text-xs py-1 px-3 h-auto"
-            >
+              onClick={(e) => { e.stopPropagation(); onWatch(stream); }}
+              className="rounded-full text-xs py-1 px-3 h-auto mt-2"
+           >
               <PlayCircle className="mr-1 h-4 w-4" /> Assistir
-            </Button>
+           </Button>
         </div>
-          <button
-          onClick={(e) => onToggleFavorite(e, stream.id)}
-          className="absolute top-1.5 right-1.5 z-10 p-2 bg-black/10 rounded-full text-white hover:bg-black/30 transition-colors"
-          aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-        >
-            {isFavoriting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Star className={cn("h-5 w-5", isFavorite ? "text-amber-400 fill-amber-400" : "text-white/80")}/>}
-        </button>
       </CardContent>
     </Card>
   );
