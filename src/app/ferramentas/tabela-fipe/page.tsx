@@ -27,6 +27,12 @@ interface FipeResult {
   MesReferencia: string;
 }
 
+const AdPlaceholder = ({ className }: { className?: string }) => (
+  <div className={cn("my-6 p-4 rounded-xl bg-muted/30 border border-dashed h-24 flex items-center justify-center", className)}>
+    <p className="text-muted-foreground text-sm">Publicidade</p>
+  </div>
+);
+
 export default function TabelaFipePage() {
   const [vehicleType, setVehicleType] = useState<string>('');
   const [brands, setBrands] = useState<FipeOption[]>([]);
@@ -126,6 +132,7 @@ export default function TabelaFipePage() {
           <CardDescription>Consulte o valor de mercado do seu veículo.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <AdPlaceholder />
           <div>
             <Label htmlFor="vehicle-type">Tipo de Veículo</Label>
             <Select value={vehicleType} onValueChange={setVehicleType}>
