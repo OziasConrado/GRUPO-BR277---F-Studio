@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, type FormEvent } from 'react';
@@ -114,6 +115,7 @@ export default function CalculadoraHorasExtrasPage() {
 
           {resultado && (
             <div className="mt-6 pt-6 border-t">
+              <AdPlaceholder />
               <Alert className="rounded-lg bg-primary/5 border-primary/20">
                   <Clock className="h-5 w-5 text-primary" />
                   <AlertTitle className="font-semibold text-primary">Resultado Estimado</AlertTitle>
