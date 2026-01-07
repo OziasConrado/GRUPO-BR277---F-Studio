@@ -5,7 +5,7 @@ import { useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, Shield, LayoutDashboard, MessageSquareWarning } from 'lucide-react';
+import { Loader2, Shield, LayoutDashboard, MessageSquareWarning, Handshake } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -31,6 +31,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   const navItems = [
     { href: '/admin/banners', label: 'Gestão de Banners', icon: LayoutDashboard },
+    { href: '/admin/patrocinadores', label: 'Patrocinadores', icon: Handshake },
     { href: '/admin/feedbacks', label: 'Gestão de Feedbacks', icon: MessageSquareWarning },
   ];
 

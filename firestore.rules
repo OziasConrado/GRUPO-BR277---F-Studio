@@ -24,6 +24,12 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+    
+    // Camera Sponsors: Public read, Admin write
+    match /camera_sponsors/{sponsorId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
 
     // Posts: Authenticated read, authenticated write/update/delete
     match /posts/{postId} {

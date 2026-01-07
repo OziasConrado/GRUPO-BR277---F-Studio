@@ -182,7 +182,6 @@ export async function deleteBannerServer(bannerId: string): Promise<{ success: b
 
 /**
  * Server Action para buscar um perfil de usuário pelo UID (Admin SDK).
- * MANTIDO como Admin SDK pois é uma operação interna e não pública.
  */
 export async function fetchUserProfileServer(uid: string): Promise<{ success: boolean; data?: any; error?: string; }> {
   if (!firestoreAdmin) {
@@ -565,3 +564,108 @@ export async function fetchFeedbacksServer(): Promise<{ success: boolean; data: 
       return { success: false, data: [], error: error.message || 'Falha ao buscar feedbacks via REST.' };
     }
 }
+
+
+// --- Funções para Patrocinadores de Câmeras ---
+
+export async function fetchAllCameraSponsorsServer(): Promise<{ success: boolean; data: any[]; error?: string; }> {
+  if (!apiKey) return { success: false, data: [], error: 'API Key ausente.' };
+  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/camera_sponsors?key=${apiKey}`;
+  try {
+    const res = await fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' }, next: { revalidate: 300 } });
+    if (!res.ok) throw new Error(`Falha ao buscar patrocinadores: ${res.statusText}`);
+    const data = await res.json();
+    return { success: true, data: mapFirestoreRestResponse(data.documents) };
+  } catch (e: any) {
+    return { success: false, data: [], error: e.message };
+  }
+}
+
+export async function fetchSponsorForCameraServer(cameraId: string): Promise<{ success: boolean; data?: any; error?: string; }> {
+  if (!apiKey) return { success: false, error: 'API Key ausente.' };
+  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery?key=${apiKey}`;
+  const queryPayload = {
+    structuredQuery: {
+      from: [{ collectionId: 'camera_sponsors' }],
+      where: {
+        compositeFilter: {
+          op: 'AND',
+          filters: [
+            { fieldFilter: { field: { fieldPath: 'cameraId' }, op: 'EQUAL', value: { stringValue: cameraId } } },
+            { fieldFilter: { field: { fieldPath: 'isActive' }, op: 'EQUAL', value: { booleanValue: true } } }
+          ]
+        }
+      },
+      limit: 1
+    }
+  };
+  try {
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(queryPayload), next: { revalidate: 300 } });
+    if (!res.ok) throw new Error(`Falha ao buscar patrocinador: ${res.statusText}`);
+    const data = await res.json();
+    const sponsorDoc = data[0]?.document;
+    if (sponsorDoc) {
+      return { success: true, data: mapFirestoreRestResponse([sponsorDoc])[0] };
+    }
+    return { success: true, data: null };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}
+
+export async function saveCameraSponsorServer(
+  sponsorData: { cameraId: string; sponsorImageUrl: string; linkDestino: string; isActive: boolean; },
+  sponsorId: string | null
+): Promise<{ success: boolean; error?: string; }> {
+  if (!apiKey) return { success: false, error: 'API Key ausente.' };
+  
+  const isCreating = !sponsorId;
+  const url = isCreating
+    ? `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/camera_sponsors?key=${apiKey}`
+    : `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/camera_sponsors/${sponsorId}?key=${apiKey}&updateMask.fieldPaths=cameraId&updateMask.fieldPaths=sponsorImageUrl&updateMask.fieldPaths=linkDestino&updateMask.fieldPaths=isActive&updateMask.fieldPaths=updatedAt`;
+
+  const payload = {
+    fields: {
+      cameraId: { stringValue: sponsorData.cameraId },
+      sponsorImageUrl: { stringValue: sponsorData.sponsorImageUrl },
+      linkDestino: { stringValue: sponsorData.linkDestino },
+      isActive: { booleanValue: sponsorData.isActive },
+      updatedAt: { timestampValue: new Date().toISOString() },
+      ...(isCreating && { createdAt: { timestampValue: new Date().toISOString() } }),
+    }
+  };
+
+  try {
+    const res = await fetch(url, { method: isCreating ? 'POST' : 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    if (!res.ok) {
+      const errorBody = await res.json();
+      throw new Error(`Falha ao salvar patrocinador: ${errorBody.error?.message || res.statusText}`);
+    }
+    revalidatePath('/admin/patrocinadores');
+    revalidatePath('/streaming');
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}
+
+export async function deleteCameraSponsorServer(sponsorId: string): Promise<{ success: boolean; error?: string; }> {
+  if (!apiKey) return { success: false, error: 'API Key ausente.' };
+  if (!sponsorId) return { success: false, error: 'ID do patrocinador é obrigatório.' };
+  
+  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/camera_sponsors/${sponsorId}?key=${apiKey}`;
+  
+  try {
+    const res = await fetch(url, { method: 'DELETE' });
+    if (!res.ok && res.status !== 404) {
+      const errorBody = await res.json();
+      throw new Error(`Falha ao deletar patrocinador: ${errorBody.error?.message || res.statusText}`);
+    }
+    revalidatePath('/admin/patrocinadores');
+    revalidatePath('/streaming');
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}
+
