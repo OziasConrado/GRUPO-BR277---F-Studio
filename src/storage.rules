@@ -2,50 +2,10 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Permite leitura pública de todos os arquivos.
+    // Permite leitura e escrita pública em todos os arquivos para facilitar o desenvolvimento.
+    // ATENÇÃO: Em produção, estas regras devem ser mais restritivas.
     match /{allPaths=**} {
-      allow read;
-    }
-    
-    // PERMISSÕES DE ESCRITA (UPLOAD)
-    
-    // Usuários só podem escrever em seus próprios diretórios de fotos de perfil.
-    match /profile_pictures/{userId}/{allPaths=**} {
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Apenas administradores podem fazer upload de banners.
-    match /banners/{allPaths=**} {
-      allow write: if request.auth != null && request.auth.token.admin == true; 
-    }
-
-    // Usuários autenticados podem fazer upload de imagens para posts.
-    match /posts/{userId}/{allPaths=**} {
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Usuários autenticados podem fazer upload de imagens para o chat.
-    match /chat_images/{userId}/{allPaths=**} {
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Usuários autenticados podem fazer upload de áudios para o chat.
-    match /chat_audio/{userId}/{allPaths=**} {
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Usuários autenticados podem fazer upload de imagens de negócios.
-    match /business_images/{businessId}/{allPaths=**} {
-      allow write: if request.auth != null;
-    }
-
-    match /business_promo_images/{businessId}/{allPaths=**} {
-      allow write: if request.auth != null;
-    }
-
-    // Usuários autenticados podem fazer upload de imagens de pontos turísticos indicados.
-    match /indicated_points_images/{userId}/{allPaths=**} {
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if true;
     }
   }
 }

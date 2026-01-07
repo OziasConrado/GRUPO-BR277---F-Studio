@@ -163,10 +163,17 @@ export function SponsorForm({ isOpen, onClose, sponsor }: SponsorFormProps) {
 
       if (data.imageSourceType === 'upload' && data.imageFile) {
         if (sponsor?.sponsorImageUrl && sponsor.sponsorImageUrl.includes('firebasestorage')) {
-          try { await deleteObject(ref(storage, sponsor.sponsorImageUrl)); } catch (e) {}
+          try { await deleteObject(ref(storage, sponsor.sponsorImageUrl)); } catch (e) {
+            // Log error if not 'object-not-found'
+            if ((e as any).code !== 'storage/object-not-found') {
+              console.warn("Could not delete old sponsor image:", e);
+            }
+          }
         }
         const imagePath = `sponsors/${Date.now()}_${data.imageFile.name}`;
-        finalImageUrl = await getDownloadURL(await uploadBytes(ref(storage, imagePath), data.imageFile));
+        const imageRef = ref(storage, imagePath);
+        await uploadBytes(imageRef, data.imageFile);
+        finalImageUrl = await getDownloadURL(imageRef);
       } else if (data.imageSourceType === 'url' && data.sponsorImageUrl) {
         finalImageUrl = data.sponsorImageUrl;
       }
