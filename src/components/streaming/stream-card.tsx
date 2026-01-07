@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
@@ -32,20 +33,24 @@ export default function StreamCard({ stream, isFavorite, isFavoriting, onWatch, 
     >
        <button
         onClick={(e) => onToggleFavorite(e, stream.id)}
-        className="absolute top-2 right-2 z-10 p-2"
+        className="absolute top-2 right-2 z-10 p-1" // Ajustado padding para ícone menor
         aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
       >
         {isFavoriting ? (
           <Loader2 className="h-5 w-5 animate-spin text-white" />
         ) : (
-          <Star className={cn("h-5 w-5 transition-all duration-200 ease-in-out", isFavorite ? "text-amber-400 fill-amber-400" : "text-slate-400/70 hover:text-amber-400 hover:scale-125")} />
+          <Star className={cn(
+              "h-5 w-5 transition-all duration-200 ease-in-out", 
+              isFavorite ? "text-amber-400 fill-amber-400" : "text-slate-400/70 hover:text-amber-400 hover:scale-125"
+            )} 
+          />
         )}
       </button>
       <CardContent className="p-3 flex items-center gap-4">
         <div className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center">
           <Cctv className="h-8 w-8 text-primary"/>
         </div>
-        <div className="flex-grow min-w-0">
+        <div className="flex-grow min-w-0 pr-6"> {/* Adicionado padding à direita para evitar sobreposição */}
           <h3 className="font-semibold font-headline line-clamp-1">{stream.title}</h3>
           <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{stream.description}</p>
            <Button 
