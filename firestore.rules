@@ -25,10 +25,10 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
-    // Camera Sponsors: Public read, Admin write
+    // Camera Sponsors: Public read, write temporarily open for testing
     match /camera_sponsors/{sponsorId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if true; 
     }
 
     // Posts: Authenticated read, authenticated write/update/delete
