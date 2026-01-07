@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Dialog, DialogContent, DialogClose, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -58,7 +59,7 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
   const streamUrlForModal = getAutoplayStreamUrlForModal(stream.streamUrl);
 
   const SponsorAdSpace = () => (
-    <div className="shrink-0 px-8 py-2 text-center">
+    <div className="shrink-0 px-8 py-2 text-center mt-2">
       {loadingSponsor ? (
         <div className="h-[50px] flex items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -77,8 +78,8 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
 
   const AdMobSpace = () => (
     <div className="shrink-0 flex justify-center mt-6">
-      <div className="w-64 h-64 border border-dashed border-gray-600/30 rounded-xl flex items-center justify-center text-gray-500 text-sm">
-        Publicidade Quadrada
+      <div className="w-64 h-64 border border-dashed border-gray-600/30 rounded-xl flex items-center justify-center">
+        <span className="text-[10px] tracking-[0.2em] text-gray-500 uppercase font-medium">Publicidade</span>
       </div>
     </div>
   );
@@ -102,34 +103,30 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
         </DialogHeader>
         
         <div className="flex-grow flex flex-col items-center justify-center p-1 sm:p-2 overflow-hidden gap-0">
+            <SponsorAdSpace />
             
-            <div className="w-full max-w-4xl mx-auto px-4 mt-2">
-                 <SponsorAdSpace />
-            </div>
-
-            {/* Bloco de Informações da Câmera (justaposto ao vídeo) */}
-            <div className="w-full max-w-4xl mx-auto px-4 text-white mt-2">
-                <div className="flex items-start gap-2">
-                    <MapPin className="h-5 w-5 text-primary-foreground/80 flex-shrink-0 mt-1" />
-                    <div>
-                        <h3 className="text-lg font-bold">{stream.title}</h3>
-                        <p className="text-sm text-primary-foreground/70 -mt-1">
-                            {stream.description}
-                        </p>
+            <div className="flex-grow w-full max-w-4xl mx-auto flex flex-col justify-center gap-0">
+                <div className="w-full px-4 text-white mt-2">
+                    <div className="flex items-start gap-2">
+                        <MapPin className="h-5 w-5 text-primary-foreground/80 flex-shrink-0 mt-1" />
+                        <div>
+                            <h3 className="text-lg font-bold">{stream.title}</h3>
+                            <p className="text-sm text-primary-foreground/70 -mt-1">
+                                {stream.description}
+                            </p>
+                        </div>
                     </div>
                 </div>
-            </div>
-
-            {/* Player de Vídeo */}
-            <div className="w-full max-w-4xl mx-auto aspect-video bg-black rounded-md overflow-hidden mt-2">
-              <iframe
-                src={streamUrlForModal}
-                title={stream.title}
-                className="w-full h-full border-0"
-                allow="autoplay; encrypted-media; picture-in-picture"
-                allowFullScreen
-                sandbox="allow-scripts allow-same-origin allow-presentation"
-              ></iframe>
+                <div className="w-full aspect-video bg-black rounded-md overflow-hidden mt-2">
+                  <iframe
+                    src={streamUrlForModal}
+                    title={stream.title}
+                    className="w-full h-full border-0"
+                    allow="autoplay; encrypted-media; picture-in-picture"
+                    allowFullScreen
+                    sandbox="allow-scripts allow-same-origin allow-presentation"
+                  ></iframe>
+                </div>
             </div>
 
             <AdMobSpace />
