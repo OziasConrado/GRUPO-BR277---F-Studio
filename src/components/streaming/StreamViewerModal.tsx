@@ -60,25 +60,27 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
   const streamUrlForModal = getAutoplayStreamUrlForModal(stream.streamUrl);
 
   const SponsorAdSpace = () => (
-    <div className="shrink-0 h-[60px] bg-card flex items-center justify-center text-sm text-primary-foreground p-2">
+    <div className="shrink-0 px-6 sm:px-8 py-2">
       {loadingSponsor ? (
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <div className="h-[50px] flex items-center justify-center">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        </div>
       ) : sponsor ? (
-        <a href={sponsor.linkDestino} target="_blank" rel="noopener noreferrer" className="h-full">
+        <a href={sponsor.linkDestino} target="_blank" rel="noopener noreferrer" className="h-[50px] w-full flex items-center justify-center">
           <Image src={sponsor.sponsorImageUrl} alt={`Patrocinador da câmera ${stream.title}`} height={40} width={120} className="object-contain h-full w-auto" />
         </a>
       ) : (
-        <div className="w-full h-full rounded-md border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
-            <span className="text-xs text-muted-foreground">Patrocinador</span>
+         <div className="h-[50px] w-full rounded-xl border border-dashed border-white/20 flex items-center justify-center opacity-60">
+            <span className="text-xs text-white/50 tracking-widest uppercase">Patrocinador</span>
         </div>
       )}
     </div>
   );
 
   const AdMobSpace = () => (
-    <div className="shrink-0 flex items-center justify-center p-4 bg-background">
-      <div className={cn("h-64 w-64 p-4 rounded-xl bg-muted/30 border border-dashed flex items-center justify-center")}>
-        <p className="text-muted-foreground text-sm">Publicidade Quadrada</p>
+    <div className="shrink-0 flex items-center justify-center p-4">
+      <div className={cn("h-64 w-64 p-4 rounded-xl bg-white/5 border border-dashed border-white/20 flex items-center justify-center")}>
+        <p className="text-white/50 text-sm">Publicidade Quadrada</p>
       </div>
     </div>
   );
@@ -103,27 +105,31 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
         
         <SponsorAdSpace />
 
-        <div className="shrink-0 px-4 pt-2 text-white">
-            <div className="flex items-center gap-2 mb-1">
-                <MapPin className="h-5 w-5 text-primary-foreground/80 flex-shrink-0" />
-                <h3 className="text-lg font-semibold">{stream.title}</h3>
+        <div className="flex-grow flex flex-col items-center justify-center p-1 sm:p-2 overflow-hidden">
+            {/* Bloco de Informações da Câmera */}
+            <div className="w-full max-w-4xl mx-auto px-4 pb-2 text-white">
+                <div className="flex items-start gap-2">
+                    <MapPin className="h-5 w-5 text-primary-foreground/80 flex-shrink-0 mt-1" />
+                    <div>
+                        <h3 className="text-lg font-bold">{stream.title}</h3>
+                        <p className="text-sm text-primary-foreground/70 -mt-1">
+                            {stream.description}
+                        </p>
+                    </div>
+                </div>
             </div>
-            <p className="text-sm text-primary-foreground/70 pl-7">
-                {stream.description}
-            </p>
-        </div>
 
-        <div className="flex-grow flex items-center justify-center p-1 sm:p-2 overflow-hidden">
-          <div className="w-full max-w-4xl mx-auto aspect-video bg-black rounded-md overflow-hidden">
-            <iframe
-              src={streamUrlForModal}
-              title={stream.title}
-              className="w-full h-full border-0"
-              allow="autoplay; encrypted-media; picture-in-picture"
-              allowFullScreen
-              sandbox="allow-scripts allow-same-origin allow-presentation"
-            ></iframe>
-          </div>
+            {/* Player de Vídeo */}
+            <div className="w-full max-w-4xl mx-auto aspect-video bg-black rounded-md overflow-hidden">
+              <iframe
+                src={streamUrlForModal}
+                title={stream.title}
+                className="w-full h-full border-0"
+                allow="autoplay; encrypted-media; picture-in-picture"
+                allowFullScreen
+                sandbox="allow-scripts allow-same-origin allow-presentation"
+              ></iframe>
+            </div>
         </div>
 
         <AdMobSpace />
