@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
@@ -259,14 +260,28 @@ export default function StreamingPage() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             {favoriteStreams.map(stream => (
-               <StreamCard
-                key={`fav-${stream.id}`}
-                stream={stream}
-                isFavorite={true}
-                isFavoriting={isFavoriting === stream.id}
-                onWatch={handleWatchStream}
-                onToggleFavorite={handleToggleFavorite}
-              />
+                <Card 
+                  key={`fav-${stream.id}`}
+                  className="bg-card/70 dark:bg-card/70 backdrop-blur-sm border rounded-lg overflow-hidden group relative cursor-pointer"
+                  onClick={() => handleWatchStream(stream)}
+                >
+                  <button
+                    onClick={(e) => handleToggleFavorite(e, stream.id)}
+                    className="absolute top-2 right-2 z-10 p-1"
+                    aria-label="Remover dos favoritos"
+                  >
+                    <Star className="h-5 w-5 text-amber-400 fill-amber-400" />
+                  </button>
+                  <CardContent className="p-3 flex flex-col items-center justify-center text-center">
+                    <div className="w-16 h-12 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center mb-2">
+                      <Cctv className="h-7 w-7 text-primary"/>
+                    </div>
+                    <div className="flex-grow min-w-0">
+                      <h3 className="font-semibold text-sm line-clamp-1">{stream.title}</h3>
+                      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-1">{stream.description}</p>
+                    </div>
+                  </CardContent>
+                </Card>
             ))}
           </div>
         </section>
