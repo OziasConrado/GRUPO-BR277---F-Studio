@@ -3,12 +3,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Video, Store, Wrench, Map, Plus } from 'lucide-react'; // Alterado Newspaper para Video
+import { Home, Store, Wrench, Map, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import MoreFeaturesSheet from '../MoreFeaturesSheet';
 
 const navItems = [
-  { href: '/streaming', label: 'Início', icon: Video }, // Alterado href de /feed para /streaming e ícone
+  { href: '/streaming', label: 'Início', icon: Home },
   { href: '/guia-comercial', label: 'Comercial', icon: Store },
   { href: '#', label: '', icon: Plus },
   { href: '/ferramentas', label: 'Ferramentas', icon: Wrench },
