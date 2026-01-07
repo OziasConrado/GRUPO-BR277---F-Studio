@@ -42,7 +42,6 @@ const mockStreamsData = [
   { id: 'stream-outros-1', title: 'Paraguai - Ponte da Amizade' },
 ];
 
-
 const sponsorSchema = z.object({
   cameraId: z.string().min(1, 'A câmera é obrigatória.'),
   linkDestino: z.string().url('A URL de destino deve ser um link válido.'),
@@ -83,6 +82,14 @@ interface SponsorFormProps {
   onClose: () => void;
   sponsor?: Sponsor | null;
 }
+
+const sanitizeFileName = (fileName: string) => {
+  return fileName
+    .normalize('NFD') // Decompor caracteres acentuados
+    .replace(/[\u0300-\u036f]/g, '') // Remover diacríticos
+    .replace(/[^a-zA-Z0-9_.-]/g, '_') // Substituir caracteres especiais por _
+    .replace(/\s+/g, '_'); // Substituir espaços por _
+};
 
 export function SponsorForm({ isOpen, onClose, sponsor }: SponsorFormProps) {
   const { toast } = useToast();
@@ -164,13 +171,14 @@ export function SponsorForm({ isOpen, onClose, sponsor }: SponsorFormProps) {
       if (data.imageSourceType === 'upload' && data.imageFile) {
         if (sponsor?.sponsorImageUrl && sponsor.sponsorImageUrl.includes('firebasestorage')) {
           try { await deleteObject(ref(storage, sponsor.sponsorImageUrl)); } catch (e) {
-            // Log error if not 'object-not-found'
             if ((e as any).code !== 'storage/object-not-found') {
               console.warn("Could not delete old sponsor image:", e);
             }
           }
         }
-        const imagePath = `sponsors/${Date.now()}_${data.imageFile.name}`;
+        
+        const sanitizedName = sanitizeFileName(data.imageFile.name);
+        const imagePath = `sponsors/${Date.now()}_${sanitizedName}`;
         const imageRef = ref(storage, imagePath);
         await uploadBytes(imageRef, data.imageFile);
         finalImageUrl = await getDownloadURL(imageRef);

@@ -80,6 +80,15 @@ interface BannerFormProps {
   banner?: Banner | null;
 }
 
+const sanitizeFileName = (fileName: string) => {
+  return fileName
+    .normalize('NFD') // Decompor caracteres acentuados
+    .replace(/[\u0300-\u036f]/g, '') // Remover diacríticos
+    .replace(/[^a-zA-Z0-9_.-]/g, '_') // Substituir caracteres especiais por _
+    .replace(/\s+/g, '_'); // Substituir espaços por _
+};
+
+
 export function BannerForm({ isOpen, onClose, banner }: BannerFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -168,7 +177,8 @@ export function BannerForm({ isOpen, onClose, banner }: BannerFormProps) {
           }
         }
         
-        const imagePath = `banners/${Date.now()}_${data.imageFile.name}`;
+        const sanitizedName = sanitizeFileName(data.imageFile.name);
+        const imagePath = `banners/${Date.now()}_${sanitizedName}`;
         const newImageRef = ref(storage, imagePath);
         await uploadBytes(newImageRef, data.imageFile);
         finalImageUrl = await getDownloadURL(newImageRef);
