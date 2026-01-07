@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
@@ -31,15 +30,15 @@ export default function StreamCard({ stream, isFavorite, isFavoriting, onWatch, 
       className="bg-card/70 dark:bg-card/70 backdrop-blur-sm border rounded-lg overflow-hidden group relative cursor-pointer"
       onClick={() => onWatch(stream)}
     >
-      <button
+       <button
         onClick={(e) => onToggleFavorite(e, stream.id)}
-        className="absolute top-2 right-2 z-10 h-10 w-10 flex items-center justify-center rounded-full"
+        className="absolute top-2 right-2 z-10 p-2"
         aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
       >
         {isFavoriting ? (
           <Loader2 className="h-5 w-5 animate-spin text-white" />
         ) : (
-          <Star className={cn("h-5 w-5 transition-all duration-200 ease-in-out", isFavorite ? "text-amber-400 fill-amber-400" : "text-white/70 hover:text-amber-300")} />
+          <Star className={cn("h-5 w-5 transition-all duration-200 ease-in-out", isFavorite ? "text-amber-400 fill-amber-400" : "text-slate-400/70 hover:text-amber-400 hover:scale-125")} />
         )}
       </button>
       <CardContent className="p-3 flex items-center gap-4">
