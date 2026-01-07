@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Dialog, DialogContent, DialogClose, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -8,7 +7,6 @@ import type { StreamCardProps } from './stream-card';
 import { useEffect, useState } from 'react';
 import { fetchSponsorForCameraServer } from '@/app/actions/firestore';
 import Image from 'next/image';
-import { cn } from '@/lib/utils';
 
 interface StreamViewerModalProps {
   isOpen: boolean;
@@ -60,7 +58,7 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
   const streamUrlForModal = getAutoplayStreamUrlForModal(stream.streamUrl);
 
   const SponsorAdSpace = () => (
-    <div className="shrink-0 px-8 py-2">
+    <div className="shrink-0 px-8 py-2 text-center">
       {loadingSponsor ? (
         <div className="h-[50px] flex items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -70,17 +68,17 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
           <Image src={sponsor.sponsorImageUrl} alt={`Patrocinador da câmera ${stream.title}`} height={40} width={120} className="object-contain h-full w-auto" />
         </a>
       ) : (
-        <div className="h-[50px] w-full rounded-xl border border-dashed border-gray-500/30 flex items-center justify-center opacity-60">
-            <span className="text-[10px] text-white/50 tracking-widest uppercase">Patrocínio</span>
+        <div className="border border-dashed border-gray-600/30 rounded-lg py-2 px-8 inline-block mx-auto">
+             <span className="text-[10px] tracking-[0.2em] text-gray-400 uppercase font-medium">Patrocínio</span>
         </div>
       )}
     </div>
   );
 
   const AdMobSpace = () => (
-    <div className="shrink-0 flex items-center justify-center p-4">
-      <div className={cn("max-w-[250px] w-full aspect-square p-4 rounded-xl bg-white/5 border border-dashed border-gray-500/30 flex items-center justify-center")}>
-        <p className="text-white/50 text-sm">Publicidade Quadrada</p>
+    <div className="shrink-0 flex justify-center mt-6">
+      <div className="w-64 h-64 border border-dashed border-gray-600/30 rounded-xl flex items-center justify-center text-gray-500 text-sm">
+        Publicidade Quadrada
       </div>
     </div>
   );
@@ -88,10 +86,10 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
-        className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none !bg-black/95 !p-0 flex flex-col !translate-x-0 !translate-y-0"
+        className="!fixed !inset-0 !z-[200] !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-none !bg-neutral-950 !p-0 flex flex-col !translate-x-0 !translate-y-0"
         onEscapeKeyDown={onClose}
       >
-        <DialogHeader className="shrink-0 p-2 sm:p-3 flex flex-row justify-end items-center bg-black/30 !z-[210]">
+        <DialogHeader className="shrink-0 p-2 sm:p-3 flex flex-row justify-end items-center bg-transparent absolute top-0 right-0 !z-[210]">
           <DialogTitle className="sr-only">
             Visualizador de Transmissão: {stream.title}
           </DialogTitle>
@@ -103,11 +101,14 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
           </DialogClose>
         </DialogHeader>
         
-        <SponsorAdSpace />
+        <div className="flex-grow flex flex-col items-center justify-center p-1 sm:p-2 overflow-hidden gap-0">
+            
+            <div className="w-full max-w-4xl mx-auto px-4 mt-2">
+                 <SponsorAdSpace />
+            </div>
 
-        <div className="flex-grow flex flex-col items-center justify-center p-1 sm:p-2 overflow-hidden">
-            {/* Bloco de Informações da Câmera */}
-            <div className="w-full max-w-4xl mx-auto px-4 pb-2 text-white mt-2">
+            {/* Bloco de Informações da Câmera (justaposto ao vídeo) */}
+            <div className="w-full max-w-4xl mx-auto px-4 text-white mt-2">
                 <div className="flex items-start gap-2">
                     <MapPin className="h-5 w-5 text-primary-foreground/80 flex-shrink-0 mt-1" />
                     <div>
@@ -120,7 +121,7 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
             </div>
 
             {/* Player de Vídeo */}
-            <div className="w-full max-w-4xl mx-auto aspect-video bg-black rounded-md overflow-hidden">
+            <div className="w-full max-w-4xl mx-auto aspect-video bg-black rounded-md overflow-hidden mt-2">
               <iframe
                 src={streamUrlForModal}
                 title={stream.title}
@@ -130,9 +131,9 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
                 sandbox="allow-scripts allow-same-origin allow-presentation"
               ></iframe>
             </div>
-        </div>
 
-        <AdMobSpace />
+            <AdMobSpace />
+        </div>
 
       </DialogContent>
     </Dialog>
