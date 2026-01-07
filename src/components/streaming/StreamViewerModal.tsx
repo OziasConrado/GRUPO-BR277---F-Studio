@@ -60,18 +60,18 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
   const streamUrlForModal = getAutoplayStreamUrlForModal(stream.streamUrl);
 
   const SponsorAdSpace = () => (
-    <div className="shrink-0 px-6 sm:px-8 py-2">
+    <div className="shrink-0 px-8 py-2">
       {loadingSponsor ? (
         <div className="h-[50px] flex items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
       ) : sponsor ? (
         <a href={sponsor.linkDestino} target="_blank" rel="noopener noreferrer" className="h-[50px] w-full flex items-center justify-center">
           <Image src={sponsor.sponsorImageUrl} alt={`Patrocinador da câmera ${stream.title}`} height={40} width={120} className="object-contain h-full w-auto" />
         </a>
       ) : (
-         <div className="h-[50px] w-full rounded-xl border border-dashed border-white/20 flex items-center justify-center opacity-60">
-            <span className="text-xs text-white/50 tracking-widest uppercase">Patrocinador</span>
+        <div className="h-[50px] w-full rounded-xl border border-dashed border-gray-500/30 flex items-center justify-center opacity-60">
+            <span className="text-[10px] text-white/50 tracking-widest uppercase">Patrocínio</span>
         </div>
       )}
     </div>
@@ -79,7 +79,7 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
 
   const AdMobSpace = () => (
     <div className="shrink-0 flex items-center justify-center p-4">
-      <div className={cn("h-64 w-64 p-4 rounded-xl bg-white/5 border border-dashed border-white/20 flex items-center justify-center")}>
+      <div className={cn("max-w-[250px] w-full aspect-square p-4 rounded-xl bg-white/5 border border-dashed border-gray-500/30 flex items-center justify-center")}>
         <p className="text-white/50 text-sm">Publicidade Quadrada</p>
       </div>
     </div>
@@ -107,7 +107,7 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
 
         <div className="flex-grow flex flex-col items-center justify-center p-1 sm:p-2 overflow-hidden">
             {/* Bloco de Informações da Câmera */}
-            <div className="w-full max-w-4xl mx-auto px-4 pb-2 text-white">
+            <div className="w-full max-w-4xl mx-auto px-4 pb-2 text-white mt-2">
                 <div className="flex items-start gap-2">
                     <MapPin className="h-5 w-5 text-primary-foreground/80 flex-shrink-0 mt-1" />
                     <div>
