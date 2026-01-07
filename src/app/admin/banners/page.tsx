@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -143,7 +144,7 @@ export default function AdminBannersPage() {
                       className="h-16 w-32 object-cover rounded-md bg-muted"
                       crossOrigin="anonymous"
                     />
-                    <div className="flex-grow">
+                    <div className="flex-grow min-w-0">
                       <p className="font-semibold">{banner.name} <span className="text-xs text-muted-foreground font-normal">(Ordem: {banner.order})</span></p>
                       <a href={banner.targetUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:underline flex items-center gap-1 truncate">
                         <ExternalLink className="h-3 w-3" /> {banner.targetUrl}
