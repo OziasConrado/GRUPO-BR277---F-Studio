@@ -274,7 +274,7 @@ export function SponsorForm({ isOpen, onClose, sponsor }: SponsorFormProps) {
                              <Input id="image-upload" type="file" className="sr-only" onChange={handleImageFileChange} accept="image/png, image/jpeg, image/gif, image/webp" />
                           </Label>
                        </div>
-                       <p className="text-xs text-muted-foreground">PNG, JPG, GIF, WebP até {MAX_FILE_SIZE_MB}MB</p>
+                       <p className="text-xs text-muted-foreground">PNG, JPG, GIF, WebP até ${MAX_FILE_SIZE_MB}MB</p>
                     </div>
                  </div>
                  {form.formState.errors.imageFile && imageSourceType === 'upload' && (
