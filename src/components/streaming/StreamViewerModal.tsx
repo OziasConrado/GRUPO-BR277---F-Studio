@@ -59,27 +59,27 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
   const streamUrlForModal = getAutoplayStreamUrlForModal(stream.streamUrl);
 
   const SponsorAdSpace = () => (
-    <div className="shrink-0 px-8 py-2 text-center mt-2">
+    <div className="text-center">
       {loadingSponsor ? (
-        <div className="h-[50px] flex items-center justify-center">
+        <div className="h-[60px] flex items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
       ) : sponsor ? (
-        <a href={sponsor.linkDestino} target="_blank" rel="noopener noreferrer" className="h-[50px] w-full flex items-center justify-center">
-          <Image src={sponsor.sponsorImageUrl} alt={`Patrocinador da câmera ${stream.title}`} height={40} width={120} className="object-contain h-full w-auto" />
+        <a href={sponsor.linkDestino} target="_blank" rel="noopener noreferrer" className="h-[60px] w-full flex items-center justify-center">
+          <Image src={sponsor.sponsorImageUrl} alt={`Patrocinador da câmera ${stream.title}`} height={50} width={150} className="object-contain h-full w-auto" />
         </a>
       ) : (
-        <div className="border border-dashed border-gray-600/30 rounded-lg py-2 px-8 inline-block mx-auto">
-             <span className="text-[10px] tracking-[0.2em] text-gray-400 uppercase font-medium">Patrocínio</span>
+        <div className="border border-dashed border-gray-700/40 rounded-xl py-2 px-8 inline-block mx-auto bg-white/5">
+             <span className="text-[10px] tracking-[0.2em] uppercase font-medium text-gray-500">Patrocínio</span>
         </div>
       )}
     </div>
   );
 
   const AdMobSpace = () => (
-    <div className="shrink-0 flex justify-center mt-6">
-      <div className="w-64 h-64 border border-dashed border-gray-600/30 rounded-xl flex items-center justify-center">
-        <span className="text-[10px] tracking-[0.2em] text-gray-500 uppercase font-medium">Publicidade</span>
+    <div className="flex justify-center">
+      <div className="w-64 h-64 border border-dashed border-gray-700/40 rounded-xl flex items-center justify-center bg-white/5">
+        <span className="text-[10px] tracking-[0.2em] uppercase font-medium text-gray-500">Publicidade</span>
       </div>
     </div>
   );
@@ -102,11 +102,11 @@ export default function StreamViewerModal({ isOpen, onClose, stream }: StreamVie
           </DialogClose>
         </DialogHeader>
         
-        <div className="flex-grow flex flex-col items-center justify-center p-1 sm:p-2 overflow-hidden gap-0">
+        <div className="flex-grow flex flex-col items-center justify-center p-2 sm:p-4 overflow-hidden pt-10 pb-10 gap-8">
             <SponsorAdSpace />
             
-            <div className="flex-grow w-full max-w-4xl mx-auto flex flex-col justify-center gap-0">
-                <div className="w-full px-4 text-white mt-2">
+            <div className="w-full max-w-4xl mx-auto flex flex-col justify-center gap-0">
+                <div className="w-full px-4 text-white">
                     <div className="flex items-start gap-2">
                         <MapPin className="h-5 w-5 text-primary-foreground/80 flex-shrink-0 mt-1" />
                         <div>
